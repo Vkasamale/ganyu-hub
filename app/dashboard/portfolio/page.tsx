@@ -4,8 +4,8 @@ import { addPortfolioItem } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SavingForm, SubmitButton } from "@/components/saving-form";
 
 export default async function PortfolioPage() {
   const supabase = createClient();
@@ -18,7 +18,7 @@ export default async function PortfolioPage() {
       <Card>
         <CardHeader><CardTitle>Add portfolio item</CardTitle></CardHeader>
         <CardContent>
-          <form action={addPortfolioItem} className="space-y-4">
+          <SavingForm action={addPortfolioItem} successText="Portfolio item added." resetOnSuccess className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="title">Title</Label>
               <Input id="title" name="title" required />
@@ -35,8 +35,8 @@ export default async function PortfolioPage() {
               <Label htmlFor="project_url">Project URL</Label>
               <Input id="project_url" name="project_url" type="url" placeholder="https://..." />
             </div>
-            <Button type="submit">Add</Button>
-          </form>
+            <SubmitButton pendingText="Adding…">Add</SubmitButton>
+          </SavingForm>
         </CardContent>
       </Card>
 

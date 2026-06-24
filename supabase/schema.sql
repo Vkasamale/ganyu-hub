@@ -268,7 +268,9 @@ create policy "notifications update own" on notifications for update using (auth
 drop policy if exists "notifications insert authenticated" on notifications;
 create policy "notifications insert authenticated" on notifications for insert with check (auth.uid() is not null);
 
--- Realtime: ensure publication includes notifications
+-- Realtime: ensure publication includes notifications + REPLICA IDENTITY FULL
+-- (required for filtered postgres_changes subscriptions on RLS-protected tables)
+alter table notifications replica identity full;
 do $$ begin
   alter publication supabase_realtime add table notifications;
 exception when duplicate_object then null; when others then null; end $$;

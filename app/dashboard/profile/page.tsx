@@ -4,8 +4,8 @@ import { updateProfile } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SavingForm, SubmitButton } from "@/components/saving-form";
 
 export default async function EditProfilePage() {
   const supabase = createClient();
@@ -18,7 +18,7 @@ export default async function EditProfilePage() {
       <Card>
         <CardHeader><CardTitle>Edit your profile</CardTitle></CardHeader>
         <CardContent>
-          <form action={updateProfile} className="space-y-4">
+          <SavingForm action={updateProfile} successText="Profile saved." className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="full_name">Full name</Label>
               <Input id="full_name" name="full_name" defaultValue={profile?.full_name || ""} />
@@ -47,8 +47,8 @@ export default async function EditProfilePage() {
               <Label htmlFor="skills">Skills (comma-separated)</Label>
               <Input id="skills" name="skills" defaultValue={(profile?.skills || []).join(", ")} placeholder="Figma, Branding, React" />
             </div>
-            <Button type="submit">Save</Button>
-          </form>
+            <SubmitButton>Save</SubmitButton>
+          </SavingForm>
         </CardContent>
       </Card>
     </div>

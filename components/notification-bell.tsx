@@ -37,7 +37,10 @@ export function NotificationBell({
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
         (payload) => {
-          setItems((prev) => [payload.new as NotificationItem, ...prev].slice(0, 20));
+          setItems((prev) => {
+            if (prev.some((n) => n.id === (payload.new as NotificationItem).id)) return prev;
+            return [payload.new as NotificationItem, ...prev].slice(0, 20);
+          });
         }
       )
       .on(
@@ -49,8 +52,26 @@ export function NotificationBell({
         }
       )
       .subscribe();
+
+    // Polling fallback — covers cases where Realtime isn't enabled on the table
+    // or the websocket is asleep. Cheap query, 15s cadence.
+    async function refresh() {
+      const { data } = await supabase
+        .from("notifications")
+        .select("id, kind, title, body, link, read_at, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (data) setItems(data as NotificationItem[]);
+    }
+    const interval = setInterval(refresh, 15000);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
     };
   }, [userId]);
 
