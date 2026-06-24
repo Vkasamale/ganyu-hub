@@ -1,4 +1,5 @@
 -- Ganyu Hub schema. Run this in the Supabase SQL editor on a fresh project.
+-- Idempotent: safe to re-run on an existing project (will add new tables/policies).
 create extension if not exists "pgcrypto";
 
 do $$ begin
@@ -112,6 +113,48 @@ create table if not exists reviews (
   unique (job_id, reviewer_id)
 );
 
+-- For You / Trending: interactions + saved_items
+do $$ begin
+  create type target_kind as enum ('job', 'creative');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type interaction_kind as enum ('view', 'click', 'save', 'unsave', 'message_sent', 'proposal_sent');
+exception when duplicate_object then null; end $$;
+
+create table if not exists interactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  target_type target_kind not null,
+  target_id uuid not null,
+  kind interaction_kind not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_interactions_user_time on interactions(user_id, created_at desc);
+create index if not exists idx_interactions_target_time on interactions(target_type, target_id, created_at desc);
+
+create table if not exists saved_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  target_type target_kind not null,
+  target_id uuid not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, target_type, target_id)
+);
+create index if not exists idx_saved_user on saved_items(user_id, created_at desc);
+
+create or replace function public.trending_items(p_target_type target_kind, p_limit int default 6)
+returns table(target_id uuid, score bigint)
+language sql security definer set search_path = public as $$
+  select target_id, count(*) as score
+  from interactions
+  where target_type = p_target_type and created_at > now() - interval '7 days'
+  group by target_id
+  order by score desc
+  limit p_limit;
+$$;
+grant execute on function public.trending_items(target_kind, int) to anon, authenticated;
+
 alter table profiles enable row level security;
 alter table portfolio_items enable row level security;
 alter table services enable row level security;
@@ -120,6 +163,8 @@ alter table proposals enable row level security;
 alter table message_threads enable row level security;
 alter table messages enable row level security;
 alter table reviews enable row level security;
+alter table interactions enable row level security;
+alter table saved_items enable row level security;
 
 drop policy if exists "profiles read" on profiles;
 create policy "profiles read" on profiles for select using (true);
@@ -174,6 +219,12 @@ drop policy if exists "reviews read" on reviews;
 create policy "reviews read" on reviews for select using (true);
 drop policy if exists "reviews insert" on reviews;
 create policy "reviews insert" on reviews for insert with check (auth.uid() = reviewer_id);
+
+drop policy if exists "interactions own" on interactions;
+create policy "interactions own" on interactions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "saved own" on saved_items;
+create policy "saved own" on saved_items for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create index if not exists idx_jobs_status on jobs(status);
 create index if not exists idx_jobs_category on jobs(category);

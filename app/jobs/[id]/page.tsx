@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { submitProposal, decideProposal } from "@/app/actions";
+import { SaveButton } from "@/components/save-button";
+import { submitProposal, decideProposal, recordView } from "@/app/actions";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
 export default async function JobDetailPage({ params }: { params: { id: string } }) {
@@ -17,6 +18,12 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const { data: client } = await supabase.from("profiles").select("id, full_name").eq("id", job.client_id).single();
   const { data: { user } } = await supabase.auth.getUser();
   const isClient = user?.id === job.client_id;
+  if (user && !isClient) await recordView("job", params.id);
+  let isSaved = false;
+  if (user && !isClient) {
+    const { data: s } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("target_type", "job").eq("target_id", params.id).maybeSingle();
+    isSaved = !!s;
+  }
 
   const { data: proposals } = isClient
     ? await supabase
@@ -42,7 +49,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-2xl">{job.title}</CardTitle>
-            <Badge>{job.category}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge>{job.category}</Badge>
+              {user && !isClient && <SaveButton targetType="job" targetId={job.id} saved={isSaved} />}
+            </div>
           </div>
           <p className="text-sm text-neutral-500">
             Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}

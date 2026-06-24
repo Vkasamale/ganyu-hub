@@ -102,6 +102,7 @@ export async function submitProposal(formData: FormData) {
     bid_mwk: Number(formData.get("bid_mwk")),
   });
   if (error) return { error: error.message };
+  await supabase.from("interactions").insert({ user_id: user.id, target_type: "job", target_id: job_id, kind: "proposal_sent" });
   revalidatePath(`/jobs/${job_id}`);
   return { ok: true };
 }
@@ -142,4 +143,40 @@ export async function startThread(formData: FormData) {
     .select("id").single();
   if (error) return { error: error.message };
   redirect(`/messages/${data.id}`);
+}
+
+export async function toggleSave(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const target_type = String(formData.get("target_type")) as "job" | "creative";
+  const target_id = String(formData.get("target_id"));
+
+  const { data: existing } = await supabase
+    .from("saved_items")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("target_type", target_type)
+    .eq("target_id", target_id)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("saved_items").delete().eq("id", existing.id);
+    await supabase.from("interactions").insert({ user_id: user.id, target_type, target_id, kind: "unsave" });
+  } else {
+    await supabase.from("saved_items").insert({ user_id: user.id, target_type, target_id });
+    await supabase.from("interactions").insert({ user_id: user.id, target_type, target_id, kind: "save" });
+  }
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/saved");
+  revalidatePath("/browse");
+  revalidatePath("/jobs");
+  return { ok: true };
+}
+
+export async function recordView(target_type: "job" | "creative", target_id: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("interactions").insert({ user_id: user.id, target_type, target_id, kind: "view" });
 }

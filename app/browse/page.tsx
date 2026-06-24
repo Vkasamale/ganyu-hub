@@ -1,15 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { CreativeCard } from "@/components/creative-card";
 import { FiltersBar } from "@/components/filters-bar";
+import { getSavedIds } from "@/lib/feed";
 
 function toArray(v: string | string[] | undefined): string[] {
   if (!v) return [];
   return Array.isArray(v) ? v : [v];
 }
-
-function sanitize(s: string) {
-  return s.replace(/[,()]/g, " ").trim();
-}
+function sanitize(s: string) { return s.replace(/[,()]/g, " ").trim(); }
 
 export default async function BrowsePage({ searchParams }: {
   searchParams: { q?: string; category?: string | string[]; skills?: string; min_price?: string; max_price?: string; sort?: string };
@@ -31,37 +29,25 @@ export default async function BrowsePage({ searchParams }: {
   if (skills.length) query = query.overlaps("skills", skills);
   if (minP != null) query = query.gte("hourly_rate_mwk", minP);
   if (maxP != null) query = query.lte("hourly_rate_mwk", maxP);
-
   if (sort === "rate_asc") query = query.order("hourly_rate_mwk", { ascending: true, nullsFirst: false });
   else if (sort === "rate_desc") query = query.order("hourly_rate_mwk", { ascending: false, nullsFirst: false });
   else query = query.order("created_at", { ascending: false });
 
   const { data: profiles } = await query;
+  const { data: { user } } = await supabase.auth.getUser();
+  const saved = user ? await getSavedIds(supabase as any, user.id, "creative") : new Set<string>();
   const count = profiles?.length || 0;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-3xl font-bold">Browse Malawian creatives</h1>
       <p className="mt-1 text-neutral-600">{count} {count === 1 ? "creative" : "creatives"} found</p>
-
       <div className="mt-6">
-        <FiltersBar
-          kind="creatives"
-          action="/browse"
-          q={searchParams.q}
-          categories={cats}
-          skills={searchParams.skills}
-          minPrice={searchParams.min_price}
-          maxPrice={searchParams.max_price}
-          sort={searchParams.sort}
-        />
+        <FiltersBar kind="creatives" action="/browse" q={searchParams.q} categories={cats} skills={searchParams.skills} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
       </div>
-
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {(profiles || []).map((p) => <CreativeCard key={p.id} profile={p} />)}
-        {count === 0 && (
-          <p className="col-span-full text-neutral-500">No creatives match these filters.</p>
-        )}
+        {(profiles || []).map((p) => <CreativeCard key={p.id} profile={p} saved={saved.has(p.id)} showSave={!!user} />)}
+        {count === 0 && <p className="col-span-full text-neutral-500">No creatives match these filters.</p>}
       </div>
     </div>
   );

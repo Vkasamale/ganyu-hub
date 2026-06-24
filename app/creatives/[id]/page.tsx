@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { startThread } from "@/app/actions";
+import { SaveButton } from "@/components/save-button";
+import { startThread, recordView } from "@/app/actions";
 import { formatMwk } from "@/lib/utils";
 
 export default async function CreativePage({ params }: { params: { id: string } }) {
@@ -12,6 +13,12 @@ export default async function CreativePage({ params }: { params: { id: string } 
   if (!profile) notFound();
   const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", params.id).order("created_at", { ascending: false });
   const { data: { user } } = await supabase.auth.getUser();
+  if (user && user.id !== params.id) await recordView("creative", params.id);
+  let isSaved = false;
+  if (user) {
+    const { data: s } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("target_type", "creative").eq("target_id", params.id).maybeSingle();
+    isSaved = !!s;
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -28,10 +35,13 @@ export default async function CreativePage({ params }: { params: { id: string } 
             <p className="mt-3 text-lg font-semibold">{formatMwk(profile.hourly_rate_mwk)}/hr</p>
           )}
           {user && user.id !== profile.id && (
-            <form action={startThread} className="mt-4">
-              <input type="hidden" name="creative_id" value={profile.id} />
-              <Button type="submit">Message {profile.full_name?.split(" ")[0] || "this creative"}</Button>
-            </form>
+            <div className="mt-4 flex items-center gap-2">
+              <form action={startThread}>
+                <input type="hidden" name="creative_id" value={profile.id} />
+                <Button type="submit">Message {profile.full_name?.split(" ")[0] || "this creative"}</Button>
+              </form>
+              <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
+            </div>
           )}
         </div>
       </div>
