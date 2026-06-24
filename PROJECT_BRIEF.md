@@ -1,6 +1,15 @@
 # Ganyu Hub — Project Brief
 
-*Draft v0.1 — 2026-06-24*
+*Draft v0.2 — last updated 2026-06-24*
+
+> **Status:** MVP is built and running locally. Tech stack is locked. Search + filters and a For You / Trending feed are shipped. Payments are still deferred. See [`CHANGELOG.md`](CHANGELOG.md) for the shipped history.
+>
+> **Locked decisions** (resolving open questions from earlier drafts):
+> - **Tech stack:** Next.js 14 (App Router) + TypeScript + Tailwind + Supabase (Postgres, Auth, Storage). Hosting TBD.
+> - **Launch audience:** clients-first, but both sides exist from day one.
+> - **Monetization:** subscriptions + commission (rate TBD).
+> - **Trust model:** open signup + reviews.
+> - **Geography phase 1:** Malawi only.
 
 ## 1. One-line pitch
 
