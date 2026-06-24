@@ -4,8 +4,8 @@ import { postJob } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { CATEGORIES } from "@/lib/types";
 
 export default async function NewJobPage() {
@@ -18,7 +18,7 @@ export default async function NewJobPage() {
       <Card>
         <CardHeader><CardTitle>Post a job</CardTitle></CardHeader>
         <CardContent>
-          <form action={postJob} className="space-y-4">
+          <SavingForm action={postJob} successText="Job posted." className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="title">Title</Label>
               <Input id="title" name="title" required placeholder="e.g. Logo for new coffee brand" />
@@ -37,8 +37,8 @@ export default async function NewJobPage() {
               <Label htmlFor="budget_mwk">Budget (MWK)</Label>
               <Input id="budget_mwk" name="budget_mwk" type="number" min={0} placeholder="e.g. 150000" />
             </div>
-            <Button type="submit">Post job</Button>
-          </form>
+            <SubmitButton pendingText="Posting…">Post job</SubmitButton>
+          </SavingForm>
         </CardContent>
       </Card>
     </div>

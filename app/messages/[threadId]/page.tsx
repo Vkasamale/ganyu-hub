@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendMessage } from "@/app/actions";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { timeAgo } from "@/lib/utils";
 
 export default async function ThreadPage({ params }: { params: { threadId: string } }) {
@@ -29,11 +29,11 @@ export default async function ThreadPage({ params }: { params: { threadId: strin
         })}
         {(!messages || messages.length === 0) && <p className="text-center text-neutral-500">Say hello.</p>}
       </div>
-      <form action={sendMessage} className="mt-4 flex gap-2">
+      <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="mt-4 flex gap-2">
         <input type="hidden" name="thread_id" value={thread.id} />
         <Input name="body" placeholder="Type a message" required />
-        <Button type="submit">Send</Button>
-      </form>
+        <SubmitButton pendingText="Sending…">Send</SubmitButton>
+      </SavingForm>
     </div>
   );
 }

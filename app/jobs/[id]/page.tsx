@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SaveButton } from "@/components/save-button";
+import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { submitProposal, decideProposal, recordView } from "@/app/actions";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
@@ -76,7 +77,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         <Card className="mt-6">
           <CardHeader><CardTitle>Send a proposal</CardTitle></CardHeader>
           <CardContent>
-            <form action={submitProposal} className="space-y-4">
+            <SavingForm action={submitProposal} successText="Proposal sent." className="space-y-4">
               <input type="hidden" name="job_id" value={job.id} />
               <div className="space-y-1.5">
                 <Label htmlFor="cover_letter">Cover letter</Label>
@@ -86,8 +87,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                 <Label htmlFor="bid_mwk">Your bid (MWK)</Label>
                 <Input id="bid_mwk" name="bid_mwk" type="number" min={0} required />
               </div>
-              <Button type="submit">Submit proposal</Button>
-            </form>
+              <SubmitButton pendingText="Sending…">Submit proposal</SubmitButton>
+            </SavingForm>
           </CardContent>
         </Card>
       )}
