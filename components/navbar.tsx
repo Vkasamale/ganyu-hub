@@ -1,10 +1,22 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { NotificationBell, type NotificationItem } from "@/components/notification-bell";
 
 export async function Navbar() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  let notifications: NotificationItem[] = [];
+  if (user) {
+    const { data } = await supabase
+      .from("notifications")
+      .select("id, kind, title, body, link, read_at, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    notifications = (data || []) as NotificationItem[];
+  }
 
   return (
     <header className="border-b border-neutral-200 bg-white">
@@ -21,6 +33,7 @@ export async function Navbar() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              <NotificationBell userId={user.id} initialItems={notifications} />
               <Link href="/jobs/new"><Button size="sm">Post a job</Button></Link>
               <form action="/auth/signout" method="post">
                 <Button variant="ghost" size="sm" type="submit">Sign out</Button>

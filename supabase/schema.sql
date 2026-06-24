@@ -232,3 +232,43 @@ create index if not exists idx_proposals_job on proposals(job_id);
 create index if not exists idx_proposals_creative on proposals(creative_id);
 create index if not exists idx_portfolio_profile on portfolio_items(profile_id);
 create index if not exists idx_messages_thread on messages(thread_id, created_at);
+
+-- Notifications
+do $$ begin
+  create type notification_kind as enum (
+    'proposal_received',
+    'proposal_accepted',
+    'proposal_declined',
+    'message_received'
+  );
+exception when duplicate_object then null; end $$;
+
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  kind notification_kind not null,
+  title text not null,
+  body text,
+  link text,
+  actor_id uuid references profiles(id) on delete set null,
+  target_type text,
+  target_id uuid,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_notifications_user_time on notifications(user_id, created_at desc);
+create index if not exists idx_notifications_user_unread on notifications(user_id) where read_at is null;
+
+alter table notifications enable row level security;
+
+drop policy if exists "notifications read own" on notifications;
+create policy "notifications read own" on notifications for select using (auth.uid() = user_id);
+drop policy if exists "notifications update own" on notifications;
+create policy "notifications update own" on notifications for update using (auth.uid() = user_id);
+drop policy if exists "notifications insert authenticated" on notifications;
+create policy "notifications insert authenticated" on notifications for insert with check (auth.uid() is not null);
+
+-- Realtime: ensure publication includes notifications
+do $$ begin
+  alter publication supabase_realtime add table notifications;
+exception when duplicate_object then null; when others then null; end $$;

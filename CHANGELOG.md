@@ -3,6 +3,18 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-06-25 — In-app notifications (P0)
+
+Realtime notification layer so the platform stops being a silent dead drop.
+
+- New schema: `notifications` table, `notification_kind` enum (`proposal_received`, `proposal_accepted`, `proposal_declined`, `message_received`), RLS scoped to owner, added to `supabase_realtime` publication
+- Notifications inserted from `submitProposal`, `decideProposal`, `sendMessage`
+- New server actions: `markNotificationRead`, `markAllNotificationsRead`
+- New `<NotificationBell>` client component in the navbar — unread badge, dropdown, "mark all read", live-updating via Supabase Realtime channel `notifications:<user_id>`
+- Each notification links to the relevant job or message thread
+
+**Migration required:** re-run `supabase/schema.sql` in the Supabase SQL editor before testing.
+
 ## 2026-06-24 — Save/bookmark + For You + Trending feed (`69e4084`)
 
 The social-feed layer on top of the marketplace.

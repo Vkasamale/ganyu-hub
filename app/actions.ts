@@ -103,6 +103,21 @@ export async function submitProposal(formData: FormData) {
   });
   if (error) return { error: error.message };
   await supabase.from("interactions").insert({ user_id: user.id, target_type: "job", target_id: job_id, kind: "proposal_sent" });
+
+  const { data: job } = await supabase.from("jobs").select("client_id, title").eq("id", job_id).single();
+  const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  if (job) {
+    await supabase.from("notifications").insert({
+      user_id: job.client_id,
+      kind: "proposal_received",
+      title: "New proposal received",
+      body: `${me?.full_name || "Someone"} sent a proposal on "${job.title}"`,
+      link: `/jobs/${job_id}`,
+      actor_id: user.id,
+      target_type: "job",
+      target_id: job_id,
+    });
+  }
   revalidatePath(`/jobs/${job_id}`);
   return { ok: true };
 }
@@ -113,6 +128,25 @@ export async function decideProposal(formData: FormData) {
   const status = String(formData.get("status")) as "accepted" | "declined";
   const { error } = await supabase.from("proposals").update({ status }).eq("id", id);
   if (error) return { error: error.message };
+
+  const { data: proposal } = await supabase
+    .from("proposals")
+    .select("creative_id, job_id, job:jobs(title, client_id)")
+    .eq("id", id)
+    .single();
+  if (proposal) {
+    const job: any = Array.isArray(proposal.job) ? proposal.job[0] : proposal.job;
+    await supabase.from("notifications").insert({
+      user_id: proposal.creative_id,
+      kind: status === "accepted" ? "proposal_accepted" : "proposal_declined",
+      title: status === "accepted" ? "Proposal accepted" : "Proposal declined",
+      body: `Your proposal on "${job?.title || "a job"}" was ${status}.`,
+      link: `/jobs/${proposal.job_id}`,
+      actor_id: job?.client_id || null,
+      target_type: "job",
+      target_id: proposal.job_id,
+    });
+  }
   revalidatePath("/jobs");
   return { ok: true };
 }
@@ -122,13 +156,53 @@ export async function sendMessage(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
   const thread_id = String(formData.get("thread_id"));
+  const body = String(formData.get("body"));
   const { error } = await supabase.from("messages").insert({
     thread_id,
     sender_id: user.id,
-    body: String(formData.get("body")),
+    body,
   });
   if (error) return { error: error.message };
+
+  const { data: thread } = await supabase
+    .from("message_threads")
+    .select("client_id, creative_id")
+    .eq("id", thread_id)
+    .single();
+  if (thread) {
+    const recipient = thread.client_id === user.id ? thread.creative_id : thread.client_id;
+    const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+    const preview = body.length > 80 ? body.slice(0, 80) + "…" : body;
+    await supabase.from("notifications").insert({
+      user_id: recipient,
+      kind: "message_received",
+      title: `New message from ${me?.full_name || "someone"}`,
+      body: preview,
+      link: `/messages/${thread_id}`,
+      actor_id: user.id,
+      target_type: "thread",
+      target_id: thread_id,
+    });
+  }
   revalidatePath(`/messages/${thread_id}`);
+  return { ok: true };
+}
+
+export async function markNotificationRead(id: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id).eq("user_id", user.id);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function markAllNotificationsRead() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", user.id).is("read_at", null);
+  revalidatePath("/");
   return { ok: true };
 }
 
