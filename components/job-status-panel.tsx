@@ -6,6 +6,7 @@ type Role = "client" | "creative";
 
 const LABELS: Record<string, string> = {
   open: "Open",
+  scope_pending: "Awaiting scope confirmation",
   in_progress: "In progress",
   submitted: "Submitted for review",
   revision_requested: "Revision requested",
@@ -19,9 +20,14 @@ function actionsFor(status: string, role: Role): { next: string; label: string; 
     if (status === "in_progress") return [{ next: "submitted", label: "Mark as submitted" }, { next: "disputed", label: "Flag dispute", variant: "outline" }];
     if (status === "revision_requested") return [{ next: "submitted", label: "Re-submit work" }, { next: "disputed", label: "Flag dispute", variant: "outline" }];
     if (status === "submitted") return [{ next: "disputed", label: "Flag dispute", variant: "outline" }];
+    if (status === "scope_pending") return [{ next: "disputed", label: "Flag dispute", variant: "outline" }];
     return [];
   }
   if (status === "open") return [{ next: "cancelled", label: "Cancel job", variant: "outline" }];
+  if (status === "scope_pending") return [
+    { next: "cancelled", label: "Cancel job", variant: "outline" },
+    { next: "disputed", label: "Flag dispute", variant: "outline" },
+  ];
   if (status === "submitted") return [
     { next: "completed", label: "Accept & mark complete" },
     { next: "revision_requested", label: "Request revision", variant: "outline" },

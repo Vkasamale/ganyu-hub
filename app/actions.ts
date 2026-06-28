@@ -452,7 +452,7 @@ export async function decideProposal(formData: FormData) {
   if (proposal) {
     const job: any = Array.isArray(proposal.job) ? proposal.job[0] : proposal.job;
     if (status === "accepted") {
-      await supabase.from("jobs").update({ status: "in_progress" }).eq("id", proposal.job_id);
+      await supabase.from("jobs").update({ status: "scope_pending" }).eq("id", proposal.job_id);
     }
     await supabase.from("notifications").insert({
       user_id: proposal.creative_id,
@@ -479,6 +479,7 @@ export async function decideProposal(formData: FormData) {
 
 type JobStatus =
   | "open"
+  | "scope_pending"
   | "in_progress"
   | "submitted"
   | "revision_requested"
@@ -493,11 +494,13 @@ const CREATIVE_TRANSITIONS: Record<string, JobStatus[]> = {
 const CLIENT_TRANSITIONS: Record<string, JobStatus[]> = {
   submitted: ["completed", "revision_requested"],
   open: ["cancelled"],
+  scope_pending: ["cancelled"],
 };
 const EITHER_TRANSITIONS: Record<string, JobStatus[]> = {
   in_progress: ["disputed"],
   submitted: ["disputed"],
   revision_requested: ["disputed"],
+  scope_pending: ["disputed"],
 };
 
 export async function updateJobStatus(formData: FormData) {
@@ -572,6 +575,86 @@ export async function updateJobStatus(formData: FormData) {
 
   revalidatePath(`/jobs/${job_id}`);
   revalidatePath("/jobs");
+  return { ok: true };
+}
+
+export async function confirmScope(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const job_id = String(formData.get("job_id"));
+  const summary = formData.get("scope_summary");
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id, client_id, title, status, scope_summary, client_confirmed_scope_at, creative_confirmed_scope_at")
+    .eq("id", job_id)
+    .single();
+  if (!job) return { error: "Job not found" };
+  if (job.status !== "scope_pending") return { error: "Job is not awaiting scope confirmation." };
+
+  const { data: acceptedProposal } = await supabase
+    .from("proposals")
+    .select("creative_id")
+    .eq("job_id", job_id)
+    .eq("status", "accepted")
+    .maybeSingle();
+  const creativeId = acceptedProposal?.creative_id;
+
+  const isClient = user.id === job.client_id;
+  const isCreative = creativeId && user.id === creativeId;
+  if (!isClient && !isCreative) return { error: "Not a party to this job" };
+
+  const patch: Record<string, any> = {};
+  if (typeof summary === "string" && summary.trim() && isClient) {
+    patch.scope_summary = summary.trim();
+    patch.creative_confirmed_scope_at = null;
+  }
+  if (isClient) patch.client_confirmed_scope_at = new Date().toISOString();
+  if (isCreative) patch.creative_confirmed_scope_at = new Date().toISOString();
+
+  const nextSummary = patch.scope_summary ?? job.scope_summary;
+  if (!nextSummary || !nextSummary.trim()) return { error: "Add a scope summary before confirming." };
+
+  const clientAt = isClient ? patch.client_confirmed_scope_at : job.client_confirmed_scope_at;
+  const creativeAt = isCreative ? patch.creative_confirmed_scope_at : job.creative_confirmed_scope_at;
+  if (clientAt && creativeAt) patch.status = "in_progress";
+
+  const { error } = await supabase.from("jobs").update(patch).eq("id", job_id);
+  if (error) return { error: error.message };
+
+  if (creativeId) {
+    const recipient = isClient ? creativeId : job.client_id;
+    const movedToInProgress = patch.status === "in_progress";
+    const title = movedToInProgress
+      ? "Scope agreed — work can begin"
+      : isClient
+        ? "Client confirmed the scope"
+        : "Creative confirmed the scope";
+    const body = movedToInProgress
+      ? `Both sides agreed on the scope for "${job.title}". The job is now in progress.`
+      : `Scope confirmed on "${job.title}". Waiting on the other side to confirm.`;
+    await supabase.from("notifications").insert({
+      user_id: recipient,
+      kind: "message_received",
+      title,
+      body,
+      link: `/jobs/${job_id}`,
+      actor_id: user.id,
+      target_type: "job",
+      target_id: job_id,
+    });
+    await emailUser(supabase, recipient, {
+      subject: `${title}: ${job.title}`,
+      heading: title,
+      body,
+      ctaText: "Open job",
+      ctaPath: `/jobs/${job_id}`,
+    });
+  }
+
+  revalidatePath(`/jobs/${job_id}`);
   return { ok: true };
 }
 

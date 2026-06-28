@@ -3,6 +3,21 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-06-28 — Contract / scope confirmation (P1)
+
+Both sides agree on what's being delivered before work starts — kills most disputes at the source.
+
+- New `scope_pending` job status. `decideProposal('accepted')` now flips the job here instead of jumping straight to `in_progress`.
+- New `jobs.scope_summary`, `jobs.client_confirmed_scope_at`, `jobs.creative_confirmed_scope_at` columns.
+- New server action `confirmScope` — client writes/edits the scope summary; both parties confirm. Editing the summary after the creative confirmed resets their confirmation. Once both sides confirm, the job auto-flips to `in_progress`.
+- New `<ScopeConfirmPanel>` on the job detail page — visible to both sides while status = `scope_pending`. Shows summary, both confirmation checkmarks, role-specific CTA.
+- Status panel extended: client can cancel during `scope_pending`; either party can dispute.
+- Notifications + emails fired on each confirmation and on the final flip to `in_progress`.
+
+**Migration required:** re-run `supabase/schema.sql` for the new enum value and three columns.
+
+
+
 ## 2026-06-26 — Admin dashboard (P1)
 
 Basic moderation surface so the marketplace can actually be policed.

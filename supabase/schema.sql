@@ -80,6 +80,11 @@ exception when duplicate_object then null; end $$;
 alter type job_status add value if not exists 'submitted';
 alter type job_status add value if not exists 'revision_requested';
 alter type job_status add value if not exists 'disputed';
+alter type job_status add value if not exists 'scope_pending';
+
+alter table jobs add column if not exists scope_summary text;
+alter table jobs add column if not exists client_confirmed_scope_at timestamptz;
+alter table jobs add column if not exists creative_confirmed_scope_at timestamptz;
 
 do $$ begin
   create type escrow_status as enum ('none', 'payment_held', 'payment_released', 'payment_disputed');

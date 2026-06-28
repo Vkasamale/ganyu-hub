@@ -12,6 +12,7 @@ import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
+import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem } from "@/app/actions";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
@@ -69,6 +70,25 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           <p className="mt-4 font-semibold">Budget: {formatMwk(job.budget_mwk)}</p>
         </CardContent>
       </Card>
+
+      {user && job.status === "scope_pending" && isClient && (
+        <ScopeConfirmPanel
+          jobId={job.id}
+          role="client"
+          summary={job.scope_summary}
+          clientConfirmedAt={job.client_confirmed_scope_at}
+          creativeConfirmedAt={job.creative_confirmed_scope_at}
+        />
+      )}
+      {user && job.status === "scope_pending" && !isClient && myProposal?.status === "accepted" && (
+        <ScopeConfirmPanel
+          jobId={job.id}
+          role="creative"
+          summary={job.scope_summary}
+          clientConfirmedAt={job.client_confirmed_scope_at}
+          creativeConfirmedAt={job.creative_confirmed_scope_at}
+        />
+      )}
 
       {user && isClient && (
         <JobStatusPanel jobId={job.id} status={job.status || "open"} role="client" />
