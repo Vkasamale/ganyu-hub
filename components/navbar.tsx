@@ -2,42 +2,45 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { NotificationBell, type NotificationItem } from "@/components/notification-bell";
+import { UserMenu } from "@/components/user-menu";
 
 export async function Navbar() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   let notifications: NotificationItem[] = [];
+  let profile: { full_name: string | null; is_admin: boolean | null } | null = null;
   if (user) {
-    const { data } = await supabase
-      .from("notifications")
-      .select("id, kind, title, body, link, read_at, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    notifications = (data || []) as NotificationItem[];
+    const [{ data: nots }, { data: p }] = await Promise.all([
+      supabase
+        .from("notifications")
+        .select("id, kind, title, body, link, read_at, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase.from("profiles").select("full_name, is_admin").eq("id", user.id).single(),
+    ]);
+    notifications = (nots || []) as NotificationItem[];
+    profile = p;
   }
 
   return (
     <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-bold">
           <span className="text-brand">Ganyu</span>
           <span className="text-brand-ink">Hub</span>
         </Link>
-        <nav className="hidden items-center gap-6 text-sm text-neutral-600 md:flex">
+        <nav className="hidden items-center gap-5 text-sm text-neutral-600 sm:flex">
           <Link href="/browse" className="hover:text-brand-ink">Browse creatives</Link>
           <Link href="/jobs" className="hover:text-brand-ink">Browse jobs</Link>
-          {user && <Link href="/dashboard" className="hover:text-brand-ink">Dashboard</Link>}
         </nav>
         <div className="flex items-center gap-2">
           {user ? (
             <>
               <NotificationBell userId={user.id} initialItems={notifications} />
               <Link href="/jobs/new"><Button size="sm">Post a job</Button></Link>
-              <form action="/auth/signout" method="post">
-                <Button variant="ghost" size="sm" type="submit">Sign out</Button>
-              </form>
+              <UserMenu name={profile?.full_name || null} email={user.email || null} userId={user.id} isAdmin={!!profile?.is_admin} />
             </>
           ) : (
             <>

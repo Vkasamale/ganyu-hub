@@ -36,10 +36,6 @@ export default async function EditProfilePage() {
               <Input id="location" name="location" defaultValue={profile?.location || "Malawi"} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="hourly_rate_mwk">Hourly rate (MWK)</Label>
-              <Input id="hourly_rate_mwk" name="hourly_rate_mwk" type="number" min={0} defaultValue={profile?.hourly_rate_mwk || ""} />
-            </div>
-            <div className="space-y-1.5">
               <Label htmlFor="categories">Categories (comma-separated)</Label>
               <Input id="categories" name="categories" defaultValue={(profile?.categories || []).join(", ")} placeholder="Design, Development" />
             </div>

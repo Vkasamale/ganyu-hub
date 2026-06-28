@@ -11,6 +11,9 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  if (profile && !profile.onboarded_at) {
+    redirect(profile.role === "client" ? "/onboarding/client" : "/onboarding/creative");
+  }
   const isClient = profile?.role === "client";
 
   const [forYou, trending, savedJobIds, savedCreativeIds] = await Promise.all([
@@ -21,8 +24,11 @@ export default async function DashboardPage() {
   ]);
 
   const tiles = [
+    { href: "/dashboard/account", title: "Account" },
     { href: "/dashboard/profile", title: "Edit profile" },
     { href: "/dashboard/portfolio", title: "Portfolio" },
+    { href: "/dashboard/services", title: "Rate card" },
+    { href: "/dashboard/jobs", title: "Jobs" },
     { href: "/dashboard/proposals", title: "Proposals" },
     { href: "/dashboard/saved", title: "Saved" },
     { href: "/messages", title: "Messages" },

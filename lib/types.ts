@@ -77,5 +77,6 @@ export const CATEGORIES = [
   "Design",
   "Development",
   "Video & Photography",
+  "Content Creation",
   "Writing & Marketing",
 ] as const;

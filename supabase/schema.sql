@@ -17,8 +17,25 @@ create table if not exists profiles (
   avatar_url text,
   categories text[] default '{}',
   skills text[] default '{}',
+  phone text,
   created_at timestamptz not null default now()
 );
+alter table profiles add column if not exists phone text;
+alter table profiles add column if not exists onboarded_at timestamptz;
+alter table profiles add column if not exists is_admin boolean not null default false;
+alter table jobs add column if not exists hidden_at timestamptz;
+
+create or replace function public.is_admin(uid uuid)
+returns boolean language sql security definer set search_path = public as $$
+  select coalesce((select is_admin from profiles where id = uid), false);
+$$;
+revoke all on function public.is_admin(uuid) from public, anon;
+grant execute on function public.is_admin(uuid) to authenticated;
+
+drop policy if exists "jobs update by admin" on jobs;
+create policy "jobs update by admin" on jobs for update
+  using (public.is_admin(auth.uid()))
+  with check (public.is_admin(auth.uid()));
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -54,10 +71,20 @@ create table if not exists services (
   delivery_days integer not null default 7,
   created_at timestamptz not null default now()
 );
+alter table services add column if not exists price_mwk_max integer;
+alter table services alter column price_mwk drop not null;
 
 do $$ begin
   create type job_status as enum ('open', 'in_progress', 'completed', 'cancelled');
 exception when duplicate_object then null; end $$;
+alter type job_status add value if not exists 'submitted';
+alter type job_status add value if not exists 'revision_requested';
+alter type job_status add value if not exists 'disputed';
+
+do $$ begin
+  create type escrow_status as enum ('none', 'payment_held', 'payment_released', 'payment_disputed');
+exception when duplicate_object then null; end $$;
+alter table jobs add column if not exists escrow_status escrow_status not null default 'none';
 
 create table if not exists jobs (
   id uuid primary key default gen_random_uuid(),
@@ -185,6 +212,10 @@ drop policy if exists "jobs read" on jobs;
 create policy "jobs read" on jobs for select using (true);
 drop policy if exists "jobs write" on jobs;
 create policy "jobs write" on jobs for all using (auth.uid() = client_id) with check (auth.uid() = client_id);
+drop policy if exists "jobs update by accepted creative" on jobs;
+create policy "jobs update by accepted creative" on jobs for update
+  using (auth.uid() in (select creative_id from proposals where proposals.job_id = jobs.id and proposals.status = 'accepted'))
+  with check (auth.uid() in (select creative_id from proposals where proposals.job_id = jobs.id and proposals.status = 'accepted'));
 
 drop policy if exists "proposals read" on proposals;
 create policy "proposals read" on proposals for select using (
@@ -271,6 +302,23 @@ create policy "notifications insert authenticated" on notifications for insert w
 -- Realtime: ensure publication includes notifications + REPLICA IDENTITY FULL
 -- (required for filtered postgres_changes subscriptions on RLS-protected tables)
 alter table notifications replica identity full;
+alter table jobs replica identity full;
+alter table proposals replica identity full;
 do $$ begin
   alter publication supabase_realtime add table notifications;
 exception when duplicate_object then null; when others then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table jobs;
+exception when duplicate_object then null; when others then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table proposals;
+exception when duplicate_object then null; when others then null; end $$;
+
+-- Email lookup: security-definer so server actions can resolve recipient emails
+-- without the service role key. Only callable by authenticated users.
+create or replace function public.get_user_email(uid uuid)
+returns text language sql security definer set search_path = public, auth as $$
+  select email::text from auth.users where id = uid;
+$$;
+revoke all on function public.get_user_email(uuid) from public, anon;
+grant execute on function public.get_user_email(uuid) to authenticated;

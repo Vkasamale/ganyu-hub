@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SaveButton } from "@/components/save-button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
-import { submitProposal, decideProposal, recordView } from "@/app/actions";
+import { JobStatusPanel } from "@/components/job-status-panel";
+import { JobRealtime } from "@/components/job-realtime";
+import { EscrowPanel } from "@/components/escrow-panel";
+import { submitProposal, decideProposal, recordView, addPortfolioItem } from "@/app/actions";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
 export default async function JobDetailPage({ params }: { params: { id: string } }) {
@@ -43,6 +46,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
+      {user && <JobRealtime jobId={job.id} />}
       <Link href="/jobs" className="text-sm text-neutral-500 hover:underline">
         All jobs
       </Link>
@@ -52,6 +56,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             <CardTitle className="text-2xl">{job.title}</CardTitle>
             <div className="flex items-center gap-2">
               <Badge>{job.category}</Badge>
+              <Badge className="bg-white">{(job.status || "open").replace("_", " ")}</Badge>
               {user && !isClient && <SaveButton targetType="job" targetId={job.id} saved={isSaved} />}
             </div>
           </div>
@@ -64,6 +69,50 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           <p className="mt-4 font-semibold">Budget: {formatMwk(job.budget_mwk)}</p>
         </CardContent>
       </Card>
+
+      {user && isClient && (
+        <JobStatusPanel jobId={job.id} status={job.status || "open"} role="client" />
+      )}
+      {user && !isClient && myProposal?.status === "accepted" && (
+        <JobStatusPanel jobId={job.id} status={job.status || "open"} role="creative" />
+      )}
+
+      {user && isClient && job.status !== "open" && (
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" />
+      )}
+      {user && !isClient && myProposal?.status === "accepted" && (
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" />
+      )}
+
+      {user && !isClient && myProposal?.status === "accepted" && job.status === "completed" && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Add this work to your portfolio</CardTitle>
+            <p className="text-sm text-neutral-500">Great work deserves to be shown. Upload a cover image, link the project, and let future clients see what you can do.</p>
+          </CardHeader>
+          <CardContent>
+            <SavingForm action={addPortfolioItem} successText="Added to your portfolio." resetOnSuccess className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="title">Title</Label>
+                <Input id="title" name="title" required defaultValue={job.title} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" name="description" rows={3} placeholder="What did you deliver? What was the result?" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cover_url">Cover image URL</Label>
+                <Input id="cover_url" name="cover_url" type="url" placeholder="https://..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="project_url">Project URL</Label>
+                <Input id="project_url" name="project_url" type="url" placeholder="https://..." />
+              </div>
+              <SubmitButton pendingText="Adding…">Add to portfolio</SubmitButton>
+            </SavingForm>
+          </CardContent>
+        </Card>
+      )}
 
       {!user && (
         <Card className="mt-6">
