@@ -17,23 +17,16 @@ const LABELS: Record<string, string> = {
 
 function actionsFor(status: string, role: Role): { next: string; label: string; variant?: "outline" }[] {
   if (role === "creative") {
-    if (status === "in_progress") return [{ next: "submitted", label: "Mark as submitted" }, { next: "disputed", label: "Flag dispute", variant: "outline" }];
-    if (status === "revision_requested") return [{ next: "submitted", label: "Re-submit work" }, { next: "disputed", label: "Flag dispute", variant: "outline" }];
-    if (status === "submitted") return [{ next: "disputed", label: "Flag dispute", variant: "outline" }];
-    if (status === "scope_pending") return [{ next: "disputed", label: "Flag dispute", variant: "outline" }];
+    if (status === "in_progress") return [{ next: "submitted", label: "Mark as submitted" }];
+    if (status === "revision_requested") return [{ next: "submitted", label: "Re-submit work" }];
     return [];
   }
   if (status === "open") return [{ next: "cancelled", label: "Cancel job", variant: "outline" }];
-  if (status === "scope_pending") return [
-    { next: "cancelled", label: "Cancel job", variant: "outline" },
-    { next: "disputed", label: "Flag dispute", variant: "outline" },
-  ];
+  if (status === "scope_pending") return [{ next: "cancelled", label: "Cancel job", variant: "outline" }];
   if (status === "submitted") return [
     { next: "completed", label: "Accept & mark complete" },
     { next: "revision_requested", label: "Request revision", variant: "outline" },
-    { next: "disputed", label: "Flag dispute", variant: "outline" },
   ];
-  if (status === "in_progress" || status === "revision_requested") return [{ next: "disputed", label: "Flag dispute", variant: "outline" }];
   return [];
 }
 

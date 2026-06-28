@@ -85,6 +85,9 @@ alter type job_status add value if not exists 'scope_pending';
 alter table jobs add column if not exists scope_summary text;
 alter table jobs add column if not exists client_confirmed_scope_at timestamptz;
 alter table jobs add column if not exists creative_confirmed_scope_at timestamptz;
+alter table jobs add column if not exists dispute_reason text;
+alter table jobs add column if not exists dispute_raised_by uuid references profiles(id) on delete set null;
+alter table jobs add column if not exists dispute_raised_at timestamptz;
 
 do $$ begin
   create type escrow_status as enum ('none', 'payment_held', 'payment_released', 'payment_disputed');

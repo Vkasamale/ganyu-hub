@@ -496,12 +496,8 @@ const CLIENT_TRANSITIONS: Record<string, JobStatus[]> = {
   open: ["cancelled"],
   scope_pending: ["cancelled"],
 };
-const EITHER_TRANSITIONS: Record<string, JobStatus[]> = {
-  in_progress: ["disputed"],
-  submitted: ["disputed"],
-  revision_requested: ["disputed"],
-  scope_pending: ["disputed"],
-};
+const EITHER_TRANSITIONS: Record<string, JobStatus[]> = {};
+const DISPUTABLE: JobStatus[] = ["in_progress", "submitted", "revision_requested", "scope_pending"];
 
 export async function updateJobStatus(formData: FormData) {
   const supabase = createClient();
@@ -575,6 +571,66 @@ export async function updateJobStatus(formData: FormData) {
 
   revalidatePath(`/jobs/${job_id}`);
   revalidatePath("/jobs");
+  return { ok: true };
+}
+
+export async function raiseDispute(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const job_id = String(formData.get("job_id"));
+  const reason = String(formData.get("reason") || "").trim();
+  if (reason.length < 10) return { error: "Add a few sentences explaining the issue (10+ chars)." };
+
+  const { data: job } = await supabase.from("jobs").select("id, client_id, status, title").eq("id", job_id).single();
+  if (!job) return { error: "Job not found" };
+  if (!DISPUTABLE.includes(job.status as JobStatus)) {
+    return { error: `Cannot raise a dispute from "${job.status}".` };
+  }
+
+  const { data: acceptedProposal } = await supabase
+    .from("proposals").select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  const creativeId = acceptedProposal?.creative_id;
+
+  const isClient = user.id === job.client_id;
+  const isCreative = creativeId && user.id === creativeId;
+  if (!isClient && !isCreative) return { error: "Not a party to this job" };
+
+  const { error } = await supabase.from("jobs").update({
+    status: "disputed",
+    dispute_reason: reason,
+    dispute_raised_by: user.id,
+    dispute_raised_at: new Date().toISOString(),
+  }).eq("id", job_id);
+  if (error) return { error: error.message };
+
+  const otherParty = isClient ? creativeId : job.client_id;
+  const { data: admins } = await supabase.from("profiles").select("id").eq("is_admin", true);
+  const recipients = [otherParty, ...(admins || []).map((a) => a.id)].filter(Boolean) as string[];
+
+  for (const recipient of recipients) {
+    await supabase.from("notifications").insert({
+      user_id: recipient,
+      kind: "message_received",
+      title: `Dispute raised: ${job.title}`,
+      body: reason.length > 140 ? reason.slice(0, 140) + "…" : reason,
+      link: recipient === otherParty ? `/jobs/${job_id}` : "/admin",
+      actor_id: user.id,
+      target_type: "job",
+      target_id: job_id,
+    });
+    await emailUser(supabase, recipient, {
+      subject: `Dispute raised: ${job.title}`,
+      heading: "A dispute was raised",
+      body: `"${job.title}" was flagged as disputed.\n\nReason: ${reason}`,
+      ctaText: recipient === otherParty ? "Open job" : "Open admin",
+      ctaPath: recipient === otherParty ? `/jobs/${job_id}` : "/admin",
+    });
+  }
+
+  revalidatePath(`/jobs/${job_id}`);
+  revalidatePath("/admin");
   return { ok: true };
 }
 

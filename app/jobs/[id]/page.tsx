@@ -13,6 +13,7 @@ import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
+import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem } from "@/app/actions";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
@@ -95,6 +96,16 @@ export default async function JobDetailPage({ params }: { params: { id: string }
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
         <JobStatusPanel jobId={job.id} status={job.status || "open"} role="creative" />
+      )}
+
+      {job.status === "disputed" && (
+        <DisputeBanner reason={job.dispute_reason} />
+      )}
+      {user && isClient && (
+        <DisputePanel jobId={job.id} status={job.status || "open"} />
+      )}
+      {user && !isClient && myProposal?.status === "accepted" && (
+        <DisputePanel jobId={job.id} status={job.status || "open"} />
       )}
 
       {user && isClient && job.status !== "open" && (

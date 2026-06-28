@@ -3,6 +3,19 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-06-28 — Dispute resolution flow (P1)
+
+A real dispute path with context, not a one-click status flip.
+
+- New `jobs.dispute_reason`, `jobs.dispute_raised_by`, `jobs.dispute_raised_at` columns.
+- New server action `raiseDispute` — requires a written reason (10+ chars), validates the job is in a disputable state (`scope_pending`, `in_progress`, `submitted`, `revision_requested`), flips status to `disputed`, notifies the other party **and every admin** via in-app + email.
+- New `<DisputePanel>` on the job detail page — collapsible "Flag a dispute" with textarea, replacing the bare "Flag dispute" button in the status panel (which silently bypassed the reason).
+- New `<DisputeBanner>` shown to both parties (and admins) when status = `disputed`, displaying the raised reason.
+- `/admin` disputed queue now shows the reason inline and sorts by `dispute_raised_at` desc.
+- `updateJobStatus` no longer accepts `disputed` — all disputes route through `raiseDispute`.
+
+**Migration required:** re-run `supabase/schema.sql` for the three new columns.
+
 ## 2026-06-28 — Contract / scope confirmation (P1)
 
 Both sides agree on what's being delivered before work starts — kills most disputes at the source.

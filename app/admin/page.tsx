@@ -16,9 +16,9 @@ export default async function AdminPage() {
 
   const [{ data: disputed }, { data: recentJobs }, { data: recentUsers }, { count: userCount }, { count: jobCount }, { count: openCount }] = await Promise.all([
     supabase.from("jobs")
-      .select("id, title, status, client_id, hidden_at, created_at, profiles:profiles!jobs_client_id_fkey(full_name)")
+      .select("id, title, status, client_id, hidden_at, created_at, dispute_reason, dispute_raised_at, profiles:profiles!jobs_client_id_fkey(full_name)")
       .eq("status", "disputed")
-      .order("created_at", { ascending: false }),
+      .order("dispute_raised_at", { ascending: false }),
     supabase.from("jobs")
       .select("id, title, status, hidden_at, budget_mwk, created_at")
       .order("created_at", { ascending: false })
@@ -51,25 +51,32 @@ export default async function AdminPage() {
         <div className="mt-3 space-y-3">
           {(disputed || []).map((j: any) => (
             <Card key={j.id}>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="min-w-0 flex-1">
-                  <Link href={`/jobs/${j.id}`} className="font-medium hover:underline">{j.title}</Link>
-                  <p className="text-xs text-neutral-500">
-                    {j.profiles?.full_name || "Unnamed client"} &middot; {timeAgo(j.created_at)}
+              <CardContent className="space-y-3 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/jobs/${j.id}`} className="font-medium hover:underline">{j.title}</Link>
+                    <p className="text-xs text-neutral-500">
+                      Client: {j.profiles?.full_name || "Unnamed"} &middot; raised {timeAgo(j.dispute_raised_at || j.created_at)}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <form action={adminResolveDispute}>
+                      <input type="hidden" name="job_id" value={j.id} />
+                      <input type="hidden" name="outcome" value="completed" />
+                      <Button size="sm" type="submit">Resolve as completed</Button>
+                    </form>
+                    <form action={adminResolveDispute}>
+                      <input type="hidden" name="job_id" value={j.id} />
+                      <input type="hidden" name="outcome" value="cancelled" />
+                      <Button size="sm" variant="outline" type="submit">Resolve as cancelled</Button>
+                    </form>
+                  </div>
+                </div>
+                {j.dispute_reason && (
+                  <p className="whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-neutral-800">
+                    {j.dispute_reason}
                   </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <form action={adminResolveDispute}>
-                    <input type="hidden" name="job_id" value={j.id} />
-                    <input type="hidden" name="outcome" value="completed" />
-                    <Button size="sm" type="submit">Resolve as completed</Button>
-                  </form>
-                  <form action={adminResolveDispute}>
-                    <input type="hidden" name="job_id" value={j.id} />
-                    <input type="hidden" name="outcome" value="cancelled" />
-                    <Button size="sm" variant="outline" type="submit">Resolve as cancelled</Button>
-                  </form>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}

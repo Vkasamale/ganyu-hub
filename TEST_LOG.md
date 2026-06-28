@@ -31,6 +31,7 @@ Last updated: 2026-06-28
 | Rate card system (services CRUD + custom inquiry) | User confirmed "thats working" |
 | Admin dashboard access + stats render | EQ New Client promoted via SQL, `/admin` loads with stats (5/9/6/0) + recent jobs list |
 | Scope confirmation: both sides confirm → auto-flip to `in_progress` | User confirmed end-to-end working |
+| Dispute resolution: raise → reason banner → admin resolves | User confirmed end-to-end working |
 
 ## ⚠️ Tested, known issue (tracked in BACKLOG)
 
@@ -50,7 +51,6 @@ Last updated: 2026-06-28
 | Account → change password | `/dashboard/account` Security card |
 | Job status: Request revision → Re-submit cycle | Job page, client + creative tabs |
 | Scope confirmation: client edits summary after creative confirms → resets creative confirmation | Job page, client side |
-| Job status: Flag dispute (either side) | Job page status panel |
 | Escrow: Mark payment held / Release / Dispute | Job page Payment panel, client only |
 | Escrow: creative notification on payment state change | Should see in bell + email |
 | Custom service request from client side | Creative profile page form |

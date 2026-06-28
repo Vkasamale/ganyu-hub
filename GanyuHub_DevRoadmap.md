@@ -34,7 +34,7 @@ Work through these in order. Do not skip to P1 while P0 items are open.
 | Creative onboarding flow: guided 3-step setup on first login (add bio, upload portfolio piece, set rate) | DONE 2026-06-26 | `/onboarding/creative` page + `completeCreativeOnboarding` action + `onboarded_at` column. Dashboard redirects un-onboarded creatives/agencies. |
 | Client onboarding flow: guided setup (company name, what they need, first job prompt) | DONE 2026-06-26 | `/onboarding/client` + `completeClientOnboarding` action. Dashboard redirect routes un-onboarded users by role. |
 | Contract/scope confirmation: both parties confirm agreed scope before work starts | DONE 2026-06-28 | New `scope_pending` status between accept and in_progress. `<ScopeConfirmPanel>` + `confirmScope` action. Editing summary after creative confirms resets their confirmation. |
-| Dispute resolution flow: add disputed state, admin review queue, resolution actions | NOT STARTED | Without this, first dispute kills platform trust permanently. |
+| Dispute resolution flow: add disputed state, admin review queue, resolution actions | DONE 2026-06-28 | `raiseDispute` action with required reason. Banner on job page; admin queue shows reason + raised-at. Admins notified on dispute raised. |
 | Admin dashboard: view all users, jobs, proposals, flag/remove content, resolve disputes | DONE 2026-06-26 | `/admin` with stats, disputed queue (resolve as completed/cancelled), recent jobs (hide/unhide), recent users. Gated on `profiles.is_admin`. |
 
 ### P2 - Medium Priority
