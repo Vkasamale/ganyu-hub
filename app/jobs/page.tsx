@@ -37,18 +37,37 @@ export default async function JobsPage({ searchParams }: {
   const saved = user ? await getSavedIds(supabase as any, user.id, "job") : new Set<string>();
   const count = jobs?.length || 0;
 
+  const jobIds = (jobs || []).map((j) => j.id);
+  const clientIds = Array.from(new Set((jobs || []).map((j) => j.client_id)));
+  const clientName = new Map<string, string | null>();
+  const proposalsByJob = new Map<string, number>();
+  if (clientIds.length) {
+    const { data: clients } = await supabase.from("profiles").select("id, full_name").in("id", clientIds);
+    (clients || []).forEach((c: any) => clientName.set(c.id, c.full_name));
+  }
+  if (jobIds.length) {
+    const { data: proposals } = await supabase.from("proposals").select("job_id").in("job_id", jobIds);
+    (proposals || []).forEach((p: any) => proposalsByJob.set(p.job_id, (proposalsByJob.get(p.job_id) || 0) + 1));
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Open jobs</h1>
-        <Link href="/jobs/new" className="text-sm text-brand hover:underline">Post a job</Link>
-      </div>
+      <h1 className="text-3xl font-bold">Open jobs</h1>
       <p className="mt-1 text-neutral-600">{count} {count === 1 ? "job" : "jobs"} found</p>
       <div className="mt-6">
         <FiltersBar kind="jobs" action="/jobs" q={searchParams.q} categories={cats} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
       </div>
-      <div className="mt-8 grid gap-4">
-        {(jobs || []).map((j) => <JobCard key={j.id} job={j} saved={saved.has(j.id)} showSave={!!user} />)}
+      <div className="mt-8 grid gap-5 md:grid-cols-2">
+        {(jobs || []).map((j) => (
+          <JobCard
+            key={j.id}
+            job={j}
+            saved={saved.has(j.id)}
+            showSave={!!user}
+            proposalsCount={proposalsByJob.get(j.id) || 0}
+            clientName={clientName.get(j.client_id) || null}
+          />
+        ))}
         {count === 0 && <p className="text-neutral-500">No jobs match these filters.</p>}
       </div>
     </div>

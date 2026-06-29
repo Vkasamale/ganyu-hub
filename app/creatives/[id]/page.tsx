@@ -8,6 +8,7 @@ import { SaveButton } from "@/components/save-button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { startThread, recordView, requestCustomService } from "@/app/actions";
 import { formatMwk } from "@/lib/utils";
+import { checkProfileComplete } from "@/lib/profile-complete";
 
 export default async function CreativePage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -16,13 +17,18 @@ export default async function CreativePage({ params }: { params: { id: string } 
   const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", params.id).order("created_at", { ascending: false });
   const { data: services } = await supabase.from("services").select("*").eq("profile_id", params.id).order("price_mwk", { ascending: true });
   const { data: { user } } = await supabase.auth.getUser();
-  if (user && user.id !== params.id) await recordView("creative", params.id);
+  const isOwner = !!user && user.id === params.id;
+  if (user && !isOwner) await recordView("creative", params.id);
 
   let isSaved = false;
-  if (user) {
+  if (user && !isOwner) {
     const { data: s } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("target_type", "creative").eq("target_id", params.id).maybeSingle();
     isSaved = !!s;
   }
+
+  const portfolioCount = portfolio?.length || 0;
+  const serviceCount = services?.length || 0;
+  const completeness = checkProfileComplete(profile, portfolioCount, serviceCount);
 
   const primaryCat = (profile.categories || [])[0];
   const { data: similar } = primaryCat
@@ -41,23 +47,89 @@ export default async function CreativePage({ params }: { params: { id: string } 
     .join("")
     .toUpperCase();
 
+  const memberSince = profile.created_at
+    ? new Date(profile.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : null;
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12">
+      {isOwner && !completeness.complete && (
+        <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">
+            Your profile is incomplete and not visible to clients.
+          </p>
+          <p className="mt-1 text-xs text-amber-900/80">Complete these to go live:</p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {completeness.missing.map((m) => (
+              <li key={m.key}>
+                <Link
+                  href={m.href}
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-900 px-3 py-1 text-xs font-medium text-amber-50 hover:bg-amber-800"
+                >
+                  {m.label} →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <section className="card-soft mt-6 overflow-hidden">
-        <div className="h-36 bg-gradient-to-br from-wash via-paper to-wash md:h-48" />
+        <div
+          className="relative h-44 md:h-56"
+          style={{
+            background:
+              "linear-gradient(135deg, #8B2020 0%, #6e1a18 50%, #5a1414 100%)",
+          }}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.08]"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 14px)",
+            }}
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-4 right-6 font-display text-4xl font-semibold tracking-tight text-paper/15 md:text-5xl"
+            style={{ fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
+          >
+            Ganyu Hub
+          </span>
+          {isOwner && (
+            <Link
+              href="/dashboard/account"
+              className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-ink/60 px-3 py-1.5 text-xs font-medium text-paper backdrop-blur transition-colors hover:bg-ink/80"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              Add cover photo
+            </Link>
+          )}
+        </div>
+
         <div className="px-6 pb-6">
-          <div className="-mt-12 flex flex-col gap-4 md:-mt-14 md:flex-row md:items-end md:justify-between">
+          <div className="-mt-16 flex flex-col gap-4 md:-mt-20 md:flex-row md:items-end md:justify-between">
             <div className="flex items-end gap-4">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-paper bg-ink text-2xl font-display font-semibold text-paper shadow-md md:h-28 md:w-28">
+              <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-full border-4 border-paper bg-ink text-3xl font-display font-semibold text-paper shadow-lg md:h-36 md:w-36 md:text-4xl">
                 {initials}
               </div>
               <div className="pb-1">
                 <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">{profile.full_name || "Unnamed"}</h1>
-                <p className="mt-1 text-sm text-ink/70 md:text-base">{profile.headline || "No headline yet."}</p>
+                {profile.headline ? (
+                  <p className="mt-1 text-sm text-ink/70 md:text-base">{profile.headline}</p>
+                ) : isOwner ? (
+                  <Link href="/dashboard/account" className="mt-1 inline-block text-sm text-stamp underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp md:text-base">
+                    No headline yet — Add one
+                  </Link>
+                ) : null}
                 <p className="mt-0.5 text-xs text-ink/55">{profile.location || "Malawi"}</p>
               </div>
             </div>
-            {user && user.id !== profile.id && (
+            {user && !isOwner && (
               <div className="flex items-center gap-2">
                 <form action={startThread}>
                   <input type="hidden" name="creative_id" value={profile.id} />
@@ -73,8 +145,15 @@ export default async function CreativePage({ params }: { params: { id: string } 
               {(profile.categories || []).map((c: string) => (
                 <span key={c} className="rounded-full bg-wash/70 px-3 py-1 text-xs text-ink/75">{c}</span>
               ))}
-              {(services?.length || 0) > 0 && (
-                <span className="ml-auto text-sm font-medium text-ink">From {formatMwk(services![0].price_mwk)}</span>
+              {serviceCount > 0 && (
+                <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-ink">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-ink/70">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                  Services from {formatMwk(services![0].price_mwk)}
+                </span>
               )}
             </div>
           )}
@@ -118,34 +197,40 @@ export default async function CreativePage({ params }: { params: { id: string } 
                   </p>
                 </div>
               ))}
-              {(!services || services.length === 0) && (
+              {serviceCount === 0 && (
                 <p className="text-sm text-ink/55">No services listed yet.</p>
               )}
             </div>
           </section>
 
-          <section className="card-soft p-6">
-            <p className="eyebrow">Portfolio</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {(portfolio || []).map((p) => (
-                <div key={p.id} className="overflow-hidden rounded-lg border border-ink/10 bg-paper">
-                  {p.cover_url && <img src={p.cover_url} alt={p.title} className="aspect-video w-full object-cover" />}
-                  <div className="p-4">
-                    <p className="font-medium text-ink">{p.title}</p>
-                    {p.description && <p className="mt-1 line-clamp-3 text-xs text-ink/65">{p.description}</p>}
-                    {p.project_url && (
-                      <a href={p.project_url} target="_blank" rel="noopener" className="mt-2 inline-block text-xs font-medium text-stamp hover:underline">
-                        View project →
-                      </a>
-                    )}
+          {(portfolioCount > 0 || isOwner) && (
+            <section className="card-soft p-6">
+              <p className="eyebrow">Portfolio</p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {(portfolio || []).map((p) => (
+                  <div key={p.id} className="overflow-hidden rounded-lg border border-ink/10 bg-paper">
+                    {p.cover_url && <img src={p.cover_url} alt={p.title} className="aspect-video w-full object-cover" />}
+                    <div className="p-4">
+                      <p className="font-medium text-ink">{p.title}</p>
+                      {p.description && <p className="mt-1 line-clamp-3 text-xs text-ink/65">{p.description}</p>}
+                      {p.project_url && (
+                        <a href={p.project_url} target="_blank" rel="noopener" className="mt-2 inline-block text-xs font-medium text-stamp hover:underline">
+                          View project →
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {(!portfolio || portfolio.length === 0) && <p className="text-sm text-ink/55">No portfolio items yet.</p>}
-            </div>
-          </section>
+                ))}
+                {portfolioCount === 0 && isOwner && (
+                  <Link href="/dashboard/portfolio" className="rounded-lg border border-dashed border-ink/25 p-6 text-center text-sm text-ink/60 hover:border-ink/45 hover:text-ink">
+                    + Add your first portfolio item
+                  </Link>
+                )}
+              </div>
+            </section>
+          )}
 
-          {user && user.id !== profile.id && (
+          {user && !isOwner && (
             <section className="card-soft p-6">
               <p className="eyebrow">Custom quote</p>
               <p className="mt-1 text-sm text-ink/65">
@@ -173,11 +258,23 @@ export default async function CreativePage({ params }: { params: { id: string } 
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink/60">Services</dt>
-                <dd className="text-ink">{services?.length || 0}</dd>
+                <dd className="text-ink">{serviceCount}</dd>
               </div>
+              {(portfolioCount > 0 || isOwner) && (
+                <div className="flex justify-between">
+                  <dt className="text-ink/60">Portfolio</dt>
+                  <dd className="text-ink">{portfolioCount}</dd>
+                </div>
+              )}
+              {memberSince && (
+                <div className="flex justify-between">
+                  <dt className="text-ink/60">Member since</dt>
+                  <dd className="text-ink">{memberSince}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
-                <dt className="text-ink/60">Portfolio</dt>
-                <dd className="text-ink">{portfolio?.length || 0}</dd>
+                <dt className="text-ink/60">Response time</dt>
+                <dd className="text-ink">Usually within 24h</dd>
               </div>
             </dl>
           </section>

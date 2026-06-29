@@ -43,7 +43,18 @@ export default async function ThreadPage({ params }: { params: { threadId: strin
       <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
         <aside className="card-soft hidden flex-col overflow-hidden md:flex">
           <div className="border-b border-ink/10 p-4">
-            <p className="eyebrow">Messages</p>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                aria-label="Back to dashboard"
+                className="-ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-ink/60 transition-colors hover:bg-wash/60 hover:text-ink"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </Link>
+              <p className="eyebrow">Messages</p>
+            </div>
             <p className="mt-1 text-xs text-ink/55">{threads?.length || 0} conversations</p>
           </div>
           <ul className="flex-1 overflow-y-auto">
