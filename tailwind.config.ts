@@ -6,15 +6,27 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#E63946",
-          dark: "#A4161A",
-          ink: "#0B0C10",
-          paper: "#FFFDF7",
-          muted: "#6B7280",
+          DEFAULT: "#B6332A",
+          dark: "#8C231C",
+          ink: "#1A1611",
+          paper: "#EFE6CE",
+          muted: "#736A5C",
         },
+        paper: "#EFE6CE",
+        ink: "#1A1611",
+        stamp: "#B6332A",
+        "stamp-dark": "#8C231C",
+        mark: "#2F5D3B",
+        wash: "#DACFB2",
+        rule: "#1A1611",
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "sans-serif"],
+        sans: ["var(--font-plex-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-fraunces)", "Georgia", "serif"],
+        mono: ["var(--font-plex-mono)", "ui-monospace", "monospace"],
+      },
+      letterSpacing: {
+        eyebrow: "0.18em",
       },
     },
   },

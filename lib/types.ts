@@ -78,5 +78,6 @@ export const CATEGORIES = [
   "Development",
   "Video & Photography",
   "Content Creation",
-  "Writing & Marketing",
+  "Writing",
+  "Marketing",
 ] as const;

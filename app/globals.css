@@ -2,7 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 html, body {
-  background: #FFFDF7;
-  color: #0B0C10;
+  background: #EFE6CE;
+  color: #1A1611;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+  letter-spacing: -0.015em;
+}
+
+h1 { font-weight: 500; }
+h2, h3 { font-weight: 500; }
+
+p, li, .text-pretty {
+  text-wrap: pretty;
+}
+
+img {
+  outline: 1px solid rgba(26, 22, 17, 0.10);
+  outline-offset: -1px;
+}
+
+.tabular-nums, [data-tabular] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Signature: Malawian kwacha. Mono-set prices with a stamped k-mark. */
+.price {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss01";
+}
+.price::before {
+  content: "k";
+  display: inline-block;
+  margin-right: 0.32em;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variation-settings: "opsz" 144, "SOFT" 50, "WONK" 1;
+  font-weight: 600;
+  font-style: italic;
+  color: #B6332A;
+  transform: translateY(0.04em);
+}
+
+/* Eyebrow label — small caps utility */
+.eyebrow {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #736A5C;
+}
+
+/* Hairline rule that matches the press-shop direction */
+.hairline {
+  height: 1px;
+  background: #1A1611;
+  opacity: 0.18;
+}
+
+/* Soft, layered card — editorial elevation against the cream bg */
+.card-soft {
+  background: #FFFFFF;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(26, 22, 17, 0.04),
+    0 4px 12px rgba(26, 22, 17, 0.05),
+    0 16px 32px rgba(26, 22, 17, 0.04);
 }

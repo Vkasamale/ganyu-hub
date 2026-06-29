@@ -2,7 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { NotificationBell, type NotificationItem } from "@/components/notification-bell";
+import { NavbarBrowseLinks } from "@/components/navbar-browse-links";
 import { UserMenu } from "@/components/user-menu";
+import { Logo } from "@/components/logo";
 
 export async function Navbar() {
   const supabase = createClient();
@@ -25,16 +27,10 @@ export async function Navbar() {
   }
 
   return (
-    <header className="border-b border-neutral-200 bg-white">
+    <header className="border-b border-ink/15 bg-paper">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
-        <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-bold">
-          <span className="text-brand">Ganyu</span>
-          <span className="text-brand-ink">Hub</span>
-        </Link>
-        <nav className="hidden items-center gap-5 text-sm text-neutral-600 sm:flex">
-          <Link href="/browse" className="hover:text-brand-ink">Browse creatives</Link>
-          <Link href="/jobs" className="hover:text-brand-ink">Browse jobs</Link>
-        </nav>
+        <Logo />
+        <NavbarBrowseLinks />
         <div className="flex items-center gap-2">
           {user ? (
             <>

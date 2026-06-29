@@ -22,4 +22,12 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Job and creative filters: verify they actually work.** `<FiltersBar>` on `/browse` and `/jobs` exposes category multi-select, skills tags, price range, and sort. None of this has been tested end-to-end since the feed/Trending refactor. Sit with each filter, change values, confirm URL params update + results actually narrow. Likely culprits if broken: SSR filters reading from URL searchParams but the FiltersBar client component not pushing them back, OR Supabase queries ignoring the param when it's an empty string.
 
+## Landing-page imagery
+
+- **Hero right-side imagery.** Removed 2026-06-29 — the layered photo + chitenje block + clay arc + spinning "Find creatives" badge on the right column was pulled to keep the launch landing page clean while the imagery story is figured out. The `<HeroArt />` component (`components/hero-art.tsx`) and `/public/hero-photographer.webp` are still in the repo as a starting point. To bring it back: re-add the right column in `app/page.tsx` (revert the `grid-cols-[1.15fr_1fr]` block) and pick the imagery direction — single portrait of a real Malawian creative we've onboarded, a portfolio collage from real shipped work, or stay graphic-only with the chitenje composition. Best after we have 3–5 seeded creatives whose portraits/work we can actually feature.
+
+## Landing-page proof
+
+- **Landing hero proof row.** Removed 2026-06-29 — placeholder stats ("5 categories live", "K — local currency", "48h median time to first proposal") were aspirational, not real. Bring back once we have actual numbers worth quoting: real category count from `CATEGORIES.length`, real median-time-to-first-proposal from `proposals.created_at - jobs.created_at`, and either a "creatives live" count or a recognisable client logo strip if/when we have one.
+
 ## To add as we find them

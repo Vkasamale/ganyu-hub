@@ -5,7 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-export default function SignupPage() {
+type Role = "creative" | "client" | "agency";
+const VALID_ROLES: Role[] = ["creative", "client", "agency"];
+
+export default function SignupPage({ searchParams }: { searchParams?: { role?: string } }) {
+  const requested = searchParams?.role as Role | undefined;
+  const initialRole: Role = requested && VALID_ROLES.includes(requested) ? requested : "creative";
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <Card>
@@ -31,13 +36,13 @@ export default function SignupPage() {
               <Label>I am a…</Label>
               <div className="flex gap-3 text-sm">
                 <label className="flex items-center gap-2">
-                  <input type="radio" name="role" value="creative" defaultChecked /> Creative
+                  <input type="radio" name="role" value="creative" defaultChecked={initialRole === "creative"} /> Creative
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="radio" name="role" value="client" /> Client
+                  <input type="radio" name="role" value="client" defaultChecked={initialRole === "client"} /> Client
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="radio" name="role" value="agency" /> Agency
+                  <input type="radio" name="role" value="agency" defaultChecked={initialRole === "agency"} /> Agency
                 </label>
               </div>
             </div>
