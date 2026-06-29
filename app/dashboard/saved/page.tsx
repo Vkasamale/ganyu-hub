@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CreativeCard } from "@/components/creative-card";
 import { JobCard } from "@/components/job-card";
 
-export default async function SavedPage() {
+type Tab = "creatives" | "jobs";
+
+export default async function SavedPage({ searchParams }: { searchParams?: { tab?: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -24,23 +27,60 @@ export default async function SavedPage() {
     ? await supabase.from("jobs").select("*").in("id", jobIds)
     : { data: [] as any[] };
 
+  const tab: Tab = searchParams?.tab === "jobs" ? "jobs" : "creatives";
+  const creativesCount = creatives?.length || 0;
+  const jobsCount = jobs?.length || 0;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 space-y-10">
-      <h1 className="text-3xl font-bold">Saved</h1>
+    <div className="space-y-6">
+      <header>
+        <p className="eyebrow">Bookmarks</p>
+        <h1 className="mt-1 text-3xl font-display font-semibold text-ink">Saved</h1>
+        <p className="mt-1 text-sm text-ink/60">A drawer for creatives and jobs worth a second look.</p>
+      </header>
 
-      <section>
-        <h2 className="text-xl font-semibold">Saved creatives ({creatives?.length || 0})</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(creatives || []).map((p: any) => <CreativeCard key={p.id} profile={p} saved showSave />)}
-          {(creatives?.length || 0) === 0 && <p className="text-neutral-500">No saved creatives yet.</p>}
-        </div>
-      </section>
+      <section className="card-soft p-6">
+        <nav className="flex gap-1 border-b border-ink/10 pb-3">
+          <Link
+            href="/dashboard/saved?tab=creatives"
+            scroll={false}
+            className={
+              tab === "creatives"
+                ? "rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper"
+                : "rounded-md px-4 py-2 text-sm text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
+            }
+          >
+            Creatives <span className="ml-1 text-xs opacity-70">{creativesCount}</span>
+          </Link>
+          <Link
+            href="/dashboard/saved?tab=jobs"
+            scroll={false}
+            className={
+              tab === "jobs"
+                ? "rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper"
+                : "rounded-md px-4 py-2 text-sm text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
+            }
+          >
+            Jobs <span className="ml-1 text-xs opacity-70">{jobsCount}</span>
+          </Link>
+        </nav>
 
-      <section>
-        <h2 className="text-xl font-semibold">Saved jobs ({jobs?.length || 0})</h2>
-        <div className="mt-4 grid gap-4">
-          {(jobs || []).map((j: any) => <JobCard key={j.id} job={j} saved showSave />)}
-          {(jobs?.length || 0) === 0 && <p className="text-neutral-500">No saved jobs yet.</p>}
+        <div className="mt-5">
+          {tab === "creatives" ? (
+            creativesCount === 0 ? (
+              <p className="rounded-lg border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">No saved creatives yet.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(creatives || []).map((p: any) => <CreativeCard key={p.id} profile={p} saved showSave />)}
+              </div>
+            )
+          ) : jobsCount === 0 ? (
+            <p className="rounded-lg border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">No saved jobs yet.</p>
+          ) : (
+            <div className="grid gap-4">
+              {(jobs || []).map((j: any) => <JobCard key={j.id} job={j} saved showSave />)}
+            </div>
+          )}
         </div>
       </section>
     </div>

@@ -27,7 +27,7 @@ export async function Navbar() {
   }
 
   return (
-    <header className="border-b border-ink/15 bg-paper">
+    <header className="sticky top-0 z-40 border-b border-ink/15 bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
         <Logo />
         <NavbarBrowseLinks />

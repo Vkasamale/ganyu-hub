@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { sendMessage } from "@/app/actions";
 import { Input } from "@/components/ui/input";
@@ -9,31 +10,120 @@ export default async function ThreadPage({ params }: { params: { threadId: strin
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: thread } = await supabase.from("message_threads").select("*").eq("id", params.threadId).single();
+
+  const { data: thread } = await supabase
+    .from("message_threads")
+    .select("*, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name)")
+    .eq("id", params.threadId)
+    .single();
   if (!thread) notFound();
-  const { data: messages } = await supabase.from("messages").select("*").eq("thread_id", params.threadId).order("created_at", { ascending: true });
+
+  const { data: messages } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("thread_id", params.threadId)
+    .order("created_at", { ascending: true });
+
+  const { data: threads } = await supabase
+    .from("message_threads")
+    .select("id, created_at, client_id, creative_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name)")
+    .or(`client_id.eq.${user.id},creative_id.eq.${user.id}`)
+    .order("created_at", { ascending: false });
+
+  const other: any = thread.client_id === user.id ? thread.creative : thread.client;
+  const otherInitials = ((other?.full_name as string) || "?")
+    .split(" ")
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col px-4 py-8" style={{ minHeight: "calc(100vh - 4rem)" }}>
-      <div className="flex-1 space-y-3 overflow-y-auto">
-        {(messages || []).map((m) => {
-          const mine = m.sender_id === user.id;
-          return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${mine ? "bg-brand text-white" : "bg-neutral-100"}`}>
-                <p className="whitespace-pre-wrap">{m.body}</p>
-                <p className={`mt-1 text-[10px] ${mine ? "text-white/70" : "text-neutral-500"}`}>{timeAgo(m.created_at)}</p>
-              </div>
+    <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
+        <aside className="card-soft hidden flex-col overflow-hidden md:flex">
+          <div className="border-b border-ink/10 p-4">
+            <p className="eyebrow">Messages</p>
+            <p className="mt-1 text-xs text-ink/55">{threads?.length || 0} conversations</p>
+          </div>
+          <ul className="flex-1 overflow-y-auto">
+            {(threads || []).map((t: any) => {
+              const o = t.client_id === user.id ? t.creative : t.client;
+              const active = t.id === thread.id;
+              const initials = ((o?.full_name as string) || "?")
+                .split(" ")
+                .map((n: string) => n[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase();
+              return (
+                <li key={t.id}>
+                  <Link
+                    href={`/messages/${t.id}`}
+                    className={
+                      active
+                        ? "flex items-center gap-3 border-l-2 border-stamp bg-wash/50 px-4 py-3"
+                        : "flex items-center gap-3 border-l-2 border-transparent px-4 py-3 transition-colors hover:bg-wash/30"
+                    }
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink">{o?.full_name || "Unknown"}</p>
+                      <p className="truncate text-xs text-ink/55">{timeAgo(t.created_at)}</p>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+            {(!threads || threads.length === 0) && (
+              <li className="px-4 py-6 text-center text-xs text-ink/55">No conversations yet.</li>
+            )}
+          </ul>
+        </aside>
+
+        <section className="card-soft flex flex-col overflow-hidden">
+          <header className="flex items-center gap-3 border-b border-ink/10 px-5 py-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
+              {otherInitials}
             </div>
-          );
-        })}
-        {(!messages || messages.length === 0) && <p className="text-center text-neutral-500">Say hello.</p>}
+            <div>
+              <p className="font-medium text-ink">{other?.full_name || "Unknown"}</p>
+              <p className="text-xs text-ink/55">Started {timeAgo(thread.created_at)}</p>
+            </div>
+          </header>
+
+          <div className="flex-1 space-y-3 overflow-y-auto bg-paper/60 px-5 py-5">
+            {(messages || []).map((m) => {
+              const mine = m.sender_id === user.id;
+              return (
+                <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={
+                      mine
+                        ? "max-w-[75%] rounded-2xl rounded-br-sm bg-ink px-4 py-2.5 text-sm text-paper shadow-sm"
+                        : "max-w-[75%] rounded-2xl rounded-bl-sm border border-ink/10 bg-paper px-4 py-2.5 text-sm text-ink shadow-sm"
+                    }
+                  >
+                    <p className="whitespace-pre-wrap">{m.body}</p>
+                    <p className={`mt-1 text-[10px] ${mine ? "text-paper/60" : "text-ink/50"}`}>{timeAgo(m.created_at)}</p>
+                  </div>
+                </div>
+              );
+            })}
+            {(!messages || messages.length === 0) && (
+              <p className="py-8 text-center text-sm text-ink/55">Say hello.</p>
+            )}
+          </div>
+
+          <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex gap-2 border-t border-ink/10 bg-paper px-5 py-4">
+            <input type="hidden" name="thread_id" value={thread.id} />
+            <Input name="body" placeholder="Type a message" required className="flex-1" />
+            <SubmitButton pendingText="Sending…">Send</SubmitButton>
+          </SavingForm>
+        </section>
       </div>
-      <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="mt-4 flex gap-2">
-        <input type="hidden" name="thread_id" value={thread.id} />
-        <Input name="body" placeholder="Type a message" required />
-        <SubmitButton pendingText="Sending…">Send</SubmitButton>
-      </SavingForm>
     </div>
   );
 }
