@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState, useEffect, useRef } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 
 type Result = { ok?: boolean; error?: string } | null | void;
@@ -24,7 +24,7 @@ export function SavingForm({
   const boundAction = async (_prev: Result, formData: FormData): Promise<Result> => {
     return await action(formData);
   };
-  const [state, formAction] = useFormState(boundAction, null);
+  const [state, formAction] = useActionState(boundAction, null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {

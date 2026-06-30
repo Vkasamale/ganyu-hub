@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 type Role = "creative" | "client" | "agency";
 const VALID_ROLES: Role[] = ["creative", "client", "agency"];
 
-export default function SignupPage({ searchParams }: { searchParams?: { role?: string } }) {
+export default async function SignupPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ role?: string }> }) {
+  const searchParams = (await searchParamsP) || {};
   const requested = searchParams?.role as Role | undefined;
   const initialRole: Role = requested && VALID_ROLES.includes(requested) ? requested : "creative";
   return (

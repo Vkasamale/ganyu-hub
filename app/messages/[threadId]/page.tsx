@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { timeAgo } from "@/lib/utils";
 
-export default async function ThreadPage({ params }: { params: { threadId: string } }) {
+export default async function ThreadPage({ params: paramsP }: { params: Promise<{ threadId: string }> }) {
+  const params = await paramsP;
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");

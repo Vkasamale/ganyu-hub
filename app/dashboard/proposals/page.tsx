@@ -46,7 +46,8 @@ function countByStatus(rows: { status: string }[]) {
   return c;
 }
 
-export default async function ProposalsPage({ searchParams }: { searchParams?: { tab?: string } }) {
+export default async function ProposalsPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ tab?: string }> }) {
+  const searchParams = (await searchParamsP) || {};
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");

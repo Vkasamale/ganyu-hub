@@ -17,7 +17,8 @@ import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem } from "@/app/actions";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
-export default async function JobDetailPage({ params }: { params: { id: string } }) {
+export default async function JobDetailPage({ params: paramsP }: { params: Promise<{ id: string }> }) {
+  const params = await paramsP;
   const supabase = createClient();
   const { data: job } = await supabase.from("jobs").select("*").eq("id", params.id).single();
   if (!job) notFound();

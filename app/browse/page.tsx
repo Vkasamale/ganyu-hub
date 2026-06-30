@@ -10,9 +10,10 @@ function toArray(v: string | string[] | undefined): string[] {
 }
 function sanitize(s: string) { return s.replace(/[,()]/g, " ").trim(); }
 
-export default async function BrowsePage({ searchParams }: {
-  searchParams: { q?: string; category?: string | string[]; skills?: string; min_price?: string; max_price?: string; sort?: string };
+export default async function BrowsePage({ searchParams: searchParamsP }: {
+  searchParams: Promise<{ q?: string; category?: string | string[]; skills?: string; min_price?: string; max_price?: string; sort?: string }>;
 }) {
+  const searchParams = (await searchParamsP) || {};
   const supabase = createClient();
   const q = (searchParams.q || "").trim();
   const cats = toArray(searchParams.category);

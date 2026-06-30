@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("role, onboarded_at").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("role, onboarded_at, is_admin").eq("id", user.id).single();
   if (profile && !profile.onboarded_at) {
     redirect(profile.role === "client" ? "/onboarding/client" : "/onboarding/creative");
   }
@@ -74,8 +74,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/proposals", label: "Proposals" },
     { href: "/messages", label: "Messages" },
     ...(!isClient ? [{ href: "/dashboard/portfolio", label: "Portfolio" }, { href: "/dashboard/services", label: "Rate card" }] : []),
+    { href: "/dashboard/payments", label: "Payments" },
     { href: "/dashboard/saved", label: "Saved" },
-    { href: "/dashboard/account", label: "Account" },
+    { href: "/dashboard/profile", label: "Edit profile" },
+    { href: "/dashboard/account", label: "Account & security" },
+    { href: `/creatives/${user.id}`, label: "View public profile" },
+    ...(profile?.is_admin ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
   return (
@@ -83,11 +87,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <aside className="md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
         <p className="eyebrow">Workspace</p>
         <DashboardNav items={navItems} />
-        <div className="mt-6 border-t border-ink/15 pt-4">
-          <Link href={`/creatives/${user.id}`} className="block text-sm text-ink/70 underline decoration-ink/30 underline-offset-4 hover:text-ink">
-            View public profile →
-          </Link>
-        </div>
       </aside>
 
       <main className="min-w-0">{children}</main>

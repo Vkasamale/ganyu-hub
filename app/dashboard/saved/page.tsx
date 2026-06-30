@@ -6,7 +6,8 @@ import { JobCard } from "@/components/job-card";
 
 type Tab = "creatives" | "jobs";
 
-export default async function SavedPage({ searchParams }: { searchParams?: { tab?: string } }) {
+export default async function SavedPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ tab?: string }> }) {
+  const searchParams = (await searchParamsP) || {};
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");

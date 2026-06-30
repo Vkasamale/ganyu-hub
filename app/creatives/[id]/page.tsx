@@ -10,19 +10,20 @@ import { startThread, recordView, requestCustomService } from "@/app/actions";
 import { formatMwk } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
 
-export default async function CreativePage({ params }: { params: { id: string } }) {
+export default async function CreativePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = createClient();
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", params.id).single();
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", id).single();
   if (!profile) notFound();
-  const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", params.id).order("created_at", { ascending: false });
-  const { data: services } = await supabase.from("services").select("*").eq("profile_id", params.id).order("price_mwk", { ascending: true });
+  const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", id).order("created_at", { ascending: false });
+  const { data: services } = await supabase.from("services").select("*").eq("profile_id", id).order("price_mwk", { ascending: true });
   const { data: { user } } = await supabase.auth.getUser();
-  const isOwner = !!user && user.id === params.id;
-  if (user && !isOwner) await recordView("creative", params.id);
+  const isOwner = !!user && user.id === id;
+  if (user && !isOwner) await recordView("creative", id);
 
   let isSaved = false;
   if (user && !isOwner) {
-    const { data: s } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("target_type", "creative").eq("target_id", params.id).maybeSingle();
+    const { data: s } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("target_type", "creative").eq("target_id", id).maybeSingle();
     isSaved = !!s;
   }
 
@@ -112,7 +113,7 @@ export default async function CreativePage({ params }: { params: { id: string } 
         </div>
 
         <div className="px-6 pb-6">
-          <div className="-mt-16 flex flex-col gap-4 md:-mt-20 md:flex-row md:items-end md:justify-between">
+          <div className="relative z-10 -mt-16 flex flex-col gap-4 md:-mt-20 md:flex-row md:items-end md:justify-between">
             <div className="flex items-end gap-4">
               <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-full border-4 border-paper bg-ink text-3xl font-display font-semibold text-paper shadow-lg md:h-36 md:w-36 md:text-4xl">
                 {initials}
