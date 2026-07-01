@@ -16,6 +16,7 @@ export function SavingForm({
   successText = "Saved.",
   resetOnSuccess = false,
   className,
+  silent = false,
 }: {
   action: ServerAction;
   children: React.ReactNode;

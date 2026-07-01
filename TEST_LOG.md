@@ -4,7 +4,7 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-01 (evening)
+Last updated: 2026-07-02
 
 ---
 
@@ -49,6 +49,10 @@ Last updated: 2026-07-01 (evening)
 | Client onboarding redirect + "Post a job now" radio | User confirmed |
 | Landing page: "Browse jobs" CTA, "Types of creatives" grid + Content Creation category | User confirmed |
 | User profile dropdown menu (avatar + name) + navbar responsive at narrow widths | User confirmed |
+| Job status: Request revision → Re-submit cycle | User confirmed end-to-end (client requests, creative re-submits, status flips back to Submitted) |
+| Escrow: Mark payment held → Release | User confirmed end-to-end |
+| Admin: resolve dispute as completed / cancelled | User confirmed |
+| Admin: hide / unhide job | User confirmed — hidden jobs disappear from public listings, reappear on unhide |
 
 ## ⚠️ Tested, known issue (tracked in BACKLOG)
 
@@ -62,12 +66,7 @@ Last updated: 2026-07-01 (evening)
 
 ## 🕒 Prompted to test, awaiting confirmation
 
-| Feature | Where to test |
-|---|---|
-| Job status: Request revision → Re-submit cycle | Job page, client + creative tabs |
-| Escrow: Mark payment held / Release / Dispute | Job page Payment panel, client only |
-| Admin: resolve dispute as completed/cancelled | Triggers notification + email to both parties |
-| Admin: hide / unhide job | Hidden jobs disappear from `/jobs` listing |
+_(empty — all outstanding items verified 2026-07-02)_
 
 ## ⬜ Never tested
 
