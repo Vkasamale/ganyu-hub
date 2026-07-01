@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 type Role = "creative" | "client" | "agency";
 const VALID_ROLES: Role[] = ["creative", "client", "agency"];
 
-export default async function SignupPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ role?: string }> }) {
+export default async function SignupPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ role?: string; error?: string }> }) {
   const searchParams = (await searchParamsP) || {};
   const requested = searchParams?.role as Role | undefined;
   const initialRole: Role = requested && VALID_ROLES.includes(requested) ? requested : "creative";
+  const error = searchParams?.error;
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <Card>
@@ -20,6 +21,11 @@ export default async function SignupPage({ searchParams: searchParamsP }: { sear
           <CardDescription>Sign up as a creative or as a client looking to hire.</CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {decodeURIComponent(error)}
+            </p>
+          )}
           <form action={signUp} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="full_name">Full name</Label>

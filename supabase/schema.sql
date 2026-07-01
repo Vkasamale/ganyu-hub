@@ -24,6 +24,12 @@ alter table profiles add column if not exists phone text;
 alter table profiles add column if not exists onboarded_at timestamptz;
 alter table profiles add column if not exists is_admin boolean not null default false;
 alter table jobs add column if not exists hidden_at timestamptz;
+alter table jobs add column if not exists proposal_limit integer not null default 10;
+
+do $$ begin
+  create type availability_status as enum ('available', 'busy', 'unavailable');
+exception when duplicate_object then null; end $$;
+alter table profiles add column if not exists availability availability_status not null default 'available';
 
 create or replace function public.is_admin(uid uuid)
 returns boolean language sql security definer set search_path = public as $$

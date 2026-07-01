@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { markNotificationRead, markAllNotificationsRead } from "@/app/actions";
@@ -16,6 +16,22 @@ export type NotificationItem = {
   created_at: string;
 };
 
+const TABS: { key: string; label: string; match: (k: string) => boolean }[] = [
+  { key: "all", label: "View all", match: () => true },
+  { key: "jobs", label: "Jobs", match: (k) => /job|milestone|dispute|scope|escrow/i.test(k) },
+  { key: "proposals", label: "Proposals", match: (k) => /proposal|bid|offer/i.test(k) },
+  { key: "messages", label: "Messages", match: (k) => /message|reply|comment/i.test(k) },
+];
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("") || "•";
+}
+
 export function NotificationBell({
   userId,
   initialItems,
@@ -25,9 +41,18 @@ export function NotificationBell({
 }) {
   const [items, setItems] = useState<NotificationItem[]>(initialItems);
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<string>("all");
   const [, startTransition] = useTransition();
 
   const unread = items.filter((n) => !n.read_at).length;
+
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const t of TABS) counts[t.key] = items.filter((n) => t.match(n.kind)).length;
+    return counts;
+  }, [items]);
+
+  const visible = items.filter((n) => TABS.find((t) => t.key === tab)?.match(n.kind));
 
   useEffect(() => {
     const supabase = createClient();
@@ -53,8 +78,6 @@ export function NotificationBell({
       )
       .subscribe();
 
-    // Polling fallback — covers cases where Realtime isn't enabled on the table
-    // or the websocket is asleep. Cheap query, 15s cadence.
     async function refresh() {
       const { data } = await supabase
         .from("notifications")
@@ -106,54 +129,105 @@ export function NotificationBell({
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
         </svg>
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold text-white">
-            {unread > 9 ? "9+" : unread}
-          </span>
+          <span className="absolute -right-0.5 -top-0.5 inline-flex h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white" />
         )}
       </button>
 
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-40 w-80 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg">
-            <div className="flex items-center justify-between border-b border-neutral-100 px-3 py-2">
-              <p className="text-sm font-semibold">Notifications</p>
-              {unread > 0 && (
-                <button onClick={handleMarkAll} className="text-xs text-brand hover:underline">
-                  Mark all read
+          <div className="absolute right-0 top-11 z-40 w-[440px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between px-5 pt-4 pb-3">
+              <p className="text-base font-semibold">Notifications</p>
+              <div className="flex items-center gap-1 text-neutral-500">
+                <button
+                  onClick={handleMarkAll}
+                  disabled={unread === 0}
+                  aria-label="Mark all read"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100 disabled:opacity-40"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1.5 12.5 6 17l7-9" />
+                    <path d="M11 17l1.5 1.5L22 7" />
+                  </svg>
                 </button>
-              )}
+                <Link
+                  href="/dashboard/account"
+                  aria-label="Notification settings"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.24.58.76 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </Link>
+              </div>
             </div>
-            <div className="max-h-96 overflow-y-auto">
-              {items.length === 0 && (
-                <p className="px-3 py-6 text-center text-sm text-neutral-500">No notifications yet.</p>
+
+            <div className="flex items-center gap-1 px-4 pb-3">
+              {TABS.map((t) => {
+                const active = tab === t.key;
+                const count = tabCounts[t.key];
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+                      active ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"
+                    }`}
+                  >
+                    {t.label}
+                    {count > 0 && (
+                      <span className={`text-[10px] ${active ? "text-white/70" : "text-neutral-400"}`}>{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="max-h-[28rem] overflow-y-auto px-2 pb-2">
+              {visible.length === 0 && (
+                <p className="px-3 py-10 text-center text-sm text-neutral-500">No notifications here.</p>
               )}
-              {items.map((n) => {
-                const inner = (
-                  <div className={`px-3 py-2.5 text-sm ${n.read_at ? "" : "bg-brand/5"}`}>
-                    <p className="font-medium leading-tight">{n.title}</p>
-                    {n.body && <p className="mt-0.5 line-clamp-2 text-neutral-600">{n.body}</p>}
-                    <p className="mt-1 text-[11px] text-neutral-400">{timeAgo(n.created_at)}</p>
+              {visible.map((n, i) => {
+                const isUnread = !n.read_at;
+                const row = (
+                  <div className={`flex gap-3 rounded-lg px-3 py-3 transition ${isUnread ? "bg-brand/[0.04]" : ""} hover:bg-neutral-50`}>
+                    <div className="relative shrink-0">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-200 text-xs font-semibold text-neutral-700">
+                        {initials(n.title)}
+                      </div>
+                      {isUnread && (
+                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium leading-tight text-neutral-900">{n.title}</p>
+                        <p className="shrink-0 text-[11px] text-neutral-400">{timeAgo(n.created_at)}</p>
+                      </div>
+                      {n.body && (
+                        <p className="mt-1 line-clamp-2 rounded-md bg-neutral-50 px-2.5 py-1.5 text-xs text-neutral-600">
+                          {n.body}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
-                return n.link ? (
-                  <Link
-                    key={n.id}
-                    href={n.link}
-                    onClick={() => handleItemClick(n)}
-                    className="block border-b border-neutral-50 hover:bg-neutral-50"
-                  >
-                    {inner}
-                  </Link>
-                ) : (
-                  <button
-                    key={n.id}
-                    type="button"
-                    onClick={() => handleItemClick(n)}
-                    className="block w-full border-b border-neutral-50 text-left hover:bg-neutral-50"
-                  >
-                    {inner}
-                  </button>
+                const separator = i < visible.length - 1 ? "border-b border-dashed border-neutral-200" : "";
+                return (
+                  <div key={n.id} className={separator}>
+                    {n.link ? (
+                      <Link href={n.link} onClick={() => handleItemClick(n)} className="block">
+                        {row}
+                      </Link>
+                    ) : (
+                      <button type="button" onClick={() => handleItemClick(n)} className="block w-full text-left">
+                        {row}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>

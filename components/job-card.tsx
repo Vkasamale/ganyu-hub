@@ -66,8 +66,9 @@ export function JobCard({
 
         <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-mark/10 px-3 py-1.5 text-sm font-semibold text-mark">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="1" x2="12" y2="23" />
-            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            <path d="M20 12V8H6a2 2 0 0 1 0-4h12v4" />
+            <path d="M4 6v12a2 2 0 0 0 2 2h14v-4" />
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4z" />
           </svg>
           <span>Budget: {job.budget_mwk != null ? formatMwk(job.budget_mwk) : "Open"}</span>
         </div>

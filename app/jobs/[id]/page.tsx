@@ -47,6 +47,13 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
   const myProposal = !isClient && user ? (proposals || [])[0] : null;
 
+  const { count: proposalCount } = await supabase
+    .from("proposals")
+    .select("id", { count: "exact", head: true })
+    .eq("job_id", job.id);
+  const proposalLimit = (job as { proposal_limit?: number | null }).proposal_limit ?? 10;
+  const isFull = (proposalCount ?? 0) >= proposalLimit;
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       {user && <JobRealtime jobId={job.id} />}
@@ -154,9 +161,27 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
 
-      {user && !isClient && !myProposal && (
+      {user && !isClient && !myProposal && isFull && (
+        <Card className="mt-6 border-neutral-300 bg-neutral-50">
+          <CardContent className="p-6">
+            <p className="text-sm font-semibold">This job is full.</p>
+            <p className="mt-1 text-sm text-neutral-600">
+              It has reached its cap of {proposalLimit} proposals. Try another job.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {user && !isClient && !myProposal && !isFull && (
         <Card className="mt-6">
-          <CardHeader><CardTitle>Send a proposal</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Send a proposal</CardTitle>
+              <p className="text-xs text-neutral-500">
+                {proposalCount ?? 0} of {proposalLimit} proposals
+              </p>
+            </div>
+          </CardHeader>
           <CardContent>
             <SavingForm action={submitProposal} successText="Proposal sent." className="space-y-4">
               <input type="hidden" name="job_id" value={job.id} />

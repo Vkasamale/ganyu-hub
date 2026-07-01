@@ -153,13 +153,9 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
                     return (
                       <label
                         key={c}
-                        className={
-                          checked
-                            ? "cursor-pointer rounded-full border border-stamp bg-stamp px-3.5 py-1.5 text-xs font-medium text-paper transition-colors"
-                            : "cursor-pointer rounded-full border border-ink/25 bg-paper px-3.5 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-ink/50 hover:bg-wash/40"
-                        }
+                        className="relative cursor-pointer rounded-full border border-ink/25 bg-paper px-3.5 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-ink/50 hover:bg-wash/40 has-[:checked]:border-stamp has-[:checked]:bg-stamp has-[:checked]:text-paper has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-stamp"
                       >
-                        <input type="checkbox" name="category" value={c} defaultChecked={checked} className="hidden" />
+                        <input type="checkbox" name="category" value={c} defaultChecked={checked} className="sr-only" />
                         {c}
                       </label>
                     );

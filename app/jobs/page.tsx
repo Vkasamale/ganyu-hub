@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { JobCard } from "@/components/job-card";
 import { FiltersBar } from "@/components/filters-bar";
 import { StaggerList } from "@/components/animated";
+import { EmptyState } from "@/components/empty-state";
 import { getSavedIds } from "@/lib/feed";
 import Link from "next/link";
 
@@ -71,7 +72,14 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
           />
         ))}
       </StaggerList>
-      {count === 0 && <p className="mt-8 text-neutral-500">No jobs match these filters.</p>}
+      {count === 0 && (
+        <EmptyState
+          title="No jobs match these filters."
+          body="Try widening your search — clear a category or drop the budget range."
+          actionLabel="Clear filters"
+          actionHref="/jobs"
+        />
+      )}
     </div>
   );
 }

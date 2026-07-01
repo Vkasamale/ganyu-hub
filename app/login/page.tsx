@@ -5,12 +5,18 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <Card>
         <CardHeader><CardTitle>Welcome back</CardTitle></CardHeader>
         <CardContent>
+          {error && (
+            <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {decodeURIComponent(error)}
+            </p>
+          )}
           <form action={signIn} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>

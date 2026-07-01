@@ -33,7 +33,7 @@ export async function signUp(formData: FormData) {
     password,
     options: { data: { full_name, role } },
   });
-  if (error) return { error: error.message };
+  if (error) redirect(`/signup?error=${encodeURIComponent(error.message)}`);
   redirect("/dashboard");
 }
 
@@ -43,8 +43,23 @@ export async function signIn(formData: FormData) {
     email: String(formData.get("email")),
     password: String(formData.get("password")),
   });
-  if (error) return { error: error.message };
+  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
   redirect("/dashboard");
+}
+
+export async function updateAvailability(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const value = String(formData.get("availability") || "available");
+  if (!["available", "busy", "unavailable"].includes(value)) {
+    return { error: "Invalid availability." };
+  }
+  const { error } = await supabase.from("profiles").update({ availability: value }).eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/profile");
+  revalidatePath(`/creatives/${user.id}`);
+  return { ok: true };
 }
 
 export async function updateProfile(formData: FormData) {
@@ -403,6 +418,21 @@ export async function submitProposal(formData: FormData) {
   if (!user) return { error: "Not signed in" };
 
   const job_id = String(formData.get("job_id"));
+
+  const { data: jobRow } = await supabase
+    .from("jobs")
+    .select("proposal_limit")
+    .eq("id", job_id)
+    .single();
+  const limit = jobRow?.proposal_limit ?? 10;
+  const { count } = await supabase
+    .from("proposals")
+    .select("id", { count: "exact", head: true })
+    .eq("job_id", job_id);
+  if ((count ?? 0) >= limit) {
+    return { error: `This job has reached its proposal limit (${limit}).` };
+  }
+
   const { error } = await supabase.from("proposals").insert({
     job_id,
     creative_id: user.id,

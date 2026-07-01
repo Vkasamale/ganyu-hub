@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { updateProfile } from "@/app/actions";
+import { updateProfile, updateAvailability } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,33 @@ export default async function EditProfilePage() {
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
+  const showAvailability = profile?.role === "creative" || profile?.role === "agency";
+  const currentAvailability = (profile?.availability as string | undefined) || "available";
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-2xl px-4 py-10 space-y-6">
+      {showAvailability && (
+        <Card>
+          <CardHeader><CardTitle>Availability</CardTitle></CardHeader>
+          <CardContent>
+            <SavingForm action={updateAvailability} successText="Availability updated." className="flex items-center gap-3">
+              <Label htmlFor="availability" className="sr-only">Availability</Label>
+              <select
+                id="availability"
+                name="availability"
+                defaultValue={currentAvailability}
+                className="h-10 rounded-lg border border-ink/20 bg-paper px-3 text-sm text-ink focus:border-ink/40 focus:outline-none"
+              >
+                <option value="available">🟢 Available for work</option>
+                <option value="busy">🟡 Busy — limited slots</option>
+                <option value="unavailable">⚪ Not taking work</option>
+              </select>
+              <SubmitButton pendingText="Saving…">Update</SubmitButton>
+            </SavingForm>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader><CardTitle>Edit your profile</CardTitle></CardHeader>
         <CardContent>

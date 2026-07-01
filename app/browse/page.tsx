@@ -4,6 +4,7 @@ import { FiltersBar } from "@/components/filters-bar";
 import { getSavedIds } from "@/lib/feed";
 import { checkProfileComplete } from "@/lib/profile-complete";
 import { StaggerList } from "@/components/animated";
+import { EmptyState } from "@/components/empty-state";
 
 function toArray(v: string | string[] | undefined): string[] {
   if (!v) return [];
@@ -83,7 +84,14 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
           />
         ))}
       </StaggerList>
-      {visibleCount === 0 && <p className="mt-8 text-neutral-500">No creatives match these filters.</p>}
+      {visibleCount === 0 && (
+        <EmptyState
+          title="No creatives match these filters."
+          body="Try widening your search — clear a category or drop the price range."
+          actionLabel="Clear filters"
+          actionHref="/browse"
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 export type Role = "client" | "creative" | "agency";
 
+export type Availability = "available" | "busy" | "unavailable";
+
 export type Profile = {
   id: string;
   role: Role;
@@ -11,6 +13,7 @@ export type Profile = {
   avatar_url: string | null;
   categories: string[] | null;
   skills: string[] | null;
+  availability?: Availability | null;
   created_at: string;
 };
 
@@ -43,6 +46,7 @@ export type Job = {
   budget_mwk: number | null;
   category: string;
   status: JobStatus;
+  proposal_limit?: number | null;
   created_at: string;
 };
 

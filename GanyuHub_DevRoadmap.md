@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-06-24
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-01
 
 ---
 
@@ -42,9 +42,9 @@ Work through these in order. Do not skip to P1 while P0 items are open.
 | Task | Status | Notes |
 |------|--------|-------|
 | Mobile money payment integration: Airtel Money or TNM Mpamba (whichever API approves first) | BLOCKED | Waiting on API approval. Wire up the abstraction layer now so plugin-in is fast. |
-| UX/UI refresh: improve visual design, spacing, typography, color system | NOT STARTED | Not blocking launch but needed before showing to real clients. |
-| Proposal limit per job: cap proposals a client receives to avoid overwhelm | NOT STARTED | Fiverr-style cap keeps quality high. |
-| Creative availability status: available now, busy, not taking work | NOT STARTED | Simple flag. Saves clients time. |
+| UX/UI refresh: improve visual design, spacing, typography, color system | DONE 2026-07-01 | Full editorial redesign — Recharts across admin + user dashboards, animation layer (stagger, count-up, chip morph, heart bounce, dispute reveal, toasts), notification panel redesign, filter click-highlight fix, keyboard focus, empty states, 404/error pages, signup silent-error fix, password recovery flow. |
+| Proposal limit per job: cap proposals a client receives to avoid overwhelm | DONE 2026-07-01 | `jobs.proposal_limit` (default 10). `submitProposal` guard rejects at cap. Job detail shows counter and swaps form for "job full" card when at limit. |
+| Creative availability status: available now, busy, not taking work | DONE 2026-07-01 | `availability_status` enum + `profiles.availability`. Selector at `/dashboard/profile` (creative/agency only). Colored dot on avatar in creative cards. |
 
 ### P3 - Post-Traction
 

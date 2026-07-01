@@ -71,8 +71,21 @@ export function CreativeCard({
 
       <div className="flex flex-1 flex-col p-4">
         <Link href={`/creatives/${profile.id}`} className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink/85 text-[11px] font-semibold text-paper">
-            {initials}
+          <div className="relative shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ink/85 text-[11px] font-semibold text-paper">
+              {initials}
+            </div>
+            {profile.availability && profile.availability !== "available" && (
+              <span
+                title={profile.availability === "busy" ? "Busy" : "Not taking work"}
+                className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-white ${
+                  profile.availability === "busy" ? "bg-yellow-400" : "bg-neutral-400"
+                }`}
+              />
+            )}
+            {profile.availability === "available" && (
+              <span title="Available" className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
+            )}
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-ink">{profile.full_name || "Unnamed creative"}</p>
