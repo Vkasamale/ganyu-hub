@@ -15,7 +15,7 @@ export function HeroArt() {
           <pattern id="rosette" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
             <rect width="44" height="44" fill="#DACFB2" />
             <circle cx="22" cy="22" r="7" fill="none" stroke="#1A1611" strokeWidth="1.1" />
-            <circle cx="22" cy="22" r="3" fill="#B6332A" />
+            <circle cx="22" cy="22" r="3" fill="#069494" />
             <path d="M22 10 L25 19 L34 22 L25 25 L22 34 L19 25 L10 22 L19 19 Z" fill="#1A1611" opacity="0.82" />
           </pattern>
           <pattern id="stripes" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -27,7 +27,7 @@ export function HeroArt() {
         {/* warm clay arc */}
         <path
           d="M 60 60 Q 60 -30 240 -30 Q 420 -30 420 60 L 420 300 L 60 300 Z"
-          fill="#B6332A"
+          fill="#069494"
           opacity="0.95"
         />
         {/* chitenje block — peeks out behind photo, right side */}

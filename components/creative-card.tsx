@@ -50,7 +50,7 @@ export function CreativeCard({
               className="flex h-full w-full items-center justify-center"
               style={{
                 background:
-                  "radial-gradient(120% 80% at 30% 30%, #B6332A 0%, #8C231C 55%, #5A1611 100%)",
+                  "radial-gradient(120% 80% at 30% 30%, #069494 0%, #046B6B 55%, #023939 100%)",
               }}
             >
               <span

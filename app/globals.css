@@ -5,16 +5,16 @@
 :root {
   --background: 43 33% 94%;
   --foreground: 0 14% 17%;
-  --primary: 0 63% 33%;
+  --primary: 180 92% 30%;
   --primary-foreground: 0 0% 100%;
   --secondary: 43 20% 88%;
   --secondary-foreground: 0 14% 17%;
   --muted: 43 20% 88%;
   --muted-foreground: 0 5% 45%;
-  --accent: 0 63% 33%;
+  --accent: 180 92% 30%;
   --accent-foreground: 0 0% 100%;
   --border: 43 15% 82%;
-  --ring: 0 63% 33%;
+  --ring: 180 92% 30%;
   --radius: 0.5rem;
   --font-display: var(--font-instrument-serif), 'Instrument Serif', serif;
   --font-body: var(--font-inter), 'Inter', sans-serif;
@@ -75,7 +75,7 @@ img {
   display: inline-block;
   margin-right: 0.32em;
   font-weight: 700;
-  color: #B6332A;
+  color: #069494;
 }
 
 .eyebrow {

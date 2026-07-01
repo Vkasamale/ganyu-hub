@@ -6,16 +6,16 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#B6332A",
-          dark: "#8C231C",
+          DEFAULT: "#069494",
+          dark: "#046B6B",
           ink: "#1A1611",
           paper: "#EFE6CE",
           muted: "#736A5C",
         },
         paper: "#EFE6CE",
         ink: "#1A1611",
-        stamp: "#B6332A",
-        "stamp-dark": "#8C231C",
+        stamp: "#069494",
+        "stamp-dark": "#046B6B",
         mark: "#2F5D3B",
         wash: "#DACFB2",
         rule: "#1A1611",

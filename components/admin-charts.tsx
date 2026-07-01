@@ -18,8 +18,8 @@ import {
 
 const INK = "hsl(0, 14%, 17%)";
 const INK_MUTED = "hsla(0, 14%, 17%, 0.55)";
-const STAMP = "hsl(0, 63%, 33%)";
-const STAMP_SOFT = "hsl(0, 78%, 62%)";
+const STAMP = "hsl(180, 92%, 30%)";
+const STAMP_SOFT = "hsl(180, 60%, 55%)";
 
 const tooltipStyle = {
   backgroundColor: "white",

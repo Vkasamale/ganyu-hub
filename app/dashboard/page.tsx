@@ -107,7 +107,7 @@ export default async function DashboardPage() {
         center: String(myJobs.filter((j) => j.escrow_status === "payment_released").length),
         centerLabel: "Released",
         slices: [
-          { label: "Held", value: myJobs.filter((j) => j.escrow_status === "payment_held").length, color: "#B6332A" },
+          { label: "Held", value: myJobs.filter((j) => j.escrow_status === "payment_held").length, color: "#069494" },
           { label: "Released", value: myJobs.filter((j) => j.escrow_status === "payment_released").length, color: "#2F5D3B" },
         ],
       }
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
         centerLabel: "Accepted",
         slices: [
           { label: "Accepted", value: proposalsSent.filter((p) => p.status === "accepted").length, color: "#2F5D3B" },
-          { label: "Pending", value: proposalsSent.filter((p) => p.status === "pending").length, color: "#B6332A" },
+          { label: "Pending", value: proposalsSent.filter((p) => p.status === "pending").length, color: "#069494" },
           { label: "Declined", value: proposalsSent.filter((p) => p.status === "declined").length, color: "#DACFB2" },
         ],
       };

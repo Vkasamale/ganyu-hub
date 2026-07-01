@@ -6,7 +6,7 @@ export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-2">
       <svg width={dim} height={dim} viewBox="0 0 40 40" fill="none" aria-hidden className="shrink-0">
-        <rect x="2" y="2" width="36" height="36" rx="6" fill="#B6332A" />
+        <rect x="2" y="2" width="36" height="36" rx="6" fill="#069494" />
         <path
           d="M14 9 L14 31 M14 22 L22 12 M14 22 L24 31"
           stroke="#EFE6CE"

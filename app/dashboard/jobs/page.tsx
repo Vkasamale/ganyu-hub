@@ -96,7 +96,7 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
   const statusGroups = [
     { label: "Open", statuses: ["open"], color: "#1A1611" },
     { label: "In progress", statuses: ["scope_pending", "in_progress", "submitted", "revision_requested"], color: "#2F5D3B" },
-    { label: "Completed", statuses: ["completed"], color: "#B6332A" },
+    { label: "Completed", statuses: ["completed"], color: "#069494" },
     { label: "Other", statuses: ["disputed", "cancelled"], color: "#DACFB2" },
   ];
   const donutSlices = statusGroups
