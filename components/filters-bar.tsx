@@ -127,7 +127,7 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
       )}
 
       <div
-        className={`grid transition-[grid-template-rows] duration-100 ease-out ${open ? "mt-3 grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+        className={`grid transition-[grid-template-rows] duration-200 ease-out ${open ? "mt-3 grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
           <form action={action} method="get" className="rounded-xl border border-ink/15 bg-paper p-5 shadow-[0_2px_8px_rgba(26,22,17,0.05)]">

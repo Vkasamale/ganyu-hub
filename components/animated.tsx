@@ -24,7 +24,7 @@ export function StaggerList({
           key={(isValidElement(child) && (child as any).key) || i}
           variants={{
             hidden: { opacity: 0, y: 12 },
-            show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+            show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.2, 0.8, 0.2, 1] } },
           }}
         >
           {child}
@@ -84,20 +84,11 @@ export function PopScale({
 
 export function Reveal({ open, children }: { open: boolean; children: React.ReactNode }) {
   return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.div
-          key="reveal"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
-          style={{ overflow: "hidden" }}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+    >
+      <div className="overflow-hidden">{children}</div>
+    </div>
   );
 }
 

@@ -134,7 +134,7 @@ export default function Home() {
       style={{
         backgroundColor: t.bg,
         color: t.text,
-        transition: "background-color 500ms ease-in-out, color 500ms ease-in-out",
+        transition: "background-color 250ms ease-out, color 250ms ease-out",
       }}
     >
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[1.6fr_1fr] md:gap-12 md:px-8 md:py-8">
@@ -144,7 +144,7 @@ export default function Home() {
               key={mode}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } }}
-              exit={{ opacity: 0, y: 4, transition: { duration: 0.2, ease: "easeIn" } }}
+              exit={{ opacity: 0, y: 4, transition: { duration: 0.2, ease: "easeOut" } }}
               className="mt-4"
             >
               <span
@@ -153,14 +153,14 @@ export default function Home() {
                   borderColor: t.badgeBorder,
                   backgroundColor: t.badgeBg,
                   color: t.badgeText,
-                  transition: "background-color 500ms ease-in-out, border-color 500ms ease-in-out, color 500ms ease-in-out",
+                  transition: "background-color 250ms ease-out, border-color 250ms ease-out, color 250ms ease-out",
                 }}
               >
                 {c.badge}
               </span>
 
               <h1 className="mt-3 text-4xl font-semibold leading-[0.95] tracking-tight md:text-5xl lg:text-6xl">
-                <span className="block" style={{ color: t.text, transition: "color 500ms ease-in-out" }}>
+                <span className="block" style={{ color: t.text, transition: "color 250ms ease-out" }}>
                   {c.line1}
                 </span>
                 <em
@@ -168,7 +168,7 @@ export default function Home() {
                   style={{
                     fontStyle: "italic",
                     color: t.accent,
-                    transition: "color 500ms ease-in-out, letter-spacing 300ms ease-out, transform 300ms ease-out",
+                    transition: "color 250ms ease-out, letter-spacing 250ms ease-out, transform 250ms ease-out",
                   }}
                 >
                   {c.line2}
@@ -177,7 +177,7 @@ export default function Home() {
 
               <p
                 className="mt-3 max-w-xl text-sm leading-relaxed md:text-base"
-                style={{ color: t.textMuted, transition: "color 500ms ease-in-out" }}
+                style={{ color: t.textMuted, transition: "color 250ms ease-out" }}
               >
                 {c.sub}
               </p>
@@ -194,7 +194,7 @@ export default function Home() {
                   style={{
                     backgroundColor: t.primaryBg,
                     color: t.primaryText,
-                    transition: "background-color 500ms ease-in-out, color 500ms ease-in-out",
+                    transition: "background-color 250ms ease-out, color 250ms ease-out",
                   }}
                 >
                   {c.primaryLabel}
@@ -206,7 +206,7 @@ export default function Home() {
                   style={{
                     borderColor: t.secondaryBorder,
                     color: t.secondaryText,
-                    transition: "border-color 500ms ease-in-out, color 500ms ease-in-out",
+                    transition: "border-color 250ms ease-out, color 250ms ease-out",
                   }}
                 >
                   {c.secondaryLabel}
@@ -219,7 +219,7 @@ export default function Home() {
         <div className="md:pt-6">
           <p
             className="text-xs font-medium uppercase tracking-[0.22em]"
-            style={{ color: t.textMuted, transition: "color 500ms ease-in-out" }}
+            style={{ color: t.textMuted, transition: "color 250ms ease-out" }}
           >
             <AnimatePresence mode="wait">
               <motion.span
@@ -248,7 +248,7 @@ export default function Home() {
       <div className="mx-auto max-w-7xl px-4 pb-4 md:px-8">
         <p
           className="text-xs font-medium uppercase tracking-[0.32em]"
-          style={{ color: t.cityText, transition: "color 500ms ease-in-out" }}
+          style={{ color: t.cityText, transition: "color 250ms ease-out" }}
         >
           Blantyre · Lilongwe · Mzuzu
         </p>
@@ -263,7 +263,7 @@ function ModeToggle({ mode, setMode, t }: { mode: Mode; setMode: (m: Mode) => vo
       className="inline-flex items-center gap-1 rounded-full p-1"
       style={{
         backgroundColor: t.tabBarBg,
-        transition: "background-color 500ms ease-in-out",
+        transition: "background-color 250ms ease-out",
       }}
       role="tablist"
     >
@@ -290,7 +290,7 @@ function TabPill({
       style={{
         backgroundColor: active ? t.primaryBg : "transparent",
         color: active ? t.primaryText : t.text,
-        transition: "background-color 500ms ease-in-out, color 500ms ease-in-out",
+        transition: "background-color 250ms ease-out, color 250ms ease-out",
       }}
     >
       {icon}
@@ -318,7 +318,7 @@ function SearchBar({ t, c }: { t: typeof THEME[Mode]; c: typeof CONTENT[Mode] })
         style={{
           borderColor: t.searchBorder,
           backgroundColor: t.searchBg,
-          transition: "border-color 500ms ease-in-out, background-color 500ms ease-in-out",
+          transition: "border-color 250ms ease-out, background-color 250ms ease-out",
         }}
       >
         <input
@@ -328,7 +328,7 @@ function SearchBar({ t, c }: { t: typeof THEME[Mode]; c: typeof CONTENT[Mode] })
           placeholder={c.placeholder}
           aria-label="Search"
           className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm focus:outline-none md:text-base"
-          style={{ color: t.searchText, transition: "color 500ms ease-in-out" }}
+          style={{ color: t.searchText, transition: "color 250ms ease-out" }}
         />
         <button
           type="submit"
@@ -336,7 +336,7 @@ function SearchBar({ t, c }: { t: typeof THEME[Mode]; c: typeof CONTENT[Mode] })
           style={{
             backgroundColor: t.primaryBg,
             color: t.primaryText,
-            transition: "background-color 500ms ease-in-out, color 500ms ease-in-out",
+            transition: "background-color 250ms ease-out, color 250ms ease-out",
           }}
           aria-label="Search"
         >
@@ -359,7 +359,7 @@ function CategoryLink({ href, t, children }: { href: string; t: typeof THEME[Mod
       style={{
         color: hover ? t.catLinkHover : t.catLinkText,
         borderColor: t.secondaryBorder,
-        transition: "color 250ms ease-out, border-color 500ms ease-in-out",
+        transition: "color 250ms ease-out, border-color 250ms ease-out",
       }}
     >
       <span>{children}</span>
