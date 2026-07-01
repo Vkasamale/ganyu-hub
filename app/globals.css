@@ -33,16 +33,16 @@ html, body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(var(--fade-y, 16px)); }
-  to   { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
-.anim-fade-up { animation: fadeUp 0.5s ease-out both; --fade-y: 10px; }
-.anim-fade-up-1 { animation: fadeUp 0.6s ease-out 0.10s both; }
-.anim-fade-up-2 { animation: fadeUp 0.6s ease-out 0.20s both; }
-.anim-fade-up-3 { animation: fadeUp 0.6s ease-out 0.30s both; }
-.anim-fade-up-5 { animation: fadeUp 0.8s ease-out 0.50s both; --fade-y: 30px; }
-.anim-fade-up-6 { animation: fadeUp 0.6s ease-out 0.90s both; }
 
 h1, h2, h3 {
   text-wrap: balance;
