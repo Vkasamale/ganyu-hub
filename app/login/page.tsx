@@ -27,6 +27,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <Input id="password" name="password" type="password" required />
             </div>
             <Button type="submit" className="w-full">Log in</Button>
+            <p className="text-center text-sm">
+              <Link href="/forgot-password" className="text-brand hover:underline">Forgot password?</Link>
+            </p>
             <p className="text-center text-sm text-neutral-500">
               No account? <Link href="/signup" className="text-brand hover:underline">Sign up</Link>
             </p>

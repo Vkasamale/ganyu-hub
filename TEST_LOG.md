@@ -4,7 +4,7 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-06-28
+Last updated: 2026-07-01
 
 ---
 
@@ -32,6 +32,13 @@ Last updated: 2026-06-28
 | Admin dashboard access + stats render | EQ New Client promoted via SQL, `/admin` loads with stats (5/9/6/0) + recent jobs list |
 | Scope confirmation: both sides confirm → auto-flip to `in_progress` | User confirmed end-to-end working |
 | Dispute resolution: raise → reason banner → admin resolves | User confirmed end-to-end working |
+| `/reset-password` renders form + validates | Confirmed via Playwright (`tests/e2e/password-recovery.spec.ts`) — page loads, mismatched-password shows inline error |
+| Empty states on `/browse` and `/jobs` | Confirmed via Playwright (`tests/e2e/empty-states-and-errors.spec.ts`) — zero-result query shows `EmptyState` + "Clear filters" CTA on both |
+| Custom 404 page | Confirmed via Playwright — `/this-does-not-exist` renders "Nothing here." + "Back to home" |
+| Signup with already-used email shows error banner | Confirmed via Playwright — redirects to `/signup?error=...`, no silent success |
+| Creative availability selector persists after reload | Confirmed via Playwright — `/dashboard/profile` select round-trips through `updateAvailability` + reload |
+| Creative onboarding submit (profile + portfolio + service in one shot) | Confirmed incidentally via Playwright — `ensureOnboarded` helper completes the form and lands back on `/dashboard` |
+| Dashboard "Profile insights" section (creative) | Confirmed via Playwright — 4 KPI cards (Views/Saves/Proposals sent/Save rate) + chart render |
 
 ## ⚠️ Tested, known issue (tracked in BACKLOG)
 
@@ -41,6 +48,7 @@ Last updated: 2026-06-28
 | Email delivery to anyone other than `vinnykasa@gmail.com` | Resend sandbox only delivers to account owner until `ganyu.com` domain verifies | "Verify ganyu.com in Resend" |
 | Email: proposal accepted (creative side) | Not received — same domain issue | Same as above |
 | Email: job completed (either side) | Not received — same domain issue | Same as above |
+| Password recovery request flow | No "Forgot password?" link exists anywhere in the app (checked `/login` and `app/actions.ts` — no `resetPasswordForEmail` call). `/reset-password` itself only works via the recovery-link callback (`app/auth/callback/route.ts`). This session only verified the page renders + validates; the request step needs to be built before it can be tested end-to-end | Not yet in BACKLOG — add "Add forgot-password link + request flow" |
 
 ## 🕒 Prompted to test, awaiting confirmation
 
@@ -56,7 +64,6 @@ Last updated: 2026-06-28
 | Custom service request from client side | Creative profile page form |
 | Custom service request notification + thread creation | Creative receives notification + lands in message thread |
 | Creative onboarding redirect (new signup) | First `/dashboard` hit auto-redirects to `/onboarding/creative` |
-| Creative onboarding submit (profile + portfolio + service in one shot) | Finish button → back to `/dashboard` |
 | Client onboarding redirect | New client signup → `/onboarding/client` |
 | Client onboarding "Post a job now" radio | If yes → lands on `/jobs/new` after finishing |
 | Admin: resolve dispute as completed/cancelled | Triggers notification + email to both parties |
@@ -70,6 +77,7 @@ Last updated: 2026-06-28
 
 | Feature | Notes |
 |---|---|
+| Proposal limit — "job full" card at cap | Skipped this session: default cap is 10 proposals/job (see `app/jobs/[id]/page.tsx` `proposalLimit`); seeding 10 proposals from 10 distinct creatives just to hit the cap is heavier scaffolding than the "keep specs minimal" constraint allows. Revisit if a lower per-job cap becomes easy to set via seed/admin. |
 | Job / creative filters (`<FiltersBar>`) | Category, skills, price range, sort — also in BACKLOG |
 | Search (`?q=`) on `/browse` and `/jobs` | Title + brief ILIKE — never hands-on tested since shipping |
 | For You / Trending feed correctness | Categories match, view counts populate correctly |
