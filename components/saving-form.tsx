@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 type Result = { ok?: boolean; error?: string } | null | void;
@@ -28,10 +29,14 @@ export function SavingForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state && (state as any).ok && resetOnSuccess && formRef.current) {
-      formRef.current.reset();
+    const s = state as { ok?: boolean; error?: string } | null;
+    if (s?.ok) {
+      toast.success(successText);
+      if (resetOnSuccess && formRef.current) formRef.current.reset();
+    } else if (s?.error) {
+      toast.error(s.error);
     }
-  }, [state, resetOnSuccess]);
+  }, [state, resetOnSuccess, successText]);
 
   const s = state as { ok?: boolean; error?: string } | null;
 
@@ -60,7 +65,15 @@ export function SubmitButton({
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} {...rest}>
-      {pending ? pendingText : children}
+      <span className="inline-flex items-center gap-2">
+        {pending && (
+          <span
+            className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+            aria-hidden
+          />
+        )}
+        {pending ? pendingText : children}
+      </span>
     </Button>
   );
 }

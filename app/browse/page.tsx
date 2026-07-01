@@ -3,6 +3,7 @@ import { CreativeCard } from "@/components/creative-card";
 import { FiltersBar } from "@/components/filters-bar";
 import { getSavedIds } from "@/lib/feed";
 import { checkProfileComplete } from "@/lib/profile-complete";
+import { StaggerList } from "@/components/animated";
 
 function toArray(v: string | string[] | undefined): string[] {
   if (!v) return [];
@@ -71,7 +72,7 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
       <div className="mt-6">
         <FiltersBar kind="creatives" action="/browse" q={searchParams.q} categories={cats} skills={searchParams.skills} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
       </div>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <StaggerList className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {visibleProfiles.map((p) => (
           <CreativeCard
             key={p.id}
@@ -81,8 +82,8 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
             fromPriceMwk={fromPrice.get(p.id) ?? null}
           />
         ))}
-        {visibleCount === 0 && <p className="col-span-full text-neutral-500">No creatives match these filters.</p>}
-      </div>
+      </StaggerList>
+      {visibleCount === 0 && <p className="mt-8 text-neutral-500">No creatives match these filters.</p>}
     </div>
   );
 }

@@ -217,6 +217,29 @@ async function main() {
   if (svcErr) throw svcErr;
   console.log(`  done (${serviceRows.length})`);
 
+  console.log("Creating portfolio items…");
+  const PORTFOLIO_BY_CAT = {
+    Design: ["Rebrand for Mzuzu coffee co-op","Packaging for FMCG snack line","Identity for fintech pilot","Poster series for arts festival","Pitch deck for development partner"],
+    Development: ["Next.js dashboard for microfinance team","WordPress site for maternal-health NGO","Shopify build for Blantyre boutique","React Native screens for savings app","Landing page for logistics SaaS"],
+    Photography: ["Wedding gallery — Lilongwe","Product shoot for online retailer","NGO field-story portraits","Restaurant menu photography","Graduation ceremony coverage"],
+    Writing: ["Annual report copy for NGO","Three-part blog series on agri-tech","Press release for Series A round","Web copy for fintech relaunch","Case studies for health programme"],
+    Marketing: ["Meta Ads campaign — school intake","Monthly social calendar for SME","Content strategy for NGO relaunch","Paid media for restaurant opening","Analytics setup for retailer"],
+  };
+  const portfolioRows = [];
+  for (const cr of creatives) {
+    const titles = sample(PORTFOLIO_BY_CAT[cr.category], int(2, 3));
+    for (const title of titles) {
+      portfolioRows.push({
+        profile_id: cr.id,
+        title,
+        description: `Past project: ${title.toLowerCase()}. Delivered end-to-end with client revisions.`,
+      });
+    }
+  }
+  const { error: pfErr } = await sb.from("portfolio_items").insert(portfolioRows);
+  if (pfErr) throw pfErr;
+  console.log(`  done (${portfolioRows.length})`);
+
   console.log("Creating 10 client profiles…");
   const clients = [];
   for (let i = 0; i < 10; i++) {

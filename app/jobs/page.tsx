@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { JobCard } from "@/components/job-card";
 import { FiltersBar } from "@/components/filters-bar";
+import { StaggerList } from "@/components/animated";
 import { getSavedIds } from "@/lib/feed";
 import Link from "next/link";
 
@@ -58,7 +59,7 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
       <div className="mt-6">
         <FiltersBar kind="jobs" action="/jobs" q={searchParams.q} categories={cats} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
       </div>
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
+      <StaggerList className="mt-8 grid gap-5 md:grid-cols-2">
         {(jobs || []).map((j) => (
           <JobCard
             key={j.id}
@@ -69,8 +70,8 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
             clientName={clientName.get(j.client_id) || null}
           />
         ))}
-        {count === 0 && <p className="text-neutral-500">No jobs match these filters.</p>}
-      </div>
+      </StaggerList>
+      {count === 0 && <p className="mt-8 text-neutral-500">No jobs match these filters.</p>}
     </div>
   );
 }

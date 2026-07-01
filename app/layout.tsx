@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { Toaster } from "sonner";
 import { Navbar } from "@/components/navbar";
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-white font-sans text-ink">
         <Navbar />
         <main>{children}</main>
+        <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
   );

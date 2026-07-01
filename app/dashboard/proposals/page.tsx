@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { PeriodBarChart, TwoSeriesBarChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
 type Tab = "sent" | "received";
@@ -70,13 +71,20 @@ export default async function ProposalsPage({ searchParams: searchParamsP }: { s
 
   const activeRows = (tab === "sent" ? sent : received) || [];
   const buckets = weeklyBuckets(activeRows as any, 8);
-  const max = Math.max(1, ...buckets.map((b) => b.count));
   const statusCounts = countByStatus(activeRows as any);
   const totalThisPeriod = buckets.reduce((s, b) => s + b.count, 0);
 
   const sentBuckets = weeklyBuckets((sent as any) || [], 8);
   const receivedBuckets = weeklyBuckets((received as any) || [], 8);
-  const compareMax = Math.max(1, ...sentBuckets.map((b) => b.count), ...receivedBuckets.map((b) => b.count));
+
+  const fmtWeek = (ts: number) =>
+    new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const activityData = buckets.map((b) => ({ label: fmtWeek(b.ts), value: b.count }));
+  const compareData = sentBuckets.map((sb, i) => ({
+    label: fmtWeek(sb.ts),
+    sent: sb.count,
+    received: receivedBuckets[i]?.count || 0,
+  }));
 
   return (
     <div className="space-y-6">
@@ -102,31 +110,7 @@ export default async function ProposalsPage({ searchParams: searchParamsP }: { s
         </div>
 
         <div className="mt-5">
-          <div className="flex h-32 items-end gap-1.5">
-            {buckets.map((b, i) => {
-              const h = (b.count / max) * 100;
-              const isLast = i === buckets.length - 1;
-              return (
-                <div key={b.ts} className="group relative flex flex-1 flex-col items-center justify-end">
-                  <span className="absolute -top-6 text-[10px] font-medium text-ink/0 transition-colors group-hover:text-ink/80">
-                    {b.count}
-                  </span>
-                  <div
-                    className={
-                      isLast
-                        ? "w-full rounded-t-sm bg-stamp transition-colors"
-                        : "w-full rounded-t-sm bg-ink/15 transition-colors group-hover:bg-stamp/70"
-                    }
-                    style={{ height: `${Math.max(h, b.count > 0 ? 6 : 2)}%`, minHeight: 2 }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-ink/45">
-            <span>{new Date(buckets[0].ts).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
-            <span>This week</span>
-          </div>
+          <PeriodBarChart data={activityData} format="count" highlightLast seriesLabel="Proposals" height={160} />
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2 sm:hidden">
@@ -152,30 +136,15 @@ export default async function ProposalsPage({ searchParams: searchParamsP }: { s
           </div>
         </div>
 
-        <div className="mt-5 flex h-32 items-end gap-2">
-          {sentBuckets.map((sb, i) => {
-            const rb = receivedBuckets[i];
-            const sh = (sb.count / compareMax) * 100;
-            const rh = (rb.count / compareMax) * 100;
-            return (
-              <div key={sb.ts} className="group relative flex flex-1 items-end justify-center gap-0.5">
-                <div
-                  className="w-1/2 rounded-t-sm bg-stamp/85 transition-colors group-hover:bg-stamp"
-                  style={{ height: `${Math.max(sh, sb.count > 0 ? 6 : 2)}%`, minHeight: 2 }}
-                  title={`Sent: ${sb.count}`}
-                />
-                <div
-                  className="w-1/2 rounded-t-sm bg-ink/70 transition-colors group-hover:bg-ink"
-                  style={{ height: `${Math.max(rh, rb.count > 0 ? 6 : 2)}%`, minHeight: 2 }}
-                  title={`Received: ${rb.count}`}
-                />
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-ink/45">
-          <span>{new Date(sentBuckets[0].ts).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
-          <span>This week</span>
+        <div className="mt-5">
+          <TwoSeriesBarChart
+            data={compareData}
+            aKey="sent"
+            bKey="received"
+            aLabel="Sent"
+            bLabel="Received"
+            height={160}
+          />
         </div>
       </section>
 

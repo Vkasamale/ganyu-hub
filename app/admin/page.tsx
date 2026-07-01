@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { adminResolveDispute, adminHideJob } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+import { SignupsLineChart, JobStatusBarChart, JobCategoryBarChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
 export default async function AdminPage() {
@@ -12,7 +13,20 @@ export default async function AdminPage() {
   const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
   if (!me?.is_admin) notFound();
 
-  const [{ data: disputed }, { data: recentJobs }, { data: recentUsers }, { count: userCount }, { count: jobCount }, { count: openCount }] = await Promise.all([
+  const sinceDays = 30;
+  const sinceIso = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    { data: disputed },
+    { data: recentJobs },
+    { data: recentUsers },
+    { count: userCount },
+    { count: jobCount },
+    { count: openCount },
+    { data: signupSeries },
+    { data: jobStatusRows },
+    { data: jobCategoryRows },
+  ] = await Promise.all([
     supabase.from("jobs")
       .select("id, title, status, client_id, hidden_at, created_at, dispute_reason, dispute_raised_at, profiles:profiles!jobs_client_id_fkey(full_name)")
       .eq("status", "disputed")
@@ -28,7 +42,14 @@ export default async function AdminPage() {
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("jobs").select("*", { count: "exact", head: true }),
     supabase.from("jobs").select("*", { count: "exact", head: true }).eq("status", "open"),
+    supabase.from("profiles").select("created_at, role").gte("created_at", sinceIso),
+    supabase.from("jobs").select("status, profiles:profiles!jobs_client_id_fkey(role)"),
+    supabase.from("jobs").select("category, profiles:profiles!jobs_client_id_fkey(role)"),
   ]);
+
+  const signupsByDay = bucketByDayByRole(signupSeries || [], sinceDays);
+  const jobStatusCounts = splitByRole(jobStatusRows || [], "status");
+  const jobCategoryCounts = splitByRole(jobCategoryRows || [], "category");
 
   return (
     <div className="space-y-8">
@@ -43,6 +64,33 @@ export default async function AdminPage() {
         <Stat label="Jobs" value={jobCount || 0} />
         <Stat label="Open jobs" value={openCount || 0} />
         <Stat label="Disputed" value={disputed?.length || 0} highlight={(disputed?.length || 0) > 0} />
+      </div>
+
+      <section className="card-soft p-6">
+        <div className="flex items-baseline justify-between">
+          <p className="eyebrow">Signups · last {sinceDays} days</p>
+          <span className="text-xs text-ink/55">
+            {signupsByDay.reduce((s, d) => s + d.clients + d.creatives, 0)} new
+          </span>
+        </div>
+        <div className="mt-4">
+          <SignupsLineChart data={signupsByDay} />
+        </div>
+      </section>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <section className="card-soft p-6">
+          <p className="eyebrow">Jobs by status</p>
+          <div className="mt-4">
+            <JobStatusBarChart data={jobStatusCounts} />
+          </div>
+        </section>
+        <section className="card-soft p-6">
+          <p className="eyebrow">Jobs by category</p>
+          <div className="mt-4">
+            <JobCategoryBarChart data={jobCategoryCounts} />
+          </div>
+        </section>
       </div>
 
       <section className="card-soft p-6">
@@ -141,4 +189,43 @@ function Stat({ label, value, highlight }: { label: string; value: number; highl
       <p className={`mt-1 font-display text-2xl font-semibold ${highlight ? "text-stamp" : "text-ink"}`}>{value}</p>
     </div>
   );
+}
+
+type DayBucket = { day: string; clients: number; creatives: number };
+
+function bucketByDayByRole(rows: { created_at: string; role: string }[], days: number): DayBucket[] {
+  const buckets = new Map<string, { clients: number; creatives: number }>();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    buckets.set(d.toISOString().slice(0, 10), { clients: 0, creatives: 0 });
+  }
+  for (const r of rows) {
+    const key = (r.created_at || "").slice(0, 10);
+    const b = buckets.get(key);
+    if (!b) continue;
+    if (r.role === "client") b.clients += 1;
+    else if (r.role === "creative" || r.role === "agency") b.creatives += 1;
+  }
+  return Array.from(buckets.entries()).map(([day, v]) => ({ day, ...v }));
+}
+
+function splitByRole<T extends Record<string, any>>(
+  rows: T[],
+  key: keyof T,
+): { label: string; clients: number; creatives: number }[] {
+  const m = new Map<string, { clients: number; creatives: number }>();
+  for (const r of rows) {
+    const label = ((r[key] ?? "unspecified") as string) || "unspecified";
+    if (!m.has(label)) m.set(label, { clients: 0, creatives: 0 });
+    const bucket = m.get(label)!;
+    const role = (r as any).profiles?.role;
+    if (role === "creative" || role === "agency") bucket.creatives += 1;
+    else bucket.clients += 1;
+  }
+  return Array.from(m.entries())
+    .map(([label, v]) => ({ label, ...v }))
+    .sort((a, b) => b.clients + b.creatives - (a.clients + a.creatives));
 }

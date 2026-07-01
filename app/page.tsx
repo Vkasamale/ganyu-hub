@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -50,23 +50,23 @@ const THEME: Record<Mode, {
     cityText: "hsla(0, 14%, 17%, 0.65)",
   },
   creative: {
-    bg: "hsl(0, 14%, 14%)",
+    bg: "#000000",
     text: "hsl(43, 33%, 94%)",
     textMuted: "hsla(43, 33%, 94%, 0.70)",
-    accent: "hsl(35, 85%, 62%)",
+    accent: "hsl(0, 78%, 62%)",
     badgeBorder: "rgba(255,255,255,0.15)",
     badgeBg: "rgba(255,255,255,0.05)",
     badgeText: "hsl(43, 33%, 94%)",
-    primaryBg: "hsl(35, 85%, 62%)",
-    primaryText: "hsl(0, 14%, 14%)",
+    primaryBg: "hsl(43, 33%, 94%)",
+    primaryText: "#000000",
     secondaryBorder: "rgba(255,255,255,0.20)",
     secondaryText: "hsl(43, 33%, 94%)",
-    searchBorder: "hsla(35, 85%, 62%, 0.40)",
+    searchBorder: "hsla(43, 33%, 94%, 0.30)",
     searchBg: "rgba(255,255,255,0.05)",
     searchText: "hsl(43, 33%, 94%)",
     tabBarBg: "rgba(255,255,255,0.06)",
     catLinkText: "hsl(43, 33%, 94%)",
-    catLinkHover: "hsl(35, 85%, 62%)",
+    catLinkHover: "hsl(0, 78%, 62%)",
     cityText: "hsla(43, 33%, 94%, 0.50)",
   },
 };
@@ -120,6 +120,14 @@ export default function Home() {
   const t = THEME[mode];
   const c = CONTENT[mode];
 
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? (localStorage.getItem("ganyu_mode") as Mode | null) : null;
+    if (saved === "client" || saved === "creative") setMode(saved);
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("ganyu_mode", mode);
+  }, [mode]);
+
   return (
     <section
       className="relative w-full overflow-hidden"
@@ -129,7 +137,7 @@ export default function Home() {
         transition: "background-color 500ms ease-in-out, color 500ms ease-in-out",
       }}
     >
-      <div className="mx-auto grid max-w-7xl gap-12 px-4 py-14 md:grid-cols-[1.6fr_1fr] md:gap-16 md:px-8 md:py-20">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[1.6fr_1fr] md:gap-12 md:px-8 md:py-8">
         <div>
           <ModeToggle mode={mode} setMode={setMode} t={t} />
 
@@ -139,10 +147,10 @@ export default function Home() {
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } }}
               exit={{ opacity: 0, y: 4, transition: { duration: 0.2, ease: "easeIn" } }}
-              className="mt-7"
+              className="mt-4"
             >
               <span
-                className="inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-medium"
+                className="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-medium"
                 style={{
                   borderColor: t.badgeBorder,
                   backgroundColor: t.badgeBg,
@@ -153,16 +161,16 @@ export default function Home() {
                 {c.badge}
               </span>
 
-              <h1 className="mt-5 text-5xl font-semibold leading-[0.95] tracking-tight md:text-7xl lg:text-[5.5rem]">
+              <h1 className="mt-3 text-4xl font-semibold leading-[0.95] tracking-tight md:text-5xl lg:text-6xl">
                 <span className="block" style={{ color: t.text, transition: "color 500ms ease-in-out" }}>
                   {c.line1}
                 </span>
                 <em
-                  className="mt-1 block md:mt-2"
+                  className="mt-1 block cursor-default transition-[letter-spacing,transform] duration-300 ease-out hover:tracking-wide hover:-translate-y-0.5"
                   style={{
                     fontStyle: "italic",
                     color: t.accent,
-                    transition: "color 500ms ease-in-out",
+                    transition: "color 500ms ease-in-out, letter-spacing 300ms ease-out, transform 300ms ease-out",
                   }}
                 >
                   {c.line2}
@@ -170,17 +178,17 @@ export default function Home() {
               </h1>
 
               <p
-                className="mt-5 max-w-xl text-base leading-relaxed md:text-lg"
+                className="mt-3 max-w-xl text-sm leading-relaxed md:text-base"
                 style={{ color: t.textMuted, transition: "color 500ms ease-in-out" }}
               >
                 {c.sub}
               </p>
 
-              <div className="mt-7 max-w-[640px]">
+              <div className="mt-4 max-w-[640px]">
                 <SearchBar mode={mode} t={t} c={c} />
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Link
                   href={c.primaryHref}
                   className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium"
@@ -209,7 +217,7 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
-        <div className="md:pt-12">
+        <div className="md:pt-6">
           <p
             className="text-xs font-medium uppercase tracking-[0.22em]"
             style={{ color: t.textMuted, transition: "color 500ms ease-in-out" }}
@@ -226,8 +234,8 @@ export default function Home() {
               </motion.span>
             </AnimatePresence>
           </p>
-          <ul className="mt-4 space-y-0">
-            {CATEGORIES.slice(0, 8).map((cat) => (
+          <ul className="mt-2 space-y-0">
+            {CATEGORIES.map((cat) => (
               <li key={cat}>
                 <CategoryLink href={`${c.catHrefPrefix}${encodeURIComponent(cat)}`} t={t}>
                   {cat}
@@ -238,7 +246,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 pb-10 md:px-8">
+      <div className="mx-auto max-w-7xl px-4 pb-4 md:px-8">
         <p
           className="text-xs font-medium uppercase tracking-[0.32em]"
           style={{ color: t.cityText, transition: "color 500ms ease-in-out" }}
@@ -386,7 +394,7 @@ function CategoryLink({ href, t, children }: { href: string; t: typeof THEME[Mod
       href={href}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="group flex items-center justify-between gap-3 border-b py-3 text-lg font-medium md:text-xl"
+      className="group flex items-center justify-between gap-3 border-b py-2 text-base font-medium md:text-lg"
       style={{
         color: hover ? t.catLinkHover : t.catLinkText,
         borderColor: t.secondaryBorder,

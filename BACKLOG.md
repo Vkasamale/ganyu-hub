@@ -30,4 +30,8 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Landing hero proof row.** Removed 2026-06-29 — placeholder stats ("5 categories live", "K — local currency", "48h median time to first proposal") were aspirational, not real. Bring back once we have actual numbers worth quoting: real category count from `CATEGORIES.length`, real median-time-to-first-proposal from `proposals.created_at - jobs.created_at`, and either a "creatives live" count or a recognisable client logo strip if/when we have one.
 
+## Search & Filters — followup
+
+- **Filter pill highlight doesn't update on click.** `/browse` and `/jobs` category multi-select: clicking a category in the dropdown does not visually mark it as selected immediately. The selected state only renders after "Apply filters" is pressed — so you filter blind. Also: after "Clear all", re-opening the dropdown still shows the previous selections checked — clear isn't detaching the local UI state from prior committed state. Fix: make the dropdown drive off a local `useState` mirror of the committed filters, update it synchronously on click, and reset it from props when committed filters change (including clear-all). Filters themselves work end-to-end — purely a selected-state UX bug in `<FiltersBar>`.
+
 ## To add as we find them

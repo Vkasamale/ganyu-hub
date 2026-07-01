@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { Reveal } from "@/components/animated";
 import { raiseDispute } from "@/app/actions";
 
 const DISPUTABLE = new Set(["scope_pending", "in_progress", "submitted", "revision_requested"]);
@@ -19,11 +20,12 @@ export function DisputePanel({ jobId, status }: { jobId: string; status: string 
         <p className="mt-1 text-sm text-neutral-600">
           Flag a dispute and an admin will step in. Both sides and the admin team are notified.
         </p>
-        {!open ? (
+        {!open && (
           <div className="mt-3">
             <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Flag a dispute</Button>
           </div>
-        ) : (
+        )}
+        <Reveal open={open}>
           <SavingForm action={raiseDispute} successText="Dispute raised. An admin will review." className="mt-4">
             <input type="hidden" name="job_id" value={jobId} />
             <label className="block text-sm font-medium">What happened?</label>
@@ -40,7 +42,7 @@ export function DisputePanel({ jobId, status }: { jobId: string; status: string 
               <Button size="sm" variant="outline" type="button" onClick={() => setOpen(false)}>Cancel</Button>
             </div>
           </SavingForm>
-        )}
+        </Reveal>
       </CardContent>
     </Card>
   );

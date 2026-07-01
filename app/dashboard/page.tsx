@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
+import { CountUp } from "@/components/animated";
 import { formatMwk } from "@/lib/utils";
 
 type Role = "client" | "creative" | "agency";
@@ -117,17 +119,55 @@ export default async function DashboardPage() {
       </header>
 
       <section className="grid grid-cols-2 gap-5 md:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="card-soft p-6">
-            <p className="text-xs uppercase tracking-wider text-ink/55">{s.label}</p>
-            <p className={`mt-2 font-display text-2xl text-ink ${s.mono ? "tabular-nums" : ""}`}>{s.value}</p>
-          </div>
-        ))}
+        {stats.map((s) => {
+          const n = parseInt(String(s.value).replace(/[^\d]/g, ""), 10);
+          const canCount = !isNaN(n) && n > 0;
+          return (
+            <div key={s.label} className="card-soft p-6">
+              <p className="text-xs uppercase tracking-wider text-ink/55">{s.label}</p>
+              <p className={`mt-2 font-display text-2xl text-ink ${s.mono ? "tabular-nums" : ""}`}>
+                {canCount ? <CountUp value={n} format={s.mono ? "mwk" : "number"} /> : s.value}
+              </p>
+            </div>
+          );
+        })}
       </section>
 
       <section className="grid gap-5 md:grid-cols-[1.5fr_1fr]">
-        <BarChart title={isClient ? "Spend, last 6 months" : "Earned, last 6 months"} months={months} />
-        <DonutChart title={isClient ? "Escrow status" : "Proposal outcomes"} donut={donut} />
+        <div className="card-soft p-7">
+          <div className="flex items-baseline justify-between">
+            <p className="font-display text-lg">{isClient ? "Spend, last 6 months" : "Earned, last 6 months"}</p>
+            <p className="font-mono text-sm tabular-nums text-ink/70">
+              {months.reduce((s, m) => s + m.value, 0) ? `MWK ${months.reduce((s, m) => s + m.value, 0).toLocaleString()}` : "—"}
+            </p>
+          </div>
+          <div className="mt-4">
+            <PeriodBarChart data={months} format="mwk" />
+          </div>
+        </div>
+        <div className="card-soft p-7">
+          <p className="font-display text-lg">{isClient ? "Escrow status" : "Proposal outcomes"}</p>
+          <div className="mt-4 flex items-center gap-5">
+            <div className="h-40 w-40 shrink-0">
+              <OutcomeDonutChart
+                data={donut.slices.map((s) => ({ label: s.label, value: s.value, color: s.color }))}
+                centerValue={donut.center}
+                centerLabel={donut.centerLabel}
+              />
+            </div>
+            <ul className="flex-1 space-y-1.5 text-xs">
+              {donut.slices.map((s) => (
+                <li key={s.label} className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
+                    <span className="text-ink/75">{s.label}</span>
+                  </span>
+                  <span className="tabular-nums text-ink">{s.value}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
       <section className="card-soft overflow-hidden">
@@ -172,83 +212,6 @@ export default async function DashboardPage() {
           </table>
         )}
       </section>
-    </div>
-  );
-}
-
-function BarChart({ title, months }: { title: string; months: { label: string; value: number }[] }) {
-  const max = Math.max(...months.map((m) => m.value), 1);
-  const total = months.reduce((s, m) => s + m.value, 0);
-  return (
-    <div className="card-soft p-7">
-      <div className="flex items-baseline justify-between">
-        <p className="font-display text-lg">{title}</p>
-        <p className="font-mono text-sm tabular-nums text-ink/70">{total ? `MWK ${total.toLocaleString()}` : "—"}</p>
-      </div>
-      <svg viewBox="0 0 320 140" className="mt-4 h-32 w-full">
-        <line x1="0" y1="120" x2="320" y2="120" stroke="#1A1611" strokeOpacity="0.15" strokeWidth="1" />
-        {months.map((m, i) => {
-          const x = 12 + i * 52;
-          const h = max > 0 ? (m.value / max) * 96 : 0;
-          return (
-            <g key={i}>
-              <rect x={x} y={120 - h} width="32" height={h} fill="#B6332A" rx="2" />
-              <text x={x + 16} y="135" fontSize="10" textAnchor="middle" fill="#1A1611" opacity="0.55" fontFamily="var(--font-plex-mono), monospace">
-                {m.label}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-function DonutChart({
-  title,
-  donut,
-}: {
-  title: string;
-  donut: { center: string; centerLabel: string; slices: { label: string; value: number; color: string }[] };
-}) {
-  const total = donut.slices.reduce((s, x) => s + x.value, 0) || 1;
-  const R = 50;
-  const C = 2 * Math.PI * R;
-  let offset = 0;
-  return (
-    <div className="card-soft p-7">
-      <p className="font-display text-lg">{title}</p>
-      <div className="mt-4 flex items-center gap-5">
-        <svg viewBox="0 0 130 130" className="h-32 w-32 shrink-0">
-          <circle cx="65" cy="65" r={R} fill="none" stroke="#1A1611" strokeOpacity="0.08" strokeWidth="14" />
-          {donut.slices.map((s, i) => {
-            const len = total > 0 ? (s.value / total) * C : 0;
-            const dasharray = `${len} ${C - len}`;
-            const dashoffset = -offset;
-            offset += len;
-            return (
-              <circle key={i} cx="65" cy="65" r={R} fill="none" stroke={s.color} strokeWidth="14" strokeDasharray={dasharray} strokeDashoffset={dashoffset} transform="rotate(-90 65 65)" />
-            );
-          })}
-          <text x="65" y="62" textAnchor="middle" fill="#1A1611" fontSize="22" fontFamily="var(--font-fraunces), Georgia, serif">
-            {donut.center}
-          </text>
-          <text x="65" y="78" textAnchor="middle" fill="#1A1611" opacity="0.6" fontSize="9" fontFamily="var(--font-plex-mono), monospace" letterSpacing="1">
-            {donut.centerLabel.toUpperCase()}
-          </text>
-        </svg>
-        <ul className="flex-1 space-y-1.5 text-xs">
-          {donut.slices.map((s) => (
-            <li key={s.label} className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2">
-                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
-                <span className="text-ink/75">{s.label}</span>
-              </span>
-              <span className="tabular-nums text-ink">{s.value}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   );
 }

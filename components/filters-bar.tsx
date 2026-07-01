@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { motion, LayoutGroup } from "framer-motion";
 import { CATEGORIES } from "@/lib/types";
 
 type Kind = "creatives" | "jobs";
@@ -111,16 +112,18 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
       </div>
 
       {activeCount > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {q && <Chip label={`"${q}"`} href={removeQUrl} />}
-          {categories.map((c) => <Chip key={`c-${c}`} label={c} href={removeCategoryUrl(c)} />)}
-          {skillList.map((s) => <Chip key={`s-${s}`} label={s} href={removeSkillUrl(s)} />)}
-          {minPrice && <Chip label={`Min MK ${Number(minPrice).toLocaleString()}`} href={removeMinUrl} />}
-          {maxPrice && <Chip label={`Max MK ${Number(maxPrice).toLocaleString()}`} href={removeMaxUrl} />}
-          <Link href={action} className="text-xs font-medium text-stamp underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp">
-            Clear all
-          </Link>
-        </div>
+        <LayoutGroup id="filter-chips">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {q && <Chip id="q" label={`"${q}"`} href={removeQUrl} />}
+            {categories.map((c) => <Chip key={`c-${c}`} id={`c-${c}`} label={c} href={removeCategoryUrl(c)} />)}
+            {skillList.map((s) => <Chip key={`s-${s}`} id={`s-${s}`} label={s} href={removeSkillUrl(s)} />)}
+            {minPrice && <Chip id="min" label={`Min MK ${Number(minPrice).toLocaleString()}`} href={removeMinUrl} />}
+            {maxPrice && <Chip id="max" label={`Max MK ${Number(maxPrice).toLocaleString()}`} href={removeMaxUrl} />}
+            <Link href={action} className="text-xs font-medium text-stamp underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp">
+              Clear all
+            </Link>
+          </div>
+        </LayoutGroup>
       )}
 
       <div
@@ -220,17 +223,26 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
   );
 }
 
-function Chip({ label, href }: { label: string; href: string }) {
+function Chip({ id, label, href }: { id: string; label: string; href: string }) {
   return (
-    <Link
-      href={href}
-      className="group inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1 text-xs font-medium text-paper transition-colors hover:bg-stamp"
+    <motion.div
+      layout
+      layoutId={`chip-${id}`}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
     >
-      <span>{label}</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="h-3 w-3 opacity-70 group-hover:opacity-100">
-        <line x1="6" y1="6" x2="18" y2="18" />
-        <line x1="18" y1="6" x2="6" y2="18" />
-      </svg>
-    </Link>
+      <Link
+        href={href}
+        className="group inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1 text-xs font-medium text-paper transition-colors hover:bg-stamp"
+      >
+        <span>{label}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="h-3 w-3 opacity-70 group-hover:opacity-100">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </Link>
+    </motion.div>
   );
 }
