@@ -4,7 +4,7 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-01
+Last updated: 2026-07-01 (evening)
 
 ---
 
@@ -39,6 +39,16 @@ Last updated: 2026-07-01
 | Creative availability selector persists after reload | Confirmed via Playwright — `/dashboard/profile` select round-trips through `updateAvailability` + reload |
 | Creative onboarding submit (profile + portfolio + service in one shot) | Confirmed incidentally via Playwright — `ensureOnboarded` helper completes the form and lands back on `/dashboard` |
 | Dashboard "Profile insights" section (creative) | Confirmed via Playwright — 4 KPI cards (Views/Saves/Proposals sent/Save rate) + chart render |
+| Account → change name / phone | User confirmed: values persist after save + reload |
+| Account → change password | User confirmed: new password works on re-login |
+| Forgot-password request link | Added on `/login` → `/forgot-password` page → `supabase.auth.resetPasswordForEmail` with `redirectTo=/auth/callback?type=recovery`. End-to-end confirmed by user in-session |
+| Scope confirmation: client edits summary after creative confirms → resets creative confirmation | User confirmed |
+| Escrow: creative notified on payment state change | User confirmed |
+| Custom service request from client side + notification + thread creation | User confirmed |
+| Creative onboarding redirect + submit | User confirmed (also incidentally verified by Playwright `ensureOnboarded` helper) |
+| Client onboarding redirect + "Post a job now" radio | User confirmed |
+| Landing page: "Browse jobs" CTA, "Types of creatives" grid + Content Creation category | User confirmed |
+| User profile dropdown menu (avatar + name) + navbar responsive at narrow widths | User confirmed |
 
 ## ⚠️ Tested, known issue (tracked in BACKLOG)
 
@@ -48,30 +58,16 @@ Last updated: 2026-07-01
 | Email delivery to anyone other than `vinnykasa@gmail.com` | Resend sandbox only delivers to account owner until `ganyu.com` domain verifies | "Verify ganyu.com in Resend" |
 | Email: proposal accepted (creative side) | Not received — same domain issue | Same as above |
 | Email: job completed (either side) | Not received — same domain issue | Same as above |
-| Password recovery request flow | No "Forgot password?" link exists anywhere in the app (checked `/login` and `app/actions.ts` — no `resetPasswordForEmail` call). `/reset-password` itself only works via the recovery-link callback (`app/auth/callback/route.ts`). This session only verified the page renders + validates; the request step needs to be built before it can be tested end-to-end | Not yet in BACKLOG — add "Add forgot-password link + request flow" |
+| Account → change email | `updateAccount` correctly calls `supabase.auth.updateUser({ email })`; SavingForm now surfaces the `info` message ("Check your inbox to confirm the new email."). Email swap requires clicking Supabase confirmation link in the new (and, if secure email change is on, old) inbox — this is by design, not a bug. Full end-to-end swap not yet confirmed | Track in BACKLOG if Supabase confirmation redirect URL isn't set correctly |
 
 ## 🕒 Prompted to test, awaiting confirmation
 
 | Feature | Where to test |
 |---|---|
-| Account → change name / phone | `/dashboard/account` |
-| Account → change email + confirmation link flow | `/dashboard/account` (sends to new + old address) |
-| Account → change password | `/dashboard/account` Security card |
 | Job status: Request revision → Re-submit cycle | Job page, client + creative tabs |
-| Scope confirmation: client edits summary after creative confirms → resets creative confirmation | Job page, client side |
 | Escrow: Mark payment held / Release / Dispute | Job page Payment panel, client only |
-| Escrow: creative notification on payment state change | Should see in bell + email |
-| Custom service request from client side | Creative profile page form |
-| Custom service request notification + thread creation | Creative receives notification + lands in message thread |
-| Creative onboarding redirect (new signup) | First `/dashboard` hit auto-redirects to `/onboarding/creative` |
-| Client onboarding redirect | New client signup → `/onboarding/client` |
-| Client onboarding "Post a job now" radio | If yes → lands on `/jobs/new` after finishing |
 | Admin: resolve dispute as completed/cancelled | Triggers notification + email to both parties |
 | Admin: hide / unhide job | Hidden jobs disappear from `/jobs` listing |
-| Landing page: "Browse jobs" CTA | Hero buttons row |
-| Landing page: "Types of creatives" heading + new "Content Creation" category | Bottom category grid |
-| User profile dropdown menu (avatar + name) | Top-right of navbar |
-| Navbar responsive at narrow widths | Browse links collapse into dropdown |
 
 ## ⬜ Never tested
 

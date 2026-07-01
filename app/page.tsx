@@ -139,8 +139,6 @@ export default function Home() {
     >
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[1.6fr_1fr] md:gap-12 md:px-8 md:py-8">
         <div>
-          <ModeToggle mode={mode} setMode={setMode} t={t} />
-
           <AnimatePresence mode="wait">
             <motion.div
               key={mode}
@@ -184,8 +182,9 @@ export default function Home() {
                 {c.sub}
               </p>
 
-              <div className="mt-4 max-w-[640px]">
-                <SearchBar mode={mode} t={t} c={c} />
+              <div className="mt-4 max-w-[640px] space-y-2">
+                <ModeToggle mode={mode} setMode={setMode} t={t} />
+                <SearchBar t={t} c={c} />
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -300,41 +299,22 @@ function TabPill({
   );
 }
 
-function SearchBar({ mode, t, c }: { mode: Mode; t: typeof THEME[Mode]; c: typeof CONTENT[Mode] }) {
+function SearchBar({ t, c }: { t: typeof THEME[Mode]; c: typeof CONTENT[Mode] }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"creatives" | "jobs">(c.searchTab);
   const [q, setQ] = useState("");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const path = tab === "creatives" ? "/browse" : "/jobs";
+    const path = c.searchTab === "creatives" ? "/browse" : "/jobs";
     const params = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
     router.push(`${path}${params}`);
   }
 
-  const isCreativesActive = tab === "creatives";
-
   return (
     <div className="w-full">
-      <div
-        role="tablist"
-        className="inline-flex rounded-t-lg border border-b-0 px-1 pt-1"
-        style={{
-          borderColor: t.searchBorder,
-          backgroundColor: t.searchBg,
-          transition: "border-color 500ms ease-in-out, background-color 500ms ease-in-out",
-        }}
-      >
-        <SearchTab active={isCreativesActive} onClick={() => setTab("creatives")} t={t}>
-          Creatives
-        </SearchTab>
-        <SearchTab active={!isCreativesActive} onClick={() => setTab("jobs")} t={t}>
-          Jobs
-        </SearchTab>
-      </div>
       <form
         onSubmit={submit}
-        className="flex items-stretch rounded-r-lg rounded-bl-lg border p-1.5"
+        className="flex items-stretch rounded-lg border p-1.5"
         style={{
           borderColor: t.searchBorder,
           backgroundColor: t.searchBg,
@@ -365,25 +345,6 @@ function SearchBar({ mode, t, c }: { mode: Mode; t: typeof THEME[Mode]; c: typeo
         </button>
       </form>
     </div>
-  );
-}
-
-function SearchTab({ active, onClick, t, children }: { active: boolean; onClick: () => void; t: typeof THEME[Mode]; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className="rounded-t-md px-4 py-1.5 text-xs font-medium"
-      style={{
-        backgroundColor: active ? t.primaryBg : "transparent",
-        color: active ? t.primaryText : t.text,
-        transition: "background-color 500ms ease-in-out, color 500ms ease-in-out",
-      }}
-    >
-      {children}
-    </button>
   );
 }
 

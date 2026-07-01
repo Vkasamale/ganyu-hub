@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-type Result = { ok?: boolean; error?: string } | null | void;
+type Result = { ok?: boolean; error?: string; info?: string } | null | void;
 
 type ServerAction = (formData: FormData) => Promise<Result>;
 
@@ -21,34 +22,37 @@ export function SavingForm({
   successText?: string;
   resetOnSuccess?: boolean;
   className?: string;
+  silent?: boolean;
 }) {
   const boundAction = async (_prev: Result, formData: FormData): Promise<Result> => {
     return await action(formData);
   };
   const [state, formAction] = useActionState(boundAction, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const s = state as { ok?: boolean; error?: string } | null;
+    const s = state as { ok?: boolean; error?: string; info?: string } | null;
     if (s?.ok) {
-      toast.success(successText);
+      if (!silent) toast.success(s.info ?? successText);
+      router.refresh();
       if (resetOnSuccess && formRef.current) formRef.current.reset();
     } else if (s?.error) {
-      toast.error(s.error);
+      if (!silent) toast.error(s.error);
     }
-  }, [state, resetOnSuccess, successText]);
+  }, [state, resetOnSuccess, successText, router, silent]);
 
-  const s = state as { ok?: boolean; error?: string } | null;
+  const s = state as { ok?: boolean; error?: string; info?: string } | null;
 
   return (
     <form ref={formRef} action={formAction} className={className}>
       {children}
-      {s?.ok && (
+      {s?.ok && !silent && (
         <p className="mt-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-          ✓ {successText}
+          ✓ {s.info ?? successText}
         </p>
       )}
-      {s?.error && (
+      {s?.error && !silent && (
         <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {s.error}
         </p>
