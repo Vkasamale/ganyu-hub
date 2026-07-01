@@ -49,6 +49,30 @@ export default async function DashboardPage() {
       .map((p) => ({ ...p.jobs, accepted_bid_mwk: p.bid_mwk, proposal_id: p.id }));
   }
 
+  let insights: {
+    totals: { views_total: number; views_30d: number; saves_total: number; saves_30d: number } | null;
+    dailyViews: { label: string; value: number }[];
+  } = { totals: null, dailyViews: [] };
+  if (!isClient) {
+    const [{ data: totalsRow }, { data: dailyRows }] = await Promise.all([
+      supabase.rpc("creative_totals", { p_creative_id: user.id }).single(),
+      supabase.rpc("creative_daily_views", { p_creative_id: user.id, p_days: 30 }),
+    ]);
+    const map = new Map<string, number>();
+    (dailyRows || []).forEach((r: { day: string; views: number }) => map.set(r.day, Number(r.views)));
+    const days: { label: string; value: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      days.push({ label: d.toLocaleString("en", { month: "short", day: "numeric" }), value: map.get(key) || 0 });
+    }
+    insights = {
+      totals: (totalsRow as typeof insights.totals) || null,
+      dailyViews: days,
+    };
+  }
+
   const ACTIVE = new Set(["scope_pending", "in_progress", "submitted", "revision_requested"]);
   const stats = isClient
     ? [
@@ -132,6 +156,50 @@ export default async function DashboardPage() {
           );
         })}
       </section>
+
+      {!isClient && insights.totals && (
+        <section className="card-soft p-7">
+          <div className="flex items-baseline justify-between">
+            <p className="font-display text-lg">Profile insights</p>
+            <p className="text-xs uppercase tracking-wider text-ink/55">Last 30 days</p>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-ink/55">Views (30d)</p>
+              <p className="mt-1 font-display text-2xl text-ink">
+                <CountUp value={insights.totals.views_30d} format="number" />
+              </p>
+              <p className="mt-0.5 text-xs text-ink/50">{insights.totals.views_total} all-time</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-ink/55">Saves (30d)</p>
+              <p className="mt-1 font-display text-2xl text-ink">
+                <CountUp value={insights.totals.saves_30d} format="number" />
+              </p>
+              <p className="mt-0.5 text-xs text-ink/50">{insights.totals.saves_total} all-time</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-ink/55">Proposals sent</p>
+              <p className="mt-1 font-display text-2xl text-ink">
+                <CountUp value={proposalsSent.length} format="number" />
+              </p>
+              <p className="mt-0.5 text-xs text-ink/50">{proposalsSent.filter((p) => p.status === "accepted").length} accepted</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-ink/55">Save rate</p>
+              <p className="mt-1 font-display text-2xl text-ink">
+                {insights.totals.views_30d > 0
+                  ? `${Math.round((insights.totals.saves_30d / insights.totals.views_30d) * 100)}%`
+                  : "—"}
+              </p>
+              <p className="mt-0.5 text-xs text-ink/50">saves ÷ views</p>
+            </div>
+          </div>
+          <div className="mt-6">
+            <PeriodBarChart data={insights.dailyViews} format="count" />
+          </div>
+        </section>
+      )}
 
       <section className="grid gap-5 md:grid-cols-[1.5fr_1fr]">
         <div className="card-soft p-7">

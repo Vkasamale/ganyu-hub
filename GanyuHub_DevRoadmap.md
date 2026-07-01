@@ -50,10 +50,10 @@ Work through these in order. Do not skip to P1 while P0 items are open.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Skill verification badges: manual or test-based verification layer | NOT STARTED | Not needed at launch. |
-| Featured/boosted listings: paid placement for creatives | NOT STARTED | Only valuable when there is supply to boost. |
-| Portfolio analytics: views, saves, proposal conversion for creatives | NOT STARTED | Nice-to-have once creatives are active. |
-| International card payments: Stripe/Paystack/Flutterwave | NOT STARTED | Phase 2. Local mobile money first. |
+| Skill verification badges: manual or test-based verification layer | WON'T SHIP 2026-07-01 | Conflicts with platform ethos — portfolio IS the credential; no degree/cert gatekeeping. |
+| Featured/boosted listings: paid placement for creatives | MOVED TO BACKLOG 2026-07-01 | Blocked on mobile-money integration. Captured under BACKLOG.md → Monetisation. |
+| Portfolio analytics: views, saves, proposal conversion for creatives | IN PROGRESS 2026-07-01 | Reuses `interactions` table; chart on `/dashboard`. |
+| International card payments: Stripe/Paystack/Flutterwave | MOVED TO BACKLOG 2026-07-01 | Phase 2. Local mobile money first. Captured under BACKLOG.md → Monetisation. |
 
 ---
 

@@ -196,6 +196,30 @@ language sql security definer set search_path = public as $$
 $$;
 grant execute on function public.trending_items(target_kind, int) to anon, authenticated;
 
+create or replace function public.creative_daily_views(p_creative_id uuid, p_days int default 30)
+returns table(day date, views bigint)
+language sql security definer set search_path = public as $$
+  select date_trunc('day', created_at)::date as day, count(*)::bigint as views
+  from interactions
+  where target_type = 'creative' and target_id = p_creative_id
+    and kind = 'view'
+    and created_at > now() - (p_days || ' days')::interval
+  group by 1
+  order by 1;
+$$;
+grant execute on function public.creative_daily_views(uuid, int) to authenticated;
+
+create or replace function public.creative_totals(p_creative_id uuid)
+returns table(views_total bigint, views_30d bigint, saves_total bigint, saves_30d bigint)
+language sql security definer set search_path = public as $$
+  select
+    (select count(*) from interactions where target_type='creative' and target_id=p_creative_id and kind='view')::bigint,
+    (select count(*) from interactions where target_type='creative' and target_id=p_creative_id and kind='view' and created_at > now() - interval '30 days')::bigint,
+    (select count(*) from saved_items where target_type='creative' and target_id=p_creative_id)::bigint,
+    (select count(*) from saved_items where target_type='creative' and target_id=p_creative_id and created_at > now() - interval '30 days')::bigint;
+$$;
+grant execute on function public.creative_totals(uuid) to authenticated;
+
 alter table profiles enable row level security;
 alter table portfolio_items enable row level security;
 alter table services enable row level security;

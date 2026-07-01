@@ -34,4 +34,13 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Filter pill highlight doesn't update on click.** `/browse` and `/jobs` category multi-select: clicking a category in the dropdown does not visually mark it as selected immediately. The selected state only renders after "Apply filters" is pressed — so you filter blind. Also: after "Clear all", re-opening the dropdown still shows the previous selections checked — clear isn't detaching the local UI state from prior committed state. Fix: make the dropdown drive off a local `useState` mirror of the committed filters, update it synchronously on click, and reset it from props when committed filters change (including clear-all). Filters themselves work end-to-end — purely a selected-state UX bug in `<FiltersBar>`.
 
+## Monetisation (blocked on payment rails)
+
+- **Featured / boosted listings.** Paid placement for creatives — either creative pays to boost their profile in `/browse` results, or client pays to boost their job in `/jobs`. Sits behind the mobile-money integration since it needs to actually charge someone. Simplest cut when ready: `profiles.featured_until timestamptz` + card sort key + subtle gold border on card. Admin-granted boost is a possible pre-payments stopgap for launch partners.
+- **International card payments (Stripe / Paystack / Flutterwave).** Phase 2 — local mobile money ships first. When we open this up: Paystack has best Malawi card presence, Stripe requires a workaround entity, Flutterwave supports MWK. Should route through the same escrow abstraction as mobile money so the UI doesn't fork by payment method.
+
+## Ideas — creative-facing (post-analytics)
+
+- **Git-as-portfolio for devs.** Let developer creatives link a GitHub repo per portfolio item; auto-pull the README (rendered) and, for web projects, an embedded live preview (via a headless render service or Vercel/Netlify deploy hook). Would remove the "paste screenshots of your work" friction for devs and match the platform's skill-first, portfolio-is-your-credential ethos. Would need: OAuth GitHub for the creative, a repo URL field on `portfolio_items`, a fetch/render worker.
+
 ## To add as we find them
