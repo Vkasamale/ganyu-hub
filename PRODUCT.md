@@ -24,7 +24,7 @@ Ganyu Hub is the modern digital evolution of *ganyu* (Chichewa for short-term wo
 
 The interface should feel proud of being Malawian without being nostalgic or NGO-earnest. It's a working tool for people who take their craft seriously — designers, developers, agencies — and its aesthetic should match theirs, not talk down to them. Confident but not corporate; grounded but not scrappy.
 
-**Brand color:** `#069494` (teal) is the primary. Note: the current codebase theme uses editorial brick red on cream as a placeholder — this needs to be swapped to a teal-based palette. Track as an open follow-up.
+**Brand color:** `#069494` (teal) is the primary. Applied across tailwind tokens, CSS vars, SVG art, and chart colors (commit `5f8bff7`).
 
 ## Anti-references
 
@@ -46,3 +46,31 @@ The interface should feel proud of being Malawian without being nostalgic or NGO
 - **Reduced-motion honored.** All motion has a `prefers-reduced-motion: reduce` alternative (crossfade or instant transition). Current animation layer needs auditing against this.
 - **English at launch, Chichewa-ready.** UI copy uses the shortest clearest English. Category names and key CTAs should be short enough that a Chichewa translation will fit the same layout later.
 - **Low-bandwidth honest.** Images lazy-load, hero art is optional, layouts don't punish users with slow connections.
+
+## Business Model
+
+**Commission.** 15% flat, taken from the creative's payout. Shown transparently at quote time — a creative priced at MWK 10,000 displays both the client price and the creative's net (MWK 8,500) side by side before commitment. No surprise deductions at payout.
+
+**Currency.** MWK only. No toggle. International payment support, if ever needed, is a payment-processor concern, not a UI feature.
+
+**KYC.**
+- **Creatives:** ID required before payout eligibility. Payout details (mobile money — Airtel Money / TNM Mpamba — plus bank) wired through PayChangu.
+- **Clients:** account registration only, with an optional self-declared agency flag (no formal business registration required to use it). Individual client identity verification is currently the weaker side of fraud protection — **open decision, revisit before launch.**
+
+**Content policy.** Deferred to a dedicated session. Moderation ownership (who reviews flags) also unresolved. Backlogged, not blocking launch prep.
+
+**Subscription tiers.** Both sides free to join and transact. Commission is the only mandatory revenue. Paid tiers are upsells, not gates.
+
+- **Creatives:** featured placement, more proposals/month, trust badge.
+- **Clients:** unlimited concurrent job postings, priority visibility, faster support.
+
+Each side offered monthly and annual, each split student / regular → four pricing points per side.
+
+Indicative pricing (Ntchito-style strikethrough discount framing):
+
+| Tier | Monthly | Annual (shown → billed) |
+|---|---|---|
+| Student | MWK 5,000 | MWK 60,000 → ~35–38,000 |
+| Regular | MWK 10,000 | MWK 120,000 → ~70–75,000 |
+
+**Agencies** get a mandatory monthly subscription **plus** commission. Backlogged; not built now.
