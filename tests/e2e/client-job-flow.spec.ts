@@ -23,7 +23,9 @@ test.describe("Client: post job, receive + accept proposal, work through statuse
     await page.goto("/jobs");
     await expect(page.getByText(jobTitle)).toBeVisible();
 
-    await page.goto("/dashboard/jobs");
+    // A newly posted job is "open" (no accepted proposal yet), which lives under
+    // the Open posts tab — the default Active tab is reserved for in-flight jobs.
+    await page.goto("/dashboard/jobs?tab=open");
     await expect(page.getByText(jobTitle)).toBeVisible();
     await screenshot(page, "client-dashboard-jobs-list");
   });
@@ -110,6 +112,9 @@ test.describe("Client: post job, receive + accept proposal, work through statuse
   });
 
   test("raise a dispute while job is scope_pending: reveal animation, submit, banner + toast", async ({ page }) => {
+    // This test posts a job, proposes, accepts, then disputes across 4 logins —
+    // legitimately ~32s on the dev server, past the 30s default. Give it headroom.
+    test.setTimeout(90_000);
     // Dispute is only allowed for scope_pending/in_progress/submitted/revision_requested
     // (see components/job-status-panel.tsx DISPUTABLE set) — a freshly-posted job is "open"
     // and does NOT show "Flag a dispute", only "Cancel job". A job moves to scope_pending
