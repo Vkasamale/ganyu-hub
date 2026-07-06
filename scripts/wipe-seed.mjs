@@ -29,18 +29,22 @@ if (!URL || !KEY) {
 }
 const sb = createClient(URL, KEY, { auth: { autoRefreshToken: false, persistSession: false } });
 const DO_IT = process.argv.includes("--yes");
-const SUFFIX = "@seed.ganyu.local";
+// All non-routable test domains: batch seed data, e2e-signup accounts, and the
+// stable @ganyuhub.test fixtures (recreated by the next reseed). Real users have
+// real emails and are never matched.
+const SUFFIXES = ["@seed.ganyu.local", "@e2e.ganyu.local", "@ganyuhub.test"];
+const isVictim = (email) => email && SUFFIXES.some((s) => email.endsWith(s));
 
 const victims = [];
 for (let page = 1; ; page++) {
   const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 1000 });
   if (error) throw error;
   const users = data?.users || [];
-  for (const u of users) if (u.email && u.email.endsWith(SUFFIX)) victims.push(u);
+  for (const u of users) if (isVictim(u.email)) victims.push(u);
   if (users.length < 1000) break;
 }
 
-console.log(`Found ${victims.length} seed users (email ending ${SUFFIX}).`);
+console.log(`Found ${victims.length} test users (${SUFFIXES.join(", ")}).`);
 if (!DO_IT) {
   console.log("Dry run — pass --yes to delete them.");
   process.exit(0);

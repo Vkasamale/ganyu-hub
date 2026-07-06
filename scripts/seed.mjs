@@ -166,10 +166,20 @@ const REVIEW_COMMENTS = [
   "Patient with our feedback rounds and the end result speaks for itself.",
 ];
 
-async function adminCreate(email, fullName, role) {
+// Stable e2e accounts: fixed emails (no batch suffix) + fixed password, so
+// tests/e2e/fixtures.ts can hardcode them. Wiped and recreated on every reseed
+// (same credentials each time). Kept in sync with tests/e2e/fixtures.ts.
+const FIXTURE_PASSWORD = "GanyuFixture!2026";
+const STABLE_FIXTURES = {
+  client: { email: "fixture-client@ganyuhub.test", name: "Fixture Client", role: "client" },
+  creative: { email: "fixture-creative@ganyuhub.test", name: "Fixture Creative", role: "creative" },
+  admin: { email: "fixture-admin@ganyuhub.test", name: "Fixture Admin", role: "client", isAdmin: true },
+};
+
+async function adminCreate(email, fullName, role, password) {
   const { data, error } = await sb.auth.admin.createUser({
     email,
-    password: Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2),
+    password: password || (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)),
     email_confirm: true,
     user_metadata: { full_name: fullName, role },
   });
@@ -355,12 +365,39 @@ async function main() {
   // ── Deterministic test fixtures (known rows for filter/spend assertions) ──
   console.log("Creating test fixtures…");
 
-  // Fixture 1: completed job where posted budget (40,000) ≠ accepted bid (50,000),
-  // escrow released. Reveals whether "released spend" sums budget_mwk or the bid.
-  const fxClient = clients[0];
-  const fxCreative = creatives.find((c) => c.category === "Video & Photography") || creatives[0];
+  // Stable, deterministic accounts for e2e (fixed email + password, no batch
+  // suffix). Assumes a wiped DB — reseed after scripts/wipe-seed.mjs.
+  const fx = {};
+  for (const key of ["client", "creative", "admin"]) {
+    const def = STABLE_FIXTURES[key];
+    const id = await adminCreate(def.email, def.name, def.role, FIXTURE_PASSWORD);
+    const city = pick(CITIES);
+    const update = { location: city, onboarded_at: new Date().toISOString() };
+    if (def.isAdmin) update.is_admin = true;
+    if (def.role === "creative") {
+      update.headline = tag(pick(HEADLINES["Video & Photography"]), city);
+      update.bio = tag(BIOS["Video & Photography"], city);
+      update.categories = ["Video & Photography"];
+      update.skills = sample(SKILLS["Video & Photography"], 4);
+    } else {
+      update.headline = `Hiring ${pick(CLIENT_ORG_HINTS)}`;
+    }
+    const { error } = await sb.from("profiles").update(update).eq("id", id);
+    if (error) throw error;
+    fx[key] = { id, ...def };
+  }
+  // Give fixture-creative a service so it appears in /browse.
+  const { error: fxSvcErr } = await sb.from("services").insert({
+    profile_id: fx.creative.id, title: "Event coverage",
+    description: "Fixture creative service.", price_mwk: 60000, price_mwk_max: 120000, delivery_days: 5,
+  });
+  if (fxSvcErr) throw fxSvcErr;
+
+  // Bid-vs-budget fixture job — belongs to fixture-client, accepted by
+  // fixture-creative. Posted budget 40,000 ≠ accepted bid 50,000, escrow
+  // released. Reveals whether "released spend" sums budget_mwk or the bid.
   const { data: fxJob, error: fxJobErr } = await sb.from("jobs").insert({
-    client_id: fxClient.id,
+    client_id: fx.client.id,
     title: "FIXTURE — completed shoot (budget 40k, bid 50k)",
     brief: "Fixture job: posted budget 40,000, accepted bid 50,000, escrow released. Used to verify the payments page spend definition.",
     budget_mwk: 40000, category: "Video & Photography",
@@ -368,7 +405,7 @@ async function main() {
   }).select("id").single();
   if (fxJobErr) throw fxJobErr;
   const { error: fxPropErr } = await sb.from("proposals").insert({
-    job_id: fxJob.id, creative_id: fxCreative.id,
+    job_id: fxJob.id, creative_id: fx.creative.id,
     cover_letter: "Fixture accepted proposal at a bid of 50,000 against a 40,000 posted budget.",
     bid_mwk: 50000, status: "accepted",
   });

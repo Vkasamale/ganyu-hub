@@ -1,18 +1,20 @@
 import { Page, expect } from "@playwright/test";
 
-// Seed / dedicated test accounts. Passwords were reset via the Supabase service-role
-// key specifically for this audit run (see audit-report.md "Test accounts" section).
+// Stable fixture accounts minted by scripts/seed.mjs (STABLE_FIXTURES). Fixed
+// emails + password, no batch suffix, recreated identically on every reseed —
+// so these never drift. Keep in sync with STABLE_FIXTURES / FIXTURE_PASSWORD.
+const FIXTURE_PASSWORD = "GanyuFixture!2026";
 export const ADMIN = {
-  email: "client.mphatso.banda.mqzvuwtc@seed.ganyu.local",
-  password: "SeedAdmin123!",
+  email: "fixture-admin@ganyuhub.test",
+  password: FIXTURE_PASSWORD,
 };
 export const SEED_CLIENT = {
-  email: "client.towera.chirwa.mqzvuwtc@seed.ganyu.local",
-  password: "SeedTest123!",
+  email: "fixture-client@ganyuhub.test",
+  password: FIXTURE_PASSWORD,
 };
 export const TEST_CREATIVE = {
-  email: "creative@test.com",
-  password: "SeedTest123!",
+  email: "fixture-creative@ganyuhub.test",
+  password: FIXTURE_PASSWORD,
 };
 
 export async function login(page: Page, email: string, password: string) {
