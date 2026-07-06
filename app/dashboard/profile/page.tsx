@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { ImagePicker } from "@/components/image-picker";
 
 export default async function EditProfilePage() {
   const supabase = createClient();
@@ -44,6 +45,10 @@ export default async function EditProfilePage() {
         <CardHeader><CardTitle>Edit your profile</CardTitle></CardHeader>
         <CardContent>
           <SavingForm action={updateProfile} successText="Profile saved." className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Profile photo</Label>
+              <ImagePicker name="avatar_file" currentUrl={profile?.avatar_url} shape="circle" label="Upload photo" />
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="full_name">Full name</Label>
               <Input id="full_name" name="full_name" defaultValue={profile?.full_name || ""} />

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatMwk, timeAgo } from "@/lib/utils";
+import { getReleasedSpend } from "@/lib/money";
 
 type Role = "client" | "creative" | "agency";
 
@@ -53,11 +54,18 @@ export default async function PaymentsPage() {
   const released = rows.filter((r) => r.escrow === "payment_released").reduce((s, r) => s + r.amount, 0);
   const lifetime = held + released;
 
+  // Client spend figures come from the single source of truth (lib/money.ts),
+  // never from held+released — "released" must exclude money still in escrow.
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const releasedRecent = isClient ? await getReleasedSpend(user.id, sixMonthsAgo) : 0;
+  const releasedLifetime = isClient ? await getReleasedSpend(user.id) : 0;
+
   const stats = isClient
     ? [
         { label: "In escrow", value: formatMwk(held) },
-        { label: "Released", value: formatMwk(released) },
-        { label: "Lifetime spend", value: formatMwk(lifetime) },
+        { label: "Released", value: formatMwk(releasedRecent) },
+        { label: "Lifetime released", value: formatMwk(releasedLifetime) },
       ]
     : [
         { label: "Pending payout", value: formatMwk(held) },

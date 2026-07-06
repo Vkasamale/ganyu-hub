@@ -12,7 +12,7 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 ## Trust & Loop-Closing
 
-- **Reviews / feedback after completed work.** Once a job hits `completed`, prompt both sides (client and creative) to leave a rating + short written review of the other party. Surfaces on profiles (star average, recent reviews) and feeds into search ranking. The `reviews` table is already in the schema but isn't wired to anything. Important for the open-signup trust model.
+- ~~**Reviews / feedback after completed work.**~~ **Shipped 2026-07-03.** Completed jobs prompt both parties to rate (1–5 stars) + comment via `submitReview`; RLS restricts inserts to a party of a completed job. Star average + recent reviews render on `/creatives/[id]` (replaced the fake "Response time" stat); browse `CreativeCard`s show real stars via a per-profile rollup in `app/browse/page.tsx`. Still TODO: fold rating into search ranking (`lib/feed.ts` / trending RPC), and extend the rollup to the dashboard feed / saved-page cards (currently only `/browse` computes it).
 
 ## Media
 
@@ -42,5 +42,10 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 ## Ideas — creative-facing (post-analytics)
 
 - **Git-as-portfolio for devs.** Let developer creatives link a GitHub repo per portfolio item; auto-pull the README (rendered) and, for web projects, an embedded live preview (via a headless render service or Vercel/Netlify deploy hook). Would remove the "paste screenshots of your work" friction for devs and match the platform's skill-first, portfolio-is-your-credential ethos. Would need: OAuth GitHub for the creative, a repo URL field on `portfolio_items`, a fetch/render worker.
+
+## Pre-launch decisions (deferred from 2026-07-02)
+
+- **Client identity verification tiers.** Beta / early access: name + phone only. Full ID verification kicks in once escrow goes live and real money is held — hard requirement before PayChangu ships, not before beta.
+- **Content policy + moderation ownership.** Beta ships with a three-line manual rule set (no adult content, no political material, no MLM). Full policy + moderator assignment happens after beta feedback, when the real moderation surface is visible.
 
 ## To add as we find them

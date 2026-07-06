@@ -24,6 +24,22 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
   const maxP = searchParams.max_price ? Number(searchParams.max_price) : null;
   const sort = searchParams.sort || "newest";
 
+  // Price filter runs off the services rate card, not the dead hourly_rate_mwk
+  // column. A creative matches [min, max] if they have at least one service whose
+  // price span overlaps it. Service span: low = price_mwk, high = price_mwk_max
+  // (or price_mwk when no max). Overlap ⇔ low ≤ max AND high ≥ min.
+  let priceProfileIds: string[] | null = null;
+  if (minP != null || maxP != null) {
+    let sq = supabase.from("services").select("profile_id");
+    if (maxP != null) sq = sq.lte("price_mwk", maxP); // low ≤ max
+    if (minP != null) {
+      // high ≥ min, where high = coalesce(price_mwk_max, price_mwk)
+      sq = sq.or(`price_mwk_max.gte.${minP},and(price_mwk_max.is.null,price_mwk.gte.${minP})`);
+    }
+    const { data: matched } = await sq;
+    priceProfileIds = Array.from(new Set((matched || []).map((r: any) => r.profile_id)));
+  }
+
   let query = supabase.from("profiles").select("*").in("role", ["creative", "agency"]);
   if (q) {
     const s = sanitize(q);
@@ -31,8 +47,8 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
   }
   if (cats.length) query = query.overlaps("categories", cats);
   if (skills.length) query = query.overlaps("skills", skills);
-  if (minP != null) query = query.gte("hourly_rate_mwk", minP);
-  if (maxP != null) query = query.lte("hourly_rate_mwk", maxP);
+  // Empty array ⇒ no creative matched the price range ⇒ zero results (correct).
+  if (priceProfileIds != null) query = query.in("id", priceProfileIds);
   if (sort === "rate_asc") query = query.order("hourly_rate_mwk", { ascending: true, nullsFirst: false });
   else if (sort === "rate_desc") query = query.order("hourly_rate_mwk", { ascending: false, nullsFirst: false });
   else query = query.order("created_at", { ascending: false });
@@ -46,10 +62,12 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
   const fromPrice = new Map<string, number>();
   const serviceCountByProfile = new Map<string, number>();
   const portfolioCountByProfile = new Map<string, number>();
+  const ratingByProfile = new Map<string, { avg: number; count: number }>();
   if (profileIds.length) {
-    const [{ data: services }, { data: portfolioRows }] = await Promise.all([
+    const [{ data: services }, { data: portfolioRows }, { data: reviewRows }] = await Promise.all([
       supabase.from("services").select("profile_id, price_mwk").in("profile_id", profileIds),
       supabase.from("portfolio_items").select("profile_id").in("profile_id", profileIds),
+      supabase.from("reviews").select("reviewee_id, rating").in("reviewee_id", profileIds),
     ]);
     (services || []).forEach((s: any) => {
       const cur = fromPrice.get(s.profile_id);
@@ -59,6 +77,14 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
     (portfolioRows || []).forEach((p: any) => {
       portfolioCountByProfile.set(p.profile_id, (portfolioCountByProfile.get(p.profile_id) || 0) + 1);
     });
+    const sums = new Map<string, { total: number; count: number }>();
+    (reviewRows || []).forEach((r: any) => {
+      const cur = sums.get(r.reviewee_id) || { total: 0, count: 0 };
+      cur.total += r.rating;
+      cur.count += 1;
+      sums.set(r.reviewee_id, cur);
+    });
+    sums.forEach((v, id) => ratingByProfile.set(id, { avg: v.total / v.count, count: v.count }));
   }
 
   const visibleProfiles = (profiles || []).filter((p) =>
@@ -81,6 +107,8 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
             saved={saved.has(p.id)}
             showSave={!!user}
             fromPriceMwk={fromPrice.get(p.id) ?? null}
+            rating={ratingByProfile.get(p.id)?.avg ?? null}
+            reviewCount={ratingByProfile.get(p.id)?.count ?? 0}
           />
         ))}
       </StaggerList>

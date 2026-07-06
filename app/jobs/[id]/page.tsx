@@ -14,7 +14,9 @@ import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
-import { submitProposal, decideProposal, recordView, addPortfolioItem } from "@/app/actions";
+import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview } from "@/app/actions";
+import { StarRatingInput } from "@/components/star-rating-input";
+import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
 export default async function JobDetailPage({ params: paramsP }: { params: Promise<{ id: string }> }) {
@@ -53,6 +55,19 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     .eq("job_id", job.id);
   const proposalLimit = (job as { proposal_limit?: number | null }).proposal_limit ?? 10;
   const isFull = (proposalCount ?? 0) >= proposalLimit;
+
+  const isAcceptedCreative = !isClient && myProposal?.status === "accepted";
+  const isParty = isClient || isAcceptedCreative;
+  let myReview: { rating: number; comment: string | null } | null = null;
+  if (user && isParty && job.status === "completed") {
+    const { data: r } = await supabase
+      .from("reviews")
+      .select("rating, comment")
+      .eq("job_id", job.id)
+      .eq("reviewer_id", user.id)
+      .maybeSingle();
+    myReview = r;
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -121,6 +136,42 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
         <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" />
+      )}
+
+      {user && isParty && job.status === "completed" && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>{myReview ? "Your review" : `Rate ${isClient ? "the creative" : "the client"}`}</CardTitle>
+            <p className="text-sm text-neutral-500">
+              {myReview
+                ? "Thanks for the feedback — it helps others on Ganyu Hub."
+                : "How was working together? Your review appears on their profile and builds trust for future jobs."}
+            </p>
+          </CardHeader>
+          <CardContent>
+            {myReview ? (
+              <div>
+                <Stars value={myReview.rating} className="h-5 w-5" />
+                {myReview.comment && (
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{myReview.comment}</p>
+                )}
+              </div>
+            ) : (
+              <SavingForm action={submitReview} successText="Review submitted. Thanks!" className="space-y-4">
+                <input type="hidden" name="job_id" value={job.id} />
+                <div className="space-y-1.5">
+                  <Label>Rating</Label>
+                  <StarRatingInput name="rating" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="comment">Comment (optional)</Label>
+                  <Textarea id="comment" name="comment" rows={3} placeholder="What was it like to work with them?" />
+                </div>
+                <SubmitButton pendingText="Submitting…">Submit review</SubmitButton>
+              </SavingForm>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {user && !isClient && myProposal?.status === "accepted" && job.status === "completed" && (

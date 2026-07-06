@@ -9,3 +9,8 @@ out
 .claude/
 test-results/
 playwright-report/
+
+# Agent/skill tooling installed into the project dir — not app code
+.agents/
+.codex/
+skills-lock.json

@@ -44,7 +44,7 @@ function buildUrl(action: string, params: Record<string, string | string[] | und
 export function FiltersBar({ kind, action, q, categories = [], skills, minPrice, maxPrice, sort }: Props) {
   const [open, setOpen] = useState(false);
   const skillList = (skills || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const priceLabel = kind === "creatives" ? "Rate (MWK)" : "Budget (MWK)";
+  const priceLabel = kind === "creatives" ? "Price (MWK)" : "Budget (MWK)";
   const placeholder =
     kind === "creatives" ? "Search by name, headline, or bio" : "Search jobs by title or brief";
   const sorts = SORTS[kind];
@@ -117,8 +117,8 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
             {q && <Chip id="q" label={`"${q}"`} href={removeQUrl} />}
             {categories.map((c) => <Chip key={`c-${c}`} id={`c-${c}`} label={c} href={removeCategoryUrl(c)} />)}
             {skillList.map((s) => <Chip key={`s-${s}`} id={`s-${s}`} label={s} href={removeSkillUrl(s)} />)}
-            {minPrice && <Chip id="min" label={`Min MK ${Number(minPrice).toLocaleString()}`} href={removeMinUrl} />}
-            {maxPrice && <Chip id="max" label={`Max MK ${Number(maxPrice).toLocaleString()}`} href={removeMaxUrl} />}
+            {minPrice && <Chip id="min" label={`Min MWK ${Number(minPrice).toLocaleString()}`} href={removeMinUrl} />}
+            {maxPrice && <Chip id="max" label={`Max MWK ${Number(maxPrice).toLocaleString()}`} href={removeMaxUrl} />}
             <Link href={action} className="text-xs font-medium text-stamp underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp">
               Clear all
             </Link>

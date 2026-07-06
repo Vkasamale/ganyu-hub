@@ -3,10 +3,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
+import { getReleasedSpend, getCommittedValue } from "@/lib/money";
 
 type Role = "client" | "creative" | "agency";
 
-type Tab = "active" | "completed" | "proposals";
+type Tab = "active" | "open" | "completed" | "proposals";
 
 export default async function DashboardJobsPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ tab?: string }> }) {
   const searchParams = (await searchParamsP) || {};
@@ -30,6 +31,9 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
     .order("created_at", { ascending: false });
 
   const CLOSED = new Set(["completed", "cancelled"]);
+  // Single definition of "Active" (matches dashboard + lib/money committed set).
+  // "open" posts and "disputed" are deliberately NOT active.
+  const ACTIVE = new Set(["scope_pending", "in_progress", "submitted", "revision_requested"]);
 
   type Row = {
     id: string;
@@ -69,17 +73,30 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
     }));
 
   const allRows = [...postedRows, ...engagedRows];
-  const activeRows = allRows.filter((r) => !CLOSED.has(r.status));
+  const activeRows = allRows.filter((r) => ACTIVE.has(r.status));
+  const openRows = postedRows.filter((r) => r.status === "open");
   const completedRows = allRows.filter((r) => CLOSED.has(r.status));
   const otherProposals = (engagements || []).filter((e: any) => e.status !== "accepted");
 
-  const totalValue = completedRows.reduce((s, r) => s + r.amount, 0);
-  const stats = [
-    { label: "Active", value: String(activeRows.length) },
-    { label: "Completed", value: String(completedRows.filter((r) => r.status === "completed").length) },
-    { label: isClient ? "Posted" : "Engagements", value: String(isClient ? postedRows.length : engagedRows.length) },
-    { label: isClient ? "Total spent" : "Total earned", value: formatMwk(totalValue), mono: true },
-  ];
+  // Client money from the single source of truth; creative earnings from
+  // completed engagements only (cancelled jobs are not earnings).
+  const released = isClient ? await getReleasedSpend(user.id) : 0;
+  const committed = isClient ? await getCommittedValue(user.id) : 0;
+  const earned = engagedRows.filter((r) => r.status === "completed").reduce((s, r) => s + r.amount, 0);
+  const stats = isClient
+    ? [
+        { label: "Active", value: String(activeRows.length) },
+        { label: "Open posts", value: String(openRows.length) },
+        { label: "Completed", value: String(completedRows.filter((r) => r.status === "completed").length) },
+        { label: "Released", value: formatMwk(released), mono: true },
+        { label: "Committed", value: formatMwk(committed), mono: true },
+      ]
+    : [
+        { label: "Active", value: String(activeRows.length) },
+        { label: "Completed", value: String(completedRows.filter((r) => r.status === "completed").length) },
+        { label: "Engagements", value: String(engagedRows.length) },
+        { label: "Total earned", value: formatMwk(earned), mono: true },
+      ];
 
   const now = new Date();
   const months: { label: string; value: number }[] = [];
@@ -174,9 +191,10 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
 
       {(() => {
         const raw = (searchParams?.tab as Tab) || "active";
-        const tab: Tab = (["active", "completed", "proposals"] as Tab[]).includes(raw) ? raw : "active";
+        const tab: Tab = (["active", "open", "completed", "proposals"] as Tab[]).includes(raw) ? raw : "active";
         const tabs: { key: Tab; label: string; count: number }[] = [
           { key: "active", label: "Active", count: activeRows.length },
+          ...(isClient ? [{ key: "open" as Tab, label: "Open posts", count: openRows.length }] : []),
           { key: "completed", label: "Completed", count: completedRows.length },
           { key: "proposals", label: "Proposals", count: otherProposals.length },
         ];
@@ -211,6 +229,20 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
                     No active jobs.{" "}
                     <Link href={isClient ? "/jobs/new" : "/jobs"} className="text-stamp underline underline-offset-4">
                       {isClient ? "Post a job" : "Find jobs"}
+                    </Link>
+                    .
+                  </>
+                }
+              />
+            )}
+            {tab === "open" && (
+              <JobsTableBody
+                rows={openRows}
+                empty={
+                  <>
+                    No open posts.{" "}
+                    <Link href="/jobs/new" className="text-stamp underline underline-offset-4">
+                      Post a job
                     </Link>
                     .
                   </>

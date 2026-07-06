@@ -352,6 +352,54 @@ do $$ begin
   alter publication supabase_realtime add table proposals;
 exception when duplicate_object then null; when others then null; end $$;
 
+-- Message attachments
+alter table messages add column if not exists attachment_url text;
+alter table messages add column if not exists attachment_name text;
+alter table messages add column if not exists attachment_type text;
+alter table messages add column if not exists attachment_size integer;
+alter table messages alter column body drop not null;
+
+-- Storage bucket for job/thread file exchange
+insert into storage.buckets (id, name, public)
+values ('job-files', 'job-files', true)
+on conflict (id) do nothing;
+
+drop policy if exists "job-files read" on storage.objects;
+create policy "job-files read" on storage.objects for select
+  using (bucket_id = 'job-files');
+
+drop policy if exists "job-files insert" on storage.objects;
+create policy "job-files insert" on storage.objects for insert
+  with check (bucket_id = 'job-files' and auth.uid() is not null);
+
+-- Portfolio gallery (additional images beyond cover) + service image
+alter table portfolio_items add column if not exists images text[] not null default '{}';
+alter table services add column if not exists image_url text;
+
+-- Storage bucket for portfolio covers and avatars (path prefixed by uid)
+insert into storage.buckets (id, name, public)
+values ('portfolio', 'portfolio', true)
+on conflict (id) do nothing;
+
+drop policy if exists "portfolio read" on storage.objects;
+create policy "portfolio read" on storage.objects for select
+  using (bucket_id = 'portfolio');
+
+drop policy if exists "portfolio insert" on storage.objects;
+create policy "portfolio insert" on storage.objects for insert
+  with check (
+    bucket_id = 'portfolio'
+    and auth.uid() is not null
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "portfolio update own" on storage.objects;
+create policy "portfolio update own" on storage.objects for update
+  using (
+    bucket_id = 'portfolio'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
 -- Email lookup: security-definer so server actions can resolve recipient emails
 -- without the service role key. Only callable by authenticated users.
 create or replace function public.get_user_email(uid uuid)
@@ -359,4 +407,48 @@ returns text language sql security definer set search_path = public, auth as $$
   select email::text from auth.users where id = uid;
 $$;
 revoke all on function public.get_user_email(uuid) from public, anon;
+
+-- Reviews: tighten insert so only a party to a COMPLETED job can review the
+-- other party. Server action also enforces this (defense in depth).
+create index if not exists idx_reviews_reviewee on reviews(reviewee_id, created_at desc);
+
+drop policy if exists "reviews insert" on reviews;
+create policy "reviews insert" on reviews for insert with check (
+  auth.uid() = reviewer_id
+  and reviewer_id <> reviewee_id
+  and exists (
+    select 1 from jobs j
+    left join proposals p on p.job_id = j.id and p.status = 'accepted'
+    where j.id = reviews.job_id
+      and j.status = 'completed'
+      and auth.uid() in (j.client_id, p.creative_id)
+  )
+);
+
+-- Job files are PRIVATE: served via short-lived signed URLs, readable only by
+-- the two participants of the thread. Object path is `<thread_id>/<uuid>_name`,
+-- so foldername[1] is the thread id. Supersedes the earlier public config.
+update storage.buckets set public = false where id = 'job-files';
+
+drop policy if exists "job-files read" on storage.objects;
+drop policy if exists "job-files read participants" on storage.objects;
+create policy "job-files read participants" on storage.objects for select using (
+  bucket_id = 'job-files'
+  and exists (
+    select 1 from message_threads t
+    where t.id::text = (storage.foldername(name))[1]
+      and auth.uid() in (t.client_id, t.creative_id)
+  )
+);
+
+drop policy if exists "job-files insert" on storage.objects;
+drop policy if exists "job-files insert participants" on storage.objects;
+create policy "job-files insert participants" on storage.objects for insert with check (
+  bucket_id = 'job-files'
+  and exists (
+    select 1 from message_threads t
+    where t.id::text = (storage.foldername(name))[1]
+      and auth.uid() in (t.client_id, t.creative_id)
+  )
+);
 grant execute on function public.get_user_email(uuid) to authenticated;

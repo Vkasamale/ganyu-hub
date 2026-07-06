@@ -1,3 +1,5 @@
+import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { addPortfolioItem } from "@/app/actions";
@@ -6,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { MultiImagePicker } from "@/components/multi-image-picker";
 
 export default async function PortfolioPage() {
   const supabase = createClient();
@@ -28,8 +31,8 @@ export default async function PortfolioPage() {
               <Textarea id="description" name="description" rows={3} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cover_url">Cover image URL</Label>
-              <Input id="cover_url" name="cover_url" type="url" placeholder="https://..." />
+              <Label>Images</Label>
+              <MultiImagePicker name="cover_files" max={10} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="project_url">Project URL</Label>
@@ -43,15 +46,30 @@ export default async function PortfolioPage() {
       <section>
         <h2 className="text-xl font-semibold">Your items ({items?.length || 0})</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {(items || []).map((it) => (
-            <Card key={it.id}>
-              {it.cover_url && <img src={it.cover_url} alt={it.title} className="aspect-video w-full rounded-t-lg object-cover" />}
-              <CardContent className="p-4">
-                <p className="font-semibold">{it.title}</p>
-                {it.description && <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{it.description}</p>}
-              </CardContent>
-            </Card>
-          ))}
+          {(items || []).map((it: any) => {
+            const extra = Array.isArray(it.images) ? it.images.length : 0;
+            return (
+              <Link key={it.id} href={`/dashboard/portfolio/${it.id}`} className="block transition-transform hover:-translate-y-0.5">
+                <Card>
+                  {it.cover_url && (
+                    <div className="relative aspect-video w-full overflow-hidden rounded-t-lg">
+                      <Image src={it.cover_url} alt={it.title} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
+                      {extra > 0 && (
+                        <span className="absolute right-2 top-2 rounded-full bg-ink/85 px-2 py-0.5 text-[10px] font-medium text-paper">
+                          +{extra} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <p className="font-semibold">{it.title}</p>
+                    {it.description && <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{it.description}</p>}
+                    <p className="mt-2 text-xs text-ink/50">Click to edit →</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
           {(!items || items.length === 0) && <p className="text-neutral-500">No items yet.</p>}
         </div>
       </section>

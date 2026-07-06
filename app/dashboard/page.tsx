@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { CountUp } from "@/components/animated";
 import { formatMwk } from "@/lib/utils";
+import { getReleasedSpend } from "@/lib/money";
 
 type Role = "client" | "creative" | "agency";
 
@@ -88,7 +89,13 @@ export default async function DashboardPage() {
         { label: "Earned", value: formatMwk(acceptedJobs.filter((j) => j.status === "completed").reduce((s, j) => s + (j.accepted_bid_mwk || 0), 0)), mono: true },
       ];
 
-  const completedSet = isClient ? myJobs.filter((j) => j.status === "completed") : acceptedJobs.filter((j) => j.status === "completed");
+  // Client "spend" = released escrow only (see lib/money.ts). Creative keeps
+  // earnings from completed accepted proposals.
+  const completedSet = isClient
+    ? myJobs.filter((j) => j.escrow_status === "payment_released")
+    : acceptedJobs.filter((j) => j.status === "completed");
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const releasedSpend6mo = isClient ? await getReleasedSpend(user.id, sixMonthsAgo) : 0;
   const months: { label: string; value: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -204,9 +211,12 @@ export default async function DashboardPage() {
       <section className="grid gap-5 md:grid-cols-[1.5fr_1fr]">
         <div className="card-soft p-7">
           <div className="flex items-baseline justify-between">
-            <p className="font-display text-lg">{isClient ? "Spend, last 6 months" : "Earned, last 6 months"}</p>
+            <p className="font-display text-lg">{isClient ? "Released, last 6 months" : "Earned, last 6 months"}</p>
             <p className="font-mono text-sm tabular-nums text-ink/70">
-              {months.reduce((s, m) => s + m.value, 0) ? `MWK ${months.reduce((s, m) => s + m.value, 0).toLocaleString()}` : "—"}
+              {(() => {
+                const total = isClient ? releasedSpend6mo : months.reduce((s, m) => s + m.value, 0);
+                return total ? `MWK ${total.toLocaleString()}` : "—";
+              })()}
             </p>
           </div>
           <div className="mt-4">
@@ -254,7 +264,8 @@ export default async function DashboardPage() {
             .
           </p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-ink/55">
                 <th className="px-6 py-3 font-medium">Job</th>
@@ -278,6 +289,7 @@ export default async function DashboardPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
     </div>

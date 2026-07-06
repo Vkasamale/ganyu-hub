@@ -83,6 +83,21 @@ export async function updateProfile(formData: FormData) {
   if (formData.has("hourly_rate_mwk")) {
     update.hourly_rate_mwk = Number(formData.get("hourly_rate_mwk")) || null;
   }
+
+  const avatar = formData.get("avatar_file");
+  if (avatar instanceof File && avatar.size > 0) {
+    if (avatar.size > 5 * 1024 * 1024) return { error: "Avatar too large (max 5MB)." };
+    if (!avatar.type.startsWith("image/")) return { error: "Avatar must be an image." };
+    const ext = avatar.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+    const path = `${user.id}/avatar/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("portfolio")
+      .upload(path, avatar, { contentType: avatar.type, upsert: false });
+    if (upErr) return { error: upErr.message };
+    const { data: pub } = supabase.storage.from("portfolio").getPublicUrl(path);
+    update.avatar_url = pub.publicUrl;
+  }
+
   const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
   if (error) return { error: error.message };
   revalidatePath("/dashboard/profile");
@@ -188,7 +203,7 @@ export async function upsertService(formData: FormData) {
   if (!title) return { error: "Add a title for the service." };
   if (!price_mwk) return { error: "Add a starting price." };
 
-  const row = {
+  const row: Record<string, unknown> = {
     profile_id: user.id,
     title,
     description,
@@ -196,6 +211,19 @@ export async function upsertService(formData: FormData) {
     price_mwk_max,
     delivery_days,
   };
+
+  const image = formData.get("image_file");
+  if (image instanceof File && image.size > 0) {
+    if (image.size > 10 * 1024 * 1024) return { error: "Image too large (max 10MB)." };
+    if (!image.type.startsWith("image/")) return { error: "Must be an image." };
+    const ext = image.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+    const path = `${user.id}/services/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("portfolio")
+      .upload(path, image, { contentType: image.type });
+    if (upErr) return { error: upErr.message };
+    row.image_url = supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl;
+  }
 
   const { error } = id
     ? await supabase.from("services").update(row).eq("id", id).eq("profile_id", user.id)
@@ -383,17 +411,129 @@ export async function addPortfolioItem(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
+  const files = formData.getAll("cover_files").filter(
+    (f): f is File => f instanceof File && f.size > 0,
+  );
+  if (files.length > 10) return { error: "Up to 10 images per item." };
+  const uploaded: string[] = [];
+  for (const file of files) {
+    if (file.size > 10 * 1024 * 1024) return { error: `"${file.name}" is over 10MB.` };
+    if (!file.type.startsWith("image/")) return { error: `"${file.name}" is not an image.` };
+    const ext = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+    const path = `${user.id}/portfolio/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("portfolio")
+      .upload(path, file, { contentType: file.type });
+    if (upErr) return { error: upErr.message };
+    uploaded.push(supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl);
+  }
+  const cover_url = uploaded[0] ?? (String(formData.get("cover_url") || "") || null);
+  const images = uploaded.slice(1);
+
   const { error } = await supabase.from("portfolio_items").insert({
     profile_id: user.id,
     title: String(formData.get("title")),
     description: String(formData.get("description") || ""),
-    cover_url: String(formData.get("cover_url") || "") || null,
+    cover_url,
+    images,
     project_url: String(formData.get("project_url") || "") || null,
   });
   if (error) return { error: error.message };
   revalidatePath("/dashboard/portfolio");
   revalidatePath(`/creatives/${user.id}`);
   return { ok: true };
+}
+
+export async function updatePortfolioItem(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const id = String(formData.get("id") || "");
+  if (!id) return { error: "Missing id" };
+
+  const { error } = await supabase
+    .from("portfolio_items")
+    .update({
+      title: String(formData.get("title")),
+      description: String(formData.get("description") || ""),
+      project_url: String(formData.get("project_url") || "") || null,
+    })
+    .eq("id", id)
+    .eq("profile_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/portfolio");
+  revalidatePath(`/creatives/${user.id}`);
+  return { ok: true };
+}
+
+export async function deletePortfolioItem(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+  await supabase.from("portfolio_items").delete().eq("id", id).eq("profile_id", user.id);
+  revalidatePath("/dashboard/portfolio");
+  revalidatePath(`/creatives/${user.id}`);
+  redirect("/dashboard/portfolio");
+}
+
+export async function submitReview(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const job_id = String(formData.get("job_id") || "");
+  const rating = Number(formData.get("rating"));
+  const comment = String(formData.get("comment") || "").trim();
+  if (!job_id) return { error: "Missing job" };
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { error: "Pick a rating from 1 to 5 stars." };
+
+  const { data: job } = await supabase.from("jobs").select("id, client_id, status, title").eq("id", job_id).single();
+  if (!job) return { error: "Job not found" };
+  if (job.status !== "completed") return { error: "You can only review a completed job." };
+
+  const { data: acceptedProposal } = await supabase
+    .from("proposals")
+    .select("creative_id")
+    .eq("job_id", job_id)
+    .eq("status", "accepted")
+    .maybeSingle();
+  const creativeId = acceptedProposal?.creative_id;
+
+  const isClient = user.id === job.client_id;
+  const isCreative = creativeId && user.id === creativeId;
+  if (!isClient && !isCreative) return { error: "Not a party to this job" };
+
+  const reviewee_id = isClient ? creativeId : job.client_id;
+  if (!reviewee_id) return { error: "No counterparty to review yet." };
+
+  const { error } = await supabase.from("reviews").insert({
+    job_id,
+    reviewer_id: user.id,
+    reviewee_id,
+    rating,
+    comment: comment || null,
+  });
+  if (error) {
+    if (error.code === "23505") return { error: "You already reviewed this job." };
+    return { error: error.message };
+  }
+
+  await supabase.from("notifications").insert({
+    user_id: reviewee_id,
+    kind: "message_received",
+    title: `You got a ${rating}★ review`,
+    body: `Someone reviewed your work on "${job.title}".`,
+    link: `/creatives/${reviewee_id}`,
+    actor_id: user.id,
+    target_type: "creative",
+    target_id: reviewee_id,
+  });
+
+  revalidatePath(`/jobs/${job_id}`);
+  revalidatePath(`/creatives/${reviewee_id}`);
+  return { ok: true, info: "Review submitted. Thanks!" };
 }
 
 export async function postJob(formData: FormData) {
@@ -814,11 +954,39 @@ export async function sendMessage(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
   const thread_id = String(formData.get("thread_id"));
-  const body = String(formData.get("body"));
+  const body = String(formData.get("body") || "").trim();
+
+  const file = formData.get("attachment");
+  let attachment_url: string | null = null;
+  let attachment_name: string | null = null;
+  let attachment_type: string | null = null;
+  let attachment_size: number | null = null;
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 25 * 1024 * 1024) return { error: "File too large (max 25MB)." };
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${thread_id}/${crypto.randomUUID()}_${safeName}`;
+    const { error: upErr } = await supabase.storage
+      .from("job-files")
+      .upload(path, file, { contentType: file.type || undefined });
+    if (upErr) return { error: upErr.message };
+    // Private bucket: store the object path; the thread page mints a
+    // short-lived signed URL at render time (participants only).
+    attachment_url = path;
+    attachment_name = file.name;
+    attachment_type = file.type || null;
+    attachment_size = file.size;
+  }
+
+  if (!body && !attachment_url) return { error: "Type a message or attach a file." };
+
   const { error } = await supabase.from("messages").insert({
     thread_id,
     sender_id: user.id,
-    body,
+    body: body || null,
+    attachment_url,
+    attachment_name,
+    attachment_type,
+    attachment_size,
   });
   if (error) return { error: error.message };
 
@@ -830,7 +998,8 @@ export async function sendMessage(formData: FormData) {
   if (thread) {
     const recipient = thread.client_id === user.id ? thread.creative_id : thread.client_id;
     const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
-    const preview = body.length > 80 ? body.slice(0, 80) + "…" : body;
+    const previewSource = body || (attachment_name ? `📎 ${attachment_name}` : "");
+    const preview = previewSource.length > 80 ? previewSource.slice(0, 80) + "…" : previewSource;
     await supabase.from("notifications").insert({
       user_id: recipient,
       kind: "message_received",

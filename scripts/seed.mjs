@@ -44,18 +44,21 @@ const FIRST = ["Chimwemwe","Tadala","Kondwani","Mercy","Brighton","Liness","Isaa
 const LAST = ["Banda","Phiri","Mwale","Chirwa","Kalua","Tembo","Nyirenda","Mkandawire","Chisale","Gondwe","Mhango","Kachale","Nyasulu","Chinkhuntha","Kayira","Manda","Lungu","Msiska","Kumwenda","Nthala"];
 const CITIES = [...Array(8).fill("Blantyre"), ...Array(8).fill("Lilongwe"), ...Array(4).fill("Mzuzu")];
 
+// Canonical six only. Distribution sums to 20 (one creative-count per loop).
 const ROLES = [
-  ...Array(6).fill("Design"),
-  ...Array(5).fill("Development"),
-  ...Array(4).fill("Photography"),
-  ...Array(3).fill("Writing"),
+  ...Array(5).fill("Design"),
+  ...Array(4).fill("Development"),
+  ...Array(4).fill("Video & Photography"),
+  ...Array(3).fill("Content Creation"),
+  ...Array(2).fill("Writing"),
   ...Array(2).fill("Marketing"),
 ];
 
 const SKILLS = {
   Design: ["Logo design","Brand identity","Illustration","Adobe Illustrator","Figma","Print layout","Packaging","Typography"],
   Development: ["React","Next.js","WordPress","Node.js","Tailwind CSS","PostgreSQL","Mobile UI","Shopify"],
-  Photography: ["Portrait","Product","Event coverage","Lightroom","Studio lighting","Drone","Real estate"],
+  "Video & Photography": ["Portrait","Product","Event coverage","Lightroom","Videography","Video editing","Studio lighting","Drone"],
+  "Content Creation": ["Short-form video","Reels & TikTok","Social content","Content calendars","Scriptwriting","Community management"],
   Writing: ["Copywriting","Long-form articles","Editing","Press releases","Social copy","SEO"],
   Marketing: ["Social strategy","Meta Ads","Email campaigns","Content calendars","Analytics"],
 };
@@ -63,7 +66,8 @@ const SKILLS = {
 const HEADLINES = {
   Design: ["Brand designer helping Malawian SMEs stand out","Identity & packaging designer based in $CITY","Logo and brand systems for growing teams"],
   Development: ["Full-stack developer building African web products","Next.js + Supabase developer in $CITY","WordPress sites for NGOs and small businesses"],
-  Photography: ["Wedding and event photographer covering $CITY","Product photographer for online sellers","Portraits, products, and editorial in $CITY"],
+  "Video & Photography": ["Wedding and event photographer covering $CITY","Product photographer and videographer for online sellers","Portraits, products, and event video in $CITY"],
+  "Content Creation": ["Short-form video creator for Malawian brands","Social content and Reels producer in $CITY","Content creator for SMEs and NGOs"],
   Writing: ["Copywriter for healthcare and development orgs","Editor and content writer in $CITY","Press releases and long-form for Malawian brands"],
   Marketing: ["Social and paid media for Malawian SMEs","Content strategist for NGOs in $CITY"],
 };
@@ -71,7 +75,8 @@ const HEADLINES = {
 const BIOS = {
   Design: "Brand and print designer with seven years working with Malawian SMEs, fintechs, and NGOs. I build identity systems that look professional and run on small budgets. Past work includes packaging for FMCG brands and pitch decks for development partners.",
   Development: "Web and mobile developer based in $CITY. I ship production sites and dashboards using Next.js, Supabase, and Tailwind. Past clients include health-tech startups and microfinance teams in Lilongwe and Blantyre.",
-  Photography: "Editorial and commercial photographer covering events, products, and portraits across $CITY and beyond. I bring my own lighting and turn around galleries within a week. Past work spans NGO field stories, restaurant menus, and graduation ceremonies.",
+  "Video & Photography": "Editorial and commercial photographer and videographer covering events, products, and portraits across $CITY and beyond. I bring my own lighting and turn around galleries within a week. Past work spans NGO field stories, restaurant menus, and graduation ceremonies.",
+  "Content Creation": "Content creator making short-form video and social content for $CITY brands and NGOs. I script, shoot, and edit Reels and TikToks, and keep a monthly content calendar running. Comfortable working in both English and Chichewa.",
   Writing: "Copywriter and editor with a background in development reporting. I write web copy, blog posts, and grant-friendly case studies in clear, plain English. Past clients include NGOs, two banks, and a regional health programme.",
   Marketing: "Social and content marketer working with $CITY brands and NGOs. I plan calendars, run Meta and Google Ads, and report on what's actually moving the needle. Comfortable in both English and Chichewa-led campaigns.",
 };
@@ -91,11 +96,16 @@ const SERVICES_BY_CAT = {
     { title: "Mobile app UI", desc: "Front-end build of a React Native screen set wired to your API.", min: 180000, max: 450000, days: [10,14] },
     { title: "Custom web app feature", desc: "Add a feature to an existing app (auth, dashboard, payments).", min: 150000, max: 400000, days: [7,14] },
   ],
-  Photography: [
+  "Video & Photography": [
     { title: "Product photography", desc: "Up to 20 edited product shots on white or lifestyle background.", min: 30000, max: 90000, days: [3,7] },
     { title: "Event coverage", desc: "Half-day event coverage with edited gallery delivered within 5 days.", min: 60000, max: 120000, days: [3,7] },
     { title: "Portrait session", desc: "1-hour studio or outdoor session, 15 edited portraits.", min: 35000, max: 80000, days: [3,5] },
-    { title: "Real estate photos", desc: "Interior and exterior shots for a single property listing.", min: 40000, max: 100000, days: [2,5] },
+    { title: "Promo video", desc: "60-second promo video, shot and edited with captions and music.", min: 90000, max: 200000, days: [5,10] },
+  ],
+  "Content Creation": [
+    { title: "Reels / TikTok pack", desc: "Five short-form videos scripted, shot, and edited for social.", min: 40000, max: 110000, days: [5,10] },
+    { title: "Monthly content pack", desc: "12 pieces of social content plus a posting calendar for one month.", min: 50000, max: 130000, days: [7,14] },
+    { title: "Product demo video", desc: "One short product demo or explainer, vertical format with captions.", min: 35000, max: 90000, days: [4,8] },
   ],
   Writing: [
     { title: "Blog article", desc: "800–1200 word researched article in your tone of voice.", min: 15000, max: 45000, days: [3,7] },
@@ -126,15 +136,15 @@ const JOB_TEMPLATES = [
   { title: "Logo design for new Blantyre restaurant", category: "Design", brief: "We're opening a casual dining spot in Blantyre and need a warm, memorable logo that works on signage, menus, and Instagram. Looking for two concepts to choose from.", budget: [60000,120000] },
   { title: "Website for Lilongwe-based NGO", category: "Development", brief: "5-page WordPress or Next.js site for a maternal-health NGO. Needs a programmes page, donation link, and contact form. Bilingual (English + Chichewa) preferred.", budget: [180000,350000] },
   { title: "Social media content for mobile money product", category: "Marketing", brief: "Monthly social content for a mobile-money product targeting small traders. 20 posts plus a calendar. Familiarity with Malawian SME audiences is a plus.", budget: [120000,220000] },
-  { title: "Photography for school graduation ceremony", category: "Photography", brief: "Coverage of a secondary-school graduation in Mzuzu. Group portraits plus candid moments. Edited gallery within one week.", budget: [70000,110000] },
+  { title: "Photography for school graduation ceremony", category: "Video & Photography", brief: "Coverage of a secondary-school graduation in Mzuzu. Group portraits plus candid moments. Edited gallery within one week.", budget: [70000,110000] },
   { title: "Copywriter for government health campaign", category: "Writing", brief: "Three short articles and one explainer for a public-health awareness campaign. Clear, plain English. Pre-existing brief and brand voice will be shared.", budget: [60000,130000] },
   { title: "Brand identity for women-led coffee co-op", category: "Design", brief: "Need a brand identity (logo, palette, type, one-pager) for a Mzuzu coffee co-operative going to market this quarter. Should feel modern but rooted in place.", budget: [120000,250000] },
-  { title: "Product photography for online seller", category: "Photography", brief: "Around 40 product shots for an online clothing store. White-background plus 5 lifestyle setups. Studio or on-location, you tell us.", budget: [80000,160000] },
+  { title: "Product photography for online seller", category: "Video & Photography", brief: "Around 40 product shots for an online clothing store. White-background plus 5 lifestyle setups. Studio or on-location, you tell us.", budget: [80000,160000] },
   { title: "Landing page for SaaS pilot", category: "Development", brief: "Single-page marketing site for a logistics SaaS pilot. Needs a hero, three feature blocks, pricing, and a waitlist form connected to email.", budget: [120000,220000] },
   { title: "Edit and polish 12 blog articles", category: "Writing", brief: "Twelve drafts (around 1000 words each) need editing for tone, clarity, and structure. Two-week turnaround.", budget: [80000,160000] },
-  { title: "Flyer + poster set for music festival", category: "Design", brief: "A4 poster, A5 flyer, and three Instagram variants for a one-day festival in Lilongwe. Bold and a bit chaotic, we trust your judgement.", budget: [55000,110000] },
+  { title: "Short-form video series for SME launch", category: "Content Creation", brief: "Five vertical videos (Reels/TikTok) for a Lilongwe SME product launch. Scripting, filming, and editing with captions. Bold and a bit chaotic, we trust your judgement.", budget: [55000,130000] },
   { title: "E-commerce store for boutique", category: "Development", brief: "Shopify build for a Blantyre boutique. ~25 products, mobile-first, Airtel + TNM Mpamba payments preferred.", budget: [250000,500000] },
-  { title: "Event coverage — fintech launch", category: "Photography", brief: "Evening launch event in Lilongwe. Need portrait + candid coverage, 60 edited images delivered within 4 days.", budget: [90000,160000] },
+  { title: "Event coverage — fintech launch", category: "Video & Photography", brief: "Evening launch event in Lilongwe. Need portrait + candid coverage, 60 edited images delivered within 4 days.", budget: [90000,160000] },
   { title: "Press release — funding announcement", category: "Writing", brief: "One press release announcing a Series A round for a Malawian agri-tech startup. Investor-friendly tone.", budget: [40000,80000] },
   { title: "Meta Ads setup for school recruitment", category: "Marketing", brief: "Set up and run a 2-week Meta ad campaign for a private secondary school's January intake. Targeting parents in Lilongwe.", budget: [80000,160000] },
   { title: "App UI for community savings group", category: "Design", brief: "Mobile UI mockups (Figma) for a community savings app: onboarding, dashboard, contribute, payout. Five screens, mobile first.", budget: [120000,240000] },
@@ -221,7 +231,8 @@ async function main() {
   const PORTFOLIO_BY_CAT = {
     Design: ["Rebrand for Mzuzu coffee co-op","Packaging for FMCG snack line","Identity for fintech pilot","Poster series for arts festival","Pitch deck for development partner"],
     Development: ["Next.js dashboard for microfinance team","WordPress site for maternal-health NGO","Shopify build for Blantyre boutique","React Native screens for savings app","Landing page for logistics SaaS"],
-    Photography: ["Wedding gallery — Lilongwe","Product shoot for online retailer","NGO field-story portraits","Restaurant menu photography","Graduation ceremony coverage"],
+    "Video & Photography": ["Wedding gallery — Lilongwe","Product shoot for online retailer","NGO field-story portraits","Restaurant menu photography","Promo video for fintech launch"],
+    "Content Creation": ["Reels series for restaurant opening","Monthly content pack for SME","TikTok campaign for school intake","Product demo videos for retailer","Social content for NGO relaunch"],
     Writing: ["Annual report copy for NGO","Three-part blog series on agri-tech","Press release for Series A round","Web copy for fintech relaunch","Case studies for health programme"],
     Marketing: ["Meta Ads campaign — school intake","Monthly social calendar for SME","Content strategy for NGO relaunch","Paid media for restaurant opening","Analytics setup for retailer"],
   };
@@ -340,6 +351,53 @@ async function main() {
   const { error: revErr } = await sb.from("reviews").insert(reviewRows.slice(0, 10));
   if (revErr) throw revErr;
   console.log(`  done (${Math.min(reviewRows.length, 10)})`);
+
+  // ── Deterministic test fixtures (known rows for filter/spend assertions) ──
+  console.log("Creating test fixtures…");
+
+  // Fixture 1: completed job where posted budget (40,000) ≠ accepted bid (50,000),
+  // escrow released. Reveals whether "released spend" sums budget_mwk or the bid.
+  const fxClient = clients[0];
+  const fxCreative = creatives.find((c) => c.category === "Video & Photography") || creatives[0];
+  const { data: fxJob, error: fxJobErr } = await sb.from("jobs").insert({
+    client_id: fxClient.id,
+    title: "FIXTURE — completed shoot (budget 40k, bid 50k)",
+    brief: "Fixture job: posted budget 40,000, accepted bid 50,000, escrow released. Used to verify the payments page spend definition.",
+    budget_mwk: 40000, category: "Video & Photography",
+    status: "completed", escrow_status: "payment_released",
+  }).select("id").single();
+  if (fxJobErr) throw fxJobErr;
+  const { error: fxPropErr } = await sb.from("proposals").insert({
+    job_id: fxJob.id, creative_id: fxCreative.id,
+    cover_letter: "Fixture accepted proposal at a bid of 50,000 against a 40,000 posted budget.",
+    bid_mwk: 50000, status: "accepted",
+  });
+  if (fxPropErr) throw fxPropErr;
+
+  // Fixtures 2 & 3: two creatives with known service pricing for the /browse
+  // price filter — one flat (50,000, no max), one range (50,000–150,000).
+  const priceFixtures = [
+    { cat: "Video & Photography", label: "flat 50k", price: 50000, max: null },
+    { cat: "Content Creation", label: "range 50k–150k", price: 50000, max: 150000 },
+  ];
+  for (const pf of priceFixtures) {
+    const email = `fixture.price.${pf.price}.${pf.max ?? "nomax"}.${batch}@seed.ganyu.local`;
+    const id = await adminCreate(email, `Fixture Creative (${pf.label})`, "creative");
+    const city = pick(CITIES);
+    const { error: pErr } = await sb.from("profiles").update({
+      headline: tag(pick(HEADLINES[pf.cat]), city),
+      bio: tag(BIOS[pf.cat], city),
+      location: city, categories: [pf.cat], skills: sample(SKILLS[pf.cat], 4),
+      onboarded_at: new Date().toISOString(),
+    }).eq("id", id);
+    if (pErr) throw pErr;
+    const { error: sErr } = await sb.from("services").insert({
+      profile_id: id, title: "Fixture service", description: `Price fixture: ${pf.label}.`,
+      price_mwk: pf.price, price_mwk_max: pf.max, delivery_days: 5,
+    });
+    if (sErr) throw sErr;
+  }
+  console.log("  done (1 completed job + 2 price-fixture creatives)");
 
   console.log(`\nBatch tag: ${batch}`);
   console.log(`To wipe this batch:\n  delete from auth.users where email like '%.${batch}@seed.ganyu.local';`);

@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatMwk(amount: number | null | undefined) {
   if (amount == null) return "—";
-  return `MK ${amount.toLocaleString("en-MW")}`;
+  return `MWK ${amount.toLocaleString("en-MW")}`;
 }
 
 export function timeAgo(iso: string) {

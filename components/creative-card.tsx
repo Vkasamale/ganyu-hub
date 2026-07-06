@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SaveButton } from "@/components/save-button";
 import { formatMwk } from "@/lib/utils";
 import type { Profile } from "@/lib/types";
@@ -18,11 +19,15 @@ export function CreativeCard({
   saved = false,
   showSave = false,
   fromPriceMwk = null,
+  rating = null,
+  reviewCount = 0,
 }: {
   profile: Profile;
   saved?: boolean;
   showSave?: boolean;
   fromPriceMwk?: number | null;
+  rating?: number | null;
+  reviewCount?: number;
 }) {
   const initials = initialsOf(profile.full_name);
   const primaryCategory = profile.categories?.[0];
@@ -40,10 +45,12 @@ export function CreativeCard({
       <Link href={`/creatives/${profile.id}`} className="block">
         <div className="relative aspect-[4/3] w-full overflow-hidden">
           {profile.avatar_url ? (
-            <img
+            <Image
               src={profile.avatar_url}
               alt={profile.full_name || "Creative"}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             />
           ) : (
             <div
@@ -111,11 +118,24 @@ export function CreativeCard({
 
         <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
           <div className="flex items-center gap-1 text-xs text-ink/60">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5 text-ink/30">
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className={`h-3.5 w-3.5 ${reviewCount > 0 ? "text-amber-400" : "text-ink/30"}`}
+            >
               <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
             </svg>
-            <span className="font-medium text-ink/70">New</span>
-            <span className="text-ink/40">· no reviews yet</span>
+            {reviewCount > 0 && rating != null ? (
+              <>
+                <span className="font-medium text-ink/80">{rating.toFixed(1)}</span>
+                <span className="text-ink/40">· {reviewCount} review{reviewCount === 1 ? "" : "s"}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-medium text-ink/70">New</span>
+                <span className="text-ink/40">· no reviews yet</span>
+              </>
+            )}
           </div>
           <p className="text-sm font-semibold text-ink">{priceLabel}</p>
         </div>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { adminResolveDispute, adminHideJob } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+import { SavingForm } from "@/components/saving-form";
 import { SignupsLineChart, JobStatusBarChart, JobCategoryBarChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
 
@@ -109,16 +110,16 @@ export default async function AdminPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <form action={adminResolveDispute}>
+                  <SavingForm action={adminResolveDispute} silent>
                     <input type="hidden" name="job_id" value={j.id} />
                     <input type="hidden" name="outcome" value="completed" />
                     <Button size="sm" type="submit">Resolve as completed</Button>
-                  </form>
-                  <form action={adminResolveDispute}>
+                  </SavingForm>
+                  <SavingForm action={adminResolveDispute} silent>
                     <input type="hidden" name="job_id" value={j.id} />
                     <input type="hidden" name="outcome" value="cancelled" />
                     <Button size="sm" variant="outline" type="submit">Resolve as cancelled</Button>
-                  </form>
+                  </SavingForm>
                 </div>
               </div>
               {j.dispute_reason && (
@@ -151,11 +152,11 @@ export default async function AdminPage() {
                 {j.hidden_at && (
                   <span className="rounded-full bg-ink/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ink/70">hidden</span>
                 )}
-                <form action={adminHideJob}>
+                <SavingForm action={adminHideJob} silent>
                   <input type="hidden" name="id" value={j.id} />
                   <input type="hidden" name="hide" value={j.hidden_at ? "false" : "true"} />
                   <Button size="sm" variant="outline" type="submit">{j.hidden_at ? "Unhide" : "Hide"}</Button>
-                </form>
+                </SavingForm>
               </div>
             </div>
           ))}

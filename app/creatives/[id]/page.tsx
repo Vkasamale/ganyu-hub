@@ -1,13 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SaveButton } from "@/components/save-button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { startThread, recordView, requestCustomService } from "@/app/actions";
-import { formatMwk } from "@/lib/utils";
+import { Stars } from "@/components/stars";
+import { formatMwk, timeAgo } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
 
 export default async function CreativePage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +28,16 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
     const { data: s } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("target_type", "creative").eq("target_id", id).maybeSingle();
     isSaved = !!s;
   }
+
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("id, rating, comment, created_at, reviewer:profiles!reviews_reviewer_id_fkey(full_name)")
+    .eq("reviewee_id", id)
+    .order("created_at", { ascending: false });
+  const reviewCount = reviews?.length || 0;
+  const avgRating = reviewCount
+    ? (reviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount)
+    : 0;
 
   const portfolioCount = portfolio?.length || 0;
   const serviceCount = services?.length || 0;
@@ -132,10 +144,10 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
             </div>
             {user && !isOwner && (
               <div className="flex items-center gap-2">
-                <form action={startThread}>
+                <SavingForm action={startThread} silent>
                   <input type="hidden" name="creative_id" value={profile.id} />
                   <Button type="submit">Message</Button>
-                </form>
+                </SavingForm>
                 <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
               </div>
             )}
@@ -208,26 +220,62 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
             <section className="card-soft p-6">
               <p className="eyebrow">Portfolio</p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {(portfolio || []).map((p) => (
-                  <div key={p.id} className="overflow-hidden rounded-lg border border-ink/10 bg-paper">
-                    {p.cover_url && <img src={p.cover_url} alt={p.title} className="aspect-video w-full object-cover" />}
-                    <div className="p-4">
-                      <p className="font-medium text-ink">{p.title}</p>
-                      {p.description && <p className="mt-1 line-clamp-3 text-xs text-ink/65">{p.description}</p>}
-                      {p.project_url && (
-                        <a href={p.project_url} target="_blank" rel="noopener" className="mt-2 inline-block text-xs font-medium text-stamp hover:underline">
-                          View project →
-                        </a>
+                {(portfolio || []).map((p) => {
+                  const extra = Array.isArray(p.images) ? p.images.length : 0;
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/creatives/${profile.id}/portfolio/${p.id}`}
+                      className="group overflow-hidden rounded-lg border border-ink/10 bg-paper transition-shadow hover:shadow-md"
+                    >
+                      {p.cover_url && (
+                        <div className="relative aspect-video w-full overflow-hidden">
+                          <Image src={p.cover_url} alt={p.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
+                          {extra > 0 && (
+                            <span className="absolute right-2 top-2 rounded-full bg-ink/85 px-2 py-0.5 text-[10px] font-medium text-paper">
+                              +{extra} more
+                            </span>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  </div>
-                ))}
+                      <div className="p-4">
+                        <p className="font-medium text-ink group-hover:underline">{p.title}</p>
+                        {p.description && <p className="mt-1 line-clamp-3 text-xs text-ink/65">{p.description}</p>}
+                      </div>
+                    </Link>
+                  );
+                })}
                 {portfolioCount === 0 && isOwner && (
                   <Link href="/dashboard/portfolio" className="rounded-lg border border-dashed border-ink/25 p-6 text-center text-sm text-ink/60 hover:border-ink/45 hover:text-ink">
                     + Add your first portfolio item
                   </Link>
                 )}
               </div>
+            </section>
+          )}
+
+          {reviewCount > 0 && (
+            <section className="card-soft p-6">
+              <div className="flex items-center justify-between">
+                <p className="eyebrow">Reviews</p>
+                <span className="inline-flex items-center gap-1.5 text-sm">
+                  <Stars value={avgRating} className="h-4 w-4" />
+                  <span className="font-semibold text-ink">{avgRating.toFixed(1)}</span>
+                  <span className="text-ink/55">· {reviewCount}</span>
+                </span>
+              </div>
+              <ul className="mt-4 space-y-4">
+                {(reviews || []).map((r: any) => (
+                  <li key={r.id} className="border-t border-ink/10 pt-4 first:border-0 first:pt-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-ink">{r.reviewer?.full_name || "A client"}</p>
+                      <Stars value={r.rating} className="h-3.5 w-3.5" />
+                    </div>
+                    {r.comment && <p className="mt-1.5 whitespace-pre-wrap text-sm text-ink/75">{r.comment}</p>}
+                    <p className="mt-1 text-xs text-ink/45">{timeAgo(r.created_at)}</p>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
@@ -274,8 +322,18 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                 </div>
               )}
               <div className="flex justify-between">
-                <dt className="text-ink/60">Response time</dt>
-                <dd className="text-ink">Usually within 24h</dd>
+                <dt className="text-ink/60">Rating</dt>
+                <dd className="text-ink">
+                  {reviewCount > 0 ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Stars value={avgRating} className="h-3.5 w-3.5" />
+                      <span className="font-medium">{avgRating.toFixed(1)}</span>
+                      <span className="text-ink/55">({reviewCount})</span>
+                    </span>
+                  ) : (
+                    <span className="text-ink/55">No reviews yet</span>
+                  )}
+                </dd>
               </div>
             </dl>
           </section>

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { sendMessage } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { AttachmentPicker } from "@/components/attachment-picker";
+import { MessageAttachment } from "@/components/message-attachment";
 import { timeAgo } from "@/lib/utils";
 
 export default async function ThreadPage({ params: paramsP }: { params: Promise<{ threadId: string }> }) {
@@ -24,6 +26,22 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     .select("*")
     .eq("thread_id", params.threadId)
     .order("created_at", { ascending: true });
+
+  // Attachments live in a private bucket. New rows store the object path; mint
+  // short-lived signed URLs here (RLS limits this to thread participants).
+  // Legacy rows may hold a full public URL — pass those through unchanged.
+  const attachmentPaths = (messages || [])
+    .map((m: any) => m.attachment_url as string | null)
+    .filter((u): u is string => !!u && !u.startsWith("http"));
+  const signedMap = new Map<string, string>();
+  if (attachmentPaths.length) {
+    const { data: signed } = await supabase.storage
+      .from("job-files")
+      .createSignedUrls(attachmentPaths, 3600);
+    (signed || []).forEach((s) => {
+      if (s.signedUrl && s.path) signedMap.set(s.path, s.signedUrl);
+    });
+  }
 
   const { data: threads } = await supabase
     .from("message_threads")
@@ -107,7 +125,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto bg-paper/60 px-5 py-5">
-            {(messages || []).map((m) => {
+            {(messages || []).map((m: any) => {
               const mine = m.sender_id === user.id;
               return (
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
@@ -118,7 +136,16 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         : "max-w-[75%] rounded-2xl rounded-bl-sm border border-ink/10 bg-paper px-4 py-2.5 text-sm text-ink shadow-sm"
                     }
                   >
-                    <p className="whitespace-pre-wrap">{m.body}</p>
+                    {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
+                    {m.attachment_url && (
+                      <MessageAttachment
+                        url={m.attachment_url.startsWith("http") ? m.attachment_url : (signedMap.get(m.attachment_url) || "")}
+                        name={m.attachment_name}
+                        type={m.attachment_type}
+                        size={m.attachment_size}
+                        mine={mine}
+                      />
+                    )}
                     <p className={`mt-1 text-[10px] ${mine ? "text-paper/60" : "text-ink/50"}`}>{timeAgo(m.created_at)}</p>
                   </div>
                 </div>
@@ -129,9 +156,10 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             )}
           </div>
 
-          <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex gap-2 border-t border-ink/10 bg-paper px-5 py-4">
+          <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex flex-wrap items-center gap-2 border-t border-ink/10 bg-paper px-5 py-4">
             <input type="hidden" name="thread_id" value={thread.id} />
-            <Input name="body" placeholder="Type a message" required className="flex-1" />
+            <AttachmentPicker />
+            <Input name="body" placeholder="Type a message or attach a file" className="min-w-0 flex-1" />
             <SubmitButton pendingText="Sending…">Send</SubmitButton>
           </SavingForm>
         </section>

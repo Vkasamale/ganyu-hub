@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { ImagePicker } from "@/components/image-picker";
 import { formatMwk } from "@/lib/utils";
 
 export default async function ServicesPage() {
@@ -55,6 +56,10 @@ export default async function ServicesPage() {
               <Label htmlFor="delivery_days">Typical delivery (days)</Label>
               <Input id="delivery_days" name="delivery_days" type="number" min={1} defaultValue={7} />
             </div>
+            <div className="space-y-1.5">
+              <Label>Image (optional)</Label>
+              <ImagePicker name="image_file" shape="square" label="Upload image" />
+            </div>
             <SubmitButton pendingText="Adding…">Add to rate card</SubmitButton>
           </SavingForm>
         </CardContent>
@@ -66,8 +71,11 @@ export default async function ServicesPage() {
           {(services || []).map((s: any) => (
             <Card key={s.id}>
               <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                <div className="flex items-start gap-4">
+                  {s.image_url && (
+                    <img src={s.image_url} alt={s.title} className="h-16 w-16 shrink-0 rounded-md object-cover" />
+                  )}
+                  <div className="min-w-0 flex-1">
                     <p className="font-semibold">{s.title}</p>
                     {s.description && <p className="mt-1 text-sm text-neutral-600 whitespace-pre-wrap">{s.description}</p>}
                     <p className="mt-2 text-sm">
@@ -76,10 +84,10 @@ export default async function ServicesPage() {
                       <span className="text-neutral-500"> &middot; ~{s.delivery_days} day{s.delivery_days === 1 ? "" : "s"}</span>
                     </p>
                   </div>
-                  <form action={deleteService}>
+                  <SavingForm action={deleteService} silent>
                     <input type="hidden" name="id" value={s.id} />
                     <Button type="submit" size="sm" variant="outline">Delete</Button>
-                  </form>
+                  </SavingForm>
                 </div>
               </CardContent>
             </Card>
