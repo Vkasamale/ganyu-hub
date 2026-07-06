@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { CategoryPicker } from "@/components/category-picker";
 
 export default async function ClientOnboardingPage() {
   const supabase = createClient();
@@ -51,8 +52,8 @@ export default async function ClientOnboardingPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1.5">
-              <Label htmlFor="categories">Categories (comma-separated)</Label>
-              <Input id="categories" name="categories" defaultValue={(profile?.categories || []).join(", ")} placeholder="Design, Content Creation" />
+              <Label>Categories</Label>
+              <CategoryPicker selected={profile?.categories || []} />
             </div>
           </CardContent>
         </Card>

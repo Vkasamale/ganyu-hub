@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { CategoryPicker } from "@/components/category-picker";
 
 export default async function CreativeOnboardingPage() {
   const supabase = createClient();
@@ -38,8 +39,8 @@ export default async function CreativeOnboardingPage() {
               <Textarea id="bio" name="bio" rows={4} required placeholder="Who you are, what you make, who you've worked with." defaultValue={profile?.bio || ""} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="categories">Categories (comma-separated)</Label>
-              <Input id="categories" name="categories" placeholder="Design, Content Creation" defaultValue={(profile?.categories || []).join(", ")} />
+              <Label>Categories</Label>
+              <CategoryPicker selected={profile?.categories || []} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="skills">Skills (comma-separated)</Label>

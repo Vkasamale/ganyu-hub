@@ -3,6 +3,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { CATEGORIES } from "@/lib/types";
+
+// Trust-boundary guard: keep only canonical categories. The CategoryPicker
+// submits repeated name="categories" checkboxes, so read them with getAll().
+const CANONICAL = new Set<string>(CATEGORIES);
+function parseCategories(formData: FormData): string[] {
+  return formData.getAll("categories").map(String).filter((c) => CANONICAL.has(c));
+}
 
 async function emailUser(
   supabase: ReturnType<typeof createClient>,
@@ -67,8 +75,7 @@ export async function updateProfile(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
-  const categories = String(formData.get("categories") || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+  const categories = parseCategories(formData);
   const skills = String(formData.get("skills") || "")
     .split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -135,8 +142,7 @@ export async function completeCreativeOnboarding(formData: FormData) {
 
   const headline = String(formData.get("headline") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
-  const categories = String(formData.get("categories") || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+  const categories = parseCategories(formData);
   const skills = String(formData.get("skills") || "")
     .split(",").map((s) => s.trim()).filter(Boolean);
   const piece_title = String(formData.get("piece_title") || "").trim();
@@ -301,8 +307,7 @@ export async function completeClientOnboarding(formData: FormData) {
   const full_name = String(formData.get("full_name") || "").trim();
   const headline = String(formData.get("headline") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
-  const categories = String(formData.get("categories") || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+  const categories = parseCategories(formData);
 
   if (!full_name) return { error: "Add a name or company name." };
 

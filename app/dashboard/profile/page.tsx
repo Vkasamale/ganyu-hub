@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { ImagePicker } from "@/components/image-picker";
+import { CategoryPicker } from "@/components/category-picker";
 
 export default async function EditProfilePage() {
   const supabase = createClient();
@@ -66,8 +67,8 @@ export default async function EditProfilePage() {
               <Input id="location" name="location" defaultValue={profile?.location || "Malawi"} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="categories">Categories (comma-separated)</Label>
-              <Input id="categories" name="categories" defaultValue={(profile?.categories || []).join(", ")} placeholder="Design, Development" />
+              <Label>Categories</Label>
+              <CategoryPicker selected={profile?.categories || []} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="skills">Skills (comma-separated)</Label>
