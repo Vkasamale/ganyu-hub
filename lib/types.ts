@@ -77,8 +77,8 @@ export type Message = {
   created_at: string;
 };
 
-// Kept tech-adjacent for now (no fashion/DJs/tailors — see BACKLOG.md).
-// Existing six canonical values are preserved verbatim so old rows stay valid.
+// Broad freelance taxonomy — tech + creative + services.
+// Original six canonical values are preserved verbatim so old rows stay valid.
 export const CATEGORIES = [
   "Design",
   "Development",
@@ -95,4 +95,13 @@ export const CATEGORIES = [
   "Product & UX",
   "Tutoring & Training",
   "Business & Consulting",
+  "Fashion & Tailoring",
+  "Events & Entertainment",
+  "Finance & Accounting",
+  "Legal & Compliance",
+  "Sales & Customer Support",
+  "Health & Wellness",
+  "Engineering & Architecture",
+  "Crafts & Handmade",
+  "Agriculture & Food",
 ] as const;
