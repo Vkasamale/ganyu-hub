@@ -93,13 +93,13 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           style={
             profile.cover_url
               ? { backgroundImage: `url(${profile.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }
-              : { background: "linear-gradient(135deg, #8B2020 0%, #6e1a18 50%, #5a1414 100%)" }
+              : { background: "linear-gradient(135deg, #069494 0%, #057a7a 55%, #045f5f 100%)" }
           }
         >
           {!profile.cover_url && (
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-[0.08]"
+              className="pointer-events-none absolute inset-0 opacity-[0.10]"
               style={{
                 backgroundImage:
                   "repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 14px)",
@@ -109,12 +109,17 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           {!profile.cover_url && (
             <span
               aria-hidden
-              className="pointer-events-none absolute bottom-4 right-6 font-display text-4xl font-semibold tracking-tight text-paper/15 md:text-5xl"
+              className="pointer-events-none absolute bottom-4 right-6 font-display text-4xl font-semibold tracking-tight text-paper/20 md:text-5xl"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
             >
               Ganyu Hub
             </span>
           )}
+          {/* Bottom scrim so name/headline stay legible over any cover image */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/55 to-transparent"
+          />
           {isOwner && (
             <Link
               href="/dashboard/profile"
@@ -132,7 +137,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
         <div className="px-6 pb-6">
           <div className="relative z-10 -mt-16 flex flex-col gap-4 md:-mt-20 md:flex-row md:items-end md:justify-between">
             <div className="flex items-end gap-4">
-              <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-paper bg-ink text-3xl font-display font-semibold text-paper shadow-lg md:h-36 md:w-36 md:text-4xl">
+              <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-lg ring-4 ring-white md:h-36 md:w-36 md:text-4xl">
                 {profile.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.avatar_url} alt={profile.full_name || "Avatar"} className="h-full w-full object-cover" />
