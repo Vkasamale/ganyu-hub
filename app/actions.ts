@@ -621,13 +621,18 @@ export async function decideProposal(formData: FormData) {
 
   const { data: proposal } = await supabase
     .from("proposals")
-    .select("creative_id, job_id, job:jobs(title, client_id)")
+    .select("creative_id, job_id, bid_mwk, job:jobs(title, client_id)")
     .eq("id", id)
     .single();
   if (proposal) {
     const job: any = Array.isArray(proposal.job) ? proposal.job[0] : proposal.job;
     if (status === "accepted") {
-      await supabase.from("jobs").update({ status: "scope_pending" }).eq("id", proposal.job_id);
+      // The accepted bid becomes the job's agreed amount — the number of record
+      // for every money calculation (see lib/money.ts), replacing budget_mwk.
+      await supabase
+        .from("jobs")
+        .update({ status: "scope_pending", accepted_bid_mwk: proposal.bid_mwk })
+        .eq("id", proposal.job_id);
     }
     await supabase.from("notifications").insert({
       user_id: proposal.creative_id,

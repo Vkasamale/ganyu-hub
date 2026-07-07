@@ -395,12 +395,12 @@ async function main() {
 
   // Bid-vs-budget fixture job — belongs to fixture-client, accepted by
   // fixture-creative. Posted budget 40,000 ≠ accepted bid 50,000, escrow
-  // released. Reveals whether "released spend" sums budget_mwk or the bid.
+  // released. Released spend must read the agreed 50,000, not the 40,000 budget.
   const { data: fxJob, error: fxJobErr } = await sb.from("jobs").insert({
     client_id: fx.client.id,
     title: "FIXTURE — completed shoot (budget 40k, bid 50k)",
     brief: "Fixture job: posted budget 40,000, accepted bid 50,000, escrow released. Used to verify the payments page spend definition.",
-    budget_mwk: 40000, category: "Video & Photography",
+    budget_mwk: 40000, accepted_bid_mwk: 50000, category: "Video & Photography",
     status: "completed", escrow_status: "payment_released",
   }).select("id").single();
   if (fxJobErr) throw fxJobErr;
