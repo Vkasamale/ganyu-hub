@@ -105,6 +105,20 @@ export async function updateProfile(formData: FormData) {
     update.avatar_url = pub.publicUrl;
   }
 
+  const cover = formData.get("cover_file");
+  if (cover instanceof File && cover.size > 0) {
+    if (cover.size > 8 * 1024 * 1024) return { error: "Cover photo too large (max 8MB)." };
+    if (!cover.type.startsWith("image/")) return { error: "Cover must be an image." };
+    const ext = cover.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+    const path = `${user.id}/cover/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("portfolio")
+      .upload(path, cover, { contentType: cover.type, upsert: false });
+    if (upErr) return { error: upErr.message };
+    const { data: pub } = supabase.storage.from("portfolio").getPublicUrl(path);
+    update.cover_url = pub.publicUrl;
+  }
+
   const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
   if (error) return { error: error.message };
   revalidatePath("/dashboard/profile");
@@ -147,8 +161,21 @@ export async function completeCreativeOnboarding(formData: FormData) {
     .split(",").map((s) => s.trim()).filter(Boolean);
   const piece_title = String(formData.get("piece_title") || "").trim();
   const piece_description = String(formData.get("piece_description") || "").trim();
-  const piece_cover_url = String(formData.get("piece_cover_url") || "").trim() || null;
   const piece_project_url = String(formData.get("piece_project_url") || "").trim() || null;
+
+  let piece_cover_url: string | null = null;
+  const pieceCover = formData.get("piece_cover_file");
+  if (pieceCover instanceof File && pieceCover.size > 0) {
+    if (pieceCover.size > 10 * 1024 * 1024) return { error: "Cover image too large (max 10MB)." };
+    if (!pieceCover.type.startsWith("image/")) return { error: "Cover must be an image." };
+    const ext = pieceCover.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+    const path = `${user.id}/portfolio/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("portfolio")
+      .upload(path, pieceCover, { contentType: pieceCover.type });
+    if (upErr) return { error: upErr.message };
+    piece_cover_url = supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl;
+  }
   const service_title = String(formData.get("service_title") || "").trim();
   const service_price_mwk = Number(formData.get("service_price_mwk")) || null;
   const service_price_mwk_max_raw = Number(formData.get("service_price_mwk_max")) || null;

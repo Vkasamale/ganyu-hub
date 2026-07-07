@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { CategoryPicker } from "@/components/category-picker";
+import { ImagePicker } from "@/components/image-picker";
 
 export default async function CreativeOnboardingPage() {
   const supabase = createClient();
@@ -64,8 +65,8 @@ export default async function CreativeOnboardingPage() {
               <Textarea id="piece_description" name="piece_description" rows={3} placeholder="What you delivered, the client, the result." />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="piece_cover_url">Cover image URL</Label>
-              <Input id="piece_cover_url" name="piece_cover_url" type="url" placeholder="https://..." />
+              <Label>Cover image</Label>
+              <ImagePicker name="piece_cover_file" shape="wide" label="Upload cover" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="piece_project_url">Project URL</Label>

@@ -380,6 +380,9 @@ create policy "job-files insert" on storage.objects for insert
 alter table portfolio_items add column if not exists images text[] not null default '{}';
 alter table services add column if not exists image_url text;
 
+-- Profile cover photo (banner). Reuses the `portfolio` bucket.
+alter table profiles add column if not exists cover_url text;
+
 -- Storage bucket for portfolio covers and avatars (path prefixed by uid)
 insert into storage.buckets (id, name, public)
 values ('portfolio', 'portfolio', true)

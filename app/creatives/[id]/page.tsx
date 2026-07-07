@@ -90,29 +90,34 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
       <section className="card-soft mt-6 overflow-hidden">
         <div
           className="relative h-44 md:h-56"
-          style={{
-            background:
-              "linear-gradient(135deg, #8B2020 0%, #6e1a18 50%, #5a1414 100%)",
-          }}
+          style={
+            profile.cover_url
+              ? { backgroundImage: `url(${profile.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+              : { background: "linear-gradient(135deg, #8B2020 0%, #6e1a18 50%, #5a1414 100%)" }
+          }
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.08]"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 14px)",
-            }}
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-4 right-6 font-display text-4xl font-semibold tracking-tight text-paper/15 md:text-5xl"
-            style={{ fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
-          >
-            Ganyu Hub
-          </span>
+          {!profile.cover_url && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.08]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 14px)",
+              }}
+            />
+          )}
+          {!profile.cover_url && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-4 right-6 font-display text-4xl font-semibold tracking-tight text-paper/15 md:text-5xl"
+              style={{ fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
+            >
+              Ganyu Hub
+            </span>
+          )}
           {isOwner && (
             <Link
-              href="/dashboard/account"
+              href="/dashboard/profile"
               className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-ink/60 px-3 py-1.5 text-xs font-medium text-paper backdrop-blur transition-colors hover:bg-ink/80"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
@@ -127,8 +132,13 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
         <div className="px-6 pb-6">
           <div className="relative z-10 -mt-16 flex flex-col gap-4 md:-mt-20 md:flex-row md:items-end md:justify-between">
             <div className="flex items-end gap-4">
-              <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-full border-4 border-paper bg-ink text-3xl font-display font-semibold text-paper shadow-lg md:h-36 md:w-36 md:text-4xl">
-                {initials}
+              <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-paper bg-ink text-3xl font-display font-semibold text-paper shadow-lg md:h-36 md:w-36 md:text-4xl">
+                {profile.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profile.avatar_url} alt={profile.full_name || "Avatar"} className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
               </div>
               <div className="pb-1">
                 <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">{profile.full_name || "Unnamed"}</h1>

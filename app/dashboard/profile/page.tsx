@@ -51,6 +51,10 @@ export default async function EditProfilePage() {
               <ImagePicker name="avatar_file" currentUrl={profile?.avatar_url} shape="circle" label="Upload photo" />
             </div>
             <div className="space-y-1.5">
+              <Label>Cover photo</Label>
+              <ImagePicker name="cover_file" currentUrl={profile?.cover_url} shape="wide" label="Upload cover" />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="full_name">Full name</Label>
               <Input id="full_name" name="full_name" defaultValue={profile?.full_name || ""} />
             </div>
