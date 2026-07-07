@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, LayoutGroup } from "framer-motion";
-import { CATEGORIES } from "@/lib/types";
+import { CategoryPicker } from "@/components/category-picker";
 
 type Kind = "creatives" | "jobs";
 
@@ -147,19 +147,8 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
 
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-ink/70">Category</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {CATEGORIES.map((c) => {
-                    const checked = categories.includes(c);
-                    return (
-                      <label
-                        key={c}
-                        className="relative cursor-pointer rounded-full border border-ink/25 bg-paper px-3.5 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-ink/50 hover:bg-wash/40 has-[:checked]:border-stamp has-[:checked]:bg-stamp has-[:checked]:text-paper has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-stamp"
-                      >
-                        <input type="checkbox" name="category" value={c} defaultChecked={checked} className="sr-only" />
-                        {c}
-                      </label>
-                    );
-                  })}
+                <div className="mt-2">
+                  <CategoryPicker selected={categories} name="category" />
                 </div>
               </div>
 

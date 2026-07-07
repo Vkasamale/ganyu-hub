@@ -234,13 +234,18 @@ export default function Home() {
             </AnimatePresence>
           </p>
           <ul className="mt-2 space-y-0">
-            {CATEGORIES.map((cat) => (
+            {CATEGORIES.slice(0, 5).map((cat) => (
               <li key={cat}>
                 <CategoryLink href={`${c.catHrefPrefix}${encodeURIComponent(cat)}`} t={t}>
                   {cat}
                 </CategoryLink>
               </li>
             ))}
+            <li>
+              <CategoryLink href={c.catHrefPrefix.replace(/[?&]category=$/, "")} t={t}>
+                See all →
+              </CategoryLink>
+            </li>
           </ul>
         </div>
       </div>
