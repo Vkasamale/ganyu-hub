@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import { getReleasedSpend } from "@/lib/money";
+import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 
 type Role = "client" | "creative" | "agency";
 
@@ -53,6 +54,45 @@ export default async function PaymentsPage() {
   const held = rows.filter((r) => r.escrow === "payment_held").reduce((s, r) => s + r.amount, 0);
   const released = rows.filter((r) => r.escrow === "payment_released").reduce((s, r) => s + r.amount, 0);
   const lifetime = held + released;
+  const openAmount = rows
+    .filter((r) => !r.escrow || r.escrow === "none")
+    .reduce((s, r) => s + r.amount, 0);
+  const disputedAmount = rows
+    .filter((r) => r.escrow === "payment_disputed")
+    .reduce((s, r) => s + r.amount, 0);
+
+  // Last 6 months of released money, grouped by the row's created_at month.
+  // Not a perfect proxy for "when funds cleared" (we don't track escrow-transition
+  // timestamps yet) but close enough — most jobs release in the same month they open.
+  const monthBuckets: { key: string; label: string; value: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - i);
+    monthBuckets.push({
+      key: `${d.getFullYear()}-${d.getMonth()}`,
+      label: d.toLocaleDateString(undefined, { month: "short" }),
+      value: 0,
+    });
+  }
+  for (const r of rows) {
+    if (r.escrow !== "payment_released") continue;
+    const d = new Date(r.created_at);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const bucket = monthBuckets.find((b) => b.key === key);
+    if (bucket) bucket.value += r.amount;
+  }
+  const trend = monthBuckets.map(({ label, value }) => ({ label, value }));
+
+  // Donut of where money currently sits. Amber for held, teal for released,
+  // grey for open/none, red for disputed.
+  const donut = [
+    { label: "In escrow", value: held, color: "hsl(35, 92%, 50%)" },
+    { label: "Released", value: released, color: "hsl(180, 92%, 30%)" },
+    { label: "Open", value: openAmount, color: "hsla(0, 14%, 17%, 0.25)" },
+    { label: "Disputed", value: disputedAmount, color: "hsl(0, 70%, 45%)" },
+  ].filter((d) => d.value > 0);
+  const donutTotal = donut.reduce((s, d) => s + d.value, 0);
 
   // Client spend figures come from the single source of truth (lib/money.ts),
   // never from held+released — "released" must exclude money still in escrow.
@@ -90,6 +130,51 @@ export default async function PaymentsPage() {
             <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">{s.value}</p>
           </div>
         ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="card-soft p-6">
+          <div className="flex items-baseline justify-between">
+            <p className="eyebrow">{isClient ? "Released spend" : "Payouts"} — last 6 months</p>
+            <span className="text-xs text-ink/50">MWK</span>
+          </div>
+          <div className="mt-4">
+            <PeriodBarChart data={trend} format="mwk" highlightLast seriesLabel={isClient ? "Spent" : "Earned"} />
+          </div>
+          {trend.every((t) => t.value === 0) && (
+            <p className="mt-2 text-center text-xs text-ink/45">
+              No released payments in the last 6 months yet.
+            </p>
+          )}
+        </section>
+
+        <section className="card-soft p-6">
+          <p className="eyebrow">Where the money sits</p>
+          <div className="mt-4">
+            {donutTotal > 0 ? (
+              <OutcomeDonutChart
+                data={donut}
+                centerValue={formatMwk(donutTotal)}
+                centerLabel="Total"
+              />
+            ) : (
+              <div className="flex h-[180px] items-center justify-center text-xs text-ink/45">
+                Nothing tracked yet.
+              </div>
+            )}
+          </div>
+          <ul className="mt-4 space-y-1.5">
+            {donut.map((d) => (
+              <li key={d.label} className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2 text-ink/70">
+                  <span className="h-2 w-2 rounded-full" style={{ background: d.color }} />
+                  {d.label}
+                </span>
+                <span className="tabular-nums text-ink">{formatMwk(d.value)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
 
       <section className="card-soft p-6">
