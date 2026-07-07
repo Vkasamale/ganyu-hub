@@ -77,6 +77,8 @@ export type Message = {
   created_at: string;
 };
 
+// Kept tech-adjacent for now (no fashion/DJs/tailors — see BACKLOG.md).
+// Existing six canonical values are preserved verbatim so old rows stay valid.
 export const CATEGORIES = [
   "Design",
   "Development",
@@ -84,4 +86,13 @@ export const CATEGORIES = [
   "Content Creation",
   "Writing",
   "Marketing",
+  "Data & Analytics",
+  "Data Entry & Admin",
+  "Translation & Transcription",
+  "Audio & Music",
+  "Animation & Motion",
+  "IT & Networking",
+  "Product & UX",
+  "Tutoring & Training",
+  "Business & Consulting",
 ] as const;

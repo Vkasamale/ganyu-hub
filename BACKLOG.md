@@ -17,6 +17,11 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 ## Media
 
 - **Image upload for portfolio (and avatars).** Right now portfolio items take a `cover_url` text field, so creatives have to host images elsewhere and paste a URL. Wire up Supabase Storage: create a `portfolio` bucket with public read + owner-only write, swap the URL input for a file upload that stores to `portfolio/<profile_id>/<uuid>.ext` and saves the public URL. Same for profile avatars.
+- **Inline avatar upload from own public profile.** When the signed-in user is viewing their own `/creatives/[id]` page, clicking the avatar circle should open the file picker directly and upload a new avatar in place — no round-trip to `/dashboard/profile`. Keep the existing Edit-profile flow untouched; this is purely a shortcut for the most common tweak. Owner-only — for non-owners the avatar stays a static image.
+
+## Taxonomy
+
+- **Non-tech categories (fashion, DJs, event MCs, tailors, bookkeepers, legal drafting, etc.).** The current 15 are tech-adjacent by design. When the platform's ready to broaden beyond digital work, research what freelancer platforms (Upwork, Fiverr, Malt, PeoplePerHour) list top-level, cut to what's plausible in Malawi's market, and extend `CATEGORIES` in `lib/types.ts`. Keep the total browsable (target ≤25). Re-run `scripts/audit-categories.mjs` after any change.
 
 ## Search & Filters
 
