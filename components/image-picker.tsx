@@ -31,8 +31,12 @@ export function ImagePicker({
       ? "h-24 w-24 rounded-full"
       : "h-32 w-32 rounded-lg";
 
+  // Wide previews take full width, so stack the button beneath. Square/circle
+  // previews stay side-by-side with the button.
+  const layout = shape === "wide" ? "flex flex-col items-start gap-3" : "flex items-center gap-4";
+
   return (
-    <div className="flex items-center gap-4">
+    <div className={layout}>
       <div className={`${box} shrink-0 overflow-hidden border border-ink/15 bg-wash/40`}>
         {preview ? (
           <img src={preview} alt="" className="h-full w-full object-cover" />

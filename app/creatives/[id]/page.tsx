@@ -134,10 +134,10 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           )}
         </div>
 
-        <div className="px-6 pb-6">
-          <div className="relative z-10 -mt-16 flex flex-col gap-4 md:-mt-20 md:flex-row md:items-end md:justify-between">
+        <div className="px-6 pb-6 pt-8 md:pt-10">
+          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="flex items-end gap-4">
-              <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-lg ring-4 ring-white md:h-36 md:w-36 md:text-4xl">
+              <div className="-mt-16 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-lg ring-4 ring-white md:-mt-20 md:h-36 md:w-36 md:text-4xl">
                 {profile.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.avatar_url} alt={profile.full_name || "Avatar"} className="h-full w-full object-cover" />
