@@ -3,6 +3,49 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-08 — Landing category rotator
+
+Landing hero previously listed the entire `CATEGORIES` array — 24 entries after the expansion made the column absurdly tall and pushed the search bar off-screen. Now shows 6 categories at a time in a keyed batch, cycling every 3.8s through 4 batches with a Framer AnimatePresence swap (whole batch exits together, next batch enters together, small child stagger). Hover pauses; `prefers-reduced-motion` locks to the first batch. A permanent "See all 24 →" row anchors the bottom. Same rotator serves both hero modes (client / creative).
+
+## 2026-07-08 — Searchable CategoryPicker, deduplicated
+
+`CategoryPicker` is now client-side with a search input and a max-height scrollable chip area, and takes an optional `name` prop (defaults to `categories`). `FiltersBar` on `/browse` and `/jobs` swapped its inline chip wall for `<CategoryPicker name="category" />` — one source of truth, same UX everywhere (onboarding, profile edit, browse filters, jobs filters). Selected chips filtered out by search are preserved as hidden inputs so they survive form submit.
+
+## 2026-07-08 — Payments dashboard charts
+
+Between the summary stat cards and the transactions list, two new visual cards (stack on mobile):
+
+- **6-month bar chart** — `PeriodBarChart` reused from `admin-charts.tsx`. Released spend (clients) or payouts (creatives) grouped by the row's `created_at` month, current month highlighted in stamp-teal.
+- **Escrow donut** — `OutcomeDonutChart` split by state (in escrow / released / open / disputed) with a colour-coded legend below and total MWK stamped in center.
+
+No new deps — recharts was already installed for the admin page.
+
+## 2026-07-08 — Portfolio item detail page rebuild
+
+The old page rendered title + description + optional link + image grid — mostly empty when items had no images.
+
+Now: hero band (uploaded cover image, or teal fallback with the title stamped inside), category chips + "Added" date + "View live project ↗" CTA row, two-column body with an *About this project* card + gallery grid on the left and a creator sidebar (avatar + headline + location + "View full profile" button) + project details card on the right, and a **More from `<first name>`** 4-up strip at the bottom pulling other portfolio items from the same creator. Never blank now.
+
+## 2026-07-08 — Categories expanded to 24
+
+`CATEGORIES` in `lib/types.ts` grew from 6 → 24 to cover the actual freelance surface: added Data & Analytics, Data Entry & Admin, Translation & Transcription, Audio & Music, Animation & Motion, IT & Networking, Product & UX, Tutoring & Training, Business & Consulting, Fashion & Tailoring, Events & Entertainment, Finance & Accounting, Legal & Compliance, Sales & Customer Support, Health & Wellness, Engineering & Architecture, Crafts & Handmade, Agriculture & Food. Original six preserved verbatim so all existing rows stayed canonical (audit-categories.mjs still clean). All consumers (CategoryPicker, FiltersBar, /jobs/new, /browse, action-layer whitelist, audit script) pick up new values automatically because they all read from `lib/types.ts`.
+
+## 2026-07-08 — Image upload for profile cover + onboarding piece cover
+
+- New `profiles.cover_url` column. Wide `ImagePicker` on `/dashboard/profile` bound to `cover_file`; `updateProfile` uploads to `portfolio/<uid>/cover/<uuid>.ext` (reuses existing `portfolio` bucket + RLS — no new bucket needed) and stores public URL.
+- Public profile banner now renders `cover_url` as background if set, teal fallback gradient otherwise, with a bottom scrim for legibility.
+- Public profile avatar renders `avatar_url` if set (was always initials before).
+- White ring on the avatar circle; header block sits below banner, only avatar straddles the seam.
+- "Add cover photo" pill on the public profile now correctly points at `/dashboard/profile` (was `/dashboard/account`).
+- `piece_cover_url` text input in creative onboarding replaced by `<ImagePicker name="piece_cover_file" shape="wide">`; `completeCreativeOnboarding` handles the upload.
+- `ImagePicker` wide-shape layout: preview full width, button stacks below (was pushed off the row into an adjacent column).
+
+**Migration required:** re-run `supabase/schema.sql` for `profiles.cover_url`.
+
+## 2026-07-07 — Mobile dashboard nav: native dropdown
+
+Dashboard sidebar was a full vertical list stacked on top of content on mobile. Replaced with a native `<details>` dropdown showing the current page as the label, expanding to a vertical list of all nav items. Zero JS state; desktop (≥md) sidebar unchanged.
+
 ## 2026-06-28 — Dispute resolution flow (P1)
 
 A real dispute path with context, not a one-click status flip.

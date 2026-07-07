@@ -4,7 +4,25 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-02
+Last updated: 2026-07-08
+
+---
+
+## 🕒 Prompted to test — 2026-07-08 batch (awaiting confirmation)
+
+| Feature | Notes |
+|---|---|
+| Mobile dashboard nav dropdown | Native `<details>` — collapsed by default on <md, shows current page as label |
+| Image upload: profile cover photo | Wide picker on `/dashboard/profile`, renders as banner on public profile |
+| Image upload: profile avatar | Renders on public profile now (was always initials) |
+| Image upload: creative-onboarding piece cover | File picker replaced URL text input |
+| ImagePicker wide layout | Button now stacks under preview (was pushed off-row) |
+| Public profile header positioning | Only avatar straddles banner seam; name/headline fully in white |
+| Categories expanded to 24 | Add each new one via CategoryPicker on profile edit; browse filter finds them |
+| Searchable CategoryPicker | Type in the search box on `/browse` filters; chip list narrows live |
+| Landing category rotator | Batch swap every ~3.8s; hover pauses; See all 24 → link works |
+| Payments dashboard charts | Bar chart + escrow donut render; empty state when no data |
+| Portfolio item detail page rebuild | Hero + sidebar + more-from-creator all render |
 
 ---
 
