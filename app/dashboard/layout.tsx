@@ -85,7 +85,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 md:grid-cols-[180px_minmax(0,1fr)_280px] md:gap-10 md:py-10">
       <aside className="md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
-        <p className="eyebrow">Workspace</p>
+        <p className="eyebrow hidden md:block">Workspace</p>
         <DashboardNav items={navItems} />
       </aside>
 
