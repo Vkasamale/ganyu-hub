@@ -6,12 +6,16 @@ import { CATEGORIES } from "@/lib/types";
 // comma-separated <Input> that let "Dev"/"Developers" drift into the DB.
 export function CategoryPicker({ selected = [] }: { selected?: string[] }) {
   const set = new Set(selected);
+  // Chip styling mirrors the /browse category filters (components/filters-bar.tsx).
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div className="flex flex-wrap gap-2">
       {CATEGORIES.map((c) => (
-        <label key={c} className="flex items-center gap-2 rounded-lg border border-ink/15 px-3 py-2 text-sm">
-          <input type="checkbox" name="categories" value={c} defaultChecked={set.has(c)} />
-          <span>{c}</span>
+        <label
+          key={c}
+          className="relative cursor-pointer rounded-full border border-ink/25 bg-paper px-3.5 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-ink/50 hover:bg-wash/40 has-[:checked]:border-stamp has-[:checked]:bg-stamp has-[:checked]:text-paper has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-stamp"
+        >
+          <input type="checkbox" name="categories" value={c} defaultChecked={set.has(c)} className="sr-only" />
+          {c}
         </label>
       ))}
     </div>
