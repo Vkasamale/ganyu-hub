@@ -233,20 +233,8 @@ export default function Home() {
               </motion.span>
             </AnimatePresence>
           </p>
-          <ul className="mt-2 space-y-0">
-            {CATEGORIES.slice(0, 5).map((cat) => (
-              <li key={cat}>
-                <CategoryLink href={`${c.catHrefPrefix}${encodeURIComponent(cat)}`} t={t}>
-                  {cat}
-                </CategoryLink>
-              </li>
-            ))}
-            <li>
-              <CategoryLink href={c.catHrefPrefix.replace(/[?&]category=$/, "")} t={t}>
-                See all →
-              </CategoryLink>
-            </li>
-          </ul>
+          <RotatingCategories t={t} hrefPrefix={c.catHrefPrefix} />
+
         </div>
       </div>
 
@@ -350,6 +338,64 @@ function SearchBar({ t, c }: { t: typeof THEME[Mode]; c: typeof CONTENT[Mode] })
         </button>
       </form>
     </div>
+  );
+}
+
+const VISIBLE_CATEGORIES = 6;
+const ROTATE_MS = 2200;
+
+function RotatingCategories({ t, hrefPrefix }: { t: typeof THEME[Mode]; hrefPrefix: string }) {
+  const [start, setStart] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (paused || reduced) return;
+    const id = setInterval(() => {
+      setStart((s) => (s + 1) % CATEGORIES.length);
+    }, ROTATE_MS);
+    return () => clearInterval(id);
+  }, [paused, reduced]);
+
+  const visible = Array.from({ length: VISIBLE_CATEGORIES }, (_, i) => CATEGORIES[(start + i) % CATEGORIES.length]);
+  const seeAllHref = hrefPrefix.replace(/[?&]category=$/, "");
+
+  return (
+    <ul
+      className="mt-2 space-y-0"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <AnimatePresence initial={false} mode="popLayout">
+        {visible.map((cat) => (
+          <motion.li
+            key={cat}
+            layout
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <CategoryLink href={`${hrefPrefix}${encodeURIComponent(cat)}`} t={t}>
+              {cat}
+            </CategoryLink>
+          </motion.li>
+        ))}
+      </AnimatePresence>
+      <li>
+        <CategoryLink href={seeAllHref} t={t}>
+          See all {CATEGORIES.length} →
+        </CategoryLink>
+      </li>
+    </ul>
   );
 }
 
