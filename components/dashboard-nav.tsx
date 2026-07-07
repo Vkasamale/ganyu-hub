@@ -7,30 +7,55 @@ type NavItem = { href: string; label: string };
 
 export function DashboardNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
-  // Mobile: horizontal scrollable pill strip. Desktop (md+): unchanged vertical list.
-  // The -mx/px pair lets the scroll strip bleed to the viewport edges while
-  // aligning content to the page gutter — nothing gets clipped at either end.
+  const isActive = (href: string) =>
+    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+  const current = items.find((n) => isActive(n.href)) ?? items[0];
+
   return (
-    <nav
-      className="mt-3 -mx-4 flex gap-2 overflow-x-auto px-4 text-sm md:mx-0 md:flex-col md:gap-1 md:overflow-visible md:px-0"
-    >
-      {items.map((n) => {
-        const active = n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
-        return (
-          <Link
-            key={n.href}
-            href={n.href}
-            className={
-              (active
-                ? "bg-ink font-medium text-paper"
-                : "text-ink/75 transition-colors hover:bg-wash/60 hover:text-ink") +
-              " shrink-0 whitespace-nowrap rounded-full border border-ink/15 px-3 py-1.5 md:shrink md:whitespace-normal md:rounded-md md:border-0 md:px-3 md:py-2"
-            }
-          >
-            {n.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <>
+      {/* Mobile: native <details> dropdown. No JS state, closes on outside tap via <summary>. */}
+      <details className="group mt-3 md:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded-md border border-ink/15 bg-paper px-3 py-2 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
+          <span>{current?.label ?? "Menu"}</span>
+          <span aria-hidden className="ml-2 transition-transform group-open:rotate-180">▾</span>
+        </summary>
+        <div className="mt-1 flex flex-col rounded-md border border-ink/15 bg-paper p-1 shadow-sm">
+          {items.map((n) => {
+            const active = isActive(n.href);
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={
+                  (active ? "bg-ink font-medium text-paper" : "text-ink/75 hover:bg-wash/60 hover:text-ink") +
+                  " rounded px-3 py-2 text-sm"
+                }
+              >
+                {n.label}
+              </Link>
+            );
+          })}
+        </div>
+      </details>
+
+      {/* Desktop: unchanged vertical list. */}
+      <nav className="mt-3 hidden flex-col gap-1 text-sm md:flex">
+        {items.map((n) => {
+          const active = isActive(n.href);
+          return (
+            <Link
+              key={n.href}
+              href={n.href}
+              className={
+                (active ? "bg-ink font-medium text-paper" : "text-ink/75 transition-colors hover:bg-wash/60 hover:text-ink") +
+                " rounded-md px-3 py-2"
+              }
+            >
+              {n.label}
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }
