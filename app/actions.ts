@@ -921,10 +921,11 @@ export async function confirmScope(formData: FormData) {
   return { ok: true };
 }
 
-type EscrowStatus = "none" | "payment_held" | "payment_released" | "payment_disputed";
+type EscrowStatus = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
 
 const ESCROW_TRANSITIONS: Record<EscrowStatus, EscrowStatus[]> = {
-  none: ["payment_held"],
+  none: ["payment_pending"],
+  payment_pending: ["payment_held", "none"],
   payment_held: ["payment_released", "payment_disputed"],
   payment_released: [],
   payment_disputed: ["payment_held", "payment_released"],
@@ -938,9 +939,40 @@ export async function updateEscrowStatus(formData: FormData) {
   const job_id = String(formData.get("job_id"));
   const next = String(formData.get("escrow_status")) as EscrowStatus;
 
-  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status").eq("id", job_id).single();
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk").eq("id", job_id).single();
   if (!job) return { error: "Job not found" };
   if (user.id !== job.client_id) return { error: "Only the client controls payment state." };
+
+  // Client asked to hold funds → initiate PayChangu checkout and redirect.
+  // Webhook (+ server-side verification) is what actually flips to payment_held.
+  if (job.escrow_status === "none" && next === "payment_held") {
+    if (!job.accepted_bid_mwk || job.accepted_bid_mwk <= 0) {
+      return { error: "Accept a proposal first — nothing to hold." };
+    }
+    const { initiatePayment } = await import("@/lib/payments");
+    const { data: profile } = await supabase.from("profiles").select("email, full_name").eq("id", user.id).single();
+    const email = profile?.email || user.email || "";
+    const [firstName, ...rest] = (profile?.full_name || "Client").split(" ");
+    try {
+      const { checkoutUrl, txRef } = await initiatePayment({
+        jobId: job.id,
+        amountMwk: job.accepted_bid_mwk,
+        email,
+        firstName,
+        lastName: rest.join(" ") || "-",
+        title: job.title,
+      });
+      await supabase.from("jobs").update({
+        escrow_status: "payment_pending",
+        payment_ref: txRef,
+        payment_initiated_at: new Date().toISOString(),
+      }).eq("id", job_id);
+      redirect(checkoutUrl);
+    } catch (e: any) {
+      if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
+      return { error: `Could not start payment: ${e?.message || "unknown error"}` };
+    }
+  }
 
   const allowed = ESCROW_TRANSITIONS[job.escrow_status as EscrowStatus] || [];
   if (!allowed.includes(next)) return { error: `Cannot move payment from ${job.escrow_status} to ${next}` };
@@ -959,6 +991,7 @@ export async function updateEscrowStatus(formData: FormData) {
   if (creativeId) {
     const labels: Record<EscrowStatus, string> = {
       none: "Payment cleared",
+      payment_pending: "Payment pending confirmation",
       payment_held: "Payment held in escrow",
       payment_released: "Payment released",
       payment_disputed: "Payment flagged as disputed",

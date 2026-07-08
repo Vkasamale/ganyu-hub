@@ -4,24 +4,27 @@ import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { updateEscrowStatus } from "@/app/actions";
 
 type Role = "client" | "creative";
-type Escrow = "none" | "payment_held" | "payment_released" | "payment_disputed";
+type Escrow = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
 
 const LABELS: Record<Escrow, string> = {
   none: "No payment yet",
+  payment_pending: "Payment pending",
   payment_held: "Payment held in escrow",
   payment_released: "Payment released",
   payment_disputed: "Payment disputed",
 };
 
 const HINTS: Record<Escrow, string> = {
-  none: "Once you've sent payment to escrow, mark it held so the creative knows the funds are secured.",
+  none: "Pay the agreed amount into escrow to secure the work. You'll be redirected to PayChangu's checkout.",
+  payment_pending: "Waiting on PayChangu to confirm the payment. This page updates as soon as it clears.",
   payment_held: "Funds are held. Release when the work is complete, or flag a dispute if there's a problem.",
   payment_released: "Funds released to the creative. Done.",
   payment_disputed: "Payment is in dispute. Resolve by releasing or by re-holding while you sort it out.",
 };
 
 function clientActions(status: Escrow): { next: Escrow; label: string; variant?: "outline" }[] {
-  if (status === "none") return [{ next: "payment_held", label: "Mark payment held" }];
+  if (status === "none") return [{ next: "payment_held", label: "Pay into escrow" }];
+  if (status === "payment_pending") return [{ next: "none", label: "Cancel pending payment", variant: "outline" }];
   if (status === "payment_held") return [
     { next: "payment_released", label: "Release payment" },
     { next: "payment_disputed", label: "Flag dispute", variant: "outline" },

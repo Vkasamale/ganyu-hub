@@ -99,10 +99,18 @@ do $$ begin
   create type escrow_status as enum ('none', 'payment_held', 'payment_released', 'payment_disputed');
 exception when duplicate_object then null; end $$;
 alter table jobs add column if not exists escrow_status escrow_status not null default 'none';
+-- PayChangu adds an intermediate "payment_pending" state: client clicked pay
+-- and was redirected to checkout, but the webhook/verification hasn't
+-- confirmed clearance yet.
+alter type escrow_status add value if not exists 'payment_pending' before 'payment_held';
 -- The agreed amount: set to the accepted proposal's bid when a proposal is
 -- accepted. Money calculations use this; budget_mwk is only the posted asking
 -- price and is the fallback for jobs still open with no accepted proposal.
 alter table jobs add column if not exists accepted_bid_mwk integer;
+-- PayChangu references. payment_ref is our tx_ref (unique per attempt).
+alter table jobs add column if not exists payment_ref text;
+alter table jobs add column if not exists payment_provider_id text;
+alter table jobs add column if not exists payment_initiated_at timestamptz;
 
 create table if not exists jobs (
   id uuid primary key default gen_random_uuid(),
