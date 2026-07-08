@@ -28,7 +28,7 @@ export async function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-black/[0.08] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
         <Logo />
         <NavbarBrowseLinks />
         <div className="flex items-center gap-2">

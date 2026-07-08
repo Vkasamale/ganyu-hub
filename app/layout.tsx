@@ -27,6 +27,7 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "Ganyu Hub — hire Malawian creatives",
   description: "The marketplace for hiring Malawian designers, developers, and creatives.",
+  icons: { icon: "/logo-g.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
