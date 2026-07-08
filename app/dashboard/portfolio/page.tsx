@@ -39,6 +39,9 @@ export default async function PortfolioPage() {
               <Input id="project_url" name="project_url" type="url" placeholder="https://..." />
             </div>
             <SubmitButton pendingText="Adding…">Add</SubmitButton>
+            <p className="text-xs text-ink/55">
+              By posting, you agree to our <a href="/content-policy" className="underline hover:text-ink">content policy</a>.
+            </p>
           </SavingForm>
         </CardContent>
       </Card>

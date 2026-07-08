@@ -38,6 +38,9 @@ export default async function NewJobPage() {
               <Input id="budget_mwk" name="budget_mwk" type="number" min={0} placeholder="e.g. 150000" />
             </div>
             <SubmitButton pendingText="Posting…">Post job</SubmitButton>
+            <p className="text-xs text-ink/55">
+              By posting, you agree to our <a href="/content-policy" className="underline hover:text-ink">content policy</a>.
+            </p>
           </SavingForm>
         </CardContent>
       </Card>

@@ -36,6 +36,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RecoveryCatcher />
         <Navbar />
         <main>{children}</main>
+        <footer className="mt-16 border-t border-ink/10 px-4 py-6 text-sm text-ink/60">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
+            <span>© Ganyu Hub</span>
+            <a href="/content-policy" className="underline hover:text-ink">Content policy</a>
+          </div>
+        </footer>
         <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
