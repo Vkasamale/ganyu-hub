@@ -974,7 +974,15 @@ export async function updateEscrowStatus(formData: FormData) {
       .from("proposals").select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
     const creativeId = accepted?.creative_id;
     if (!creativeId) return { error: "No accepted proposal for this job." };
-    const { data: cp } = await supabase.from("profiles").select(
+    // ponytail: RLS blocks the client from reading the creative's payout columns.
+    // Service-role read scoped to just the payout fields we need.
+    const { createServerClient } = await import("@supabase/ssr");
+    const admin = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { cookies: { getAll: () => [], setAll: () => {} } }
+    );
+    const { data: cp } = await admin.from("profiles").select(
       "email, full_name, payout_mobile_number, payout_mobile_network, payout_bank_uuid, payout_bank_account_name, payout_bank_account_number"
     ).eq("id", creativeId).single();
     if (!cp) return { error: "Creative profile not found." };
