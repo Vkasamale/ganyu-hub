@@ -985,13 +985,16 @@ export async function updateEscrowStatus(formData: FormData) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { cookies: { getAll: () => [], setAll: () => {} } }
     );
-    const { data: cp, error: cpErr } = await admin.from("profiles").select(
-      "email, full_name, payout_mobile_number, payout_mobile_network, payout_bank_uuid, payout_bank_account_name, payout_bank_account_number"
+    const { data: cpRow, error: cpErr } = await admin.from("profiles").select(
+      "full_name, payout_mobile_number, payout_mobile_network, payout_bank_uuid, payout_bank_account_name, payout_bank_account_number"
     ).eq("id", creativeId).single();
-    if (cpErr || !cp) {
+    if (cpErr || !cpRow) {
       console.error("[release] profile lookup failed", { creativeId, cpErr });
       return { error: `Creative profile lookup failed (id=${creativeId}): ${cpErr?.message || "no row returned"}.` };
     }
+    // ponytail: email lives in auth.users, not profiles.
+    const { data: authUser } = await admin.auth.admin.getUserById(creativeId);
+    const cp = { ...cpRow, email: authUser?.user?.email || "" };
 
     let dest: Parameters<typeof initiatePayout>[0]["dest"];
     if (cp.payout_mobile_number && (cp.payout_mobile_network === "airtel" || cp.payout_mobile_network === "tnm")) {
