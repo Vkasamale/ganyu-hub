@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { updateProfile, updateAvailability } from "@/app/actions";
+import { updateProfile, updateAvailability, savePayoutDetails } from "@/app/actions";
+import { getSupportedBanks } from "@/lib/payments";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ export default async function EditProfilePage() {
 
   const showAvailability = profile?.role === "creative" || profile?.role === "agency";
   const currentAvailability = (profile?.availability as string | undefined) || "available";
+  const banks = showAvailability ? await getSupportedBanks("MWK") : [];
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 space-y-6">
@@ -37,6 +39,67 @@ export default async function EditProfilePage() {
                 <option value="unavailable">⚪ Not taking work</option>
               </select>
               <SubmitButton pendingText="Saving…">Update</SubmitButton>
+            </SavingForm>
+          </CardContent>
+        </Card>
+      )}
+
+      {showAvailability && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Payout details</CardTitle>
+            <p className="text-sm text-ink/60">Where PayChangu sends your money when a client releases payment. Mobile money is fastest; bank is optional.</p>
+          </CardHeader>
+          <CardContent>
+            <SavingForm action={savePayoutDetails} successText="Payout details saved." className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_160px]">
+                <div className="space-y-1.5">
+                  <Label htmlFor="payout_mobile_number">Mobile money number</Label>
+                  <Input id="payout_mobile_number" name="payout_mobile_number" defaultValue={profile?.payout_mobile_number || ""} placeholder="e.g. 099XXXXXXX" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="payout_mobile_network">Network</Label>
+                  <select
+                    id="payout_mobile_network"
+                    name="payout_mobile_network"
+                    defaultValue={profile?.payout_mobile_network || ""}
+                    className="h-10 w-full rounded-lg border border-ink/20 bg-paper px-3 text-sm text-ink focus:border-ink/40 focus:outline-none"
+                  >
+                    <option value="">Select…</option>
+                    <option value="airtel">Airtel Money</option>
+                    <option value="tnm">TNM Mpamba</option>
+                  </select>
+                </div>
+              </div>
+              <details className="rounded-lg border border-ink/10 bg-paper/40 p-3">
+                <summary className="cursor-pointer text-sm font-medium text-ink/80">Bank account (optional)</summary>
+                <div className="mt-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="payout_bank_uuid">Bank</Label>
+                    <select
+                      id="payout_bank_uuid"
+                      name="payout_bank_uuid"
+                      defaultValue={profile?.payout_bank_uuid || ""}
+                      className="h-10 w-full rounded-lg border border-ink/20 bg-paper px-3 text-sm text-ink focus:border-ink/40 focus:outline-none"
+                    >
+                      <option value="">Select bank…</option>
+                      {banks.map((b) => (
+                        <option key={b.uuid} value={b.uuid}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="payout_bank_account_name">Account name</Label>
+                    <Input id="payout_bank_account_name" name="payout_bank_account_name" defaultValue={profile?.payout_bank_account_name || ""} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="payout_bank_account_number">Account number</Label>
+                    <Input id="payout_bank_account_number" name="payout_bank_account_number" defaultValue={profile?.payout_bank_account_number || ""} />
+                  </div>
+                  <p className="text-xs text-ink/50">Bank payouts may need PayChangu support to activate on your account. Mobile money works out of the box.</p>
+                </div>
+              </details>
+              <SubmitButton pendingText="Saving…">Save payout details</SubmitButton>
             </SavingForm>
           </CardContent>
         </Card>

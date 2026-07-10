@@ -104,3 +104,137 @@ export function parseWebhook(payload: any): { txRef?: string; status: "success" 
       : "pending";
   return { txRef: data?.tx_ref || payload?.tx_ref, status };
 }
+
+export type SupportedBank = { uuid: string; name: string };
+
+// 1-hour cache — bank list changes rarely.
+export async function getSupportedBanks(currency = "MWK"): Promise<SupportedBank[]> {
+  const res = await fetch(`${API_BASE}/direct-charge/payouts/supported-banks?currency=${currency}`, {
+    headers: { Accept: "application/json", Authorization: `Bearer ${secretKey()}` },
+    next: { revalidate: 3600 },
+  });
+  const json: any = await res.json().catch(() => ({}));
+  if (!res.ok || json.status !== "success") return [];
+  return (json.data || []).map((b: any) => ({ uuid: String(b.uuid), name: String(b.name) }));
+}
+
+// ----- Payouts -----
+
+export const CREATIVE_SHARE = 0.85; // 15% commission -> creative gets 85%
+export function creativeAmount(agreedMwk: number) {
+  return Math.floor(agreedMwk * CREATIVE_SHARE);
+}
+
+export type PayoutDest =
+  | { method: "mobile"; number: string; network: "airtel" | "tnm"; firstName: string; lastName: string; email: string }
+  | { method: "bank"; bankUuid: string; accountName: string; accountNumber: string; email: string };
+
+export type PayoutInitArgs = {
+  jobId: string;
+  amountMwk: number; // already net of commission
+  jobTitle: string;
+  dest: PayoutDest;
+};
+
+export type PayoutInitResult = { chargeId: string; providerId?: string };
+
+export async function initiatePayout(a: PayoutInitArgs): Promise<PayoutInitResult> {
+  const chargeId = `gh_po_${a.jobId}_${crypto.randomUUID()}`;
+
+  if (a.dest.method === "mobile") {
+    const opId = a.dest.network === "airtel"
+      ? process.env.PAYCHANGU_AIRTEL_OP_ID
+      : process.env.PAYCHANGU_TNM_OP_ID;
+    if (!opId) throw new Error(`Missing operator id env for ${a.dest.network} (PAYCHANGU_${a.dest.network.toUpperCase()}_OP_ID)`);
+
+    const body = {
+      mobile_money_operator_ref_id: opId,
+      mobile: a.dest.number,
+      amount: a.amountMwk,
+      charge_id: chargeId,
+      email: a.dest.email,
+      first_name: a.dest.firstName,
+      last_name: a.dest.lastName,
+      meta: { job_id: a.jobId, kind: "payout" },
+    };
+    const res = await fetch(`${API_BASE}/mobile-money/payouts/initialize`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secretKey()}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const json: any = await res.json().catch(() => ({}));
+    if (!res.ok || (json.status && json.status !== "success")) {
+      throw new Error(json?.message || `PayChangu mobile payout failed (${res.status})`);
+    }
+    return { chargeId, providerId: json?.data?.reference || json?.data?.id };
+  }
+
+  const body = {
+    bank_uuid: a.dest.bankUuid,
+    amount: a.amountMwk,
+    charge_id: chargeId,
+    bank_account_name: a.dest.accountName,
+    bank_account_number: a.dest.accountNumber,
+    email: a.dest.email,
+    meta: { job_id: a.jobId, kind: "payout" },
+  };
+  const res = await fetch(`${API_BASE}/direct-charge/payouts/initialize`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${secretKey()}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const json: any = await res.json().catch(() => ({}));
+  if (!res.ok || (json.status && json.status !== "success")) {
+    // ponytail: bank endpoint may return a "feature not enabled" error even
+    // on verified accounts — user will contact PayChangu support to activate.
+    throw new Error(json?.message || `PayChangu bank payout failed (${res.status})`);
+  }
+  return { chargeId, providerId: json?.data?.reference || json?.data?.id };
+}
+
+// Server-side re-verify for a payout. Same "never trust the webhook alone"
+// pattern as verifyPayment. Mobile and bank use different detail endpoints.
+export async function verifyPayout(chargeId: string, method: "mobile" | "bank"): Promise<VerifyResult> {
+  const url = method === "mobile"
+    ? `${API_BASE}/mobile-money/payments/${encodeURIComponent(chargeId)}/details`
+    : `${API_BASE}/direct-charge/payouts/${encodeURIComponent(chargeId)}/details`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { Accept: "application/json", Authorization: `Bearer ${secretKey()}` },
+    cache: "no-store",
+  });
+  const json: any = await res.json().catch(() => ({}));
+  const data = json?.data ?? json;
+  const raw = String(data?.status ?? "").toLowerCase();
+  const status: VerifyResult["status"] =
+    raw === "success" || raw === "successful" || raw === "completed" ? "success"
+      : raw === "failed" || raw === "reversed" || raw === "cancelled" ? "failed"
+      : "pending";
+  const providerId = data?.ref_id || data?.trans_id || data?.reference || data?.id;
+  return { status, providerId: providerId ? String(providerId) : undefined };
+}
+
+// Payout webhooks share the signed-body pattern with collection webhooks but
+// carry a charge_id instead of tx_ref. verifyPayout is used to server-side
+// re-verify before trusting the webhook.
+export function parsePayoutWebhook(payload: any): { chargeId?: string; status: "success" | "pending" | "failed"; providerId?: string } {
+  const data = payload?.data ?? payload ?? {};
+  const raw = String(data?.status ?? payload?.status ?? "").toLowerCase();
+  const status: "success" | "pending" | "failed" =
+    raw === "success" || raw === "successful" || raw === "completed" ? "success"
+      : raw === "failed" || raw === "reversed" || raw === "cancelled" ? "failed"
+      : "pending";
+  return {
+    chargeId: data?.charge_id || payload?.charge_id,
+    status,
+    providerId: data?.reference || data?.id ? String(data.reference || data.id) : undefined,
+  };
+}

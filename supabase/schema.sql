@@ -112,6 +112,26 @@ alter table jobs add column if not exists payment_ref text;
 alter table jobs add column if not exists payment_provider_id text;
 alter table jobs add column if not exists payment_initiated_at timestamptz;
 
+-- Payout to creative (PayChangu mobile-money or bank transfer). Flow:
+--   payment_held + payout_status null      → nothing initiated
+--   payment_held + payout_status 'pending' → payout requested, awaiting webhook
+--   payment_held + payout_status 'failed'  → payout errored; client can retry
+--   payment_released                       → payout confirmed by webhook
+alter table jobs add column if not exists payout_ref text;
+alter table jobs add column if not exists payout_provider_id text;
+alter table jobs add column if not exists payout_status text;
+alter table jobs add column if not exists payout_initiated_at timestamptz;
+alter table jobs add column if not exists payout_error text;
+alter table jobs add column if not exists payout_method text; -- 'mobile' | 'bank'
+
+-- Creative payout destinations. Mobile money is primary; bank is optional
+-- and blocked on PayChangu enabling the bank feature per-account.
+alter table profiles add column if not exists payout_mobile_number text;
+alter table profiles add column if not exists payout_mobile_network text; -- 'airtel' | 'tnm'
+alter table profiles add column if not exists payout_bank_uuid text;
+alter table profiles add column if not exists payout_bank_account_name text;
+alter table profiles add column if not exists payout_bank_account_number text;
+
 create table if not exists jobs (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references profiles(id) on delete cascade,

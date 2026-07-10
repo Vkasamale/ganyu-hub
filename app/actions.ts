@@ -921,6 +921,29 @@ export async function confirmScope(formData: FormData) {
   return { ok: true };
 }
 
+export async function savePayoutDetails(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const network = String(formData.get("payout_mobile_network") || "").trim();
+  const number = String(formData.get("payout_mobile_number") || "").trim();
+  if (number && network !== "airtel" && network !== "tnm") {
+    return { error: "Pick Airtel or TNM for the mobile network." };
+  }
+  const update = {
+    payout_mobile_number: number || null,
+    payout_mobile_network: network || null,
+    payout_bank_uuid: String(formData.get("payout_bank_uuid") || "").trim() || null,
+    payout_bank_account_name: String(formData.get("payout_bank_account_name") || "").trim() || null,
+    payout_bank_account_number: String(formData.get("payout_bank_account_number") || "").trim() || null,
+  };
+  const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/profile");
+  return { ok: true };
+}
+
 type EscrowStatus = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
 
 const ESCROW_TRANSITIONS: Record<EscrowStatus, EscrowStatus[]> = {
@@ -942,6 +965,70 @@ export async function updateEscrowStatus(formData: FormData) {
   const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk").eq("id", job_id).single();
   if (!job) return { error: "Job not found" };
   if (user.id !== job.client_id) return { error: "Only the client controls payment state." };
+
+  // Client asked to release funds to the creative → initiate PayChangu payout.
+  // The webhook (HMAC-verified) is what flips escrow_status to payment_released.
+  if (job.escrow_status === "payment_held" && next === "payment_released") {
+    const { initiatePayout, creativeAmount } = await import("@/lib/payments");
+    const { data: accepted } = await supabase
+      .from("proposals").select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+    const creativeId = accepted?.creative_id;
+    if (!creativeId) return { error: "No accepted proposal for this job." };
+    const { data: cp } = await supabase.from("profiles").select(
+      "email, full_name, payout_mobile_number, payout_mobile_network, payout_bank_uuid, payout_bank_account_name, payout_bank_account_number"
+    ).eq("id", creativeId).single();
+    if (!cp) return { error: "Creative profile not found." };
+
+    let dest: Parameters<typeof initiatePayout>[0]["dest"];
+    if (cp.payout_mobile_number && (cp.payout_mobile_network === "airtel" || cp.payout_mobile_network === "tnm")) {
+      const [firstName, ...rest] = (cp.full_name || "Creative").split(" ");
+      dest = {
+        method: "mobile",
+        number: cp.payout_mobile_number,
+        network: cp.payout_mobile_network,
+        firstName,
+        lastName: rest.join(" ") || "-",
+        email: cp.email || "",
+      };
+    } else if (cp.payout_bank_uuid && cp.payout_bank_account_name && cp.payout_bank_account_number) {
+      dest = {
+        method: "bank",
+        bankUuid: cp.payout_bank_uuid,
+        accountName: cp.payout_bank_account_name,
+        accountNumber: cp.payout_bank_account_number,
+        email: cp.email || "",
+      };
+    } else {
+      return { error: "Creative hasn't added payout details yet. Ask them to fill in mobile-money or bank details on their profile." };
+    }
+
+    try {
+      const amount = creativeAmount(job.accepted_bid_mwk || 0);
+      const { chargeId, providerId } = await initiatePayout({
+        jobId: job.id,
+        amountMwk: amount,
+        jobTitle: job.title,
+        dest,
+      });
+      await supabase.from("jobs").update({
+        payout_ref: chargeId,
+        payout_provider_id: providerId || null,
+        payout_status: "pending",
+        payout_method: dest.method,
+        payout_initiated_at: new Date().toISOString(),
+        payout_error: null,
+      }).eq("id", job_id);
+      revalidatePath(`/jobs/${job_id}`);
+      return { ok: true, info: `Payout of MWK ${amount.toLocaleString()} initiated. It will show as released once PayChangu confirms.` };
+    } catch (e: any) {
+      await supabase.from("jobs").update({
+        payout_status: "failed",
+        payout_error: String(e?.message || "unknown error").slice(0, 500),
+      }).eq("id", job_id);
+      revalidatePath(`/jobs/${job_id}`);
+      return { error: `Payout failed: ${e?.message || "unknown error"}` };
+    }
+  }
 
   // Client asked to hold funds → initiate PayChangu checkout and redirect.
   // Webhook (+ server-side verification) is what actually flips to payment_held.
