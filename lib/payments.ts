@@ -22,6 +22,7 @@ export type InitiateArgs = {
   firstName: string;
   lastName: string;
   title: string;
+  mobile?: string;
 };
 
 export type InitiateResult = { checkoutUrl: string; txRef: string };
@@ -42,6 +43,7 @@ export async function initiatePayment(a: InitiateArgs): Promise<InitiateResult> 
       description: `Escrow for "${a.title}" on Ganyu Hub`,
     },
     meta: { job_id: a.jobId },
+    ...(a.mobile ? { mobile: a.mobile } : {}),
   };
 
   const res = await fetch(`${API_BASE}/payment`, {

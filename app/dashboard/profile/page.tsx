@@ -18,7 +18,8 @@ export default async function EditProfilePage() {
 
   const showAvailability = profile?.role === "creative" || profile?.role === "agency";
   const currentAvailability = (profile?.availability as string | undefined) || "available";
-  const banks = showAvailability ? await getSupportedBanks("MWK") : [];
+  const banks = await getSupportedBanks("MWK");
+  const isClient = profile?.role === "client";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 space-y-6">
@@ -44,11 +45,14 @@ export default async function EditProfilePage() {
         </Card>
       )}
 
-      {showAvailability && (
-        <Card>
+      <Card>
           <CardHeader>
-            <CardTitle>Payout details</CardTitle>
-            <p className="text-sm text-ink/60">Where PayChangu sends your money when a client releases payment. Mobile money is fastest; bank is optional.</p>
+            <CardTitle>Payment details</CardTitle>
+            <p className="text-sm text-ink/60">
+              {isClient
+                ? "Saved so you don't have to re-type them when you pay into escrow. You can still change them at checkout."
+                : "Where PayChangu sends your money when a client releases payment. Mobile money is fastest; bank is optional."}
+            </p>
           </CardHeader>
           <CardContent>
             <SavingForm action={savePayoutDetails} successText="Payout details saved." className="space-y-4">
@@ -99,11 +103,10 @@ export default async function EditProfilePage() {
                   <p className="text-xs text-ink/50">Bank payouts may need PayChangu support to activate on your account. Mobile money works out of the box.</p>
                 </div>
               </details>
-              <SubmitButton pendingText="Saving…">Save payout details</SubmitButton>
+              <SubmitButton pendingText="Saving…">Save payment details</SubmitButton>
             </SavingForm>
           </CardContent>
         </Card>
-      )}
 
       <Card>
         <CardHeader><CardTitle>Edit your profile</CardTitle></CardHeader>

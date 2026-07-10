@@ -1037,7 +1037,7 @@ export async function updateEscrowStatus(formData: FormData) {
       return { error: "Accept a proposal first — nothing to hold." };
     }
     const { initiatePayment } = await import("@/lib/payments");
-    const { data: profile } = await supabase.from("profiles").select("email, full_name").eq("id", user.id).single();
+    const { data: profile } = await supabase.from("profiles").select("email, full_name, payout_mobile_number").eq("id", user.id).single();
     const email = profile?.email || user.email || "";
     const [firstName, ...rest] = (profile?.full_name || "Client").split(" ");
     try {
@@ -1048,6 +1048,7 @@ export async function updateEscrowStatus(formData: FormData) {
         firstName,
         lastName: rest.join(" ") || "-",
         title: job.title,
+        mobile: profile?.payout_mobile_number || undefined,
       });
       await supabase.from("jobs").update({
         escrow_status: "payment_pending",
