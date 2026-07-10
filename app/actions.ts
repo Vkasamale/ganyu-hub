@@ -974,6 +974,9 @@ export async function updateEscrowStatus(formData: FormData) {
       .from("proposals").select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
     const creativeId = accepted?.creative_id;
     if (!creativeId) return { error: "No accepted proposal for this job." };
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set in this deployment." };
+    }
     // ponytail: RLS blocks the client from reading the creative's payout columns.
     // Service-role read scoped to just the payout fields we need.
     const { createServerClient } = await import("@supabase/ssr");
@@ -982,10 +985,13 @@ export async function updateEscrowStatus(formData: FormData) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { cookies: { getAll: () => [], setAll: () => {} } }
     );
-    const { data: cp } = await admin.from("profiles").select(
+    const { data: cp, error: cpErr } = await admin.from("profiles").select(
       "email, full_name, payout_mobile_number, payout_mobile_network, payout_bank_uuid, payout_bank_account_name, payout_bank_account_number"
     ).eq("id", creativeId).single();
-    if (!cp) return { error: "Creative profile not found." };
+    if (cpErr || !cp) {
+      console.error("[release] profile lookup failed", { creativeId, cpErr });
+      return { error: `Creative profile lookup failed (id=${creativeId}): ${cpErr?.message || "no row returned"}.` };
+    }
 
     let dest: Parameters<typeof initiatePayout>[0]["dest"];
     if (cp.payout_mobile_number && (cp.payout_mobile_network === "airtel" || cp.payout_mobile_network === "tnm")) {
