@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { ImagePicker } from "@/components/image-picker";
 import { CategoryPicker } from "@/components/category-picker";
+import { AddPayoutMethodForm } from "@/components/add-payout-method-form";
 
 function maskTail(s: string | null | undefined, keep = 4) {
   if (!s) return "";
@@ -103,62 +104,7 @@ export default async function EditProfilePage() {
 
           <div className="rounded-lg border border-ink/10 bg-paper/40 p-4">
             <p className="mb-3 text-sm font-medium text-ink/80">Add a payment method</p>
-            <SavingForm action={addPayoutMethod} successText="Payment method added." resetOnSuccess className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="kind">Type</Label>
-                <select id="kind" name="kind" defaultValue="mobile" className="h-10 w-full rounded-lg border border-ink/20 bg-paper px-3 text-sm text-ink focus:border-ink/40 focus:outline-none">
-                  <option value="mobile">Mobile money (Airtel / TNM)</option>
-                  <option value="bank">Bank account</option>
-                </select>
-                <p className="text-xs text-ink/50">Pick the type, then fill in whichever section matches.</p>
-              </div>
-
-              <div className="space-y-3 rounded-md border border-ink/10 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-ink/50">Mobile money (fill if type = Mobile)</p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_160px]">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="mobile_number">Number</Label>
-                    <Input id="mobile_number" name="mobile_number" placeholder="e.g. 099XXXXXXX" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="mobile_network">Network</Label>
-                    <select id="mobile_network" name="mobile_network" defaultValue="" className="h-10 w-full rounded-lg border border-ink/20 bg-paper px-3 text-sm text-ink focus:border-ink/40 focus:outline-none">
-                      <option value="">Select…</option>
-                      <option value="airtel">Airtel Money</option>
-                      <option value="tnm">TNM Mpamba</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 rounded-md border border-ink/10 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-ink/50">Bank account (fill if type = Bank)</p>
-                <div className="space-y-1.5">
-                  <Label htmlFor="bank_uuid">Bank</Label>
-                  <select id="bank_uuid" name="bank_uuid" defaultValue="" className="h-10 w-full rounded-lg border border-ink/20 bg-paper px-3 text-sm text-ink focus:border-ink/40 focus:outline-none">
-                    <option value="">Select bank…</option>
-                    {banks.map((b) => (
-                      <option key={b.uuid} value={b.uuid}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="bank_account_name">Account name</Label>
-                  <Input id="bank_account_name" name="bank_account_name" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="bank_account_number">Account number</Label>
-                  <Input id="bank_account_number" name="bank_account_number" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="label">Nickname (optional)</Label>
-                <Input id="label" name="label" placeholder="e.g. Personal, Business" />
-              </div>
-
-              <SubmitButton pendingText="Adding…">Add payment method</SubmitButton>
-            </SavingForm>
+            <AddPayoutMethodForm banks={banks} />
           </div>
         </CardContent>
       </Card>

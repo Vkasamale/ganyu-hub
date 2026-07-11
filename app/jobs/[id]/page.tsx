@@ -12,6 +12,7 @@ import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
+import { JobPayoutMethodPicker } from "@/components/job-payout-method-picker";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout } from "@/app/actions";
@@ -56,6 +57,11 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         .order("created_at", { ascending: false });
 
   const myProposal = !isClient && user ? (proposals || [])[0] : null;
+  const { data: myMethods } = (!isClient && !!user && myProposal?.status === "accepted")
+    ? await supabase.from("payout_methods")
+        .select("id, kind, mobile_number, mobile_network, bank_account_name, bank_account_number, is_default, label")
+        .eq("user_id", user!.id).order("is_default", { ascending: false }).order("created_at", { ascending: true })
+    : { data: null };
 
   const { count: proposalCount } = await supabase
     .from("proposals")
@@ -144,6 +150,9 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
         <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} />
+      )}
+      {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
+        <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
       )}
 
       {user && isParty && job.status === "completed" && (

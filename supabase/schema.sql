@@ -508,6 +508,9 @@ create index if not exists payout_methods_user_id_idx on payout_methods(user_id)
 create unique index if not exists payout_methods_one_default_per_user
   on payout_methods(user_id) where is_default;
 
+-- Per-job override: creative can select a specific saved method for this job.
+alter table jobs add column if not exists payout_method_id uuid references payout_methods(id);
+
 alter table payout_methods enable row level security;
 drop policy if exists "payout_methods self read" on payout_methods;
 create policy "payout_methods self read" on payout_methods for select using (auth.uid() = user_id);

@@ -992,6 +992,33 @@ export async function deletePayoutMethod(formData: FormData) {
   return { ok: true, info: "Payment method removed." };
 }
 
+// Per-job override: the accepted creative can pin which of their saved methods
+// receives this specific job's payout. Null clears the override → default is used.
+export async function setJobPayoutMethod(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const job_id = String(formData.get("job_id") || "");
+  const raw = String(formData.get("payout_method_id") || "");
+  const payout_method_id = raw === "" ? null : raw;
+  if (!job_id) return { error: "Missing job id." };
+
+  // Only the accepted creative on this job may pin its method.
+  const { data: accepted } = await supabase
+    .from("proposals").select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  if (accepted?.creative_id !== user.id) return { error: "Only the accepted creative can set this." };
+
+  if (payout_method_id) {
+    const { data: mine } = await supabase.from("payout_methods").select("id").eq("id", payout_method_id).eq("user_id", user.id).maybeSingle();
+    if (!mine) return { error: "That method isn't yours." };
+  }
+
+  const { error } = await supabase.from("jobs").update({ payout_method_id }).eq("id", job_id);
+  if (error) return { error: error.message };
+  revalidatePath(`/jobs/${job_id}`);
+  return { ok: true, info: payout_method_id ? "Payment method for this job set." : "Cleared — default will be used." };
+}
+
 type EscrowStatus = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
 
 const ESCROW_TRANSITIONS: Record<EscrowStatus, EscrowStatus[]> = {
@@ -1045,10 +1072,23 @@ export async function updateEscrowStatus(formData: FormData) {
       console.error("[release] profile lookup failed", { creativeId, cpErr });
       return { error: `Creative profile lookup failed (id=${creativeId}): ${cpErr?.message || "no row returned"}.` };
     }
-    // Payout destination now comes from the creative's default saved method.
-    const { data: pm, error: pmErr } = await admin.from("payout_methods")
-      .select("kind, mobile_number, mobile_network, bank_uuid, bank_account_name, bank_account_number")
-      .eq("user_id", creativeId).eq("is_default", true).maybeSingle();
+    // Payout destination: prefer the method the creative pinned for this job;
+    // otherwise fall back to their default.
+    const { data: jobRow } = await supabase.from("jobs").select("payout_method_id").eq("id", job_id).single();
+    let pm: any = null;
+    let pmErr: any = null;
+    if (jobRow?.payout_method_id) {
+      const r = await admin.from("payout_methods")
+        .select("kind, mobile_number, mobile_network, bank_uuid, bank_account_name, bank_account_number")
+        .eq("id", jobRow.payout_method_id).eq("user_id", creativeId).maybeSingle();
+      pm = r.data; pmErr = r.error;
+    }
+    if (!pm && !pmErr) {
+      const r = await admin.from("payout_methods")
+        .select("kind, mobile_number, mobile_network, bank_uuid, bank_account_name, bank_account_number")
+        .eq("user_id", creativeId).eq("is_default", true).maybeSingle();
+      pm = r.data; pmErr = r.error;
+    }
     if (pmErr) return { error: `Payout method lookup failed: ${pmErr.message}` };
     if (!pm) {
       return { error: "Creative hasn't set a default payment method yet. Ask them to add one on their profile." };
