@@ -15,24 +15,21 @@ export function AddPayoutMethodForm({ banks }: { banks: Bank[] }) {
     <SavingForm action={addPayoutMethod} successText="Payment method added." resetOnSuccess className="space-y-4">
       <input type="hidden" name="kind" value={kind} />
 
-      <div className="space-y-2">
-        <Label>Type</Label>
-        <div className="inline-flex rounded-lg border border-ink/20 bg-paper p-1">
-          <button
-            type="button"
-            onClick={() => setKind("mobile")}
-            className={`rounded-md px-3 py-1.5 text-sm ${kind === "mobile" ? "bg-ink text-paper" : "text-ink/70"}`}
-          >
-            Mobile money
-          </button>
-          <button
-            type="button"
-            onClick={() => setKind("bank")}
-            className={`rounded-md px-3 py-1.5 text-sm ${kind === "bank" ? "bg-ink text-paper" : "text-ink/70"}`}
-          >
-            Bank account
-          </button>
-        </div>
+      <div className="inline-flex rounded-lg border border-ink/20 bg-paper p-1">
+        <button
+          type="button"
+          onClick={() => setKind("mobile")}
+          className={`rounded-md px-3 py-1.5 text-sm ${kind === "mobile" ? "bg-ink text-paper" : "text-ink/70"}`}
+        >
+          Mobile money
+        </button>
+        <button
+          type="button"
+          onClick={() => setKind("bank")}
+          className={`rounded-md px-3 py-1.5 text-sm ${kind === "bank" ? "bg-ink text-paper" : "text-ink/70"}`}
+        >
+          Bank account
+        </button>
       </div>
 
       {kind === "mobile" ? (
