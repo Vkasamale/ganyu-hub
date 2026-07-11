@@ -487,3 +487,33 @@ create policy "job-files insert participants" on storage.objects for insert with
   )
 );
 grant execute on function public.get_user_email(uuid) to authenticated;
+
+-- Saved payout methods (multiple per user). Replaces the flat payout_* columns
+-- on profiles for reads; those columns are left in place unused.
+create table if not exists payout_methods (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null check (kind in ('mobile','bank')),
+  mobile_number text,
+  mobile_network text check (mobile_network in ('airtel','tnm')),
+  bank_uuid text,
+  bank_account_name text,
+  bank_account_number text,
+  label text,
+  is_default boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists payout_methods_user_id_idx on payout_methods(user_id);
+-- Enforce at most one default per user.
+create unique index if not exists payout_methods_one_default_per_user
+  on payout_methods(user_id) where is_default;
+
+alter table payout_methods enable row level security;
+drop policy if exists "payout_methods self read" on payout_methods;
+create policy "payout_methods self read" on payout_methods for select using (auth.uid() = user_id);
+drop policy if exists "payout_methods self insert" on payout_methods;
+create policy "payout_methods self insert" on payout_methods for insert with check (auth.uid() = user_id);
+drop policy if exists "payout_methods self update" on payout_methods;
+create policy "payout_methods self update" on payout_methods for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "payout_methods self delete" on payout_methods;
+create policy "payout_methods self delete" on payout_methods for delete using (auth.uid() = user_id);
