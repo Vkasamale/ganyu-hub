@@ -15,6 +15,8 @@ import { EscrowPanel } from "@/components/escrow-panel";
 import { JobPayoutMethodPicker } from "@/components/job-payout-method-picker";
 import { AcceptProposalPicker } from "@/components/accept-proposal-picker";
 import { ProposalPayoutPreview } from "@/components/proposal-payout-preview";
+import { CancelJobPanel } from "@/components/cancel-job-panel";
+import { DeadlineExtensionPanel } from "@/components/deadline-extension-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout } from "@/app/actions";
@@ -74,6 +76,16 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
   const isAcceptedCreative = !isClient && myProposal?.status === "accepted";
   const isParty = isClient || isAcceptedCreative;
+
+  const CANCELLABLE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
+  const canRequestCancel = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
+  const canProposeExtension = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
+
+  const { data: pendingExtension } = canProposeExtension
+    ? await supabase.from("deadline_extensions")
+        .select("id, proposed_by, proposed_deadline, reason")
+        .eq("job_id", job.id).eq("status", "pending").maybeSingle()
+    : { data: null };
   let myReview: { rating: number; comment: string | null } | null = null;
   if (user && isParty && job.status === "completed") {
     const { data: r } = await supabase
@@ -107,6 +119,23 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </CardHeader>
         <CardContent>
           <p className="whitespace-pre-wrap text-neutral-700">{job.brief}</p>
+          {job.deliverables && (
+            <div className="mt-4">
+              <p className="text-sm font-medium text-ink">Deliverables</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{job.deliverables}</p>
+            </div>
+          )}
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm">
+            {job.deadline && (
+              <div><span className="text-neutral-500">Deadline:</span> <span className="font-medium">{job.deadline}</span></div>
+            )}
+            {job.revisions_included != null && (
+              <div><span className="text-neutral-500">Revisions:</span> <span className="font-medium">{job.revisions_included}</span></div>
+            )}
+            {job.format_spec && (
+              <div><span className="text-neutral-500">Format:</span> <span className="font-medium">{job.format_spec}</span></div>
+            )}
+          </div>
           <p className="mt-4 font-semibold">Budget: {formatMwk(job.budget_mwk)}</p>
         </CardContent>
       </Card>
@@ -171,6 +200,34 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
       {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
         <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
+      )}
+
+      {user && canProposeExtension && (
+        <div className="mt-4">
+          <DeadlineExtensionPanel
+            jobId={job.id}
+            currentDeadline={job.deadline || null}
+            pending={pendingExtension || null}
+            currentUserId={user.id}
+          />
+        </div>
+      )}
+
+      {user && canRequestCancel && (
+        <div className="mt-4">
+          <CancelJobPanel jobId={job.id} />
+        </div>
+      )}
+
+      {job.status === "cancellation_requested" && (
+        <Card className="mt-4 border-amber-300 bg-amber-50">
+          <CardContent className="p-4 text-sm text-amber-900">
+            <p className="font-medium">Cancellation requested — awaiting admin review.</p>
+            {job.cancellation_reason && (
+              <p className="mt-1 text-amber-900/80">Reason: {job.cancellation_reason}</p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {user && isParty && job.status === "completed" && (

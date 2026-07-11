@@ -17,9 +17,11 @@ export async function promotePendingAcceptance(admin: Admin, jobId: string) {
   await admin.from("proposals").update({ status: "declined" })
     .eq("job_id", jobId).eq("status", "pending").neq("id", pinnedId);
 
+  // Payment confirmed = scope agreement. Skip the scope_pending step entirely.
   // Only flip job.status if it's still open — never demote a further-along state.
   await admin.from("jobs").update({
-    status: "scope_pending",
+    status: "in_progress",
     pending_accept_proposal_id: null,
+    payment_confirmed_at: new Date().toISOString(),
   }).eq("id", jobId).eq("status", "open");
 }

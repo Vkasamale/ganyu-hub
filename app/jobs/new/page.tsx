@@ -30,8 +30,26 @@ export default async function NewJobPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="brief">Brief</Label>
-              <Textarea id="brief" name="brief" required rows={6} placeholder="Describe what you need, the audience, deadline, and any references." />
+              <Label htmlFor="brief">Brief (min 200 characters)</Label>
+              <Textarea id="brief" name="brief" required rows={7} minLength={200} placeholder="Describe what you need, the audience, tone, references, and anything the creative needs to know before starting. Accepting a proposal is a contract — the more specific here, the fewer disputes later." />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="deliverables">Deliverables (min 50 characters)</Label>
+              <Textarea id="deliverables" name="deliverables" required rows={4} minLength={50} placeholder="What exactly will you receive? e.g.&#10;- Final logo in PNG and SVG&#10;- 3 color variants&#10;- Source file (.ai or .fig)" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="deadline">Deadline</Label>
+                <Input id="deadline" name="deadline" type="date" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="revisions_included">Revisions included</Label>
+                <Input id="revisions_included" name="revisions_included" type="number" min={0} max={10} defaultValue={2} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="format_spec">Format / spec (optional)</Label>
+              <Input id="format_spec" name="format_spec" placeholder="e.g. 1080×1920 MP4, under 60s" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="budget_mwk">Budget (MWK)</Label>

@@ -87,6 +87,7 @@ alter type job_status add value if not exists 'submitted';
 alter type job_status add value if not exists 'revision_requested';
 alter type job_status add value if not exists 'disputed';
 alter type job_status add value if not exists 'scope_pending';
+alter type job_status add value if not exists 'cancellation_requested';
 
 alter table jobs add column if not exists scope_summary text;
 alter table jobs add column if not exists client_confirmed_scope_at timestamptz;
@@ -510,6 +511,56 @@ create unique index if not exists payout_methods_one_default_per_user
 
 -- Per-job override: creative can select a specific saved method for this job.
 alter table jobs add column if not exists payout_method_id uuid references payout_methods(id);
+
+-- Structured job posting (scope-removal follow-through). Additive, nullable
+-- so historical jobs keep working.
+alter table jobs add column if not exists deliverables text;
+alter table jobs add column if not exists deadline date;
+alter table jobs add column if not exists revisions_included integer;
+alter table jobs add column if not exists format_spec text;
+
+-- Payment settlement timestamp (distinct from payment_initiated_at, which is
+-- when we redirected the client to PayChangu — this is when clearance landed).
+alter table jobs add column if not exists payment_confirmed_at timestamptz;
+
+-- Cancellation record. Written when either party requests, then updated by
+-- admin when they resolve. Executes two payouts (client refund + creative cut).
+alter table jobs add column if not exists cancellation_reason text;
+alter table jobs add column if not exists cancellation_requested_by uuid references profiles(id);
+alter table jobs add column if not exists cancellation_requested_at timestamptz;
+alter table jobs add column if not exists cancellation_resolved_by uuid references profiles(id);
+alter table jobs add column if not exists cancellation_client_refund_mwk integer;
+alter table jobs add column if not exists cancellation_creative_cut_mwk integer;
+alter table jobs add column if not exists client_refund_ref text;
+alter table jobs add column if not exists client_refund_status text;
+alter table jobs add column if not exists creative_cut_ref text;
+alter table jobs add column if not exists creative_cut_status text;
+
+-- Mutual deadline extension: either party proposes, the other approves.
+create table if not exists deadline_extensions (
+  id uuid primary key default gen_random_uuid(),
+  job_id uuid not null references jobs(id) on delete cascade,
+  proposed_by uuid not null references profiles(id),
+  proposed_deadline date not null,
+  reason text,
+  status text not null default 'pending',
+  responded_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists deadline_extensions_one_pending_per_job
+  on deadline_extensions(job_id) where status = 'pending';
+alter table deadline_extensions enable row level security;
+drop policy if exists "de read parties" on deadline_extensions;
+create policy "de read parties" on deadline_extensions for select using (
+  auth.uid() = proposed_by
+  or auth.uid() in (select client_id from jobs where id = job_id)
+  or auth.uid() in (select creative_id from proposals where job_id = deadline_extensions.job_id and status = 'accepted')
+);
+drop policy if exists "de write parties" on deadline_extensions;
+create policy "de write parties" on deadline_extensions for all using (
+  auth.uid() in (select client_id from jobs where id = job_id)
+  or auth.uid() in (select creative_id from proposals where job_id = deadline_extensions.job_id and status = 'accepted')
+);
 
 -- Fee capture (populated on successful verify calls). Nulls on jobs paid
 -- before this shipped — treat as "unknown" in any report.

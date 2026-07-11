@@ -573,12 +573,29 @@ export async function postJob(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
+  const brief = String(formData.get("brief") || "").trim();
+  const deliverables = String(formData.get("deliverables") || "").trim();
+  const deadline = String(formData.get("deadline") || "").trim() || null;
+  const revisionsRaw = Number(formData.get("revisions_included"));
+  const format_spec = String(formData.get("format_spec") || "").trim() || null;
+
+  // Structured brief so acceptance = real contract. Cheap validation up front.
+  if (brief.length < 200) return { error: "Brief must be at least 200 characters — spell out what the job actually is." };
+  if (deliverables.length < 50) return { error: "Deliverables must be at least 50 characters — list what you'll receive." };
+  if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return { error: "Deadline must be a valid date." };
+  const revisions_included = Number.isFinite(revisionsRaw) && revisionsRaw >= 0 && revisionsRaw <= 10
+    ? Math.floor(revisionsRaw) : null;
+
   const { data, error } = await supabase.from("jobs").insert({
     client_id: user.id,
     title: String(formData.get("title")),
-    brief: String(formData.get("brief")),
+    brief,
     budget_mwk: Number(formData.get("budget_mwk")) || null,
     category: String(formData.get("category")),
+    deliverables,
+    deadline,
+    revisions_included,
+    format_spec,
   }).select("id").single();
   if (error) return { error: error.message };
   redirect(`/jobs/${data.id}`);
@@ -1506,4 +1523,298 @@ export async function reconcilePayout(input: string | FormData): Promise<{ ok?: 
     return { ok: true, info: "PayChangu reports the payout failed." };
   }
   return { ok: true, info: "PayChangu still shows the payout as pending. Try again in a minute." };
+}
+
+
+// ============================================================================
+// Cancellation — Session D
+// ============================================================================
+//
+// Every cancellation, from either side, is a REQUEST. Nothing moves without an
+// admin confirming the split. Auto-splits are only used as a *suggestion* in
+// the admin queue, never executed directly.
+
+const CANCELLATION_MIN_REASON = 30;
+const CANCELLABLE_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
+
+export async function requestCancellation(formData: FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const job_id = String(formData.get("job_id") || "");
+  const reason = String(formData.get("reason") || "").trim();
+  if (!job_id) return { error: "Missing job id." };
+  if (reason.length < CANCELLATION_MIN_REASON) {
+    return { error: `Reason too short — write at least ${CANCELLATION_MIN_REASON} characters explaining why.` };
+  }
+
+  const { data: job } = await supabase.from("jobs")
+    .select("id, client_id, status, title")
+    .eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  if (!CANCELLABLE_STATUSES.has(job.status)) {
+    return { error: `Cannot cancel a job in state '${job.status}'.` };
+  }
+
+  const { data: accepted } = await supabase.from("proposals")
+    .select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  const creativeId = accepted?.creative_id;
+  const isParty = user.id === job.client_id || user.id === creativeId;
+  if (!isParty) return { error: "Only the client or the accepted creative can request cancellation." };
+
+  const { error } = await supabase.from("jobs").update({
+    status: "cancellation_requested",
+    cancellation_reason: reason,
+    cancellation_requested_by: user.id,
+    cancellation_requested_at: new Date().toISOString(),
+  }).eq("id", job_id);
+  if (error) return { error: error.message };
+
+  const otherParty = user.id === job.client_id ? creativeId : job.client_id;
+  if (otherParty) {
+    await supabase.from("notifications").insert({
+      user_id: otherParty,
+      kind: "message_received",
+      title: "Cancellation requested",
+      body: `The other party asked to cancel "${job.title}". An admin will review and decide the split.`,
+      link: `/jobs/${job_id}`,
+      actor_id: user.id,
+      target_type: "job",
+      target_id: job_id,
+    });
+  }
+
+  revalidatePath(`/jobs/${job_id}`);
+  revalidatePath("/admin/cancellations");
+  return { ok: true, info: "Cancellation requested. An admin will review and settle the split." };
+}
+
+export async function adminResolveCancellation(formData: FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  if (!me?.is_admin) return { error: "Admin only." };
+
+  const job_id = String(formData.get("job_id") || "");
+  const titleConfirm = String(formData.get("title_confirm") || "").trim();
+  const clientPctRaw = Number(formData.get("client_pct"));
+  const creativePctRaw = Number(formData.get("creative_pct"));
+  if (!job_id) return { error: "Missing job id." };
+  if (!Number.isFinite(clientPctRaw) || !Number.isFinite(creativePctRaw)) {
+    return { error: "Enter both percentages as numbers." };
+  }
+  if (clientPctRaw < 0 || creativePctRaw < 0 || clientPctRaw + creativePctRaw > 100) {
+    return { error: "Percentages must be 0–100 and sum to at most 100." };
+  }
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY not set." };
+  const { createServerClient } = await import("@supabase/ssr");
+  const admin = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
+  const { data: job } = await admin.from("jobs")
+    .select("id, title, client_id, accepted_bid_mwk, collection_amount_mwk, status")
+    .eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  if (job.status !== "cancellation_requested" && job.status !== "disputed") {
+    return { error: `Cannot resolve cancellation on a job in state '${job.status}'.` };
+  }
+  if (titleConfirm !== job.title) {
+    return { error: "Type the job title exactly to confirm this action." };
+  }
+
+  const { data: accepted } = await admin.from("proposals")
+    .select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  const creativeId = accepted?.creative_id;
+  if (!creativeId) return { error: "No accepted creative on this job — nothing to split." };
+
+  const gross = job.collection_amount_mwk || job.accepted_bid_mwk || 0;
+  const clientAmount = Math.floor(gross * (clientPctRaw / 100));
+  const creativeAmount = Math.floor(gross * (creativePctRaw / 100));
+
+  const { initiatePayout } = await import("@/lib/payments");
+
+  const { data: clientPm } = await admin.from("payout_methods")
+    .select("kind, mobile_number, mobile_network, bank_uuid, bank_account_name, bank_account_number")
+    .eq("user_id", job.client_id).eq("is_default", true).maybeSingle();
+  const { data: clientAuth } = await admin.auth.admin.getUserById(job.client_id);
+  const { data: clientProfile } = await admin.from("profiles").select("full_name").eq("id", job.client_id).maybeSingle();
+
+  const { data: creativePm } = await admin.from("payout_methods")
+    .select("kind, mobile_number, mobile_network, bank_uuid, bank_account_name, bank_account_number")
+    .eq("user_id", creativeId).eq("is_default", true).maybeSingle();
+  const { data: creativeAuth } = await admin.auth.admin.getUserById(creativeId);
+  const { data: creativeProfile } = await admin.from("profiles").select("full_name").eq("id", creativeId).maybeSingle();
+
+  if (clientAmount > 0 && !clientPm) return { error: "Client has no default payout method — refund cannot execute. Ask them to add one." };
+  if (creativeAmount > 0 && !creativePm) return { error: "Creative has no default payout method — cut cannot execute. Ask them to add one." };
+
+  await admin.from("jobs").update({
+    cancellation_resolved_by: user.id,
+    cancellation_client_refund_mwk: clientAmount,
+    cancellation_creative_cut_mwk: creativeAmount,
+  }).eq("id", job_id);
+
+  const buildDest = (pm: any, profile: any, auth: any) => {
+    const email = auth?.user?.email || "";
+    const [firstName, ...rest] = String(profile?.full_name || "User").split(" ");
+    if (pm.kind === "mobile" && pm.mobile_number && (pm.mobile_network === "airtel" || pm.mobile_network === "tnm")) {
+      return { method: "mobile" as const, number: pm.mobile_number, network: pm.mobile_network, firstName, lastName: rest.join(" ") || "-", email };
+    }
+    return { method: "bank" as const, bankUuid: pm.bank_uuid, accountName: pm.bank_account_name, accountNumber: pm.bank_account_number, email };
+  };
+
+  let clientRef: string | null = null;
+  let clientStatus: string | null = null;
+  if (clientAmount > 0) {
+    try {
+      const r = await initiatePayout({ jobId: job.id, amountMwk: clientAmount, jobTitle: `Refund: ${job.title}`, dest: buildDest(clientPm, clientProfile, clientAuth) });
+      clientRef = r.chargeId; clientStatus = "pending";
+    } catch (e: any) {
+      await admin.from("jobs").update({ client_refund_status: "failed" }).eq("id", job_id);
+      return { error: `Client refund payout failed: ${e?.message || "unknown"}. Job left in cancellation_requested — retry via admin.` };
+    }
+  }
+
+  let creativeRef: string | null = null;
+  let creativeStatus: string | null = null;
+  if (creativeAmount > 0) {
+    try {
+      const r = await initiatePayout({ jobId: job.id, amountMwk: creativeAmount, jobTitle: `Cancellation cut: ${job.title}`, dest: buildDest(creativePm, creativeProfile, creativeAuth) });
+      creativeRef = r.chargeId; creativeStatus = "pending";
+    } catch (e: any) {
+      await admin.from("jobs").update({
+        client_refund_ref: clientRef, client_refund_status: clientStatus,
+        creative_cut_status: "failed",
+      }).eq("id", job_id);
+      return { error: `Creative cut payout failed: ${e?.message || "unknown"}. Client refund already initiated (ref ${clientRef}). Retry creative leg manually.` };
+    }
+  }
+
+  await admin.from("jobs").update({
+    status: "cancelled",
+    client_refund_ref: clientRef,
+    client_refund_status: clientStatus,
+    creative_cut_ref: creativeRef,
+    creative_cut_status: creativeStatus,
+  }).eq("id", job_id);
+
+  revalidatePath(`/jobs/${job_id}`);
+  revalidatePath("/admin/cancellations");
+  return { ok: true, info: `Cancellation resolved. Refund ${clientAmount.toLocaleString()} to client, cut ${creativeAmount.toLocaleString()} to creative.` };
+}
+
+export async function adminRejectCancellation(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  if (!me?.is_admin) return { error: "Admin only." };
+
+  const job_id = String(formData.get("job_id") || "");
+  const revert_to = String(formData.get("revert_to") || "in_progress");
+  if (!job_id) return { error: "Missing job id." };
+  const allowed = new Set(["in_progress", "submitted", "revision_requested"]);
+  if (!allowed.has(revert_to)) return { error: "Invalid revert target." };
+
+  const { error } = await supabase.from("jobs").update({
+    status: revert_to,
+    cancellation_requested_by: null,
+    cancellation_requested_at: null,
+    cancellation_reason: null,
+  }).eq("id", job_id).eq("status", "cancellation_requested");
+  if (error) return { error: error.message };
+
+  revalidatePath(`/jobs/${job_id}`);
+  revalidatePath("/admin/cancellations");
+  return { ok: true };
+}
+
+
+// ============================================================================
+// Deadline extensions — mutual approval
+// ============================================================================
+
+export async function proposeDeadlineExtension(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const job_id = String(formData.get("job_id") || "");
+  const proposed_deadline = String(formData.get("proposed_deadline") || "");
+  const reason = String(formData.get("reason") || "").trim();
+  if (!job_id || !proposed_deadline) return { error: "Missing job id or proposed date." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(proposed_deadline)) return { error: "Invalid date format." };
+
+  const { data: job } = await supabase.from("jobs").select("id, client_id, status").eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  const { data: accepted } = await supabase.from("proposals")
+    .select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  const creativeId = accepted?.creative_id;
+  const isParty = user.id === job.client_id || user.id === creativeId;
+  if (!isParty) return { error: "Only the client or accepted creative can propose an extension." };
+
+  await supabase.from("deadline_extensions").update({ status: "superseded" })
+    .eq("job_id", job_id).eq("status", "pending");
+
+  const { error } = await supabase.from("deadline_extensions").insert({
+    job_id,
+    proposed_by: user.id,
+    proposed_deadline,
+    reason: reason || null,
+    status: "pending",
+  });
+  if (error) return { error: error.message };
+
+  const otherParty = user.id === job.client_id ? creativeId : job.client_id;
+  if (otherParty) {
+    await supabase.from("notifications").insert({
+      user_id: otherParty,
+      kind: "message_received",
+      title: "Deadline extension proposed",
+      body: `The other party proposed a new deadline: ${proposed_deadline}. Approve or decline on the job page.`,
+      link: `/jobs/${job_id}`,
+      actor_id: user.id,
+      target_type: "job",
+      target_id: job_id,
+    });
+  }
+  revalidatePath(`/jobs/${job_id}`);
+  return { ok: true };
+}
+
+export async function respondToDeadlineExtension(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const extension_id = String(formData.get("extension_id") || "");
+  const approve = String(formData.get("approve") || "") === "true";
+  if (!extension_id) return { error: "Missing extension id." };
+
+  const { data: ext } = await supabase.from("deadline_extensions")
+    .select("id, job_id, proposed_by, proposed_deadline, status").eq("id", extension_id).maybeSingle();
+  if (!ext) return { error: "Extension not found." };
+  if (ext.status !== "pending") return { error: "This extension is no longer pending." };
+  if (user.id === ext.proposed_by) return { error: "The other party approves, not the proposer." };
+
+  const { data: job } = await supabase.from("jobs").select("client_id").eq("id", ext.job_id).maybeSingle();
+  const { data: accepted } = await supabase.from("proposals")
+    .select("creative_id").eq("job_id", ext.job_id).eq("status", "accepted").maybeSingle();
+  const otherPartyIds = new Set([job?.client_id, accepted?.creative_id].filter(Boolean));
+  if (!otherPartyIds.has(user.id)) return { error: "Not a party to this job." };
+
+  if (approve) {
+    await supabase.from("deadline_extensions").update({ status: "approved", responded_at: new Date().toISOString() }).eq("id", extension_id);
+    await supabase.from("jobs").update({ deadline: ext.proposed_deadline }).eq("id", ext.job_id);
+  } else {
+    await supabase.from("deadline_extensions").update({ status: "declined", responded_at: new Date().toISOString() }).eq("id", extension_id);
+  }
+  revalidatePath(`/jobs/${ext.job_id}`);
+  return { ok: true };
 }
