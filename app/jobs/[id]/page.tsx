@@ -132,10 +132,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
 
       {user && isClient && job.status !== "open" && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" />
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} />
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" />
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} />
       )}
 
       {user && isParty && job.status === "completed" && (

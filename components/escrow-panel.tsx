@@ -36,17 +36,26 @@ function clientActions(status: Escrow): { next: Escrow; label: string; variant?:
   return [];
 }
 
-export function EscrowPanel({ jobId, escrowStatus, role }: { jobId: string; escrowStatus: Escrow; role: Role }) {
-  const actions = role === "client" ? clientActions(escrowStatus) : [];
+export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null }) {
+  const payoutPending = payoutStatus === "pending";
+  // Hide the release action entirely while a payout is in flight. Server also
+  // enforces via atomic claim — this just keeps the UI from tempting a retry.
+  const actions = role === "client"
+    ? clientActions(escrowStatus).filter((a) => !(payoutPending && a.next === "payment_released"))
+    : [];
 
   return (
     <Card className="mt-6">
       <CardContent className="p-5">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-neutral-500">Payment</p>
-          <Badge className="bg-white">{LABELS[escrowStatus]}</Badge>
+          <Badge className="bg-white">{payoutPending ? "Payout processing" : LABELS[escrowStatus]}</Badge>
         </div>
-        <p className="mt-2 text-sm text-neutral-600">{HINTS[escrowStatus]}</p>
+        <p className="mt-2 text-sm text-neutral-600">
+          {payoutPending
+            ? "Payout to the creative is processing with PayChangu. This page will update as soon as it's confirmed."
+            : HINTS[escrowStatus]}
+        </p>
         {actions.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {actions.map((a) => (

@@ -227,16 +227,19 @@ export async function verifyPayout(chargeId: string, method: "mobile" | "bank"):
 // Payout webhooks share the signed-body pattern with collection webhooks but
 // carry a charge_id instead of tx_ref. verifyPayout is used to server-side
 // re-verify before trusting the webhook.
-export function parsePayoutWebhook(payload: any): { chargeId?: string; status: "success" | "pending" | "failed"; providerId?: string } {
+export function parsePayoutWebhook(payload: any): { chargeId?: string; jobId?: string; status: "success" | "pending" | "failed"; providerId?: string } {
   const data = payload?.data ?? payload ?? {};
+  const meta = data?.meta ?? payload?.meta ?? {};
   const raw = String(data?.status ?? payload?.status ?? "").toLowerCase();
   const status: "success" | "pending" | "failed" =
     raw === "success" || raw === "successful" || raw === "completed" ? "success"
       : raw === "failed" || raw === "reversed" || raw === "cancelled" ? "failed"
       : "pending";
+  const providerRef = data?.reference || data?.id || data?.trans_id || data?.ref_id;
   return {
     chargeId: data?.charge_id || payload?.charge_id,
+    jobId: meta?.job_id,
     status,
-    providerId: data?.reference || data?.id ? String(data.reference || data.id) : undefined,
+    providerId: providerRef ? String(providerRef) : undefined,
   };
 }

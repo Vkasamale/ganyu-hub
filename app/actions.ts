@@ -962,13 +962,20 @@ export async function updateEscrowStatus(formData: FormData) {
   const job_id = String(formData.get("job_id"));
   const next = String(formData.get("escrow_status")) as EscrowStatus;
 
-  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk").eq("id", job_id).single();
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk, payout_status, payout_ref").eq("id", job_id).single();
   if (!job) return { error: "Job not found" };
   if (user.id !== job.client_id) return { error: "Only the client controls payment state." };
 
   // Client asked to release funds to the creative → initiate PayChangu payout.
   // The webhook (HMAC-verified) is what flips escrow_status to payment_released.
   if (job.escrow_status === "payment_held" && next === "payment_released") {
+    // Idempotency: never let a second click fire a second real payout.
+    if (job.payout_status === "pending") {
+      return { error: "A payout for this job is already processing. Wait for PayChangu to confirm before trying again." };
+    }
+    if (job.payout_ref && job.payout_status !== "failed") {
+      return { error: "A payout has already been initiated for this job." };
+    }
     const { initiatePayout, creativeAmount } = await import("@/lib/payments");
     const { data: accepted } = await supabase
       .from("proposals").select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
@@ -1019,6 +1026,21 @@ export async function updateEscrowStatus(formData: FormData) {
       return { error: "Creative hasn't added payout details yet. Ask them to fill in mobile-money or bank details on their profile." };
     }
 
+    // Atomic claim: exactly one concurrent click wins. Update only fires if
+    // no live payout ref exists yet AND payout is not already pending/succeeded.
+    const { data: claimed } = await supabase.from("jobs").update({
+      payout_status: "pending",
+      payout_initiated_at: new Date().toISOString(),
+      payout_error: null,
+    })
+      .eq("id", job_id)
+      .is("payout_ref", null)
+      .or("payout_status.is.null,payout_status.eq.failed")
+      .select("id");
+    if (!claimed || claimed.length === 0) {
+      return { error: "A payout for this job is already processing or completed." };
+    }
+
     try {
       const amount = creativeAmount(job.accepted_bid_mwk || 0);
       const { chargeId, providerId } = await initiatePayout({
@@ -1030,10 +1052,7 @@ export async function updateEscrowStatus(formData: FormData) {
       await supabase.from("jobs").update({
         payout_ref: chargeId,
         payout_provider_id: providerId || null,
-        payout_status: "pending",
         payout_method: dest.method,
-        payout_initiated_at: new Date().toISOString(),
-        payout_error: null,
       }).eq("id", job_id);
       revalidatePath(`/jobs/${job_id}`);
       return { ok: true, info: `Payout of MWK ${amount.toLocaleString()} initiated. It will show as released once PayChangu confirms.` };
