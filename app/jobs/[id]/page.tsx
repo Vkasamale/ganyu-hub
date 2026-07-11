@@ -13,6 +13,8 @@ import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
 import { JobPayoutMethodPicker } from "@/components/job-payout-method-picker";
+import { AcceptProposalPicker } from "@/components/accept-proposal-picker";
+import { ProposalPayoutPreview } from "@/components/proposal-payout-preview";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout } from "@/app/actions";
@@ -277,6 +279,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <Label htmlFor="bid_mwk">Your bid (MWK)</Label>
                 <Input id="bid_mwk" name="bid_mwk" type="number" min={0} required />
               </div>
+              <ProposalPayoutPreview />
               <SubmitButton pendingText="Sending…">Submit proposal</SubmitButton>
             </SavingForm>
           </CardContent>
@@ -313,17 +316,8 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                   <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-700">{p.cover_letter}</p>
                   <p className="mt-2 text-sm font-medium">Bid: {formatMwk(p.bid_mwk)}</p>
                   {p.status === "pending" && (
-                    <div className="mt-3 flex gap-2">
-                      <SavingForm action={decideProposal} successText="Redirecting to payment…">
-                        <input type="hidden" name="proposal_id" value={p.id} />
-                        <input type="hidden" name="status" value="accepted" />
-                        <Button size="sm" type="submit">Accept</Button>
-                      </SavingForm>
-                      <SavingForm action={decideProposal} successText="Declined.">
-                        <input type="hidden" name="proposal_id" value={p.id} />
-                        <input type="hidden" name="status" value="declined" />
-                        <Button size="sm" variant="outline" type="submit">Decline</Button>
-                      </SavingForm>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <AcceptProposalPicker proposalId={p.id} bidMwk={p.bid_mwk} />
                     </div>
                   )}
                 </CardContent>

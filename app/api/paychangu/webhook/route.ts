@@ -52,6 +52,8 @@ export async function POST(req: Request) {
           escrow_status: "payment_released",
           payout_status: null,
           payout_provider_id: verified.providerId || po.providerId || null,
+          payout_amount_mwk: (verified as any).amount ?? null,
+          payout_fee_mwk: (verified as any).fee ?? null,
         }).eq("id", pj.id);
       } else if (verified.status === "failed") {
         await supabase.from("jobs").update({
@@ -74,6 +76,9 @@ export async function POST(req: Request) {
     await supabase.from("jobs").update({
       escrow_status: "payment_held",
       payment_provider_id: verified.providerId || null,
+      collection_amount_mwk: verified.amount ?? null,
+      collection_fee_mwk: verified.fee ?? null,
+      payment_rail: verified.rail ?? null,
     }).eq("id", job.id);
     await promotePendingAcceptance(supabase, job.id);
   } else if (verified.status === "failed" && job.escrow_status === "payment_pending") {

@@ -28,6 +28,9 @@ export async function GET(req: Request) {
         await supabase.from("jobs").update({
           escrow_status: "payment_held",
           payment_provider_id: verified.providerId || null,
+          collection_amount_mwk: verified.amount ?? null,
+          collection_fee_mwk: verified.fee ?? null,
+          payment_rail: verified.rail ?? null,
         }).eq("id", job.id);
         await promotePendingAcceptance(supabase, job.id);
       } else if (verified.status === "failed") {

@@ -511,6 +511,14 @@ create unique index if not exists payout_methods_one_default_per_user
 -- Per-job override: creative can select a specific saved method for this job.
 alter table jobs add column if not exists payout_method_id uuid references payout_methods(id);
 
+-- Fee capture (populated on successful verify calls). Nulls on jobs paid
+-- before this shipped — treat as "unknown" in any report.
+alter table jobs add column if not exists collection_fee_mwk integer;
+alter table jobs add column if not exists collection_amount_mwk integer;
+alter table jobs add column if not exists payout_fee_mwk integer;
+alter table jobs add column if not exists payout_amount_mwk integer;
+alter table jobs add column if not exists payment_rail text;
+
 -- Pending accept: which proposal the client is trying to pay for. Cleared on
 -- payment success (proposal is promoted) or on cancellation. Job stays 'open'
 -- and other proposals stay 'pending' the whole time.

@@ -64,7 +64,13 @@ export async function initiatePayment(a: InitiateArgs): Promise<InitiateResult> 
   return { checkoutUrl, txRef };
 }
 
-export type VerifyResult = { status: "success" | "pending" | "failed"; providerId?: string };
+export type VerifyResult = {
+  status: "success" | "pending" | "failed";
+  providerId?: string;
+  amount?: number;   // what was actually charged/paid
+  fee?: number;      // PayChangu's cut
+  rail?: string;     // provider label ("Mobile Bank Transfer", "Airtel Money", ...)
+};
 
 export async function verifyPayment(txRef: string): Promise<VerifyResult> {
   const res = await fetch(`${API_BASE}/verify-payment/${encodeURIComponent(txRef)}`, {
@@ -83,7 +89,16 @@ export async function verifyPayment(txRef: string): Promise<VerifyResult> {
       : raw === "failed" || raw === "reversed" || raw === "cancelled" ? "failed"
       : "pending";
   const providerId = data?.reference || data?.id;
-  return { status, providerId: providerId ? String(providerId) : undefined };
+  const amount = Number(data?.amount);
+  const fee = Number(data?.charges);
+  const rail = data?.authorization?.channel;
+  return {
+    status,
+    providerId: providerId ? String(providerId) : undefined,
+    amount: Number.isFinite(amount) ? amount : undefined,
+    fee: Number.isFinite(fee) ? fee : undefined,
+    rail: rail ? String(rail) : undefined,
+  };
 }
 
 export function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
@@ -204,6 +219,8 @@ export async function initiatePayout(a: PayoutInitArgs): Promise<PayoutInitResul
 
 // Server-side re-verify for a payout. Same "never trust the webhook alone"
 // pattern as verifyPayment. Mobile and bank use different detail endpoints.
+// On success we also return fee data: the actual amount debited from our
+// merchant balance, PayChangu's transaction charge, and the rail label.
 export async function verifyPayout(chargeId: string, method: "mobile" | "bank"): Promise<VerifyResult> {
   const url = method === "mobile"
     ? `${API_BASE}/mobile-money/payments/${encodeURIComponent(chargeId)}/details`
@@ -221,7 +238,16 @@ export async function verifyPayout(chargeId: string, method: "mobile" | "bank"):
       : raw === "failed" || raw === "reversed" || raw === "cancelled" ? "failed"
       : "pending";
   const providerId = data?.ref_id || data?.trans_id || data?.reference || data?.id;
-  return { status, providerId: providerId ? String(providerId) : undefined };
+  const amount = Number(data?.amount);
+  const fee = Number(data?.transaction_charges?.amount);
+  const rail = data?.mobile_money?.name || data?.payment_method;
+  return {
+    status,
+    providerId: providerId ? String(providerId) : undefined,
+    amount: Number.isFinite(amount) ? amount : undefined,
+    fee: Number.isFinite(fee) ? fee : undefined,
+    rail: rail ? String(rail) : undefined,
+  };
 }
 
 // Payout webhooks share the signed-body pattern with collection webhooks but

@@ -703,6 +703,11 @@ export async function decideProposal(formData: FormData) {
   }).eq("id", proposal.job_id);
 
   const { initiatePayment } = await import("@/lib/payments");
+  const { clientCharge } = await import("@/lib/fees");
+  const railRaw = String(formData.get("rail") || "mobile_money");
+  const rail = (railRaw === "card" || railRaw === "bank_transfer" ? railRaw : "mobile_money") as
+    "mobile_money" | "card" | "bank_transfer";
+  const totalMwk = clientCharge(proposal.bid_mwk, rail);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in." };
   const { data: cprofile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
@@ -714,7 +719,7 @@ export async function decideProposal(formData: FormData) {
   try {
     const { checkoutUrl, txRef } = await initiatePayment({
       jobId: proposal.job_id,
-      amountMwk: proposal.bid_mwk,
+      amountMwk: totalMwk,
       email: user.email || "",
       firstName,
       lastName: rest.join(" ") || "-",
@@ -725,6 +730,7 @@ export async function decideProposal(formData: FormData) {
       escrow_status: "payment_pending",
       payment_ref: txRef,
       payment_initiated_at: new Date().toISOString(),
+      payment_rail: rail,
     }).eq("id", proposal.job_id);
     redirect(checkoutUrl);
   } catch (e: any) {
@@ -1107,7 +1113,8 @@ export async function updateEscrowStatus(formData: FormData) {
     if (job.payout_ref && job.payout_status !== "failed") {
       return { error: "A payout has already been initiated for this job." };
     }
-    const { initiatePayout, creativeAmount } = await import("@/lib/payments");
+    const { initiatePayout } = await import("@/lib/payments");
+    const { creativeNet } = await import("@/lib/fees");
     const { data: accepted } = await supabase
       .from("proposals").select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
     const creativeId = accepted?.creative_id;
@@ -1192,7 +1199,8 @@ export async function updateEscrowStatus(formData: FormData) {
     }
 
     try {
-      const amount = creativeAmount(job.accepted_bid_mwk || 0);
+      const payoutRail = dest.method === "bank" ? "bank" : "mobile";
+      const amount = creativeNet(job.accepted_bid_mwk || 0, payoutRail);
       const { chargeId, providerId } = await initiatePayout({
         jobId: job.id,
         amountMwk: amount,
@@ -1483,6 +1491,8 @@ export async function reconcilePayout(input: string | FormData): Promise<{ ok?: 
       escrow_status: "payment_released",
       payout_status: null,
       payout_provider_id: verified.providerId || null,
+      payout_amount_mwk: verified.amount ?? null,
+      payout_fee_mwk: verified.fee ?? null,
     }).eq("id", job_id);
     revalidatePath(`/jobs/${job_id}`);
     return { ok: true, info: "Payout confirmed. Status updated to Released." };
