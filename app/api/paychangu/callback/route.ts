@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { verifyPayment } from "@/lib/payments";
+import { promotePendingAcceptance } from "@/lib/accept-pending";
 
 export const runtime = "nodejs";
 
@@ -28,8 +29,12 @@ export async function GET(req: Request) {
           escrow_status: "payment_held",
           payment_provider_id: verified.providerId || null,
         }).eq("id", job.id);
+        await promotePendingAcceptance(supabase, job.id);
       } else if (verified.status === "failed") {
-        await supabase.from("jobs").update({ escrow_status: "none" }).eq("id", job.id);
+        await supabase.from("jobs").update({
+          escrow_status: "none",
+          pending_accept_proposal_id: null,
+        }).eq("id", job.id);
       }
     }
     if (job) return NextResponse.redirect(new URL(`/jobs/${job.id}`, url.origin));

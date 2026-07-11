@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { verifyWebhookSignature, parseWebhook, parsePayoutWebhook, verifyPayment, verifyPayout } from "@/lib/payments";
+import { promotePendingAcceptance } from "@/lib/accept-pending";
 
 export const runtime = "nodejs";
 
@@ -74,8 +75,12 @@ export async function POST(req: Request) {
       escrow_status: "payment_held",
       payment_provider_id: verified.providerId || null,
     }).eq("id", job.id);
+    await promotePendingAcceptance(supabase, job.id);
   } else if (verified.status === "failed" && job.escrow_status === "payment_pending") {
-    await supabase.from("jobs").update({ escrow_status: "none" }).eq("id", job.id);
+    await supabase.from("jobs").update({
+      escrow_status: "none",
+      pending_accept_proposal_id: null,
+    }).eq("id", job.id);
   }
   return NextResponse.json({ ok: true });
 }

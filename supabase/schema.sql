@@ -511,6 +511,11 @@ create unique index if not exists payout_methods_one_default_per_user
 -- Per-job override: creative can select a specific saved method for this job.
 alter table jobs add column if not exists payout_method_id uuid references payout_methods(id);
 
+-- Pending accept: which proposal the client is trying to pay for. Cleared on
+-- payment success (proposal is promoted) or on cancellation. Job stays 'open'
+-- and other proposals stay 'pending' the whole time.
+alter table jobs add column if not exists pending_accept_proposal_id uuid references proposals(id) on delete set null;
+
 alter table payout_methods enable row level security;
 drop policy if exists "payout_methods self read" on payout_methods;
 create policy "payout_methods self read" on payout_methods for select using (auth.uid() = user_id);

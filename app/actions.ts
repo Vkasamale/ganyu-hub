@@ -643,46 +643,98 @@ export async function decideProposal(formData: FormData) {
   const supabase = createClient();
   const id = String(formData.get("proposal_id"));
   const status = String(formData.get("status")) as "accepted" | "declined";
-  const { error } = await supabase.from("proposals").update({ status }).eq("id", id);
-  if (error) return { error: error.message };
 
   const { data: proposal } = await supabase
     .from("proposals")
-    .select("creative_id, job_id, bid_mwk, job:jobs(title, client_id)")
+    .select("creative_id, job_id, bid_mwk, job:jobs(title, client_id, escrow_status, pending_accept_proposal_id, status)")
     .eq("id", id)
     .single();
-  if (proposal) {
-    const job: any = Array.isArray(proposal.job) ? proposal.job[0] : proposal.job;
-    if (status === "accepted") {
-      // The accepted bid becomes the job's agreed amount — the number of record
-      // for every money calculation (see lib/money.ts), replacing budget_mwk.
-      await supabase
-        .from("jobs")
-        .update({ status: "scope_pending", accepted_bid_mwk: proposal.bid_mwk })
-        .eq("id", proposal.job_id);
-    }
+  if (!proposal) return { error: "Proposal not found." };
+  const job: any = Array.isArray(proposal.job) ? proposal.job[0] : proposal.job;
+
+  // Decline: unchanged path — flip status, notify.
+  if (status === "declined") {
+    const { error } = await supabase.from("proposals").update({ status: "declined" }).eq("id", id);
+    if (error) return { error: error.message };
     await supabase.from("notifications").insert({
       user_id: proposal.creative_id,
-      kind: status === "accepted" ? "proposal_accepted" : "proposal_declined",
-      title: status === "accepted" ? "Proposal accepted" : "Proposal declined",
-      body: `Your proposal on "${job?.title || "a job"}" was ${status}.`,
+      kind: "proposal_declined",
+      title: "Proposal declined",
+      body: `Your proposal on "${job?.title || "a job"}" was declined.`,
       link: `/jobs/${proposal.job_id}`,
       actor_id: job?.client_id || null,
       target_type: "job",
       target_id: proposal.job_id,
     });
     await emailUser(supabase, proposal.creative_id, {
-      subject: `Your proposal was ${status}`,
-      heading: status === "accepted" ? "Your proposal was accepted" : "Your proposal was declined",
-      body: `Your proposal on "${job?.title || "a job"}" was ${status}.${status === "accepted" ? " Start the conversation with your client on Ganyu Hub." : ""}`,
-      ctaText: status === "accepted" ? "Open job" : "See details",
+      subject: "Your proposal was declined",
+      heading: "Your proposal was declined",
+      body: `Your proposal on "${job?.title || "a job"}" was declined.`,
+      ctaText: "See details",
       ctaPath: `/jobs/${proposal.job_id}`,
     });
+    revalidatePath("/jobs");
+    revalidatePath(`/jobs/${proposal.job_id}`);
+    return { ok: true };
   }
-  revalidatePath("/jobs");
-  if (proposal) revalidatePath(`/jobs/${proposal.job_id}`);
-  return { ok: true };
+
+  // Accept: don't lock the market. Pin the proposal on the job and immediately
+  // start payment. Real acceptance happens on payment confirmation (webhook /
+  // callback / reconcile), where the proposal is promoted, losers auto-rejected,
+  // and the job flips to scope_pending.
+  if (job?.pending_accept_proposal_id && job.pending_accept_proposal_id !== id) {
+    return { error: "You already have a pending acceptance on this job. Cancel it or complete that payment first." };
+  }
+  if (job?.status !== "open") {
+    return { error: "This job is no longer open to acceptance." };
+  }
+  if (!proposal.bid_mwk || proposal.bid_mwk <= 0) {
+    return { error: "Proposal has no bid amount." };
+  }
+
+  // Pin the proposal on the job, set escrow to pending, kick off PayChangu.
+  await supabase.from("jobs").update({
+    pending_accept_proposal_id: id,
+    accepted_bid_mwk: proposal.bid_mwk,
+  }).eq("id", proposal.job_id);
+
+  const { initiatePayment } = await import("@/lib/payments");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { data: cprofile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  const [firstName, ...rest] = (cprofile?.full_name || "Client").split(" ");
+  const { data: myDefault } = await supabase.from("payout_methods")
+    .select("kind, mobile_number").eq("user_id", user.id).eq("is_default", true).maybeSingle();
+  const prefillMobile = myDefault?.kind === "mobile" ? myDefault.mobile_number : undefined;
+
+  try {
+    const { checkoutUrl, txRef } = await initiatePayment({
+      jobId: proposal.job_id,
+      amountMwk: proposal.bid_mwk,
+      email: user.email || "",
+      firstName,
+      lastName: rest.join(" ") || "-",
+      title: job?.title || "Ganyu Hub job",
+      mobile: prefillMobile || undefined,
+    });
+    await supabase.from("jobs").update({
+      escrow_status: "payment_pending",
+      payment_ref: txRef,
+      payment_initiated_at: new Date().toISOString(),
+    }).eq("id", proposal.job_id);
+    redirect(checkoutUrl);
+  } catch (e: any) {
+    if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
+    // Roll back the pending acceptance so the job doesn't stay pinned.
+    await supabase.from("jobs").update({
+      pending_accept_proposal_id: null,
+      escrow_status: "none",
+      payment_ref: null,
+    }).eq("id", proposal.job_id);
+    return { error: `Could not start payment: ${e?.message || "unknown error"}` };
+  }
 }
+
 
 type JobStatus =
   | "open"
@@ -1199,7 +1251,14 @@ export async function updateEscrowStatus(formData: FormData) {
   const allowed = ESCROW_TRANSITIONS[job.escrow_status as EscrowStatus] || [];
   if (!allowed.includes(next)) return { error: `Cannot move payment from ${job.escrow_status} to ${next}` };
 
-  const { error } = await supabase.from("jobs").update({ escrow_status: next }).eq("id", job_id);
+  // Cancelling a pending payment also releases the pinned acceptance so the
+  // job doesn't stay locked to a proposal that never got paid for.
+  const patch: Record<string, any> = { escrow_status: next };
+  if (job.escrow_status === "payment_pending" && next === "none") {
+    patch.pending_accept_proposal_id = null;
+    patch.payment_ref = null;
+  }
+  const { error } = await supabase.from("jobs").update(patch).eq("id", job_id);
   if (error) return { error: error.message };
 
   const { data: acceptedProposal } = await supabase
