@@ -646,7 +646,7 @@ export async function decideProposal(formData: FormData) {
 
   const { data: proposal, error: propErr } = await supabase
     .from("proposals")
-    .select("creative_id, job_id, bid_mwk, job:jobs(title, client_id, escrow_status, pending_accept_proposal_id, status)")
+    .select("creative_id, job_id, bid_mwk, job:jobs!proposals_job_id_fkey(title, client_id, escrow_status, pending_accept_proposal_id, status)")
     .eq("id", id)
     .single();
   if (propErr) {
