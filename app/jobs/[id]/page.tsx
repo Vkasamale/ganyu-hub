@@ -314,12 +314,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                   <p className="mt-2 text-sm font-medium">Bid: {formatMwk(p.bid_mwk)}</p>
                   {p.status === "pending" && (
                     <div className="mt-3 flex gap-2">
-                      <SavingForm action={decideProposal} silent>
+                      <SavingForm action={decideProposal} successText="Redirecting to payment…">
                         <input type="hidden" name="proposal_id" value={p.id} />
                         <input type="hidden" name="status" value="accepted" />
                         <Button size="sm" type="submit">Accept</Button>
                       </SavingForm>
-                      <SavingForm action={decideProposal} silent>
+                      <SavingForm action={decideProposal} successText="Declined.">
                         <input type="hidden" name="proposal_id" value={p.id} />
                         <input type="hidden" name="status" value="declined" />
                         <Button size="sm" variant="outline" type="submit">Decline</Button>

@@ -644,11 +644,15 @@ export async function decideProposal(formData: FormData) {
   const id = String(formData.get("proposal_id"));
   const status = String(formData.get("status")) as "accepted" | "declined";
 
-  const { data: proposal } = await supabase
+  const { data: proposal, error: propErr } = await supabase
     .from("proposals")
     .select("creative_id, job_id, bid_mwk, job:jobs(title, client_id, escrow_status, pending_accept_proposal_id, status)")
     .eq("id", id)
     .single();
+  if (propErr) {
+    // Most likely: pending_accept_proposal_id column doesn't exist yet.
+    return { error: `Could not read proposal (${propErr.message}). If you see 'column jobs.pending_accept_proposal_id does not exist', run the latest schema.sql in Supabase.` };
+  }
   if (!proposal) return { error: "Proposal not found." };
   const job: any = Array.isArray(proposal.job) ? proposal.job[0] : proposal.job;
 
