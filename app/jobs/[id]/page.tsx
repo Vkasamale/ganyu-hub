@@ -14,7 +14,7 @@ import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
-import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview } from "@/app/actions";
+import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout } from "@/app/actions";
 import { StarRatingInput } from "@/components/star-rating-input";
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo } from "@/lib/utils";
@@ -22,8 +22,16 @@ import { formatMwk, timeAgo } from "@/lib/utils";
 export default async function JobDetailPage({ params: paramsP }: { params: Promise<{ id: string }> }) {
   const params = await paramsP;
   const supabase = createClient();
-  const { data: job } = await supabase.from("jobs").select("*").eq("id", params.id).single();
+  let { data: job } = await supabase.from("jobs").select("*").eq("id", params.id).single();
   if (!job) notFound();
+  // Fallback for missed payout webhooks: if this job's payout is still pending,
+  // ask PayChangu directly and settle before we render. Same pattern as the
+  // collection callback route. Cheap: one API call per pending-payout view.
+  if (job.payout_status === "pending" && job.payout_ref) {
+    await reconcilePayout(job.id);
+    const { data: refreshed } = await supabase.from("jobs").select("*").eq("id", params.id).single();
+    if (refreshed) job = refreshed;
+  }
   const { data: client } = await supabase.from("profiles").select("id, full_name").eq("id", job.client_id).single();
   const { data: { user } } = await supabase.auth.getUser();
   const isClient = user?.id === job.client_id;

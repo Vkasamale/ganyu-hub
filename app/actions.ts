@@ -1282,3 +1282,57 @@ export async function recordView(target_type: "job" | "creative", target_id: str
   if (!user) return;
   await supabase.from("interactions").insert({ user_id: user.id, target_type, target_id, kind: "view" });
 }
+
+// Payout reconcile — the fallback for when PayChangu's webhook never arrives.
+// Same pattern as /api/paychangu/callback for collections: re-verify server
+// side, settle the job state ourselves. Safe to call repeatedly (idempotent).
+//
+// Callable two ways:
+//   1. Auto: from the job page loader when payout_status='pending'.
+//   2. Manual: from the "Refresh payout status" button in EscrowPanel.
+export async function reconcilePayout(input: string | FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+  const job_id = typeof input === "string" ? input : String(input.get("job_id"));
+  if (!job_id) return { error: "Missing job id." };
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
+  }
+  const { createServerClient } = await import("@supabase/ssr");
+  const admin = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
+  const { data: job } = await admin.from("jobs")
+    .select("id, escrow_status, payout_status, payout_method, payout_ref")
+    .eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  if (job.escrow_status === "payment_released") return { ok: true, info: "Already released." };
+  if (job.payout_status !== "pending" || !job.payout_ref) {
+    return { ok: true, info: "Nothing to reconcile." };
+  }
+
+  const { verifyPayout } = await import("@/lib/payments");
+  const method = (job.payout_method === "bank" ? "bank" : "mobile") as "mobile" | "bank";
+  const verified = await verifyPayout(job.payout_ref, method);
+
+  if (verified.status === "success") {
+    await admin.from("jobs").update({
+      escrow_status: "payment_released",
+      payout_status: null,
+      payout_provider_id: verified.providerId || null,
+    }).eq("id", job_id);
+    revalidatePath(`/jobs/${job_id}`);
+    return { ok: true, info: "Payout confirmed. Status updated to Released." };
+  }
+  if (verified.status === "failed") {
+    await admin.from("jobs").update({
+      payout_status: "failed",
+      payout_error: "PayChangu reported failed payout.",
+    }).eq("id", job_id);
+    revalidatePath(`/jobs/${job_id}`);
+    return { ok: true, info: "PayChangu reports the payout failed." };
+  }
+  return { ok: true, info: "PayChangu still shows the payout as pending. Try again in a minute." };
+}

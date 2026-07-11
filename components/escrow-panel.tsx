@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
-import { updateEscrowStatus } from "@/app/actions";
+import { updateEscrowStatus, reconcilePayout } from "@/app/actions";
 
 type Role = "client" | "creative";
 type Escrow = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
@@ -65,6 +65,22 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus }: { jobId
                 <SubmitButton size="sm" variant={a.variant} pendingText="Saving…">{a.label}</SubmitButton>
               </SavingForm>
             ))}
+          </div>
+        )}
+        {payoutPending && (
+          <div className="mt-3">
+            <SavingForm action={reconcilePayout} successText="Checked with PayChangu.">
+              <input type="hidden" name="job_id" value={jobId} />
+              <SubmitButton size="sm" variant="outline" pendingText="Checking…">Refresh payout status</SubmitButton>
+            </SavingForm>
+          </div>
+        )}
+        {payoutPending && (
+          <div className="mt-3">
+            <SavingForm action={reconcilePayout} successText="Checked with PayChangu.">
+              <input type="hidden" name="job_id" value={jobId} />
+              <SubmitButton size="sm" variant="outline" pendingText="Checking…">Refresh payout status</SubmitButton>
+            </SavingForm>
           </div>
         )}
         {role === "creative" && escrowStatus === "none" && (
