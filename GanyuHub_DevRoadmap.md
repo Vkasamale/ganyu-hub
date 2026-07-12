@@ -197,7 +197,11 @@ That is your next session.
   - Split applies to `total_paid_mwk`, not `budget_mwk`.
   - Admin cancellation queue must render a breakdown line: `original X + topup#1 Y + topup#2 Z = total_paid_mwk`.
   - `adminResolveCancellation` validates `refund + cut = total_paid_mwk` (was `= budget_mwk`).
-  - Any `payment_topups` row with `status='pending'` at cancellation-request time is auto-declined so the client isn't charged while a dispute is pending.
+  - Any `payment_topups` row with `status='pending'` at cancellation-request time is auto-cancelled so the client isn't charged while a dispute is pending.
+- **Dispute × top-up rule (locked):**
+  - Same rule extends to `disputed`. Any transition into `disputed` (via `raiseDispute`, admin action, or the `non-response-check` cron 72h auto-flag) auto-cancels all `payment_topups` rows with `status='pending'` for that job.
+  - Notify the creative: "Your pending top-up on X was cancelled because the job entered dispute. You can re-request after resolution if the job resumes."
+  - The `non-response-check` cron gets one extra query alongside the status flip.
 - **Actions:** `requestTopUp(jobId, amount, reason)` (creative, job must be `in_progress|revision_requested`), `declineTopUp(id)` (client), `payTopUp(id)` → PayChangu checkout with `meta.topup_id`.
 - **Webhook/callback:** `/api/paychangu/callback` and `/api/paychangu/webhook` detect `meta.topup_id`, mark topup `paid`, `UPDATE jobs SET total_paid_mwk = total_paid_mwk + amount WHERE id = topup.job_id`.
 - **UI:** on job page during in-progress states — creative "Request additional payment" form; client sees pending topups with Accept (→ payment) / Decline; history of past topups shown to both.
