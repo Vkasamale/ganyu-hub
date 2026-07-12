@@ -83,6 +83,7 @@ export async function verifyPayment(txRef: string): Promise<VerifyResult> {
     cache: "no-store",
   });
   const json: any = await res.json().catch(() => ({}));
+  console.log("[paychangu-verify]", txRef, "http=", res.status, "body=", JSON.stringify(json).slice(0, 800));
   const data = json?.data ?? json;
   const raw = String(data?.status ?? "").toLowerCase();
   const status: VerifyResult["status"] =
