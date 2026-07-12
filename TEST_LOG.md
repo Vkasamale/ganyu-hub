@@ -10,6 +10,14 @@ Last updated: 2026-07-08
 
 ## ⬜ Session 2 (2026-07-12) — Direct invites (not yet tested)
 
+Two accounts needed: client (with an open job) + creative.
+
+1. **Send invite**: client → creative profile → "Invite to job" → pick job → send → expect toast. Retry same creative → previously-invited job shows "(already invited)" disabled.
+2. **Creative receives**: switch to creative → bell shows notification → click → lands on job page with emerald "You've been invited" banner + your message.
+3. **Cap bypass**: fake 3 rejections via SQL: `insert into proposals (job_id, creative_id, cover_letter, bid_mwk, status) select '<job>', '<creative>', 'test', 1000, 'rejected' from generate_series(1,3);`. Without invite → blocked card. With invite → form + banner still shown, submit works.
+4. **Guards**: non-clients don't see the button; non-open jobs don't appear in dropdown; RLS blocks direct-SQL inserts as wrong user.
+5. **Cleanup**: `delete from proposals where cover_letter = 'test'; delete from job_invites where message like '%test%';`
+
 | Feature | Notes |
 |---|---|
 | "Invite to job" button appears on creative profile | Only visible to signed-in non-owner; only if viewer has ≥1 open job |
