@@ -38,14 +38,8 @@ test.describe("Session 1: 3-attempts proposal cap", () => {
   });
 
   test("reapply after rejection, cap at 3, one-active-proposal guard", async ({ page }) => {
-    // BUG (confirmed live 2026-07-12): proposals.status enum has no "rejected" value
-    // (only 'pending'|'accepted'|'declined'|'withdrawn' — supabase/schema.sql:148).
-    // submitProposal's cap check (app/actions.ts:630) and the job page's reapply
-    // banner (app/jobs/[id]/page.tsx:66) both filter on status === "rejected", which
-    // never matches a real declined row. The cap never triggers. Flip to test.fail()
-    // -> test.fixme() once app/actions.ts:630 and app/jobs/[id]/page.tsx:66,465 are
-    // fixed to check "declined" instead.
-    test.fail();
+    // Cap-check bug fixed: status filter switched from "rejected" to "declined"
+    // in app/actions.ts and app/jobs/[id]/page.tsx.
     await login(page, SEED_CLIENT.email, SEED_CLIENT.password);
     await page.goto("/jobs/new");
     await page.getByLabel("Title").fill(jobTitle);

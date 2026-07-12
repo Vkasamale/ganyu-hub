@@ -627,7 +627,7 @@ export async function submitProposal(formData: FormData) {
     .select("id", { count: "exact", head: true })
     .eq("job_id", job_id)
     .eq("creative_id", user.id)
-    .eq("status", "rejected");
+    .eq("status", "declined");
   if ((rejectedCount ?? 0) >= 3) {
     const { data: invite } = await supabase.from("job_invites")
       .select("id").eq("job_id", job_id).eq("creative_id", user.id).in("status", ["pending", "accepted"]).maybeSingle();

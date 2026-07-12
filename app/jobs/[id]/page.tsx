@@ -63,7 +63,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
   const myProposals = !isClient && user ? (proposals || []) : [];
   const myActiveProposal = myProposals.find((p: any) => p.status === "pending" || p.status === "accepted") || null;
-  const myRejectedCount = myProposals.filter((p: any) => p.status === "rejected").length;
+  const myRejectedCount = myProposals.filter((p: any) => p.status === "declined").length;
   const myProposal = myActiveProposal || myProposals[0] || null;
   const { data: myInvite } = (user && !isClient)
     ? await supabase.from("job_invites")
