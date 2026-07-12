@@ -10,8 +10,9 @@ test.describe("Client: post job, receive + accept proposal, work through statuse
     await page.goto("/jobs/new");
     await page.getByLabel("Title").fill(jobTitle);
     await page.getByLabel("Category").selectOption("Design");
-    await page.getByLabel("Brief").fill("E2E audit test job brief, please ignore.");
+    await page.getByLabel("Brief").fill("E2E audit test job brief, please ignore. This is a filler brief written purely to satisfy the 200-character minimum required by the job posting form so this automated E2E test can proceed past validation and reach the job detail page.");
     await page.getByLabel("Budget (MWK)").fill("100000");
+    await page.getByLabel("Deliverables (min 50 characters)").fill("Final files delivered in the agreed format, source files included, one revision round covered by this test job.");
     await page.getByRole("button", { name: "Post job" }).click();
     // NOTE (bug): postJob server action calls redirect() on success, so the SavingForm's
     // "Job posted." toast never renders — the redirect happens before useActionState resolves.
@@ -125,7 +126,9 @@ test.describe("Client: post job, receive + accept proposal, work through statuse
     await page.goto("/jobs/new");
     await page.getByLabel("Title").fill(disputeTitle);
     await page.getByLabel("Category").selectOption("Design");
-    await page.getByLabel("Brief").fill("Job created purely to test the dispute flow.");
+    await page.getByLabel("Brief").fill("Job created purely to test the dispute flow. This is a filler brief written purely to satisfy the 200-character minimum required by the job posting form so this automated E2E test can proceed past validation.");
+    await page.getByLabel("Budget (MWK)").fill("50000");
+    await page.getByLabel("Deliverables (min 50 characters)").fill("Final files delivered in the agreed format, source files included, one revision round covered by this test job.");
     await page.getByRole("button", { name: "Post job" }).click();
     await page.waitForURL(/\/jobs\/[0-9a-f-]+$/, { timeout: 10_000 });
     const disputeJobUrl = page.url();

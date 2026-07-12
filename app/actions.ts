@@ -598,6 +598,8 @@ export async function postJob(formData: FormData) {
     format_spec,
   }).select("id").single();
   if (error) return { error: error.message };
+  revalidatePath("/dashboard/jobs");
+  revalidatePath("/jobs");
   redirect(`/jobs/${data.id}`);
 }
 
