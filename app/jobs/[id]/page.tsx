@@ -22,7 +22,7 @@ import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout } from "@/app/actions";
 import { StarRatingInput } from "@/components/star-rating-input";
 import { Stars } from "@/components/stars";
-import { formatMwk, timeAgo } from "@/lib/utils";
+import { formatMwk, timeAgo, formatDeadline, daysUntil } from "@/lib/utils";
 
 export default async function JobDetailPage({ params: paramsP }: { params: Promise<{ id: string }> }) {
   const params = await paramsP;
@@ -118,16 +118,25 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           </p>
         </CardHeader>
         <CardContent>
-          <p className="whitespace-pre-wrap text-neutral-700">{job.brief}</p>
+          <p className="whitespace-pre-wrap break-words text-neutral-700">{job.brief}</p>
           {job.deliverables && (
             <div className="mt-4">
               <p className="text-sm font-medium text-ink">Deliverables</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{job.deliverables}</p>
+              <p className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-700">{job.deliverables}</p>
             </div>
           )}
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm">
             {job.deadline && (
-              <div><span className="text-neutral-500">Deadline:</span> <span className="font-medium">{job.deadline}</span></div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-neutral-500">Deadline:</span>
+                <span className="font-medium">{formatDeadline(job.deadline)}</span>
+                {(() => {
+                  const d = daysUntil(job.deadline);
+                  const label = d > 0 ? `${d} day${d === 1 ? "" : "s"} left` : d === 0 ? "due today" : `${-d} day${d === -1 ? "" : "s"} overdue`;
+                  const tone = d < 0 ? "bg-red-100 text-red-800 border-red-200" : d <= 3 ? "bg-amber-100 text-amber-900 border-amber-200" : "bg-emerald-100 text-emerald-900 border-emerald-200";
+                  return <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span>;
+                })()}
+              </div>
             )}
             {job.revisions_included != null && (
               <div><span className="text-neutral-500">Revisions:</span> <span className="font-medium">{job.revisions_included}</span></div>
