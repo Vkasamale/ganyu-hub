@@ -18,6 +18,11 @@ export const TEST_CREATIVE = {
 };
 
 export async function login(page: Page, email: string, password: string) {
+  // Clear any prior session first: middleware bounces /login → /dashboard for
+  // an already-authed user, causing the wrong account to persist across
+  // login() calls (fixture-client posts a job, but /dashboard renders for
+  // whoever was in the cookie jar). Kill Supabase cookies before every login.
+  await page.context().clearCookies();
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
