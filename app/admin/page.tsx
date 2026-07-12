@@ -27,6 +27,7 @@ export default async function AdminPage() {
     { data: signupSeries },
     { data: jobStatusRows },
     { data: jobCategoryRows },
+    { count: errorCount },
   ] = await Promise.all([
     supabase.from("jobs")
       .select("id, title, status, client_id, hidden_at, created_at, dispute_reason, dispute_raised_at, profiles:profiles!jobs_client_id_fkey(full_name)")
@@ -46,6 +47,7 @@ export default async function AdminPage() {
     supabase.from("profiles").select("created_at, role").gte("created_at", sinceIso),
     supabase.from("jobs").select("status, profiles:profiles!jobs_client_id_fkey(role)"),
     supabase.from("jobs").select("category, profiles:profiles!jobs_client_id_fkey(role)"),
+    supabase.from("admin_errors").select("*", { count: "exact", head: true }).is("resolved_at", null),
   ]);
 
   const signupsByDay = bucketByDayByRole(signupSeries || [], sinceDays);
@@ -60,11 +62,19 @@ export default async function AdminPage() {
         <p className="mt-1 text-sm text-ink/60">Moderate users and jobs, resolve disputes.</p>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-5">
         <Stat label="Users" value={userCount || 0} />
         <Stat label="Jobs" value={jobCount || 0} />
         <Stat label="Open jobs" value={openCount || 0} />
         <Stat label="Disputed" value={disputed?.length || 0} highlight={(disputed?.length || 0) > 0} />
+        <Link href="/admin/errors" className="block">
+          <Stat label="Errors" value={errorCount || 0} highlight={(errorCount || 0) > 0} />
+        </Link>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-sm">
+        <Link href="/admin/errors" className="underline hover:text-ink">Error log →</Link>
+        <Link href="/admin/cancellations" className="underline hover:text-ink">Cancellation queue →</Link>
       </div>
 
       <section className="card-soft p-6">

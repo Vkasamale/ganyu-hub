@@ -40,7 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="mt-16 border-t border-ink/10 px-4 py-6 text-sm text-ink/60">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
             <span>© Ganyu Hub</span>
-            <a href="/content-policy" className="underline hover:text-ink">Content policy</a>
+            <div className="flex gap-4">
+              <a href="/content-policy" className="underline hover:text-ink">Content policy</a>
+              <a href="/dashboard/report" className="underline hover:text-ink">Report an issue</a>
+            </div>
           </div>
         </footer>
         <Toaster position="bottom-right" richColors closeButton />
