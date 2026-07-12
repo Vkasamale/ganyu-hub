@@ -98,6 +98,20 @@ describe("submitProposal", () => {
     expect(res.error).toMatch(/already have an active proposal/i);
   });
 
+  it("mock guard: filtering proposals.status='rejected' throws (enum has 'declined', not 'rejected')", async () => {
+    // Regression guard for the Session 1 bug: the code used to filter on
+    // "rejected" but the proposals.status enum is pending|accepted|declined|
+    // withdrawn. The old mock silently accepted the wrong string; this proves
+    // the hardened mock will now blow up if anyone reintroduces that bug.
+    supabaseHolder.client = makeSupabase({
+      user: CREATIVE,
+      tables: { proposals: [{ count: 0 }] },
+    });
+    expect(() =>
+      supabaseHolder.client.from("proposals").select("id").eq("status", "rejected")
+    ).toThrow(/proposals\.status="rejected" is not a valid value/);
+  });
+
   it("blocks once the job's proposal limit is reached", async () => {
     supabaseHolder.client = makeSupabase({
       user: CREATIVE,

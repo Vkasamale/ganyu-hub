@@ -5,9 +5,45 @@ import { vi } from "vitest";
 // order these server actions actually use; no real query parsing needed.
 export type Resp = { data?: any; error?: any; count?: number | null };
 
+// Known enum/status vocabularies. Mirror of supabase/schema.sql. Update this
+// when a migration adds a value. A .eq/.in/.neq against a listed column with
+// an off-vocabulary value throws loudly — the whole reason this exists is
+// that the Session 1 "rejected" vs "declined" bug went green under the
+// previous permissive mock. Text-typed status columns are listed too; they
+// have no DB enum but the code treats their values as a fixed set.
+const ENUM_VOCAB: Record<string, ReadonlyArray<string>> = {
+  "profiles.role": ["client", "creative", "agency"],
+  "profiles.availability": ["available", "busy", "unavailable"],
+  "jobs.status": [
+    "open", "in_progress", "completed", "cancelled",
+    "submitted", "revision_requested", "disputed", "scope_pending", "cancellation_requested",
+  ],
+  "jobs.escrow_status": [
+    "none", "payment_held", "payment_released", "payment_disputed", "payment_pending",
+  ],
+  "proposals.status": ["pending", "accepted", "declined", "withdrawn"],
+  "job_invites.status": ["pending", "accepted", "declined"],
+  "payment_topups.status": ["pending", "paid", "declined", "cancelled"],
+  "deadline_extensions.status": ["pending", "accepted", "declined"],
+};
+
 // Holder so `vi.mock("@/lib/supabase/server", ...)` factories (hoisted) can
 // still read whatever client each test wires up.
 export const supabaseHolder: { client: any } = { client: null };
+
+function validate(table: string, col: string, val: unknown) {
+  const key = `${table}.${col}`;
+  const allowed = ENUM_VOCAB[key];
+  if (!allowed) return;
+  if (val == null) return;
+  if (!allowed.includes(String(val))) {
+    throw new Error(
+      `[mockSupabase] ${key}=${JSON.stringify(val)} is not a valid value. ` +
+      `Allowed: ${allowed.join(", ")}. ` +
+      `This usually means the code you're testing filters on the wrong status string.`
+    );
+  }
+}
 
 export function makeSupabase(opts: {
   user?: { id: string; email?: string } | null;
@@ -19,8 +55,15 @@ export function makeSupabase(opts: {
 
   function chain(table: string) {
     const obj: any = {};
-    const passthrough = ["select", "eq", "in", "lt", "order", "limit", "not"];
-    passthrough.forEach((m) => (obj[m] = (..._args: any[]) => obj));
+    obj.select = (..._args: any[]) => obj;
+    obj.order = (..._args: any[]) => obj;
+    obj.limit = (..._args: any[]) => obj;
+    obj.lt = (..._args: any[]) => obj;
+    obj.not = (..._args: any[]) => obj;
+    obj.is = (..._args: any[]) => obj;
+    obj.eq = (col: string, val: unknown) => { validate(table, col, val); return obj; };
+    obj.neq = (col: string, val: unknown) => { validate(table, col, val); return obj; };
+    obj.in = (col: string, vals: unknown[]) => { (vals || []).forEach((v) => validate(table, col, v)); return obj; };
     const resolve = () => {
       const next = queues[table]?.shift();
       return next ?? { data: null, error: null, count: 0 };
