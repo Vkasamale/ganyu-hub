@@ -8,6 +8,23 @@ Last updated: 2026-07-08
 
 ---
 
+## ⬜ Session 3a (2026-07-12) — Top-up requests + decline (not yet tested)
+
+Payment integration (accept-and-pay) ships in 3b. In 3a, creative can request, client can decline or ignore. `total_paid_mwk` column exists but only mutates through the acceptance write; adding paid-topup summation happens in 3b.
+
+1. **Request**: as accepted creative on an in-progress job → new "Payment top-ups" card → enter amount + reason (≥20 chars) → submit. Expect: toast, request appears in amber "Pending" block, client gets "Top-up requested" notification.
+2. **One-pending guard**: try to request a second topup while first is pending → server returns "You already have a pending top-up request…"
+3. **Withdraw (creative)**: creative clicks "Withdraw request" on their pending topup → status flips to `cancelled`.
+4. **Decline (client)**: client clicks "Decline" on the pending topup → status flips to `declined`. Creative gets "Top-up declined" notification.
+5. **Cancellation auto-cancel**: with a pending topup, either party requests cancellation → verify topup row auto-flips to `cancelled` (SQL: `select status from payment_topups where job_id='<id>'`).
+6. **Dispute auto-cancel**: raise a dispute manually with a pending topup → same auto-flip.
+7. **Cron auto-cancel**: (harder to test) — 72h past deadline flip → same auto-flip.
+8. **Money-math sweep**: on release payout, `creativeNet` reads `total_paid_mwk` (backfilled = `accepted_bid_mwk` for existing jobs, so amounts unchanged for non-topup jobs). Verify a normal release still pays the correct amount.
+9. **Cancellation admin split**: `adminResolveCancellation` computes gross from `total_paid_mwk` first, falling back to `collection_amount_mwk` then `accepted_bid_mwk`. Verify existing cancellation flow unchanged for pre-topup jobs.
+10. **Guards**: non-creative can't request; open/completed/cancelled jobs reject request.
+
+---
+
 ## ⬜ Session 2 (2026-07-12) — Direct invites (not yet tested)
 
 Two accounts needed: client (with an open job) + creative.

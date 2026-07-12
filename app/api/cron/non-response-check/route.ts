@@ -52,6 +52,11 @@ async function run(): Promise<Response> {
       dispute_raised_at: new Date().toISOString(),
     }).eq("id", job.id).eq("status", "in_progress");
 
+    await admin.from("payment_topups").update({
+      status: "cancelled",
+      responded_at: new Date().toISOString(),
+    }).eq("job_id", job.id).eq("status", "pending");
+
     for (const uid of [job.client_id, accepted?.creative_id].filter(Boolean)) {
       await admin.from("notifications").insert({
         user_id: uid,

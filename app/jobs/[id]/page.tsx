@@ -19,7 +19,7 @@ import { CancelJobPanel } from "@/components/cancel-job-panel";
 import { DeadlineExtensionPanel } from "@/components/deadline-extension-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
-import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout } from "@/app/actions";
+import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout, requestTopUp, declineTopUp } from "@/app/actions";
 import { StarRatingInput } from "@/components/star-rating-input";
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo, formatDeadline, daysUntil } from "@/lib/utils";
@@ -90,6 +90,15 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const CANCELLABLE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
   const canRequestCancel = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
   const canProposeExtension = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
+
+  const topupJobStatuses = new Set(["in_progress", "submitted", "revision_requested"]);
+  const topupsVisible = isParty && (topupJobStatuses.has(job.status) || (job.total_paid_mwk ?? 0) > (job.accepted_bid_mwk ?? 0));
+  const { data: topups } = topupsVisible
+    ? await supabase.from("payment_topups")
+        .select("id, amount_mwk, reason, status, created_at, requested_by_creative_id")
+        .eq("job_id", job.id).order("created_at", { ascending: false })
+    : { data: null };
+  const pendingTopup = (topups || []).find((t: any) => t.status === "pending") || null;
 
   const { data: pendingExtension } = canProposeExtension
     ? await supabase.from("deadline_extensions")
@@ -230,6 +239,77 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             currentUserId={user.id}
           />
         </div>
+      )}
+
+      {user && topupsVisible && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Payment top-ups</CardTitle>
+            <p className="text-sm text-neutral-500">
+              Original bid: {formatMwk(job.accepted_bid_mwk)}. Total in escrow: {formatMwk(job.total_paid_mwk ?? job.accepted_bid_mwk)}.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {pendingTopup && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-900">
+                  Pending: {formatMwk(pendingTopup.amount_mwk)}
+                </p>
+                {pendingTopup.reason && (
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-amber-900/80">"{pendingTopup.reason}"</p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {isClient && (
+                    <>
+                      <span className="text-xs text-amber-900/70 italic">Accept &amp; pay is coming in the next release.</span>
+                      <SavingForm action={declineTopUp} silent>
+                        <input type="hidden" name="topup_id" value={pendingTopup.id} />
+                        <Button size="sm" variant="outline" type="submit">Decline</Button>
+                      </SavingForm>
+                    </>
+                  )}
+                  {!isClient && user.id === pendingTopup.requested_by_creative_id && (
+                    <SavingForm action={declineTopUp} silent>
+                      <input type="hidden" name="topup_id" value={pendingTopup.id} />
+                      <Button size="sm" variant="outline" type="submit">Withdraw request</Button>
+                    </SavingForm>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!pendingTopup && !isClient && isAcceptedCreative && topupJobStatuses.has(job.status) && (
+              <SavingForm action={requestTopUp} successText="Top-up requested." className="space-y-3">
+                <input type="hidden" name="job_id" value={job.id} />
+                <div className="space-y-1.5">
+                  <Label htmlFor="amount_mwk">Extra amount (MWK)</Label>
+                  <Input id="amount_mwk" name="amount_mwk" type="number" min={1} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reason">Why the extra?</Label>
+                  <Textarea id="reason" name="reason" required minLength={20} rows={3} placeholder="Explain the added scope: what changed, what you'll deliver for it." />
+                </div>
+                <SubmitButton pendingText="Sending…">Request top-up</SubmitButton>
+              </SavingForm>
+            )}
+
+            {(topups || []).filter((t: any) => t.status !== "pending").length > 0 && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">History</p>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {(topups || []).filter((t: any) => t.status !== "pending").map((t: any) => (
+                    <li key={t.id} className="flex flex-wrap items-center gap-2 rounded-md border border-ink/10 bg-paper px-3 py-2">
+                      <span className="font-medium">{formatMwk(t.amount_mwk)}</span>
+                      <span className="text-xs text-neutral-500">·</span>
+                      <span className="text-xs capitalize text-neutral-600">{t.status}</span>
+                      <span className="text-xs text-neutral-500">· {timeAgo(t.created_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {user && canRequestCancel && (

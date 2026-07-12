@@ -644,3 +644,49 @@ create policy "invites insert client" on job_invites for insert with check (
 );
 drop policy if exists "invites update creative" on job_invites;
 create policy "invites update creative" on job_invites for update using (auth.uid() = creative_id);
+
+-- Incremental payment top-ups (Session 3a).
+-- Creative requests extra money mid-job; client accepts (via PayChangu in 3b)
+-- or declines. Any pending topup is auto-cancelled when the job enters
+-- cancellation_requested or disputed (client can't be charged mid-dispute).
+create table if not exists payment_topups (
+  id uuid primary key default gen_random_uuid(),
+  job_id uuid not null references jobs(id) on delete cascade,
+  requested_by_creative_id uuid not null references profiles(id),
+  amount_mwk integer not null check (amount_mwk > 0),
+  reason text,
+  status text not null default 'pending',
+  payment_ref text,
+  payment_provider_id text,
+  created_at timestamptz not null default now(),
+  responded_at timestamptz
+);
+create unique index if not exists payment_topups_one_pending
+  on payment_topups(job_id) where status = 'pending';
+create index if not exists payment_topups_by_job on payment_topups(job_id, created_at desc);
+alter table payment_topups enable row level security;
+drop policy if exists "topups read parties" on payment_topups;
+create policy "topups read parties" on payment_topups for select using (
+  auth.uid() = requested_by_creative_id
+  or auth.uid() in (select client_id from jobs where id = job_id)
+);
+drop policy if exists "topups insert creative" on payment_topups;
+create policy "topups insert creative" on payment_topups for insert with check (
+  auth.uid() = requested_by_creative_id
+  and auth.uid() in (
+    select creative_id from proposals
+    where job_id = payment_topups.job_id and status = 'accepted'
+  )
+);
+drop policy if exists "topups update parties" on payment_topups;
+create policy "topups update parties" on payment_topups for update using (
+  auth.uid() = requested_by_creative_id
+  or auth.uid() in (select client_id from jobs where id = job_id)
+);
+
+-- Cumulative escrow (original + paid topups). Backfill from accepted_bid_mwk
+-- so pre-existing jobs are correct. Money math (release payout, cancellation
+-- split) reads this; accepted_bid_mwk stays immutable for history.
+alter table jobs add column if not exists total_paid_mwk integer;
+update jobs set total_paid_mwk = accepted_bid_mwk
+  where total_paid_mwk is null and accepted_bid_mwk is not null;

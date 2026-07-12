@@ -741,6 +741,7 @@ export async function decideProposal(formData: FormData) {
   await supabase.from("jobs").update({
     pending_accept_proposal_id: id,
     accepted_bid_mwk: proposal.bid_mwk,
+    total_paid_mwk: proposal.bid_mwk,
   }).eq("id", proposal.job_id);
 
   const { initiatePayment } = await import("@/lib/payments");
@@ -915,6 +916,11 @@ export async function raiseDispute(formData: FormData) {
     dispute_raised_at: new Date().toISOString(),
   }).eq("id", job_id);
   if (error) return { error: error.message };
+
+  await supabase.from("payment_topups").update({
+    status: "cancelled",
+    responded_at: new Date().toISOString(),
+  }).eq("job_id", job_id).eq("status", "pending");
 
   const otherParty = isClient ? creativeId : job.client_id;
   const { data: admins } = await supabase.from("profiles").select("id").eq("is_admin", true);
@@ -1141,7 +1147,7 @@ export async function updateEscrowStatus(formData: FormData) {
   const job_id = String(formData.get("job_id"));
   const next = String(formData.get("escrow_status")) as EscrowStatus;
 
-  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk, payout_status, payout_ref").eq("id", job_id).single();
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk, total_paid_mwk, payout_status, payout_ref").eq("id", job_id).single();
   if (!job) return { error: "Job not found" };
   if (user.id !== job.client_id) return { error: "Only the client controls payment state." };
 
@@ -1242,7 +1248,7 @@ export async function updateEscrowStatus(formData: FormData) {
 
     try {
       const payoutRail = dest.method === "bank" ? "bank" : "mobile";
-      const amount = creativeNet(job.accepted_bid_mwk || 0, payoutRail);
+      const amount = creativeNet(job.total_paid_mwk ?? job.accepted_bid_mwk ?? 0, payoutRail);
       const { chargeId, providerId } = await initiatePayout({
         jobId: job.id,
         amountMwk: amount,
@@ -1600,6 +1606,11 @@ export async function requestCancellation(formData: FormData): Promise<{ ok?: bo
   }).eq("id", job_id);
   if (error) return { error: error.message };
 
+  await supabase.from("payment_topups").update({
+    status: "cancelled",
+    responded_at: new Date().toISOString(),
+  }).eq("job_id", job_id).eq("status", "pending");
+
   const otherParty = user.id === job.client_id ? creativeId : job.client_id;
   if (otherParty) {
     await supabase.from("notifications").insert({
@@ -1647,7 +1658,7 @@ export async function adminResolveCancellation(formData: FormData): Promise<{ ok
   );
 
   const { data: job } = await admin.from("jobs")
-    .select("id, title, client_id, accepted_bid_mwk, collection_amount_mwk, status")
+    .select("id, title, client_id, accepted_bid_mwk, total_paid_mwk, collection_amount_mwk, status")
     .eq("id", job_id).maybeSingle();
   if (!job) return { error: "Job not found." };
   if (job.status !== "cancellation_requested" && job.status !== "disputed") {
@@ -1662,7 +1673,7 @@ export async function adminResolveCancellation(formData: FormData): Promise<{ ok
   const creativeId = accepted?.creative_id;
   if (!creativeId) return { error: "No accepted creative on this job — nothing to split." };
 
-  const gross = job.collection_amount_mwk || job.accepted_bid_mwk || 0;
+  const gross = job.total_paid_mwk ?? job.collection_amount_mwk ?? job.accepted_bid_mwk ?? 0;
   const clientAmount = Math.floor(gross * (clientPctRaw / 100));
   const creativeAmount = Math.floor(gross * (creativePctRaw / 100));
 
@@ -1972,5 +1983,94 @@ export async function respondToInvite(formData: FormData): Promise<{ ok?: boolea
   if (error) return { error: error.message };
 
   revalidatePath(`/jobs/${inv.job_id}`);
+  return { ok: true };
+}
+
+const TOPUP_ACTIVE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
+
+export async function requestTopUp(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const job_id = String(formData.get("job_id") || "");
+  const amount_mwk = Number(formData.get("amount_mwk"));
+  const reason = String(formData.get("reason") || "").trim();
+  if (!job_id) return { error: "Missing job." };
+  if (!Number.isFinite(amount_mwk) || amount_mwk <= 0) return { error: "Enter an amount greater than zero." };
+  if (reason.length < 20) return { error: "Explain briefly why the extra amount is needed (at least 20 characters)." };
+
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, status").eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  if (!TOPUP_ACTIVE_JOB_STATUSES.has(job.status)) {
+    return { error: `Top-ups can only be requested while a job is in progress (current: ${job.status}).` };
+  }
+
+  const { data: accepted } = await supabase.from("proposals")
+    .select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  if (!accepted || accepted.creative_id !== user.id) {
+    return { error: "Only the accepted creative on this job can request a top-up." };
+  }
+
+  const { error } = await supabase.from("payment_topups").insert({
+    job_id, requested_by_creative_id: user.id, amount_mwk, reason,
+  });
+  if (error) {
+    if (error.code === "23505") return { error: "You already have a pending top-up request on this job. Wait for a decision before requesting another." };
+    return { error: error.message };
+  }
+
+  const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  await supabase.from("notifications").insert({
+    user_id: job.client_id,
+    kind: "message_received",
+    title: "Top-up requested",
+    body: `${me?.full_name || "The creative"} requested an extra MWK ${amount_mwk.toLocaleString("en-MW")} on "${job.title}".`,
+    link: `/jobs/${job_id}`,
+    actor_id: user.id,
+    target_type: "job",
+    target_id: job_id,
+  });
+
+  revalidatePath(`/jobs/${job_id}`);
+  return { ok: true };
+}
+
+export async function declineTopUp(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const topup_id = String(formData.get("topup_id") || "");
+  if (!topup_id) return { error: "Missing top-up id." };
+
+  const { data: t } = await supabase.from("payment_topups")
+    .select("id, job_id, requested_by_creative_id, amount_mwk, status, job:jobs!payment_topups_job_id_fkey(client_id, title)")
+    .eq("id", topup_id).maybeSingle();
+  if (!t) return { error: "Top-up not found." };
+  const client_id = (t.job as any)?.client_id;
+  const canAct = user.id === client_id || user.id === t.requested_by_creative_id;
+  if (!canAct) return { error: "Only the job's client or the requesting creative can decline this." };
+  if (t.status !== "pending") return { error: "Already responded." };
+
+  const { error } = await supabase.from("payment_topups").update({
+    status: user.id === client_id ? "declined" : "cancelled",
+    responded_at: new Date().toISOString(),
+  }).eq("id", topup_id);
+  if (error) return { error: error.message };
+
+  const otherParty = user.id === client_id ? t.requested_by_creative_id : client_id;
+  await supabase.from("notifications").insert({
+    user_id: otherParty,
+    kind: "message_received",
+    title: user.id === client_id ? "Top-up declined" : "Top-up request withdrawn",
+    body: `Top-up of MWK ${t.amount_mwk.toLocaleString("en-MW")} on "${(t.job as any)?.title || "the job"}" was ${user.id === client_id ? "declined" : "withdrawn"}.`,
+    link: `/jobs/${t.job_id}`,
+    actor_id: user.id,
+    target_type: "job",
+    target_id: t.job_id,
+  });
+
+  revalidatePath(`/jobs/${t.job_id}`);
   return { ok: true };
 }
