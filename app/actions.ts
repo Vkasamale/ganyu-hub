@@ -622,6 +622,26 @@ export async function submitProposal(formData: FormData) {
     return { error: `This job has reached its proposal limit (${limit}).` };
   }
 
+  const { count: rejectedCount } = await supabase
+    .from("proposals")
+    .select("id", { count: "exact", head: true })
+    .eq("job_id", job_id)
+    .eq("creative_id", user.id)
+    .eq("status", "rejected");
+  if ((rejectedCount ?? 0) >= 3) {
+    return { error: "You've used all 3 attempts on this job. Only a direct invite from the client can reopen it." };
+  }
+
+  const { count: activeCount } = await supabase
+    .from("proposals")
+    .select("id", { count: "exact", head: true })
+    .eq("job_id", job_id)
+    .eq("creative_id", user.id)
+    .in("status", ["pending", "accepted"]);
+  if ((activeCount ?? 0) > 0) {
+    return { error: "You already have an active proposal on this job." };
+  }
+
   const { error } = await supabase.from("proposals").insert({
     job_id,
     creative_id: user.id,

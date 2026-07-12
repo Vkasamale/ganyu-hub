@@ -60,7 +60,11 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         .eq("creative_id", user?.id || "")
         .order("created_at", { ascending: false });
 
-  const myProposal = !isClient && user ? (proposals || [])[0] : null;
+  const myProposals = !isClient && user ? (proposals || []) : [];
+  const myActiveProposal = myProposals.find((p: any) => p.status === "pending" || p.status === "accepted") || null;
+  const myRejectedCount = myProposals.filter((p: any) => p.status === "rejected").length;
+  const myProposal = myActiveProposal || myProposals[0] || null;
+  const canReapply = !isClient && !!user && !myActiveProposal && myRejectedCount < 3;
   const { data: myMethods } = (!isClient && !!user && myProposal?.status === "accepted")
     ? await supabase.from("payout_methods")
         .select("id, kind, mobile_number, mobile_network, bank_account_name, bank_account_number, is_default, label")
@@ -313,7 +317,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
 
-      {user && !isClient && !myProposal && isFull && (
+      {user && !isClient && !myActiveProposal && isFull && myRejectedCount === 0 && (
         <Card className="mt-6 border-neutral-300 bg-neutral-50">
           <CardContent className="p-6">
             <p className="text-sm font-semibold">This job is full.</p>
@@ -324,15 +328,33 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
 
-      {user && !isClient && !myProposal && !isFull && (
+      {user && !isClient && !myActiveProposal && myRejectedCount >= 3 && (
+        <Card className="mt-6 border-neutral-300 bg-neutral-50">
+          <CardContent className="p-6">
+            <p className="text-sm font-semibold">You've used all 3 attempts on this job.</p>
+            <p className="mt-1 text-sm text-neutral-600">
+              Only a direct invite from the client can reopen it.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {user && canReapply && !isFull && (
         <Card className="mt-6">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Send a proposal</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle>
+                {myRejectedCount > 0 ? `Send another proposal (attempt ${myRejectedCount + 1} of 3)` : "Send a proposal"}
+              </CardTitle>
               <p className="text-xs text-neutral-500">
                 {proposalCount ?? 0} of {proposalLimit} proposals
               </p>
             </div>
+            {myRejectedCount > 0 && (
+              <p className="text-xs text-neutral-500">
+                Your previous {myRejectedCount === 1 ? "proposal was" : `${myRejectedCount} proposals were`} rejected. You have {3 - myRejectedCount} {3 - myRejectedCount === 1 ? "attempt" : "attempts"} left.
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <SavingForm action={submitProposal} successText="Proposal sent." className="space-y-4">
@@ -352,15 +374,15 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
 
-      {user && !isClient && myProposal && (
+      {user && !isClient && myActiveProposal && (
         <Card className="mt-6">
           <CardContent className="p-6">
             <p className="font-semibold">
               You have sent a proposal &middot;{" "}
-              <span className="text-neutral-500 font-normal">{myProposal.status}</span>
+              <span className="text-neutral-500 font-normal">{myActiveProposal.status}</span>
             </p>
-            <p className="mt-2 text-sm text-neutral-700 whitespace-pre-wrap">{myProposal.cover_letter}</p>
-            <p className="mt-2 text-sm">Bid: {formatMwk(myProposal.bid_mwk)}</p>
+            <p className="mt-2 text-sm text-neutral-700 whitespace-pre-wrap">{myActiveProposal.cover_letter}</p>
+            <p className="mt-2 text-sm">Bid: {formatMwk(myActiveProposal.bid_mwk)}</p>
           </CardContent>
         </Card>
       )}
