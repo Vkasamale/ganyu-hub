@@ -162,3 +162,48 @@ Supabase Realtime can handle this without a third-party service. Paste the conte
 > "Build in-app notifications using Supabase Realtime. Notify the creative when a proposal is accepted or declined. Notify the client when a new proposal is received. Add a notification bell to the navbar with an unread count and a dropdown list."
 
 That is your next session.
+
+---
+
+## Backlog — Proposal & Payment Enhancements (2026-07)
+
+### Session 1 — 3-attempts-per-creative proposal cap
+- **Schema:** none. Reuse `proposals` (`job_id`, `creative_id`, `status`).
+- **Logic:** in `submitProposal`, count existing `status='rejected'` proposals for `(job_id, creative_id)`. If ≥3, reject: "You've used all 3 attempts on this job."
+- **Rule:** only `rejected` counts. `withdrawn` and `accepted-then-cancelled` do not.
+- **UI:** proposal form shows "Attempt N of 3"; blocked-state card explains the cap and points to inviting-only path.
+
+### Session 2 — Direct invites (bypasses cap)
+- **Schema:** new table `job_invites (id, job_id, creative_id, from_client_id, message, created_at, responded_at, status: pending|accepted|declined)` + partial unique `(job_id, creative_id) where status='pending'`. RLS: client can insert for own jobs; creative can read/update own row.
+- **Actions:** `inviteCreative(jobId, creativeId, message)`, `respondToInvite(inviteId, accept)`.
+- **UI:** "Invite to job" button on creative profile (client picks from own open jobs). Creative sees notification + banner on job page. Submit-path in Session 1's cap logic exempts creatives with a `pending`-or-`accepted` invite.
+
+### Session 3 — Incremental payment top-ups (prerequisites LOCKED below)
+- **Schema:**
+  - New table `payment_topups (id, job_id, requested_by_creative_id, amount_mwk, reason, status: pending|paid|declined|cancelled, payment_ref, payment_provider_id, created_at, responded_at)`.
+  - Add `jobs.total_paid_mwk integer` — backfill = `budget_mwk` for existing rows on migration.
+- **Field naming decision (locked):**
+  - `budget_mwk` = immutable original accepted bid (historical/display).
+  - `total_paid_mwk` = cumulative cleared escrow (original + all paid top-ups).
+  - All money-movement code paths read `total_paid_mwk`. Audit list must be swept in this session:
+    - `updateEscrowStatus` release branch → `creativeNet(total_paid_mwk, rail)`
+    - `adminResolveCancellation` → validate `refund + cut ≤ total_paid_mwk`
+    - Cancellation queue admin UI display
+    - `EscrowPanel` "held" display
+    - Financial report sums
+    - Client dashboard "In Escrow" stat
+  - Explicitly still reads `budget_mwk` (do not change): job cards, proposal-form defaults, "original vs final" analytics.
+- **Cancellation × top-up rule (Session D collision, locked):**
+  - Split applies to `total_paid_mwk`, not `budget_mwk`.
+  - Admin cancellation queue must render a breakdown line: `original X + topup#1 Y + topup#2 Z = total_paid_mwk`.
+  - `adminResolveCancellation` validates `refund + cut = total_paid_mwk` (was `= budget_mwk`).
+  - Any `payment_topups` row with `status='pending'` at cancellation-request time is auto-declined so the client isn't charged while a dispute is pending.
+- **Actions:** `requestTopUp(jobId, amount, reason)` (creative, job must be `in_progress|revision_requested`), `declineTopUp(id)` (client), `payTopUp(id)` → PayChangu checkout with `meta.topup_id`.
+- **Webhook/callback:** `/api/paychangu/callback` and `/api/paychangu/webhook` detect `meta.topup_id`, mark topup `paid`, `UPDATE jobs SET total_paid_mwk = total_paid_mwk + amount WHERE id = topup.job_id`.
+- **UI:** on job page during in-progress states — creative "Request additional payment" form; client sees pending topups with Accept (→ payment) / Decline; history of past topups shown to both.
+- **Split-session note:** if diff gets loud, split into 3a (schema + request/accept UI + `total_paid_mwk` sweep) and 3b (PayChangu integration + release-payout math).
+
+### Sequencing
+- Sessions 1 & 2 can proceed in either order.
+- Session 3 does not start until the two prereq answers above are considered locked (they are — this doc is the record).
+
