@@ -4,7 +4,20 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-12 (evening — post-RLS-diagnostic + test-5 skip)
+Last updated: 2026-07-12 (evening — immediate manual test plan added)
+
+---
+
+## 🕒 Immediate manual test plan (2026-07-12 evening)
+
+Ordered — Step 1 is the single unlock every other pending item depends on.
+
+1. **PayChangu escrow collection, end-to-end (hand-driven).** As client, accept a real proposal, pick a rail, go through PayChangu's hosted checkout on the sandbox, confirm the callback lands back on the job page and `escrow_status = payment_held`. — 🕒 blocks everything below + the skipped test 5 in `client-job-flow.spec.ts` + Session 3b tests 2–5.
+2. **Release payment on that same job.** Confirm the creative receives `bid − real PayChangu payout fee` (not the old flat guess). Cross-check `jobs.payout_fee_mwk` matches what PayChangu actually charged. — 🕒 blocks on #1.
+3. **Top-up on that same job.** Creative requests a top-up → client accepts and pays through a real checkout → `jobs.total_paid_mwk` bumps by the request amount → a second release includes it. — 🕒 blocks on #1.
+4. **Cancel a job with a paid top-up.** Trigger `adminResolveCancellation` and confirm the split math validates against `total_paid_mwk` (original + top-up), not just `budget_mwk`. Admin UI should show the breakdown line. — 🕒 blocks on #3.
+5. **Direct invite bypasses the 3-cap (live re-test).** Get a creative to 3 declines on the same job, then invite them from the client side. Confirm they can submit a 4th proposal. Marked in Session 2 as testable now that the enum-string bug is fixed (`478e575`), but never re-run live. — 🕒
+6. **Cap actually blocks the 4th (live re-test).** Same setup as #5 but no invite — confirm the "Only a direct invite from the client can reopen this" card actually appears now. This is the specific regression that was silently broken pre-`478e575`. — 🕒
 
 ---
 
