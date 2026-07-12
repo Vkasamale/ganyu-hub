@@ -20,13 +20,13 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
 
   const { data: posted } = await supabase
     .from("jobs")
-    .select("id, title, category, budget_mwk, status, created_at, proposals(count)")
+    .select("id, title, category, budget_mwk, status, created_at, proposals!proposals_job_id_fkey(count)")
     .eq("client_id", user.id)
     .order("created_at", { ascending: false });
 
   const { data: engagements } = await supabase
     .from("proposals")
-    .select("id, bid_mwk, status, created_at, job:jobs(id, title, category, status, created_at)")
+    .select("id, bid_mwk, status, created_at, job:jobs!proposals_job_id_fkey(id, title, category, status, created_at)")
     .eq("creative_id", user.id)
     .order("created_at", { ascending: false });
 

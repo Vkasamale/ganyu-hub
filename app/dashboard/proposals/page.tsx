@@ -55,13 +55,13 @@ export default async function ProposalsPage({ searchParams: searchParamsP }: { s
 
   const { data: sent } = await supabase
     .from("proposals")
-    .select("*, job:jobs(id, title, category)")
+    .select("*, job:jobs!proposals_job_id_fkey(id, title, category)")
     .eq("creative_id", user.id)
     .order("created_at", { ascending: false });
 
   const { data: received } = await supabase
     .from("proposals")
-    .select("*, job:jobs!inner(id, title, client_id), creative:profiles!proposals_creative_id_fkey(id, full_name)")
+    .select("*, job:jobs!proposals_job_id_fkey!inner(id, title, client_id), creative:profiles!proposals_creative_id_fkey(id, full_name)")
     .eq("job.client_id", user.id)
     .order("created_at", { ascending: false });
 
