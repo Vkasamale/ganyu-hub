@@ -91,8 +91,10 @@ export async function verifyPayment(txRef: string): Promise<VerifyResult> {
       : raw === "failed" || raw === "reversed" || raw === "cancelled" ? "failed"
       : "pending";
   const providerId = data?.reference || data?.id;
-  const amount = Number(data?.amount);
-  const fee = Number(data?.charges);
+  const amountRaw = Number(data?.amount);
+  const amount = Number.isFinite(amountRaw) ? Math.round(amountRaw) : amountRaw;
+  const feeRaw = Number(data?.charges);
+  const fee = Number.isFinite(feeRaw) ? Math.round(feeRaw) : feeRaw;
   const rail = data?.authorization?.channel;
   return {
     status,
