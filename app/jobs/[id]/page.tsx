@@ -64,7 +64,13 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const myActiveProposal = myProposals.find((p: any) => p.status === "pending" || p.status === "accepted") || null;
   const myRejectedCount = myProposals.filter((p: any) => p.status === "rejected").length;
   const myProposal = myActiveProposal || myProposals[0] || null;
-  const canReapply = !isClient && !!user && !myActiveProposal && myRejectedCount < 3;
+  const { data: myInvite } = (user && !isClient)
+    ? await supabase.from("job_invites")
+        .select("id, message, status")
+        .eq("job_id", job.id).eq("creative_id", user.id)
+        .in("status", ["pending", "accepted"]).maybeSingle()
+    : { data: null };
+  const canReapply = !isClient && !!user && !myActiveProposal && (myRejectedCount < 3 || !!myInvite);
   const { data: myMethods } = (!isClient && !!user && myProposal?.status === "accepted")
     ? await supabase.from("payout_methods")
         .select("id, kind, mobile_number, mobile_network, bank_account_name, bank_account_number, is_default, label")
@@ -328,13 +334,25 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
 
-      {user && !isClient && !myActiveProposal && myRejectedCount >= 3 && (
+      {user && !isClient && !myActiveProposal && myRejectedCount >= 3 && !myInvite && (
         <Card className="mt-6 border-neutral-300 bg-neutral-50">
           <CardContent className="p-6">
             <p className="text-sm font-semibold">You've used all 3 attempts on this job.</p>
             <p className="mt-1 text-sm text-neutral-600">
               Only a direct invite from the client can reopen it.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {user && !isClient && myInvite && !myActiveProposal && (
+        <Card className="mt-6 border-emerald-300 bg-emerald-50">
+          <CardContent className="p-5">
+            <p className="text-sm font-semibold text-emerald-900">You've been invited to apply.</p>
+            {myInvite.message && (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-emerald-900/80">"{myInvite.message}"</p>
+            )}
+            <p className="mt-2 text-xs text-emerald-900/70">This invite lets you submit a proposal regardless of prior attempts.</p>
           </CardContent>
         </Card>
       )}

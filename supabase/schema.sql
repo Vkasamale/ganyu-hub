@@ -616,3 +616,31 @@ drop policy if exists "payout_methods self update" on payout_methods;
 create policy "payout_methods self update" on payout_methods for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 drop policy if exists "payout_methods self delete" on payout_methods;
 create policy "payout_methods self delete" on payout_methods for delete using (auth.uid() = user_id);
+
+-- Direct invites: a client invites a specific creative to a job.
+-- Bypasses the 3-attempts-per-creative cap in submitProposal.
+create table if not exists job_invites (
+  id uuid primary key default gen_random_uuid(),
+  job_id uuid not null references jobs(id) on delete cascade,
+  creative_id uuid not null references profiles(id) on delete cascade,
+  from_client_id uuid not null references profiles(id),
+  message text,
+  status text not null default 'pending',
+  responded_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists job_invites_one_pending
+  on job_invites(job_id, creative_id) where status = 'pending';
+create index if not exists job_invites_creative on job_invites(creative_id, status);
+alter table job_invites enable row level security;
+drop policy if exists "invites read parties" on job_invites;
+create policy "invites read parties" on job_invites for select using (
+  auth.uid() = creative_id or auth.uid() = from_client_id
+);
+drop policy if exists "invites insert client" on job_invites;
+create policy "invites insert client" on job_invites for insert with check (
+  auth.uid() = from_client_id
+  and auth.uid() in (select client_id from jobs where id = job_id)
+);
+drop policy if exists "invites update creative" on job_invites;
+create policy "invites update creative" on job_invites for update using (auth.uid() = creative_id);

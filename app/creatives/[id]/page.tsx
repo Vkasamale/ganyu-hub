@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SaveButton } from "@/components/save-button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
-import { startThread, recordView, requestCustomService } from "@/app/actions";
+import { startThread, recordView, requestCustomService, inviteCreative } from "@/app/actions";
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
@@ -27,6 +27,22 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
   if (user && !isOwner) {
     const { data: s } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("target_type", "creative").eq("target_id", id).maybeSingle();
     isSaved = !!s;
+  }
+
+  let inviteableJobs: { id: string; title: string; alreadyInvited: boolean }[] = [];
+  if (user && !isOwner) {
+    const { data: myOpenJobs } = await supabase
+      .from("jobs").select("id, title")
+      .eq("client_id", user.id).eq("status", "open")
+      .order("created_at", { ascending: false });
+    if (myOpenJobs && myOpenJobs.length > 0) {
+      const jobIds = myOpenJobs.map((j) => j.id);
+      const { data: existing } = await supabase
+        .from("job_invites").select("job_id")
+        .in("job_id", jobIds).eq("creative_id", id).in("status", ["pending", "accepted"]);
+      const invitedSet = new Set((existing || []).map((r) => r.job_id));
+      inviteableJobs = myOpenJobs.map((j) => ({ id: j.id, title: j.title, alreadyInvited: invitedSet.has(j.id) }));
+    }
   }
 
   const { data: reviews } = await supabase
@@ -158,11 +174,38 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
               </div>
             </div>
             {user && !isOwner && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <SavingForm action={startThread} silent>
                   <input type="hidden" name="creative_id" value={profile.id} />
                   <Button type="submit">Message</Button>
                 </SavingForm>
+                {inviteableJobs.length > 0 && (
+                  <details className="relative">
+                    <summary className="cursor-pointer list-none rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5">
+                      Invite to job
+                    </summary>
+                    <div className="absolute right-0 z-10 mt-2 w-80 rounded-lg border border-ink/15 bg-white p-4 shadow-lg">
+                      <SavingForm action={inviteCreative} successText="Invite sent." className="space-y-3">
+                        <input type="hidden" name="creative_id" value={profile.id} />
+                        <div className="space-y-1.5">
+                          <Label htmlFor="job_id" className="text-xs">Job</Label>
+                          <select id="job_id" name="job_id" required className="w-full rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm">
+                            {inviteableJobs.map((j) => (
+                              <option key={j.id} value={j.id} disabled={j.alreadyInvited}>
+                                {j.title}{j.alreadyInvited ? " (already invited)" : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="message" className="text-xs">Message (optional)</Label>
+                          <Textarea id="message" name="message" rows={2} placeholder="Why you'd like them on this job." />
+                        </div>
+                        <SubmitButton pendingText="Sending…">Send invite</SubmitButton>
+                      </SavingForm>
+                    </div>
+                  </details>
+                )}
                 <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
               </div>
             )}

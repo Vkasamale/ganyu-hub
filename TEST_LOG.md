@@ -8,6 +8,32 @@ Last updated: 2026-07-08
 
 ---
 
+## ⬜ Session 2 (2026-07-12) — Direct invites (not yet tested)
+
+| Feature | Notes |
+|---|---|
+| "Invite to job" button appears on creative profile | Only visible to signed-in non-owner; only if viewer has ≥1 open job |
+| Invite dropdown lists only my open jobs | Jobs already invited to this creative show as disabled option |
+| Invite creates notification | Creative gets "You've been invited to a job" notification with link |
+| Invite banner on job page | Emerald banner shows on job page for invited creative with the invite message |
+| Invite bypasses 3-cap | Creative with 3 rejections + invite can still submit a proposal |
+| Duplicate invite blocked | Second invite for same creative+job returns "already invited" error |
+| Non-open jobs can't be invited to | Trying to invite on in_progress/completed job → error |
+
+---
+
+## ⬜ Session 1 (2026-07-12) — 3-attempts proposal cap (not yet tested)
+
+| Feature | Notes |
+|---|---|
+| Reapply after 1 rejection | Creative gets rejected → form re-appears with "attempt 2 of 3" header |
+| Cap at 3 rejections | Third rejection → form gone, blocked card shows "Only a direct invite from the client can reopen it" |
+| One-active-proposal guard | Try to submit while pending → server rejects with "You already have an active proposal on this job" |
+| Rejected count excludes withdrawn/cancelled | Only `status='rejected'` should count against the 3 |
+| Client-side view unchanged | Client sees all proposals (including rejected reapplies) in the proposals list |
+
+---
+
 ## 🕒 Prompted to test — 2026-07-08 batch (awaiting confirmation)
 
 | Feature | Notes |

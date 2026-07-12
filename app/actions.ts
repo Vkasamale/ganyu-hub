@@ -629,7 +629,11 @@ export async function submitProposal(formData: FormData) {
     .eq("creative_id", user.id)
     .eq("status", "rejected");
   if ((rejectedCount ?? 0) >= 3) {
-    return { error: "You've used all 3 attempts on this job. Only a direct invite from the client can reopen it." };
+    const { data: invite } = await supabase.from("job_invites")
+      .select("id").eq("job_id", job_id).eq("creative_id", user.id).in("status", ["pending", "accepted"]).maybeSingle();
+    if (!invite) {
+      return { error: "You've used all 3 attempts on this job. Only a direct invite from the client can reopen it." };
+    }
   }
 
   const { count: activeCount } = await supabase
@@ -1903,5 +1907,70 @@ export async function adminResolveError(formData: FormData): Promise<{ ok?: bool
   }).eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/admin/errors");
+  return { ok: true };
+}
+
+export async function inviteCreative(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const job_id = String(formData.get("job_id") || "");
+  const creative_id = String(formData.get("creative_id") || "");
+  const message = String(formData.get("message") || "").trim() || null;
+  if (!job_id || !creative_id) return { error: "Missing job or creative." };
+
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, status").eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  if (job.client_id !== user.id) return { error: "Only the job's client can invite." };
+  if (job.status !== "open") return { error: "You can only invite on open jobs." };
+
+  const { error } = await supabase.from("job_invites").insert({
+    job_id, creative_id, from_client_id: user.id, message,
+  });
+  if (error) {
+    if (error.code === "23505") return { error: "You've already invited this creative to this job." };
+    return { error: error.message };
+  }
+
+  const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  await supabase.from("notifications").insert({
+    user_id: creative_id,
+    kind: "proposal_received",
+    title: "You've been invited to a job",
+    body: `${me?.full_name || "A client"} invited you to "${job.title}"`,
+    link: `/jobs/${job_id}`,
+    actor_id: user.id,
+    target_type: "job",
+    target_id: job_id,
+  });
+
+  revalidatePath(`/creatives/${creative_id}`);
+  return { ok: true };
+}
+
+export async function respondToInvite(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const invite_id = String(formData.get("invite_id") || "");
+  const accept = String(formData.get("accept") || "") === "true";
+  if (!invite_id) return { error: "Missing invite." };
+
+  const { data: inv } = await supabase.from("job_invites")
+    .select("id, creative_id, job_id, status")
+    .eq("id", invite_id).maybeSingle();
+  if (!inv) return { error: "Invite not found." };
+  if (inv.creative_id !== user.id) return { error: "Not your invite." };
+  if (inv.status !== "pending") return { error: "Already responded." };
+
+  const { error } = await supabase.from("job_invites").update({
+    status: accept ? "accepted" : "declined",
+    responded_at: new Date().toISOString(),
+  }).eq("id", invite_id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/jobs/${inv.job_id}`);
   return { ok: true };
 }
