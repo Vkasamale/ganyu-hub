@@ -8,67 +8,75 @@ Last updated: 2026-07-12
 
 ---
 
-## ⬜ Session 3b (2026-07-12) — Top-up accept-and-pay (not yet tested)
+## 🕒 Session 3b (2026-07-12) — Top-up accept-and-pay
 
 Requires: Session 3a shipped + `increment_total_paid` RPC migration run.
 
-1. **Happy path**: creative requests topup → client picks rail → "Accept & pay" → redirected to PayChangu → complete a sandbox payment → return lands on job page → topup status is `paid`, `jobs.total_paid_mwk` incremented by request amount.
-2. **Escrow release uses new total**: after topup paid, client releases payment → verify creative receives `creativeNet(total_paid_mwk, rail)` — bigger than pre-topup release.
-3. **Failed payment**: cancel or fail at PayChangu → callback marks topup `declined`, `total_paid_mwk` unchanged.
-4. **Webhook idempotency**: webhook fires after callback → status stays `paid`, RPC not re-called (guarded by `status = 'pending'` check).
-5. **Cancellation with paid topup**: paid topup on a job → cancellation request → admin sees `total_paid_mwk` in the split. Refund + creative cut must sum to `total_paid_mwk`.
-6. **Guards**: creative can't hit `payTopUp` (client-only); non-pending topup rejects.
+1. **Happy path**: creative requests topup → client picks rail → "Accept & pay" → redirected to PayChangu → complete a sandbox payment → return lands on job page → topup status is `paid`, `jobs.total_paid_mwk` incremented by request amount. — 🕒 not run: reaching "Accept & pay" and generating the checkout redirect is straightforward (confirmed indirectly — `payTopUp` in `app/actions.ts:2039` builds the same `initiatePayment` call already unit-tested in `tests/actions/topups.test.ts`), but completing a real hosted PayChangu sandbox checkout via browser automation (OTP/redirect flow on their domain) needs a manual run. Please complete one sandbox top-up payment by hand and confirm the callback lands.
+2. **Escrow release uses new total** — 🕒 blocked on #1 (needs a paid topup to release against).
+3. **Failed payment** — 🕒 blocked on #1 (needs the checkout flow reached by hand first).
+4. **Webhook idempotency** — 🕒 blocked on #1.
+5. **Cancellation with paid topup** — 🕒 blocked on #1.
+6. **Guards: creative can't hit `payTopUp`, non-pending topup rejects** — ✅ verified via unit tests (`tests/actions/topups.test.ts:78`, `:89`), both passing.
 
 ---
 
-## ⬜ Session 3a (2026-07-12) — Top-up requests + decline (not yet tested)
+## ✅ Session 3a (2026-07-12) — Top-up requests + decline
 
 Payment integration (accept-and-pay) ships in 3b. In 3a, creative can request, client can decline or ignore. `total_paid_mwk` column exists but only mutates through the acceptance write; adding paid-topup summation happens in 3b.
 
-1. **Request**: as accepted creative on an in-progress job → new "Payment top-ups" card → enter amount + reason (≥20 chars) → submit. Expect: toast, request appears in amber "Pending" block, client gets "Top-up requested" notification.
-2. **One-pending guard**: try to request a second topup while first is pending → server returns "You already have a pending top-up request…"
-3. **Withdraw (creative)**: creative clicks "Withdraw request" on their pending topup → status flips to `cancelled`.
-4. **Decline (client)**: client clicks "Decline" on the pending topup → status flips to `declined`. Creative gets "Top-up declined" notification.
-5. **Cancellation auto-cancel**: with a pending topup, either party requests cancellation → verify topup row auto-flips to `cancelled` (SQL: `select status from payment_topups where job_id='<id>'`).
-6. **Dispute auto-cancel**: raise a dispute manually with a pending topup → same auto-flip.
-7. **Cron auto-cancel**: (harder to test) — 72h past deadline flip → same auto-flip.
-8. **Money-math sweep**: on release payout, `creativeNet` reads `total_paid_mwk` (backfilled = `accepted_bid_mwk` for existing jobs, so amounts unchanged for non-topup jobs). Verify a normal release still pays the correct amount.
-9. **Cancellation admin split**: `adminResolveCancellation` computes gross from `total_paid_mwk` first, falling back to `collection_amount_mwk` then `accepted_bid_mwk`. Verify existing cancellation flow unchanged for pre-topup jobs.
-10. **Guards**: non-creative can't request; open/completed/cancelled jobs reject request.
+1. **Request** — ✅ verified live via Playwright (`tests/e2e/sessions-1-2-3.spec.ts`, "Session 3a" describe block): creative fills amount + reason, submits, "Pending: MWK 15,000" block appears.
+2. **One-pending guard** — ✅ verified: request form disappears while a topup is pending; DB confirms exactly one `pending` row (server-side guard also unit-tested in `tests/actions/topups.test.ts:48`).
+3. **Withdraw (creative)** — ✅ verified live: "Withdraw request" flips status to `cancelled` in the DB.
+4. **Decline (client)** — ✅ verified live: client's "Decline" flips status to `declined`.
+5. **Cancellation auto-cancel** — ✅ verified live: raising "Request cancellation" with a pending topup on the job auto-flips it to `cancelled` (also unit-tested in `tests/actions/dispute-cancellation.test.ts:83`).
+6. **Dispute auto-cancel** — ✅ verified via code + passing unit test (`tests/actions/dispute-cancellation.test.ts:48`); mirrors the cancellation code path 1:1 (`app/actions.ts:920`). Not re-run live in the browser to save time, since it's the identical `payment_topups` update as #5 with a different caller.
+7. **Cron auto-cancel** — ✅ verified via code inspection, commit `c72535e` (per task instructions — cron timing makes live testing impractical).
+8. **Money-math sweep** — ✅ verified via code inspection: `creativeNet` reads `total_paid_mwk` with `accepted_bid_mwk` fallback baked into the backfill, unchanged for non-topup jobs.
+9. **Cancellation admin split** — ✅ verified via code inspection: `adminResolveCancellation` falls back `total_paid_mwk` → `collection_amount_mwk` → `accepted_bid_mwk`, preserving pre-topup behavior.
+10. **Guards: non-creative can't request; wrong job status rejects** — ✅ verified via unit tests (`tests/actions/topups.test.ts:27`, `:39`).
 
 ---
 
-## ⬜ Session 2 (2026-07-12) — Direct invites (not yet tested)
+## ⚠️ Session 2 (2026-07-12) — Direct invites
 
-Two accounts needed: client (with an open job) + creative.
+Two accounts needed: client (with an open job) + creative. Used seeded fixture accounts (`tests/e2e/fixtures.ts`: `SEED_CLIENT`, `TEST_CREATIVE`).
 
-1. **Send invite**: client → creative profile → "Invite to job" → pick job → send → expect toast. Retry same creative → previously-invited job shows "(already invited)" disabled.
-2. **Creative receives**: switch to creative → bell shows notification → click → lands on job page with emerald "You've been invited" banner + your message.
-3. **Cap bypass**: fake 3 rejections via SQL: `insert into proposals (job_id, creative_id, cover_letter, bid_mwk, status) select '<job>', '<creative>', 'test', 1000, 'rejected' from generate_series(1,3);`. Without invite → blocked card. With invite → form + banner still shown, submit works.
-4. **Guards**: non-clients don't see the button; non-open jobs don't appear in dropdown; RLS blocks direct-SQL inserts as wrong user.
-5. **Cleanup**: `delete from proposals where cover_letter = 'test'; delete from job_invites where message like '%test%';`
+1. **Send invite** — ✅ verified live via Playwright: client → creative profile → "Invite to job" → picks job → submits → "Invite sent." Retry shows "(already invited)" as a disabled option.
+2. **Creative receives** — ✅ verified live: bell notification shows "You've been invited to a job"; job page shows the "You've been invited" banner.
+3. **Cap bypass** — ⚠️ untestable as specified: the SQL fixture in this doc used `status='rejected'`, but `proposals.status` is a real Postgres enum with values `pending|accepted|declined|withdrawn` (`supabase/schema.sql:148`) — there is no `'rejected'` value, so that insert would error. See the Session 1 bug below: the app's own cap-check code has the same wrong string, so the cap never engages regardless of invite state — this scenario can't be meaningfully validated until that's fixed.
+4. **Guards** — ✅ non-clients don't see the button, non-open jobs don't appear in the dropdown (both confirmed via code path + unit tests `tests/actions/invites.test.ts`). RLS-blocks-direct-SQL not separately re-tested (service-role bypasses RLS by design, so this needs an anon-key run — not done this pass).
+5. **Cleanup** — done (test fixtures deleted via `test.afterAll` in the Playwright spec).
 
 | Feature | Notes |
 |---|---|
-| "Invite to job" button appears on creative profile | Only visible to signed-in non-owner; only if viewer has ≥1 open job |
-| Invite dropdown lists only my open jobs | Jobs already invited to this creative show as disabled option |
-| Invite creates notification | Creative gets "You've been invited to a job" notification with link |
-| Invite banner on job page | Emerald banner shows on job page for invited creative with the invite message |
-| Invite bypasses 3-cap | Creative with 3 rejections + invite can still submit a proposal |
-| Duplicate invite blocked | Second invite for same creative+job returns "already invited" error |
-| Non-open jobs can't be invited to | Trying to invite on in_progress/completed job → error |
+| "Invite to job" button appears on creative profile | ✅ Confirmed live |
+| Invite dropdown lists only my open jobs | ✅ Confirmed live (disabled "(already invited)" option) |
+| Invite creates notification | ✅ Confirmed live |
+| Invite banner on job page | ✅ Confirmed live |
+| Invite bypasses 3-cap | ⚠️ Can't be meaningfully tested — the cap itself is dead code (see Session 1 bug) |
+| Duplicate invite blocked | ✅ Confirmed live + unit test |
+| Non-open jobs can't be invited to | ✅ Confirmed via unit test (`tests/actions/invites.test.ts:30`) |
 
 ---
 
-## ⬜ Session 1 (2026-07-12) — 3-attempts proposal cap (not yet tested)
+## ⚠️ Session 1 (2026-07-12) — 3-attempts proposal cap — BUG FOUND
+
+**Real bug, confirmed live 2026-07-12** (Playwright run: `tests/e2e/sessions-1-2-3.spec.ts`, "Session 1" describe block, wrapped in `test.fail()` since it's expected to fail until fixed):
+
+`proposals.status` is a Postgres enum with values `pending | accepted | declined | withdrawn` (`supabase/schema.sql:148`) — there is **no `'rejected'` value**. `declineProposal` correctly writes `status: "declined"` (`app/actions.ts:702`). But:
+- The cap-check query in `submitProposal` filters `.eq("status", "rejected")` (`app/actions.ts:630`) — never matches a real declined row, so `rejectedCount` is always 0 and the cap **never triggers**.
+- The job page's reapply banner does the same: `myProposals.filter(p => p.status === "rejected")` (`app/jobs/[id]/page.tsx:66`, also used at line 465).
+
+**Net effect: the entire 3-attempts cap feature is inert in production.** A declined creative can resubmit proposals indefinitely; the "attempt 2 of 3" banner and the "Only a direct invite…" blocked card never appear. The unit tests in `tests/actions/submitProposal.test.ts` all pass because the mock Supabase client doesn't enforce the real enum — they inject the literal string `"rejected"` directly into mock data, masking the bug. This is worth a follow-up: fix both references to check `"declined"` instead, and fix the mock/test data so a real enum mismatch like this would be caught.
 
 | Feature | Notes |
 |---|---|
-| Reapply after 1 rejection | Creative gets rejected → form re-appears with "attempt 2 of 3" header |
-| Cap at 3 rejections | Third rejection → form gone, blocked card shows "Only a direct invite from the client can reopen it" |
-| One-active-proposal guard | Try to submit while pending → server rejects with "You already have an active proposal on this job" |
-| Rejected count excludes withdrawn/cancelled | Only `status='rejected'` should count against the 3 |
-| Client-side view unchanged | Client sees all proposals (including rejected reapplies) in the proposals list |
+| Reapply after 1 rejection | ❌ Broken — "attempt 2 of 3" header never appears (`app/jobs/[id]/page.tsx:66,465` checks the wrong status string) |
+| Cap at 3 rejections | ❌ Broken — blocked card never appears (`app/actions.ts:630` checks the wrong status string) |
+| One-active-proposal guard | ✅ Confirmed live — re-navigating while a proposal is pending correctly hides the form |
+| Rejected count excludes withdrawn/cancelled | N/A — moot, the count is always 0 regardless (see bug above) |
+| Client-side view unchanged | ✅ Confirmed live — client's `/dashboard/proposals?tab=received` still lists all proposals |
 
 ---
 
