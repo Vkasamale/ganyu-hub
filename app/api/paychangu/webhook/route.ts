@@ -17,6 +17,8 @@ export async function POST(req: Request) {
   const raw = await req.text();
   const sig = req.headers.get("signature") || req.headers.get("Signature");
   if (!verifyWebhookSignature(raw, sig)) {
+    const { logAdminError } = await import("@/lib/admin-errors");
+    await logAdminError({ operation: "webhook_signature", error: "bad signature", context: { headers_present: !!sig, body_len: raw.length } });
     return NextResponse.json({ error: "bad signature" }, { status: 401 });
   }
 
@@ -60,6 +62,8 @@ export async function POST(req: Request) {
           payout_status: "failed",
           payout_error: "PayChangu reported failed payout.",
         }).eq("id", pj.id);
+        const { logAdminError } = await import("@/lib/admin-errors");
+        await logAdminError({ operation: "payout_webhook_failed", jobId: pj.id, error: "PayChangu reported failed payout", context: { chargeId: pj.payout_ref } });
       }
       return NextResponse.json({ ok: true });
     }

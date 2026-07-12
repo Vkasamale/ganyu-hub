@@ -38,6 +38,8 @@ export async function GET(req: Request) {
           escrow_status: "none",
           pending_accept_proposal_id: null,
         }).eq("id", job.id);
+        const { logAdminError } = await import("@/lib/admin-errors");
+        await logAdminError({ operation: "payment_verify_failed", jobId: job.id, error: "PayChangu verify returned failed", context: { txRef } });
       }
     }
     if (job) return NextResponse.redirect(new URL(`/jobs/${job.id}`, url.origin));

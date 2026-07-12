@@ -752,13 +752,14 @@ export async function decideProposal(formData: FormData) {
     redirect(checkoutUrl);
   } catch (e: any) {
     if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
-    // Roll back the pending acceptance so the job doesn't stay pinned.
     await supabase.from("jobs").update({
       pending_accept_proposal_id: null,
       escrow_status: "none",
       payment_ref: null,
     }).eq("id", proposal.job_id);
-    return { error: `Could not start payment: ${e?.message || "unknown error"}` };
+    const { logAdminError, GENERIC_MONEY_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "payment_init", jobId: proposal.job_id, userId: user.id, error: e, context: { rail } });
+    return { error: GENERIC_MONEY_ERROR(ref) };
   }
 }
 
@@ -1236,8 +1237,10 @@ export async function updateEscrowStatus(formData: FormData) {
         payout_status: "failed",
         payout_error: String(e?.message || "unknown error").slice(0, 500),
       }).eq("id", job_id);
+      const { logAdminError, GENERIC_MONEY_ERROR } = await import("@/lib/admin-errors");
+      const ref = await logAdminError({ operation: "payout_init", jobId: job_id, userId: user.id, error: e, context: { method: dest.method } });
       revalidatePath(`/jobs/${job_id}`);
-      return { error: `Payout failed: ${e?.message || "unknown error"}` };
+      return { error: GENERIC_MONEY_ERROR(ref) };
     }
   }
 
@@ -1273,7 +1276,9 @@ export async function updateEscrowStatus(formData: FormData) {
       redirect(checkoutUrl);
     } catch (e: any) {
       if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
-      return { error: `Could not start payment: ${e?.message || "unknown error"}` };
+      const { logAdminError, GENERIC_MONEY_ERROR } = await import("@/lib/admin-errors");
+      const ref = await logAdminError({ operation: "payment_init", jobId: job.id, userId: user.id, error: e });
+      return { error: GENERIC_MONEY_ERROR(ref) };
     }
   }
 
@@ -1816,5 +1821,67 @@ export async function respondToDeadlineExtension(formData: FormData): Promise<{ 
     await supabase.from("deadline_extensions").update({ status: "declined", responded_at: new Date().toISOString() }).eq("id", extension_id);
   }
   revalidatePath(`/jobs/${ext.job_id}`);
+  return { ok: true };
+}
+
+
+// ============================================================================
+// User error reports + admin resolve
+// ============================================================================
+
+export async function submitUserReport(formData: FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const reference = String(formData.get("reference") || "").trim();
+  const body = String(formData.get("body") || "").trim();
+  if (body.length < 20) return { error: "Please describe what happened in at least 20 characters." };
+
+  const { data, error } = await supabase.from("admin_errors").insert({
+    operation: "user_report",
+    user_id: user.id,
+    message: body.slice(0, 1000),
+    context: { reference: reference || null },
+  }).select("short_id").single();
+  if (error) return { error: "Could not submit report. Please try again." };
+
+  // Bell an admin — best effort via service role to bypass RLS.
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const { createServerClient } = await import("@supabase/ssr");
+      const admin = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { cookies: { getAll: () => [], setAll: () => {} } });
+      const { data: admins } = await admin.from("profiles").select("id").eq("is_admin", true);
+      for (const a of admins || []) {
+        await admin.from("notifications").insert({
+          user_id: a.id, kind: "message_received",
+          title: `User report ${data?.short_id || ""}`,
+          body: `${reference ? `Re ${reference}: ` : ""}${body.slice(0, 140)}`,
+          link: "/admin/errors",
+        });
+      }
+    } catch { /* ignore */ }
+  }
+  return { ok: true, info: `Report submitted. Reference: ${data?.short_id || "(pending)"}` };
+}
+
+export async function adminResolveError(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  if (!me?.is_admin) return { error: "Admin only." };
+
+  const id = String(formData.get("id") || "");
+  const note = String(formData.get("note") || "").trim() || null;
+  if (!id) return { error: "Missing id." };
+
+  const { error } = await supabase.from("admin_errors").update({
+    resolved_at: new Date().toISOString(),
+    resolved_by: user.id,
+    resolved_note: note,
+  }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/errors");
   return { ok: true };
 }

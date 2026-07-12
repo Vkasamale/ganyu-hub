@@ -8,6 +8,16 @@ export async function GET(req: Request) {
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  try {
+    return await run();
+  } catch (e: any) {
+    const { logAdminError } = await import("@/lib/admin-errors");
+    await logAdminError({ operation: "cron_non_response", error: e });
+    return NextResponse.json({ error: "cron failed" }, { status: 500 });
+  }
+}
+
+async function run(): Promise<Response> {
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "service key not set" }, { status: 500 });

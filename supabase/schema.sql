@@ -489,6 +489,38 @@ create policy "job-files insert participants" on storage.objects for insert with
 );
 grant execute on function public.get_user_email(uuid) to authenticated;
 
+-- Admin error log. Populated by lib/admin-errors.ts on payment/payout/webhook
+-- failures. Users see only ERR-XXXXX case IDs; raw messages stay here.
+create sequence if not exists admin_errors_short_id_seq;
+create table if not exists admin_errors (
+  id uuid primary key default gen_random_uuid(),
+  short_id text not null unique default 'ERR-' || lpad(nextval('admin_errors_short_id_seq')::text, 5, '0'),
+  occurred_at timestamptz not null default now(),
+  operation text not null,
+  job_id uuid references jobs(id) on delete set null,
+  user_id uuid references profiles(id) on delete set null,
+  message text not null,
+  context jsonb,
+  resolved_at timestamptz,
+  resolved_by uuid references profiles(id),
+  resolved_note text
+);
+create index if not exists admin_errors_unresolved on admin_errors(occurred_at desc) where resolved_at is null;
+create index if not exists admin_errors_job on admin_errors(job_id);
+alter table admin_errors enable row level security;
+drop policy if exists "admin_errors read admin" on admin_errors;
+create policy "admin_errors read admin" on admin_errors for select using (public.is_admin(auth.uid()));
+drop policy if exists "admin_errors update admin" on admin_errors;
+create policy "admin_errors update admin" on admin_errors for update using (public.is_admin(auth.uid()));
+-- Users can insert their own reports (operation='user_report'); server-side
+-- helper checks user_id = auth.uid() to prevent impersonation.
+drop policy if exists "admin_errors insert user report" on admin_errors;
+create policy "admin_errors insert user report" on admin_errors for insert
+  with check (
+    auth.uid() = user_id
+    and operation = 'user_report'
+  );
+
 -- Saved payout methods (multiple per user). Replaces the flat payout_* columns
 -- on profiles for reads; those columns are left in place unused.
 create table if not exists payout_methods (
