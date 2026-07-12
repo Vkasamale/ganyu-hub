@@ -3,6 +3,129 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-12 — Disambiguate jobs↔proposals PostgREST embeds
+
+Session C's new `jobs.pending_accept_proposal_id` FK created a second `jobs↔proposals` relationship, so every unqualified PostgREST embed started returning `PGRST201` and zero rows — silently on the dashboards. Pinned the three embeds in `app/dashboard/jobs/page.tsx` and `app/dashboard/proposals/page.tsx` to `!proposals_job_id_fkey`. (An earlier one-off fix on `bada1cb` handled the actions layer; this catches the read-side pages that failed later, uncovered by the E2E rerun.)
+
+Test 5 in `client-job-flow.spec.ts` (dispute-while-scope_pending) skipped with a TODO — it was written for single-click accept, but Accept is now picker → Pay → PayChangu webhook → `scope_pending`. Belongs in the Session 3b PayChangu-sandbox bucket; un-skip when that lands and rewrite it to drive the real chain.
+
+## 2026-07-12 — E2E spec hardening
+
+- `login()` helper in `tests/e2e/helpers.ts` now clears cookies before navigating, so session state from one spec file can't leak into the next.
+- `client-job-flow.spec.ts` fills the new required Brief (200-char min) + Deliverables fields on the post-job form.
+- `postJob` action revalidates `/dashboard/jobs` on success so the just-posted row appears without a manual refresh.
+- Mock Supabase (`tests/helpers/mockSupabase.ts`) now validates enum status filters and errors on bogus values — the "declined" vs "rejected" bug (below) slipped past tests before because mocks silently accepted any string.
+
+## 2026-07-12 — Fix Session 1 cap: `declined`, not `rejected`
+
+`proposals.status` is a real Postgres enum with values `pending | accepted | declined | withdrawn`. `submitProposal` and the job page's reapply banner filtered `.eq("status", "rejected")` — a value that doesn't exist — so `rejectedCount` was always 0 and the entire 3-attempts cap feature was inert. Fixed both call sites (`app/actions.ts:630`, `app/jobs/[id]/page.tsx:66,465`). Unit tests grew regression coverage for the enum check via the mock-hardening above.
+
+## 2026-07-12 — Test coverage for Sessions 1/2/3
+
+New unit tests for the server actions and cron paths introduced in Sessions 1, 2, 3a, and 3b: `tests/actions/submitProposal.test.ts`, `invites.test.ts`, `topups.test.ts`, `dispute-cancellation.test.ts`. Playwright spec `sessions-1-2-3.spec.ts` walks the happy paths for the proposal cap, direct invites, and topup request/decline live in a browser.
+
+## 2026-07-12 — Session 3b: top-up accept-and-pay
+
+Creative-requested top-ups are now billable. Client picks a rail on the pending request, `payTopUp` builds a PayChangu `initiatePayment` charge like the initial acceptance flow, callback + webhook routes handle both `job:<id>` and `topup:<id>` tx_refs. On success, the new `increment_total_paid` RPC atomically bumps `jobs.total_paid_mwk` by the request amount and flips the topup to `paid`. Payout math (`lib/money.ts`) reads `total_paid_mwk` with `accepted_bid_mwk` fallback.
+
+**Migration required:** re-run `supabase/schema.sql` for the `payment_topups` table and `increment_total_paid` RPC.
+
+## 2026-07-12 — Session 3a: top-up requests + decline
+
+Creative side of the top-up flow. New `payment_topups` table, `requestTopUp` action (one pending per job), `withdrawTopUp` (creative), `declineTopUp` (client). Top-up UI on the job page for both parties. Dispute + cancellation transitions auto-cancel any pending topup; a 72h non-response cron ages abandoned requests to `cancelled`. Money layer respects `total_paid_mwk` for `creativeNet` and the admin cancellation split.
+
+## 2026-07-12 — Session 2: direct client-to-creative invites
+
+New "Invite to job" button on creative profiles (client-only). Dropdown lists my open jobs, marks already-invited ones as `(already invited)`. Invited creatives get a notification + a banner on the job page and bypass the 3-attempts cap (Session 1). New `job_invites` table + `inviteCreative` / `respondToInvite` actions.
+
+## 2026-07-12 — Session 1: 3-attempts-per-creative proposal cap
+
+A creative gets at most 3 declined attempts on the same job before being blocked from resubmitting (`declined | withdrawn` count; direct invites bypass). Reapply banner shows "attempt N of 3" between attempts; blocked state shows an "Only a direct invite from the client can reopen this" card. See the enum-string fix above — this feature was inert on ship day and only actually engaged after `478e575`.
+
+## 2026-07-12 — Admin error log + user report system
+
+- `errors` table + `sanitizeError()` helper: server actions surface a short, user-safe message and stash the raw stack + payload in `errors`.
+- User-facing "Report an error" link in the footer opens a form that writes into the same table with the current URL + user id.
+- `/admin` gets an Errors card listing recent entries with the raw payload one click deep.
+
+**Migration required:** re-run `supabase/schema.sql` for the `errors` table + policies.
+
+## 2026-07-12 — Job form: description overflow + friendlier deadline
+
+Long briefs no longer break the layout on the job detail page (proper wrapping + max-height + scroll). Deadline picker now shows a human date ("20th of July 2026") and a "N days left" pill, and defaults to a sensible offset instead of yesterday's date.
+
+## 2026-07-12 — Cron: hourly → daily (Hobby plan)
+
+Vercel Hobby only allows daily crons. All hourly schedules (dispute non-response, topup expiry, deadline extensions) collapsed to a single daily cron. Semantics unchanged, just less frequent aging.
+
+## 2026-07-12 — Session D: cancellation + deadline extensions + 72h non-response cron
+
+Either party can request cancellation with a reason; the other party has 72 hours to accept or dispute. Creative can request a deadline extension with a proposed new date; client accepts or declines. A cron ages non-responded requests: cancellations auto-resolve, extensions auto-decline. New columns on `jobs` for pending cancellation/extension state, plus `cancellation_requests` and `deadline_extensions` tables. `adminResolveCancellation` splits escrow according to work-done proportion.
+
+**Migration required:** re-run `supabase/schema.sql`.
+
+## 2026-07-11 — Fee-on-top for client, fee-through for creative
+
+Real fee capture on both rails.
+
+- Client is charged `bid + PayChangu collection fee` at accept-and-pay. Full bid lands in escrow; fee is recorded on the job so it shows on receipts.
+- Creative receives `bid − PayChangu payout fee`; payout amount and fee stored per job.
+- `AcceptProposalPicker` shows a live breakdown (bid + fee = total) per rail (mobile money / bank / card).
+
+New columns on `jobs`: `collection_rail`, `collection_amount_mwk`, `collection_fee_mwk`, `payout_fee_mwk`. Money helpers (`lib/money.ts`, `lib/fees.ts`) are now the single source of truth for both dashboards.
+
+**Migration required:** re-run `supabase/schema.sql`.
+
+## 2026-07-11 — Session C: payment-first acceptance
+
+Accepting a proposal no longer instantly locks the creative in. Client picks a payment rail, the app starts a PayChangu charge, and the proposal only wins once escrow is funded (`escrow_status = payment_held`). While payment is in flight, `jobs.pending_accept_proposal_id` marks the tentative winner and both parties see a "Payment pending — this creative isn't locked in yet" card. If the payment fails or times out, the pending marker clears and other proposals stay decideable.
+
+- New action path: `decideProposal('accepted', rail)` → `initiatePayment` → PayChangu redirect → callback/webhook finalizes.
+- Errors from `decideProposal` are now surfaced verbatim on the form (the silent-failure path was hiding the real cause).
+- `bada1cb` fixed a same-day PGRST201 in the actions layer caused by the new FK (a broader sweep landed as `0443041` today).
+
+**Migration required:** re-run `supabase/schema.sql` for `jobs.pending_accept_proposal_id`.
+
+## 2026-07-11 — Multiple saved payout methods + per-job override
+
+Creatives can save more than one payout destination (default flagged), with a tabbed Add-method form (mobile money / bank / card; the "Type" label above the tabs was redundant, dropped). Per-job payout override lets a creative pick which saved method receives a specific release. Payout reconciliation runs automatically on `/dashboard/payments` load and via a manual button (same pattern as the collection callback).
+
+New table `payout_methods` with RLS scoped to owner; new column `jobs.payout_method_id`.
+
+**Migration required:** re-run `supabase/schema.sql`.
+
+## 2026-07-11 — Prevent double-payout on Release
+
+The Release button could fire twice under a slow network and produce two PayChangu payouts. Now: server-side lock on `jobs.payout_status` (only `none` can transition to `initiated`), UI hides the button once initiated, and the payout webhook matches by `job_id` so a duplicate charge id can't re-mark the job.
+
+## 2026-07-10 — Release payment: creative-email lookup fixes
+
+Three small fixes chained together:
+
+- `295417d` — `releasePayment` was failing with "creative profile not found" because the query joined on the wrong column; corrected.
+- `75f60cf` — When the lookup did fail, the error was swallowed; now the real cause bubbles up to the client for a report.
+- `e451335` — `profiles` has no email column; the lookup now goes through `auth.users` (via the existing `get_user_email` RPC).
+
+## 2026-07-10 — Payment details card for all roles + checkout prefill
+
+The "Payment details" card on the job page used to only render for the client; creatives couldn't see the rail, fee, or status of a payment they were about to be paid from. Now visible to both parties. PayChangu checkout is prefilled with the client's saved name/phone/email to skip re-entry.
+
+## 2026-07-10 — Wire PayChangu payouts (mobile + bank)
+
+Payouts to the creative go out on real PayChangu rails (mobile money + bank). Server-side verify roundtrip mirrors the collection flow: initiate → poll/verify → mark `jobs.payout_status = paid`. Webhook path shares the callback dispatcher used for collections.
+
+## 2026-07-09 — Brand logo + navbar grid alignment
+
+Placeholder "K" swapped for the actual `G` mark. Navbar container now uses the same max-width + horizontal padding as page content, so the logo lines up with the leftmost column of the grid on every route.
+
+## 2026-07-08 — Wire escrow collection to PayChangu sandbox
+
+First real payment leg. Accept-a-proposal flow calls `initiatePayment` → PayChangu hosted checkout → callback lands on `/api/paychangu/callback` → server-side verify moves `escrow_status: none → payment_held`. Webhook path (`/api/paychangu/webhook`) is idempotent by `tx_ref` and covers the case where the redirect is lost. Env vars: `PAYCHANGU_SECRET`, `PAYCHANGU_PUBLIC_KEY`, `PAYCHANGU_BASE_URL`.
+
+## 2026-07-08 — Content policy page + disclosure links
+
+New `/policy/content` page describing what can/can't be posted (no adult, no illegal, no MLM, no harmful/dangerous services). Post-job and portfolio-add forms link to it under their submit buttons, both as click-through consent (not gating).
+
 ## 2026-07-08 — Landing category rotator
 
 Landing hero previously listed the entire `CATEGORIES` array — 24 entries after the expansion made the column absurdly tall and pushed the search bar off-screen. Now shows 6 categories at a time in a keyed batch, cycling every 3.8s through 4 batches with a Framer AnimatePresence swap (whole batch exits together, next batch enters together, small child stagger). Hover pauses; `prefers-reduced-motion` locks to the first batch. A permanent "See all 24 →" row anchors the bottom. Same rotator serves both hero modes (client / creative).

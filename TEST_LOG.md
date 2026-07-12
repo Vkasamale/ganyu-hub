@@ -4,7 +4,15 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-12
+Last updated: 2026-07-12 (evening — post-RLS-diagnostic + test-5 skip)
+
+---
+
+## ✅ 2026-07-12 (evening) — PostgREST embed disambiguation
+
+Client-job-flow E2E ran 0/5 → 4/5 after fixing `PGRST201` (ambiguous `jobs↔proposals` embed introduced by Session C's `pending_accept_proposal_id` FK) in `app/dashboard/jobs/page.tsx` and `app/dashboard/proposals/page.tsx`. Root cause was **not** RLS as first suspected — a diagnostic `console.log` printed `session.user.id` correctly but `posted.count=undefined` with `code: 'PGRST201'`. Fixed by pinning embeds to `!proposals_job_id_fkey`. Verified live via Playwright.
+
+Test 5 (dispute-while-scope_pending) skipped — it was written for the pre-Session-C single-click accept, but Accept is now picker → Pay → PayChangu webhook → `scope_pending`. Un-skip when Session 3b PayChangu sandbox testing is wired.
 
 ---
 
@@ -54,29 +62,80 @@ Two accounts needed: client (with an open job) + creative. Used seeded fixture a
 | Invite dropdown lists only my open jobs | ✅ Confirmed live (disabled "(already invited)" option) |
 | Invite creates notification | ✅ Confirmed live |
 | Invite banner on job page | ✅ Confirmed live |
-| Invite bypasses 3-cap | ⚠️ Can't be meaningfully tested — the cap itself is dead code (see Session 1 bug) |
+| Invite bypasses 3-cap | ✅ Now testable — Session 1 bug fixed in `478e575`. Unit-tested; live re-test pending |
 | Duplicate invite blocked | ✅ Confirmed live + unit test |
 | Non-open jobs can't be invited to | ✅ Confirmed via unit test (`tests/actions/invites.test.ts:30`) |
 
 ---
 
-## ⚠️ Session 1 (2026-07-12) — 3-attempts proposal cap — BUG FOUND
+## ✅ Session 1 (2026-07-12) — 3-attempts proposal cap — BUG FIXED
 
-**Real bug, confirmed live 2026-07-12** (Playwright run: `tests/e2e/sessions-1-2-3.spec.ts`, "Session 1" describe block, wrapped in `test.fail()` since it's expected to fail until fixed):
-
-`proposals.status` is a Postgres enum with values `pending | accepted | declined | withdrawn` (`supabase/schema.sql:148`) — there is **no `'rejected'` value**. `declineProposal` correctly writes `status: "declined"` (`app/actions.ts:702`). But:
-- The cap-check query in `submitProposal` filters `.eq("status", "rejected")` (`app/actions.ts:630`) — never matches a real declined row, so `rejectedCount` is always 0 and the cap **never triggers**.
-- The job page's reapply banner does the same: `myProposals.filter(p => p.status === "rejected")` (`app/jobs/[id]/page.tsx:66`, also used at line 465).
-
-**Net effect: the entire 3-attempts cap feature is inert in production.** A declined creative can resubmit proposals indefinitely; the "attempt 2 of 3" banner and the "Only a direct invite…" blocked card never appear. The unit tests in `tests/actions/submitProposal.test.ts` all pass because the mock Supabase client doesn't enforce the real enum — they inject the literal string `"rejected"` directly into mock data, masking the bug. This is worth a follow-up: fix both references to check `"declined"` instead, and fix the mock/test data so a real enum mismatch like this would be caught.
+Original bug: `proposals.status` is a Postgres enum `pending | accepted | declined | withdrawn`; the cap-check filtered `.eq("status", "rejected")` which never matched, so the cap was inert. **Fixed in `478e575`** — both `submitProposal` (`app/actions.ts:630`) and the job page's reapply banner (`app/jobs/[id]/page.tsx:66,465`) now check `"declined"`. Mock Supabase (`tests/helpers/mockSupabase.ts`) now validates enum values so a regression like this would fail unit tests instead of silently passing (`ce50cdb`).
 
 | Feature | Notes |
 |---|---|
-| Reapply after 1 rejection | ❌ Broken — "attempt 2 of 3" header never appears (`app/jobs/[id]/page.tsx:66,465` checks the wrong status string) |
-| Cap at 3 rejections | ❌ Broken — blocked card never appears (`app/actions.ts:630` checks the wrong status string) |
-| One-active-proposal guard | ✅ Confirmed live — re-navigating while a proposal is pending correctly hides the form |
-| Rejected count excludes withdrawn/cancelled | N/A — moot, the count is always 0 regardless (see bug above) |
-| Client-side view unchanged | ✅ Confirmed live — client's `/dashboard/proposals?tab=received` still lists all proposals |
+| Reapply after 1 rejection | ✅ Fixed — "attempt 2 of 3" header appears after decline |
+| Cap at 3 rejections | ✅ Fixed — blocked card ("Only a direct invite…") appears at attempt 4 |
+| One-active-proposal guard | ✅ Confirmed live |
+| Declined count excludes withdrawn/cancelled | ✅ Confirmed via unit test |
+| Client-side view unchanged | ✅ Confirmed live |
+
+---
+
+## 🕒 Session D (2026-07-12) — Cancellation + deadline extensions + 72h cron
+
+1. **Request cancellation with reason** — 🕒 covered by unit tests (`tests/actions/dispute-cancellation.test.ts`); live 4-login walkthrough not yet run this session.
+2. **Other party accepts / disputes within 72h** — 🕒 unit-tested; live pending.
+3. **72h non-response auto-resolve** — ✅ verified via code inspection (cron timing makes live impractical). Note: after `166d640` the cron is daily not hourly, so real-world aging is up to +24h.
+4. **Deadline extension request → accept / decline** — 🕒 unit test coverage partial; live pending.
+5. **`adminResolveCancellation` escrow split** — ✅ verified via code inspection + unit test (`tests/actions/dispute-cancellation.test.ts:120`).
+
+---
+
+## 🕒 Session C (2026-07-11) — Payment-first acceptance
+
+1. **Accept → picker → Pay → PayChangu → escrow held → proposal wins** — 🕒 same PayChangu-sandbox dependency as Session 3b (needs a real manual checkout). E2E test 5 in `client-job-flow.spec.ts` was written for the old single-click accept and is now `.skip`ped with TODO.
+2. **Pending accept marker (`jobs.pending_accept_proposal_id`) shows "Payment pending" cards to both parties** — ✅ verified via code path in `app/jobs/[id]/page.tsx:208,211,219`.
+3. **Failed payment clears pending marker, other proposals still decideable** — 🕒 blocked on same PayChangu dependency.
+4. **PGRST201 ambiguous embed regression (from new FK)** — ✅ fixed twice: `bada1cb` (actions layer) and `0443041` (dashboard read pages), confirmed by 4/5 client-job-flow Playwright tests passing.
+
+---
+
+## 🕒 Fee-transparency (2026-07-11) — Fee-on-top / fee-through
+
+1. **AcceptProposalPicker shows live breakdown (bid + fee = total) per rail** — ✅ verified live in the browser during Session C work.
+2. **Client charged bid + collection fee at accept-and-pay** — 🕒 blocked on PayChangu sandbox (see Session 3b).
+3. **Creative receives bid − payout fee** — 🕒 blocked on PayChangu payout sandbox.
+4. **Money helpers (`lib/money.ts`, `lib/fees.ts`) single source of truth** — ✅ verified via unit tests + dashboard payments-page rendering matches computed values.
+
+---
+
+## 🕒 PayChangu integration (2026-07-08 → 07-11)
+
+1. **Escrow collection: initiate → hosted checkout → callback → verify → `payment_held`** — 🕒 sandbox account exists but the manual hosted-checkout leg has not been driven end-to-end this session. Unit tests cover the callback/webhook dispatcher.
+2. **Webhook idempotency by `tx_ref`** — ✅ verified via code inspection.
+3. **Payouts on mobile-money + bank rails** — 🕒 same sandbox dependency.
+4. **Payment details card visible to both roles + prefill** — ✅ verified live in-browser.
+5. **Multiple saved payout methods (default flag)** — ✅ verified live in-browser during 2026-07-11 work.
+6. **Per-job payout override** — ✅ verified live.
+7. **Auto payout reconcile on `/dashboard/payments` load + manual button** — ✅ verified live.
+8. **Double-payout guard on Release** — ✅ verified via code: `payout_status` transition lock + webhook match by `job_id`. Unit test exercises the lock path.
+9. **Release-payment `get_user_email` RPC lookup** — ✅ verified live (was the bug fixed in `295417d` → `75f60cf` → `e451335`; now returns creative email from `auth.users`).
+
+---
+
+## ✅ Admin error log + user report (2026-07-12)
+
+1. **Server actions capture raw errors via `sanitizeError()` into `errors` table** — ✅ verified via code inspection; several rows already present in dev DB from Session C debugging.
+2. **User-facing "Report an error" link in footer opens form** — ✅ verified live.
+3. **`/admin` Errors card lists recent entries + expandable payload** — ✅ verified live.
+
+---
+
+## ✅ Job form polish (2026-07-12)
+
+1. **Long brief no longer breaks layout on job detail page** — ✅ verified live.
+2. **Deadline shows "20th of July 2026" + N-days-left pill, default is a sensible future date** — ✅ verified live.
 
 ---
 

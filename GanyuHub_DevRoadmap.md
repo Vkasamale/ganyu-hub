@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-01
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-12
 
 ---
 
@@ -10,7 +10,7 @@ MVP is built and running locally. Core marketplace loop exists.
 
 - **Stack:** Next.js 14 (App Router), TypeScript, Tailwind, Supabase (Postgres, Auth, Storage)
 - **What works:** auth, profiles, portfolios, job posting, proposals, messaging, search, filters, save/bookmark, For You feed, Trending feed
-- **What is missing:** payments, notifications, onboarding flow, dispute resolution, admin dashboard, job status tracking, contract confirmation
+- **What is missing:** end-to-end PayChangu sandbox verification (test 5 in `client-job-flow.spec.ts` skipped pending this); Resend domain verification (emails to non-owner addresses); the ⬜ list in TEST_LOG.md.
 
 ---
 
@@ -41,7 +41,7 @@ Work through these in order. Do not skip to P1 while P0 items are open.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Mobile money payment integration: Airtel Money or TNM Mpamba (whichever API approves first) | BLOCKED | Waiting on API approval. Wire up the abstraction layer now so plugin-in is fast. |
+| Mobile money payment integration: Airtel Money or TNM Mpamba (whichever API approves first) | DONE 2026-07-10 | Shipped via PayChangu (mobile money + bank + card). Escrow collection wired 2026-07-08 (`ae1d585`); payouts wired 2026-07-10 (`283e6fd`); fee-transparency 2026-07-11 (`5b29eb5`); Session C payment-first accept 2026-07-11 (`c877106`); Session 3b top-up accept-and-pay 2026-07-12 (`9b8cebf`). Manual sandbox checkout still needed to un-skip E2E test 5. |
 | UX/UI refresh: improve visual design, spacing, typography, color system | DONE 2026-07-01 | Full editorial redesign — Recharts across admin + user dashboards, animation layer (stagger, count-up, chip morph, heart bounce, dispute reveal, toasts), notification panel redesign, filter click-highlight fix, keyboard focus, empty states, 404/error pages, signup silent-error fix, password recovery flow. |
 | Proposal limit per job: cap proposals a client receives to avoid overwhelm | DONE 2026-07-01 | `jobs.proposal_limit` (default 10). `submitProposal` guard rejects at cap. Job detail shows counter and swaps form for "job full" card when at limit. |
 | Creative availability status: available now, busy, not taking work | DONE 2026-07-01 | `availability_status` enum + `profiles.availability`. Selector at `/dashboard/profile` (creative/agency only). Colored dot on avatar in creative cards. |
@@ -155,30 +155,28 @@ TODAY'S TASK: [PASTE ONE TASK FROM THE P0/P1 LIST ABOVE]
 
 ## What to Build Next (Right Now)
 
-**In-app notifications.** That is the first P0. Start there.
+**Manual PayChangu sandbox top-up.** All that's blocking the Session 3b E2E tests 2–5 and the skipped dispute test in `client-job-flow.spec.ts` is one hand-driven checkout on PayChangu's sandbox. Complete that, then un-skip the test and re-run.
 
-Supabase Realtime can handle this without a third-party service. Paste the context block above into Claude Code and say:
-
-> "Build in-app notifications using Supabase Realtime. Notify the creative when a proposal is accepted or declined. Notify the client when a new proposal is received. Add a notification bell to the navbar with an unread count and a dropdown list."
-
-That is your next session.
+Then: run the pending `payment_topups` + `increment_total_paid` migrations in Supabase Studio (bottom of `supabase/schema.sql`), and verify Session D live via a 4-login walkthrough.
 
 ---
 
 ## Backlog — Proposal & Payment Enhancements (2026-07)
 
-### Session 1 — 3-attempts-per-creative proposal cap
+**All sessions shipped 2026-07-12 (S1, S2, S3a, S3b) plus Session C (payment-first accept, 2026-07-11) and Session D (cancellation + deadline extensions + 72h cron, 2026-07-12). Details in CHANGELOG.md.** Kept below as historical spec.
+
+### Session 1 — 3-attempts-per-creative proposal cap — DONE 2026-07-12 (`0ee56fd`, cap-string bug fixed in `478e575`)
 - **Schema:** none. Reuse `proposals` (`job_id`, `creative_id`, `status`).
 - **Logic:** in `submitProposal`, count existing `status='rejected'` proposals for `(job_id, creative_id)`. If ≥3, reject: "You've used all 3 attempts on this job."
 - **Rule:** only `rejected` counts. `withdrawn` and `accepted-then-cancelled` do not.
 - **UI:** proposal form shows "Attempt N of 3"; blocked-state card explains the cap and points to inviting-only path.
 
-### Session 2 — Direct invites (bypasses cap)
+### Session 2 — Direct invites (bypasses cap) — DONE 2026-07-12 (`637cb97`)
 - **Schema:** new table `job_invites (id, job_id, creative_id, from_client_id, message, created_at, responded_at, status: pending|accepted|declined)` + partial unique `(job_id, creative_id) where status='pending'`. RLS: client can insert for own jobs; creative can read/update own row.
 - **Actions:** `inviteCreative(jobId, creativeId, message)`, `respondToInvite(inviteId, accept)`.
 - **UI:** "Invite to job" button on creative profile (client picks from own open jobs). Creative sees notification + banner on job page. Submit-path in Session 1's cap logic exempts creatives with a `pending`-or-`accepted` invite.
 
-### Session 3 — Incremental payment top-ups (prerequisites LOCKED below)
+### Session 3 — Incremental payment top-ups — DONE 2026-07-12 (3a: `25207fa`, 3b: `9b8cebf`)
 - **Schema:**
   - New table `payment_topups (id, job_id, requested_by_creative_id, amount_mwk, reason, status: pending|paid|declined|cancelled, payment_ref, payment_provider_id, created_at, responded_at)`.
   - Add `jobs.total_paid_mwk integer` — backfill = `budget_mwk` for existing rows on migration.
