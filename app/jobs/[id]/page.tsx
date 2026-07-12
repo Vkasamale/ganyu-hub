@@ -19,7 +19,8 @@ import { CancelJobPanel } from "@/components/cancel-job-panel";
 import { DeadlineExtensionPanel } from "@/components/deadline-extension-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
-import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout, requestTopUp, declineTopUp } from "@/app/actions";
+import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout, requestTopUp, declineTopUp, payTopUp } from "@/app/actions";
+import { collectionFee } from "@/lib/fees";
 import { StarRatingInput } from "@/components/star-rating-input";
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo, formatDeadline, daysUntil } from "@/lib/utils";
@@ -260,13 +261,24 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {isClient && (
-                    <>
-                      <span className="text-xs text-amber-900/70 italic">Accept &amp; pay is coming in the next release.</span>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <SavingForm action={payTopUp} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="topup_id" value={pendingTopup.id} />
+                        <div className="space-y-1">
+                          <Label htmlFor={`rail-${pendingTopup.id}`} className="text-xs">Pay with</Label>
+                          <select id={`rail-${pendingTopup.id}`} name="rail" className="rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm">
+                            <option value="mobile_money">Mobile money (+{formatMwk(collectionFee(pendingTopup.amount_mwk, "mobile_money"))} fee)</option>
+                            <option value="card">Card (+{formatMwk(collectionFee(pendingTopup.amount_mwk, "card"))} fee)</option>
+                            <option value="bank_transfer">Bank transfer (+{formatMwk(collectionFee(pendingTopup.amount_mwk, "bank_transfer"))} fee)</option>
+                          </select>
+                        </div>
+                        <SubmitButton pendingText="Redirecting…">Accept &amp; pay</SubmitButton>
+                      </SavingForm>
                       <SavingForm action={declineTopUp} silent>
                         <input type="hidden" name="topup_id" value={pendingTopup.id} />
                         <Button size="sm" variant="outline" type="submit">Decline</Button>
                       </SavingForm>
-                    </>
+                    </div>
                   )}
                   {!isClient && user.id === pendingTopup.requested_by_creative_id && (
                     <SavingForm action={declineTopUp} silent>

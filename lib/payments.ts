@@ -23,12 +23,13 @@ export type InitiateArgs = {
   lastName: string;
   title: string;
   mobile?: string;
+  topupId?: string;
 };
 
 export type InitiateResult = { checkoutUrl: string; txRef: string };
 
 export async function initiatePayment(a: InitiateArgs): Promise<InitiateResult> {
-  const txRef = `gh_${a.jobId}_${crypto.randomUUID()}`;
+  const txRef = a.topupId ? `ghtop_${a.topupId}_${crypto.randomUUID()}` : `gh_${a.jobId}_${crypto.randomUUID()}`;
   const body = {
     amount: a.amountMwk,
     currency: "MWK",
@@ -42,7 +43,7 @@ export async function initiatePayment(a: InitiateArgs): Promise<InitiateResult> 
       title: a.title.slice(0, 60),
       description: `Escrow for "${a.title}" on Ganyu Hub`,
     },
-    meta: { job_id: a.jobId },
+    meta: a.topupId ? { job_id: a.jobId, topup_id: a.topupId } : { job_id: a.jobId },
     ...(a.mobile ? { mobile: a.mobile } : {}),
   };
 

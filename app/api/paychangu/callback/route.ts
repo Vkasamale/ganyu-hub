@@ -20,6 +20,28 @@ export async function GET(req: Request) {
   const txRef = url.searchParams.get("tx_ref");
   const supabase = serviceClient();
 
+  if (txRef && txRef.startsWith("ghtop_")) {
+    const { data: topup } = await supabase.from("payment_topups")
+      .select("id, job_id, amount_mwk, status").eq("payment_ref", txRef).maybeSingle();
+    if (topup && topup.status === "pending") {
+      const verified = await verifyPayment(txRef);
+      if (verified.status === "success") {
+        await supabase.from("payment_topups").update({
+          status: "paid",
+          payment_provider_id: verified.providerId || null,
+          responded_at: new Date().toISOString(),
+        }).eq("id", topup.id);
+        await supabase.rpc("increment_total_paid", { p_job_id: topup.job_id, p_amount: topup.amount_mwk });
+      } else if (verified.status === "failed") {
+        await supabase.from("payment_topups").update({
+          status: "declined",
+          responded_at: new Date().toISOString(),
+        }).eq("id", topup.id);
+      }
+    }
+    if (topup) return NextResponse.redirect(new URL(`/jobs/${topup.job_id}`, url.origin));
+  }
+
   if (txRef) {
     const { data: job } = await supabase.from("jobs").select("id, escrow_status").eq("payment_ref", txRef).maybeSingle();
     if (job && job.escrow_status === "payment_pending") {

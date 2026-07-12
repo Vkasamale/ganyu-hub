@@ -2036,6 +2036,57 @@ export async function requestTopUp(formData: FormData): Promise<{ ok?: boolean; 
   return { ok: true };
 }
 
+export async function payTopUp(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const topup_id = String(formData.get("topup_id") || "");
+  const railRaw = String(formData.get("rail") || "mobile_money");
+  const rail = (railRaw === "card" || railRaw === "bank_transfer" ? railRaw : "mobile_money") as
+    "mobile_money" | "card" | "bank_transfer";
+  if (!topup_id) return { error: "Missing top-up id." };
+
+  const { data: t } = await supabase.from("payment_topups")
+    .select("id, job_id, amount_mwk, status, job:jobs!payment_topups_job_id_fkey(client_id, title, status)")
+    .eq("id", topup_id).maybeSingle();
+  if (!t) return { error: "Top-up not found." };
+  const job = t.job as any;
+  if (!job || job.client_id !== user.id) return { error: "Only the job's client can pay a top-up." };
+  if (t.status !== "pending") return { error: "This top-up is not pending." };
+
+  const { initiatePayment } = await import("@/lib/payments");
+  const { clientCharge } = await import("@/lib/fees");
+  const totalMwk = clientCharge(t.amount_mwk, rail);
+  const { data: cprofile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  const [firstName, ...rest] = (cprofile?.full_name || "Client").split(" ");
+  const { data: myDefault } = await supabase.from("payout_methods")
+    .select("kind, mobile_number").eq("user_id", user.id).eq("is_default", true).maybeSingle();
+  const prefillMobile = myDefault?.kind === "mobile" ? myDefault.mobile_number : undefined;
+
+  try {
+    const { checkoutUrl, txRef } = await initiatePayment({
+      jobId: t.job_id,
+      topupId: t.id,
+      amountMwk: totalMwk,
+      email: user.email || "",
+      firstName,
+      lastName: rest.join(" ") || "-",
+      title: `Top-up on "${job.title}"`.slice(0, 60),
+      mobile: prefillMobile || undefined,
+    });
+    await supabase.from("payment_topups").update({
+      payment_ref: txRef,
+    }).eq("id", t.id);
+    redirect(checkoutUrl);
+  } catch (e: any) {
+    if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
+    const { logAdminError, GENERIC_MONEY_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "topup_payment_init", jobId: t.job_id, error: e, context: { topup_id: t.id } });
+    return { error: GENERIC_MONEY_ERROR(ref) };
+  }
+}
+
 export async function declineTopUp(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

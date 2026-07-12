@@ -8,6 +8,19 @@ Last updated: 2026-07-08
 
 ---
 
+## ⬜ Session 3b (2026-07-12) — Top-up accept-and-pay (not yet tested)
+
+Requires: Session 3a shipped + `increment_total_paid` RPC migration run.
+
+1. **Happy path**: creative requests topup → client picks rail → "Accept & pay" → redirected to PayChangu → complete a sandbox payment → return lands on job page → topup status is `paid`, `jobs.total_paid_mwk` incremented by request amount.
+2. **Escrow release uses new total**: after topup paid, client releases payment → verify creative receives `creativeNet(total_paid_mwk, rail)` — bigger than pre-topup release.
+3. **Failed payment**: cancel or fail at PayChangu → callback marks topup `declined`, `total_paid_mwk` unchanged.
+4. **Webhook idempotency**: webhook fires after callback → status stays `paid`, RPC not re-called (guarded by `status = 'pending'` check).
+5. **Cancellation with paid topup**: paid topup on a job → cancellation request → admin sees `total_paid_mwk` in the split. Refund + creative cut must sum to `total_paid_mwk`.
+6. **Guards**: creative can't hit `payTopUp` (client-only); non-pending topup rejects.
+
+---
+
 ## ⬜ Session 3a (2026-07-12) — Top-up requests + decline (not yet tested)
 
 Payment integration (accept-and-pay) ships in 3b. In 3a, creative can request, client can decline or ignore. `total_paid_mwk` column exists but only mutates through the acceptance write; adding paid-topup summation happens in 3b.

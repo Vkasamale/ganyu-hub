@@ -690,3 +690,14 @@ create policy "topups update parties" on payment_topups for update using (
 alter table jobs add column if not exists total_paid_mwk integer;
 update jobs set total_paid_mwk = accepted_bid_mwk
   where total_paid_mwk is null and accepted_bid_mwk is not null;
+
+-- Atomic increment of total_paid_mwk when a topup clears. Called by webhook
+-- and callback — both may fire; RPC makes concurrent adds safe.
+create or replace function public.increment_total_paid(p_job_id uuid, p_amount integer)
+returns void language sql security definer set search_path = public as $$
+  update jobs
+    set total_paid_mwk = coalesce(total_paid_mwk, coalesce(accepted_bid_mwk, 0)) + p_amount
+  where id = p_job_id;
+$$;
+revoke all on function public.increment_total_paid(uuid, integer) from public, anon;
+grant execute on function public.increment_total_paid(uuid, integer) to authenticated, service_role;
