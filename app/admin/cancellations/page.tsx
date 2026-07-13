@@ -17,7 +17,7 @@ export default async function AdminCancellationsPage() {
 
   const { data: jobs } = await supabase
     .from("jobs")
-    .select("id, title, status, accepted_bid_mwk, collection_amount_mwk, cancellation_reason, cancellation_requested_by, cancellation_requested_at, payment_confirmed_at, deadline")
+    .select("id, title, status, accepted_bid_mwk, total_paid_mwk, collection_amount_mwk, cancellation_reason, cancellation_requested_by, cancellation_requested_at, payment_confirmed_at, deadline")
     .eq("status", "cancellation_requested")
     .order("cancellation_requested_at", { ascending: true });
 
@@ -26,7 +26,10 @@ export default async function AdminCancellationsPage() {
       <h1 className="text-2xl font-semibold">Cancellation queue</h1>
       {(!jobs || jobs.length === 0) && <p className="text-neutral-500">No pending cancellations.</p>}
       {(jobs || []).map((job: any) => {
-        const gross = job.collection_amount_mwk || job.accepted_bid_mwk || 0;
+        // ponytail: match adminResolveCancellation's precedence — total_paid_mwk
+        // includes paid top-ups, collection_amount_mwk is the original charge only.
+        const gross = job.total_paid_mwk || job.collection_amount_mwk || job.accepted_bid_mwk || 0;
+        const hasTopup = (job.total_paid_mwk || 0) > (job.accepted_bid_mwk || 0);
         const phase = suggestPhase(job);
         const suggestion = suggestSplit(phase);
         return (
@@ -37,6 +40,7 @@ export default async function AdminCancellationsPage() {
               </CardTitle>
               <p className="text-xs text-neutral-500">
                 Requested {job.cancellation_requested_at} · phase {phase} · gross {formatMwk(gross)}
+                {hasTopup && ` (original ${formatMwk(job.accepted_bid_mwk)} + top-ups ${formatMwk(gross - job.accepted_bid_mwk)})`}
               </p>
             </CardHeader>
             <CardContent className="space-y-3">

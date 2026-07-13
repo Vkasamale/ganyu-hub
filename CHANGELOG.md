@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-13 — Admin cancellation queue: include paid top-ups in gross
+
+The queue displayed `collection_amount_mwk || accepted_bid_mwk` as the gross to split, which ignored paid top-ups. `adminResolveCancellation` was already validating against `total_paid_mwk`, so the enforcement was correct — only the UI showed the wrong number and misleading split percentages. Switched display to `total_paid_mwk || collection_amount_mwk || accepted_bid_mwk` and added a breakdown line for top-up jobs: `(original X + top-ups Y)`. Testing Step 4 caught this: a MWK 9k job with a paid MWK 5k top-up showed "gross 9,270" instead of 14,000.
+
 ## 2026-07-13 — Top-ups locked to `payment_held`; creative fee-net line
 
 Testing Step 4 surfaced a math problem: after `payment_released`, top-ups could still be created and paid, which meant "in escrow" numbers no longer matched what was actually held. New rule — top-ups only while `escrow_status = 'payment_held'`. `requestTopUp` and `payTopUp` both reject otherwise; the creative-side request form is hidden post-release. Tips-after-release moved to [BACKLOG.md](BACKLOG.md#payments).
