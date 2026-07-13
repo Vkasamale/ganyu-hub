@@ -3,6 +3,44 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-13 — Merged to prod: 6-step manual plan green
+
+Full sandbox test plan cleared before merging `sandbox-test → main` (cbc0c33): PayChangu accept → checkout → escrow held; release with real payout fee; top-up on same job; cancel with paid top-up; direct invite lets 3×-declined creative submit; 4th proposal without invite blocked.
+
+## 2026-07-13 — Job cards: 2-line brief + explicit "More info →" + overflow-wrap:anywhere
+
+Long unbroken briefs were pushing cards wider than the mobile viewport. Clamped the description to 2 lines, added a visible "More info →" affordance beneath it so the truncation reads as intentional, and switched to `overflow-wrap: anywhere` so pseudo-words like `sandboxtestsandboxtest…` also break mid-word before the clamp fires.
+
+## 2026-07-13 — Messages: attach a job link
+
+Composer gets a "Job" button next to the file-attach button — dropdown of jobs the sender is party to (client's own + jobs a creative has proposed on). Picking one appends a `[[job:UUID]]` marker to the message body. Renderer parses the marker inline and swaps it for a small job card (title, status, budget) that links to `/jobs/[id]`. No schema change; marker lives in the existing `messages.body` text (`lib/message-markers.ts`, `components/message-body.tsx`, `components/message-job-picker.tsx`).
+
+## 2026-07-13 — Admin dashboard: sidebar nav + dedicated Users / Jobs / Disputes pages
+
+The old `/admin` was one long stacked scroll with underlined "→" hyperlinks to sub-pages. Rebuilt as a real sidebar (Overview / Users / Jobs / Disputes / Cancellations / Error log) with the overview page trimmed to KPI cards + charts. Each KPI card is now a link that lights up when its count is non-zero.
+
+New `/admin/users` and `/admin/jobs` use the same filter-chip pattern as the errors page (role chips for users; status chips for jobs) plus a title/name search. New `/admin/disputes` renders each dispute as a collapsed `<details>` card — click to reveal the reason and resolve controls, keeping the page compact when the queue grows.
+
+## 2026-07-13 — Admin errors log: SAST timestamps + job/client/creative names + filter chips
+
+Rows previously showed a truncated UUID and a raw ISO timestamp. Now each row surfaces: short_id + operation badge + `formatSAST()` (Africa/Johannesburg), job title (real title, batch-looked-up) with UUID stub next to it, client name, creative name (from accepted proposal, falling back to any proposal on the job), and the erroring user's name. New `lib/admin-format.ts` centralises SAST formatting and operation grouping. Filter chips (All / Payments / Payouts / Proposals & invites / Other) narrow the list without a full page rewrite. Context JSON hidden in a `<details>` so long rows don't dominate the view.
+
+## 2026-07-13 — Admin cancellations: Pending / Resolved-history tabs
+
+The queue only showed pending items. Added a "Resolved history" tab that lists jobs with `status = 'cancelled'` and `cancellation_resolved_by is not null`, each with the client-refund and creative-cut payout status badges so admin can see whether the money actually moved.
+
+## 2026-07-13 — Admin cancel: trim + case-insensitive title confirm
+
+`adminResolveCancellation` was rejecting resolves with a strict `===` compare when the DB title had a trailing space or the admin typed a different case. The confirm input is a "did you mean this" gate, not a security check — normalized both sides before comparing.
+
+## 2026-07-13 — Private direct jobs (jobs.visibility)
+
+New column `jobs.visibility` ('public' | 'private', default 'public') gated by a check constraint. Public queries (`/jobs`, `lib/feed.ts`) filter to `visibility='public'` so private jobs never surface on the market. `app/jobs/[id]/page.tsx` returns 404 for private jobs unless the viewer is the client or has a `job_invites` row. New `sendInviteWithNewJob` action creates a private job + invite in one submit. The invite page (`/creatives/[id]/invite`) hosts both flows: pick an existing open job, or send a fresh private job — the "Invite to job" button on the profile always shows now (no longer gated on the client having pre-existing open jobs).
+
+## 2026-07-13 — Invite-to-job: dedicated page + fix leaked DB error
+
+The `<details>` popup on the creative's profile was clipped inside the parent card. Replaced with a real `Link` to `/creatives/[id]/invite`. Also fixed a proposal submit that was leaking the raw Postgres error text (`duplicate key value violates unique constraint proposals_job_id_creative_id_key`) to the user — the total unique constraint blocked re-application even though the 3-attempt flow explicitly allows it. Dropped the constraint, added a partial unique index scoped to `status in ('pending','accepted')`, and wrapped the insert in `logAdminError` + `GENERIC_ERROR` so future failures surface in `/admin/errors` instead of the UI.
+
 ## 2026-07-13 — Minimum payout floor on cancellations (MWK 1,000)
 
 Below MWK 1,000 the PayChangu transfer fee eats most or all of the money, so paying it out is theatre — recipient sees zero, platform loses fees. New `MIN_PAYOUT_MWK` in `lib/fees.ts`: any cancellation leg whose after-reserve amount falls below it skips `initiatePayout` entirely and stays with the platform. Admin queue shows exactly what happens ("payout MWK 0 — below MWK 1,000 floor — rolled to platform") and the amber warning explains why. Honest to the recipient (they'd get zero either way) and stops us burning transfer fees on dust.

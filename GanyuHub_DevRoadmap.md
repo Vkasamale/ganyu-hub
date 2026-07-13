@@ -1,16 +1,17 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-12
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-13
 
 ---
 
 ## Project Status
 
-MVP is built and running locally. Core marketplace loop exists.
+MVP is running in production. Full payment loop (collect → hold → release → cancel + refund) is live via PayChangu sandbox and confirmed end-to-end.
 
-- **Stack:** Next.js 14 (App Router), TypeScript, Tailwind, Supabase (Postgres, Auth, Storage)
-- **What works:** auth, profiles, portfolios, job posting, proposals, messaging, search, filters, save/bookmark, For You feed, Trending feed
-- **What is missing:** end-to-end PayChangu sandbox verification (test 5 in `client-job-flow.spec.ts` skipped pending this); Resend domain verification (emails to non-owner addresses); the ⬜ list in TEST_LOG.md.
+- **Stack:** Next.js 14 (App Router), TypeScript, Tailwind, Supabase (Postgres, Auth, Storage), PayChangu (payments), Resend (email)
+- **What works:** auth, profiles, portfolios, public + private job posting, proposals (3-attempt cap + invite-bypass), messaging (with job-link attachments), search, filters, save/bookmark, For You feed, Trending feed, PayChangu escrow collect/release/top-up/cancel with fee-reserve + payout floor, admin dashboard (sidebar nav with Users / Jobs / Disputes / Cancellations / Errors).
+- **6-step manual test plan:** ✅ 6/6 cleared 2026-07-13. Merged `sandbox-test → main` (cbc0c33).
+- **What is missing:** Resend domain verification (still blocks emails to non-owner addresses); the ⬜ list in TEST_LOG.md (search boxes, saved items round-trip, recordView populating interactions, empty states, image uploads for portfolio/avatars).
 
 ---
 
