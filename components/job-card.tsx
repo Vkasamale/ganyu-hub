@@ -73,9 +73,12 @@ export function JobCard({
           <span>Budget: {job.budget_mwk != null ? formatMwk(job.budget_mwk) : "Open"}</span>
         </div>
 
-        <Link href={`/jobs/${job.id}`} className="mt-4 block">
-          <p className="line-clamp-3 break-words text-sm leading-relaxed text-ink/75">
+        <Link href={`/jobs/${job.id}`} className="group/desc mt-4 block">
+          <p className="line-clamp-2 break-words text-sm leading-relaxed text-ink/75">
             {job.brief || "No description provided."}
+          </p>
+          <p className="mt-1.5 text-xs font-medium text-stamp underline-offset-4 group-hover/desc:underline">
+            More info →
           </p>
         </Link>
 
