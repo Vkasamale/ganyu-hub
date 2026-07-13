@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { adminResolveCancellation, adminRejectCancellation } from "@/app/actions";
 import { formatMwk } from "@/lib/utils";
+import { cancellationPayoutReserve } from "@/lib/fees";
 
 export default async function AdminCancellationsPage() {
   const supabase = createClient();
@@ -48,12 +49,28 @@ export default async function AdminCancellationsPage() {
                 <p className="font-medium">Reason</p>
                 <p className="mt-1 whitespace-pre-wrap text-ink/80">{job.cancellation_reason}</p>
               </div>
-              <div className="rounded-md bg-ink/5 p-3 text-sm">
-                <p className="font-medium">Suggested split ({phase})</p>
-                <p>Client refund: {suggestion.client}% ({formatMwk(Math.floor(gross * suggestion.client / 100))})</p>
-                <p>Creative cut: {suggestion.creative}% ({formatMwk(Math.floor(gross * suggestion.creative / 100))})</p>
-                <p>Platform gross: {100 - suggestion.client - suggestion.creative}%</p>
-              </div>
+              {(() => {
+                const clientShare = Math.floor(gross * suggestion.client / 100);
+                const creativeShare = Math.floor(gross * suggestion.creative / 100);
+                const clientReserve = cancellationPayoutReserve(clientShare);
+                const creativeReserve = cancellationPayoutReserve(creativeShare);
+                const clientNet = Math.max(0, clientShare - clientReserve);
+                const creativeNet = Math.max(0, creativeShare - creativeReserve);
+                const tinyPayout = (clientShare > 0 && clientShare < 4700) || (creativeShare > 0 && creativeShare < 4700);
+                return (
+                  <div className="rounded-md bg-ink/5 p-3 text-sm space-y-1">
+                    <p className="font-medium">Suggested split ({phase})</p>
+                    <p>Client refund: {suggestion.client}% = {formatMwk(clientShare)} → payout {formatMwk(clientNet)} (−{formatMwk(clientReserve)} fee reserve)</p>
+                    <p>Creative cut: {suggestion.creative}% = {formatMwk(creativeShare)} → payout {formatMwk(creativeNet)} (−{formatMwk(creativeReserve)} fee reserve)</p>
+                    <p>Platform: {100 - suggestion.client - suggestion.creative}% ({formatMwk(gross - clientShare - creativeShare)}) + fee reserves</p>
+                    {tinyPayout && (
+                      <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                        ⚠ One side's payout is under MWK 4,700 — the 15% flat reserve may not cover the actual PayChangu transfer fee (bank flat is MWK 700). Consider adjusting the split or rejecting.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
               <SavingForm action={adminResolveCancellation} successText="Cancellation resolved." className="space-y-2">
                 <input type="hidden" name="job_id" value={job.id} />
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

@@ -14,8 +14,6 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Tips after release.** Once escrow is released the fund cycle is closed — no more top-ups (enforced 2026-07-13). A separate "Send a tip" flow could let clients add money post-release without re-opening escrow: goes straight to the creative through a fresh PayChangu payout, no back-and-forth. Nice to have; not urgent.
 
-- **Payout fees on cancellation refunds.** Every cancellation resolves into two PayChangu payouts (client refund + creative cut), each with its own transfer fee we absorb. The current 85/5/10 split assumes platform's 10% covers this; needs modeling once real MWK numbers are in. Options: (a) net PayChangu's per-payout fee out of the platform's share before we accept the split, (b) subtract it from each recipient's share proportionally, (c) minimum job value floor below which cancellations aren't allowed. Decide after a few real cancellations show what the fee actually looks like at typical amounts.
-
 - **On-platform wallets for creatives.** Instead of a PayChangu payout per completed job, creatives accrue a balance on Ganyu Hub and withdraw when they want (or set a threshold). Batches payouts → fewer transfer fees, and gives creatives a running "money you've earned here" view that doubles as social proof. Also unlocks internal transfers (creative-to-creative referrals, agency splits) without touching a payment rail. Non-trivial: needs a ledger table with double-entry semantics, admin reconciliation, and KYC once balances get large.
 
 ## Trust & Loop-Closing

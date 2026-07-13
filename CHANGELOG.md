@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-13 — Cancellation payout-fee reserve (flat 15% off each side)
+
+Platform's 10% cut on a cancellation was being eaten by PayChangu's per-payout transfer fees (bank is MWK 700 flat), turning small cancellations into a loss. New rule: each side's cancellation share is reduced by a flat 15% reserve (`CANCELLATION_PAYOUT_RESERVE_PCT` in `lib/fees.ts`) before we hand it to `initiatePayout`, so PayChangu's fee comes out of the recipient's slice, not the platform's. Admin queue now shows the pre-reserve share, the reserve deducted, and the actual payout — plus a warning when either side's share is under MWK 4,700 (where 15% no longer covers the MWK 700 bank flat). Tune the constant if reality disagrees. Removed the redundant [BACKLOG.md](BACKLOG.md#payments) entry for this.
+
 ## 2026-07-13 — Admin cancellation queue: include paid top-ups in gross
 
 The queue displayed `collection_amount_mwk || accepted_bid_mwk` as the gross to split, which ignored paid top-ups. `adminResolveCancellation` was already validating against `total_paid_mwk`, so the enforcement was correct — only the UI showed the wrong number and misleading split percentages. Switched display to `total_paid_mwk || collection_amount_mwk || accepted_bid_mwk` and added a breakdown line for top-up jobs: `(original X + top-ups Y)`. Testing Step 4 caught this: a MWK 9k job with a paid MWK 5k top-up showed "gross 9,270" instead of 14,000.
