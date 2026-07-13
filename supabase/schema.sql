@@ -144,6 +144,11 @@ create table if not exists jobs (
   created_at timestamptz not null default now()
 );
 
+-- ponytail: private jobs are direct client→creative invites, not visible on
+-- /jobs or the public feed. Enforced by query filters; RLS unchanged for now.
+alter table jobs add column if not exists visibility text not null default 'public'
+  check (visibility in ('public','private'));
+
 do $$ begin
   create type proposal_status as enum ('pending', 'accepted', 'declined', 'withdrawn');
 exception when duplicate_object then null; end $$;

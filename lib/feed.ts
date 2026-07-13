@@ -5,7 +5,7 @@ export type FeedKind = "for_you_jobs" | "for_you_creatives" | "trending_jobs" | 
 export async function getForYouJobs(supabase: SupabaseClient, userId: string, limit = 6) {
   const { data: me } = await supabase.from("profiles").select("categories, skills").eq("id", userId).single();
   const cats: string[] = me?.categories || [];
-  let q = supabase.from("jobs").select("*").eq("status", "open").neq("client_id", userId);
+  let q = supabase.from("jobs").select("*").eq("status", "open").eq("visibility", "public").neq("client_id", userId);
   if (cats.length) q = q.in("category", cats);
   const { data } = await q.order("created_at", { ascending: false }).limit(limit);
   return data || [];
@@ -25,7 +25,7 @@ export async function getTrending(supabase: SupabaseClient, kind: "job" | "creat
   const targetIds = (ids || []).map((r: any) => r.target_id);
   if (!targetIds.length) {
     if (kind === "job") {
-      const { data } = await supabase.from("jobs").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(limit);
+      const { data } = await supabase.from("jobs").select("*").eq("status", "open").eq("visibility", "public").order("created_at", { ascending: false }).limit(limit);
       return data || [];
     }
     const { data } = await supabase.from("profiles").select("*").in("role", ["creative", "agency"]).order("created_at", { ascending: false }).limit(limit);

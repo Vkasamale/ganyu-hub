@@ -179,14 +179,12 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                   <input type="hidden" name="creative_id" value={profile.id} />
                   <Button type="submit">Message</Button>
                 </SavingForm>
-                {inviteableJobs.length > 0 && (
-                  <Link
-                    href={`/creatives/${profile.id}/invite`}
-                    className="rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5"
-                  >
-                    Invite to job
-                  </Link>
-                )}
+                <Link
+                  href={`/creatives/${profile.id}/invite`}
+                  className="rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5"
+                >
+                  Invite to job
+                </Link>
                 <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
               </div>
             )}

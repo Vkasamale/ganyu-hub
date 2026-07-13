@@ -41,6 +41,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const { data: client } = await supabase.from("profiles").select("id, full_name").eq("id", job.client_id).single();
   const { data: { user } } = await supabase.auth.getUser();
   const isClient = user?.id === job.client_id;
+  if (job.visibility === "private" && !isClient) {
+    if (!user) notFound();
+    const { data: inv } = await supabase.from("job_invites")
+      .select("id").eq("job_id", job.id).eq("creative_id", user.id).maybeSingle();
+    if (!inv) notFound();
+  }
   if (user && !isClient) await recordView("job", params.id);
   let isSaved = false;
   if (user && !isClient) {

@@ -1975,6 +1975,66 @@ export async function inviteCreative(formData: FormData): Promise<{ ok?: boolean
   return { ok: true };
 }
 
+export async function sendInviteWithNewJob(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const creative_id = String(formData.get("creative_id") || "");
+  const title = String(formData.get("title") || "").trim();
+  const brief = String(formData.get("brief") || "").trim();
+  const category = String(formData.get("category") || "").trim();
+  const deliverables = String(formData.get("deliverables") || "").trim();
+  const budget = Number(formData.get("budget_mwk"));
+  const deadline = String(formData.get("deadline") || "").trim() || null;
+  const message = String(formData.get("message") || "").trim() || null;
+
+  if (!creative_id) return { error: "Missing creative." };
+  if (creative_id === user.id) return { error: "You can't invite yourself." };
+  if (!title) return { error: "Give the job a title." };
+  if (!category) return { error: "Pick a category." };
+  if (brief.length < 200) return { error: "Brief must be at least 200 characters — spell out what the job actually is." };
+  if (deliverables.length < 50) return { error: "Deliverables must be at least 50 characters — list what you'll receive." };
+  if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return { error: "Deadline must be a valid date." };
+  if (!Number.isFinite(budget) || budget <= 0) return { error: "Budget must be a positive number." };
+
+  const { data: job, error: jErr } = await supabase.from("jobs").insert({
+    client_id: user.id,
+    title, brief, category, deliverables, deadline,
+    budget_mwk: Math.round(budget),
+    visibility: "private",
+  }).select("id").single();
+  if (jErr || !job) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "invite_new_job_create", userId: user.id, error: jErr, context: { creative_id } });
+    return { error: GENERIC_ERROR(ref) };
+  }
+
+  const { error: iErr } = await supabase.from("job_invites").insert({
+    job_id: job.id, creative_id, from_client_id: user.id, message,
+  });
+  if (iErr) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "invite_new_job_invite", jobId: job.id, userId: user.id, error: iErr, context: { creative_id } });
+    return { error: GENERIC_ERROR(ref) };
+  }
+
+  const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  await supabase.from("notifications").insert({
+    user_id: creative_id,
+    kind: "proposal_received",
+    title: "You've been invited to a private job",
+    body: `${me?.full_name || "A client"} invited you to "${title}"`,
+    link: `/jobs/${job.id}`,
+    actor_id: user.id,
+    target_type: "job",
+    target_id: job.id,
+  });
+
+  revalidatePath(`/creatives/${creative_id}`);
+  return { ok: true };
+}
+
 export async function respondToInvite(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
