@@ -180,31 +180,12 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                   <Button type="submit">Message</Button>
                 </SavingForm>
                 {inviteableJobs.length > 0 && (
-                  <details className="relative">
-                    <summary className="cursor-pointer list-none rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5">
-                      Invite to job
-                    </summary>
-                    <div className="absolute right-0 z-10 mt-2 w-80 rounded-lg border border-ink/15 bg-white p-4 shadow-lg">
-                      <SavingForm action={inviteCreative} successText="Invite sent." className="space-y-3">
-                        <input type="hidden" name="creative_id" value={profile.id} />
-                        <div className="space-y-1.5">
-                          <Label htmlFor="job_id" className="text-xs">Job</Label>
-                          <select id="job_id" name="job_id" required className="w-full rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm">
-                            {inviteableJobs.map((j) => (
-                              <option key={j.id} value={j.id} disabled={j.alreadyInvited}>
-                                {j.title}{j.alreadyInvited ? " (already invited)" : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="message" className="text-xs">Message (optional)</Label>
-                          <Textarea id="message" name="message" rows={2} placeholder="Why you'd like them on this job." />
-                        </div>
-                        <SubmitButton pendingText="Sending…">Send invite</SubmitButton>
-                      </SavingForm>
-                    </div>
-                  </details>
+                  <Link
+                    href={`/creatives/${profile.id}/invite`}
+                    className="rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5"
+                  >
+                    Invite to job
+                  </Link>
                 )}
                 <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
               </div>

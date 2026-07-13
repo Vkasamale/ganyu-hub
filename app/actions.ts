@@ -654,7 +654,11 @@ export async function submitProposal(formData: FormData) {
     cover_letter: String(formData.get("cover_letter")),
     bid_mwk: Number(formData.get("bid_mwk")),
   });
-  if (error) return { error: error.message };
+  if (error) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "proposal_submit", jobId: job_id, userId: user.id, error, context: { code: (error as any).code } });
+    return { error: GENERIC_ERROR(ref) };
+  }
   await supabase.from("interactions").insert({ user_id: user.id, target_type: "job", target_id: job_id, kind: "proposal_sent" });
 
   const { data: job } = await supabase.from("jobs").select("client_id, title").eq("id", job_id).single();

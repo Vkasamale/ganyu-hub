@@ -155,9 +155,15 @@ create table if not exists proposals (
   cover_letter text not null,
   bid_mwk integer not null,
   status proposal_status not null default 'pending',
-  created_at timestamptz not null default now(),
-  unique (job_id, creative_id)
+  created_at timestamptz not null default now()
 );
+
+-- ponytail: only one *active* proposal per (job, creative). Declined rows may
+-- coexist so a creative can re-apply up to the 3-strike cap enforced in code.
+alter table proposals drop constraint if exists proposals_job_id_creative_id_key;
+create unique index if not exists proposals_active_unique
+  on proposals (job_id, creative_id)
+  where status in ('pending', 'accepted');
 
 create table if not exists message_threads (
   id uuid primary key default gen_random_uuid(),
