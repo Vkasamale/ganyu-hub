@@ -74,7 +74,7 @@ export function JobCard({
         </div>
 
         <Link href={`/jobs/${job.id}`} className="group/desc mt-4 block">
-          <p className="line-clamp-2 break-words text-sm leading-relaxed text-ink/75">
+          <p className="line-clamp-2 [overflow-wrap:anywhere] text-sm leading-relaxed text-ink/75">
             {job.brief || "No description provided."}
           </p>
           <p className="mt-1.5 text-xs font-medium text-stamp underline-offset-4 group-hover/desc:underline">
