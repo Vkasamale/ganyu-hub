@@ -39,6 +39,22 @@ export function creativeNet(bid: number, rail: PayoutRail): number {
   return Math.max(0, gross - payoutFee(gross, rail));
 }
 
+// Flat reserve on each side's cancellation payout so PayChangu's transfer
+// fee doesn't eat the platform's 10%. 15% covers bank's MWK 700 flat down
+// to ~MWK 4,700 payouts; below that the admin queue shows a warning.
+// ponytail: flat %, not per-rail — simpler, slightly over-collects on
+// large payouts. Tune here if reality disagrees.
+export const CANCELLATION_PAYOUT_RESERVE_PCT = 0.15;
+
+// Below this, PayChangu's transfer fee eats most/all of the money — skip the
+// payout entirely and roll to platform. Honest to the recipient (MWK 700 minus
+// MWK 700 fee is MWK 0 anyway) and stops us burning fees on dust.
+export const MIN_PAYOUT_MWK = 1000;
+
+export function cancellationPayoutReserve(share: number): number {
+  return Math.ceil(share * CANCELLATION_PAYOUT_RESERVE_PCT);
+}
+
 export function railLabel(rail: CollectionRail): string {
   return rail === "mobile_money" ? "Mobile Money" : rail === "card" ? "Card" : "Bank Transfer";
 }

@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { updateEscrowStatus, reconcilePayout } from "@/app/actions";
+import { creativeAmount, CREATIVE_SHARE } from "@/lib/payments";
+import { formatMwk } from "@/lib/utils";
 
 type Role = "client" | "creative";
 type Escrow = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
@@ -36,7 +38,7 @@ function clientActions(status: Escrow): { next: Escrow; label: string; variant?:
   return [];
 }
 
-export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null }) {
+export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null }) {
   const payoutPending = payoutStatus === "pending";
   // Hide the release action entirely while a payout is in flight. Server also
   // enforces via atomic claim — this just keeps the UI from tempting a retry.
@@ -75,16 +77,14 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus }: { jobId
             </SavingForm>
           </div>
         )}
-        {payoutPending && (
-          <div className="mt-3">
-            <SavingForm action={reconcilePayout} successText="Checked with PayChangu.">
-              <input type="hidden" name="job_id" value={jobId} />
-              <SubmitButton size="sm" variant="outline" pendingText="Checking…">Refresh payout status</SubmitButton>
-            </SavingForm>
-          </div>
-        )}
         {role === "creative" && escrowStatus === "none" && (
           <p className="mt-2 text-xs text-neutral-500">Waiting for the client to send funds to escrow.</p>
+        )}
+        {role === "creative" && escrowStatus === "payment_held" && heldMwk != null && heldMwk > 0 && (
+          <p className="mt-3 text-xs text-neutral-500">
+            You'll receive ~{formatMwk(creativeAmount(heldMwk))} after Ganyu's {Math.round((1 - CREATIVE_SHARE) * 100)}% fee.
+            Your payout provider may deduct a small transfer charge on top.
+          </p>
         )}
       </CardContent>
     </Card>

@@ -654,7 +654,11 @@ export async function submitProposal(formData: FormData) {
     cover_letter: String(formData.get("cover_letter")),
     bid_mwk: Number(formData.get("bid_mwk")),
   });
-  if (error) return { error: error.message };
+  if (error) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "proposal_submit", jobId: job_id, userId: user.id, error, context: { code: (error as any).code } });
+    return { error: GENERIC_ERROR(ref) };
+  }
   await supabase.from("interactions").insert({ user_id: user.id, target_type: "job", target_id: job_id, kind: "proposal_sent" });
 
   const { data: job } = await supabase.from("jobs").select("client_id, title").eq("id", job_id).single();
@@ -1513,8 +1517,10 @@ export async function recordView(target_type: "job" | "creative", target_id: str
 // Callable two ways:
 //   1. Auto: from the job page loader when payout_status='pending'.
 //   2. Manual: from the "Refresh payout status" button in EscrowPanel.
-export async function reconcilePayout(input: string | FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+export async function reconcilePayout(input: string | FormData, opts?: { skipRevalidate?: boolean }): Promise<{ ok?: boolean; error?: string; info?: string }> {
   const job_id = typeof input === "string" ? input : String(input.get("job_id"));
+  // ponytail: called from JobDetailPage render where revalidatePath throws.
+  const revalidate = (p: string) => { if (!opts?.skipRevalidate) revalidatePath(p); };
   if (!job_id) return { error: "Missing job id." };
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -1548,7 +1554,7 @@ export async function reconcilePayout(input: string | FormData): Promise<{ ok?: 
       payout_amount_mwk: verified.amount ?? null,
       payout_fee_mwk: verified.fee ?? null,
     }).eq("id", job_id);
-    revalidatePath(`/jobs/${job_id}`);
+    revalidate(`/jobs/${job_id}`);
     return { ok: true, info: "Payout confirmed. Status updated to Released." };
   }
   if (verified.status === "failed") {
@@ -1556,7 +1562,7 @@ export async function reconcilePayout(input: string | FormData): Promise<{ ok?: 
       payout_status: "failed",
       payout_error: "PayChangu reported failed payout.",
     }).eq("id", job_id);
-    revalidatePath(`/jobs/${job_id}`);
+    revalidate(`/jobs/${job_id}`);
     return { ok: true, info: "PayChangu reports the payout failed." };
   }
   return { ok: true, info: "PayChangu still shows the payout as pending. Try again in a minute." };
@@ -1666,7 +1672,7 @@ export async function adminResolveCancellation(formData: FormData): Promise<{ ok
   if (job.status !== "cancellation_requested" && job.status !== "disputed") {
     return { error: `Cannot resolve cancellation on a job in state '${job.status}'.` };
   }
-  if (titleConfirm !== job.title) {
+  if (titleConfirm.trim().toLowerCase() !== String(job.title || "").trim().toLowerCase()) {
     return { error: "Type the job title exactly to confirm this action." };
   }
 
@@ -1675,9 +1681,16 @@ export async function adminResolveCancellation(formData: FormData): Promise<{ ok
   const creativeId = accepted?.creative_id;
   if (!creativeId) return { error: "No accepted creative on this job — nothing to split." };
 
+  const { cancellationPayoutReserve, MIN_PAYOUT_MWK } = await import("@/lib/fees");
   const gross = job.total_paid_mwk ?? job.collection_amount_mwk ?? job.accepted_bid_mwk ?? 0;
-  const clientAmount = Math.floor(gross * (clientPctRaw / 100));
-  const creativeAmount = Math.floor(gross * (creativePctRaw / 100));
+  const clientShare = Math.floor(gross * (clientPctRaw / 100));
+  const creativeShare = Math.floor(gross * (creativePctRaw / 100));
+  const clientAfterReserve = Math.max(0, clientShare - cancellationPayoutReserve(clientShare));
+  const creativeAfterReserve = Math.max(0, creativeShare - cancellationPayoutReserve(creativeShare));
+  // ponytail: below MIN_PAYOUT_MWK the transfer fee eats the money — skip
+  // the payout leg and roll to platform. Recipient sees zero either way.
+  const clientAmount = clientAfterReserve >= MIN_PAYOUT_MWK ? clientAfterReserve : 0;
+  const creativeAmount = creativeAfterReserve >= MIN_PAYOUT_MWK ? creativeAfterReserve : 0;
 
   const { initiatePayout } = await import("@/lib/payments");
 
@@ -1962,6 +1975,66 @@ export async function inviteCreative(formData: FormData): Promise<{ ok?: boolean
   return { ok: true };
 }
 
+export async function sendInviteWithNewJob(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const creative_id = String(formData.get("creative_id") || "");
+  const title = String(formData.get("title") || "").trim();
+  const brief = String(formData.get("brief") || "").trim();
+  const category = String(formData.get("category") || "").trim();
+  const deliverables = String(formData.get("deliverables") || "").trim();
+  const budget = Number(formData.get("budget_mwk"));
+  const deadline = String(formData.get("deadline") || "").trim() || null;
+  const message = String(formData.get("message") || "").trim() || null;
+
+  if (!creative_id) return { error: "Missing creative." };
+  if (creative_id === user.id) return { error: "You can't invite yourself." };
+  if (!title) return { error: "Give the job a title." };
+  if (!category) return { error: "Pick a category." };
+  if (brief.length < 200) return { error: "Brief must be at least 200 characters — spell out what the job actually is." };
+  if (deliverables.length < 50) return { error: "Deliverables must be at least 50 characters — list what you'll receive." };
+  if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return { error: "Deadline must be a valid date." };
+  if (!Number.isFinite(budget) || budget <= 0) return { error: "Budget must be a positive number." };
+
+  const { data: job, error: jErr } = await supabase.from("jobs").insert({
+    client_id: user.id,
+    title, brief, category, deliverables, deadline,
+    budget_mwk: Math.round(budget),
+    visibility: "private",
+  }).select("id").single();
+  if (jErr || !job) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "invite_new_job_create", userId: user.id, error: jErr, context: { creative_id } });
+    return { error: GENERIC_ERROR(ref) };
+  }
+
+  const { error: iErr } = await supabase.from("job_invites").insert({
+    job_id: job.id, creative_id, from_client_id: user.id, message,
+  });
+  if (iErr) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "invite_new_job_invite", jobId: job.id, userId: user.id, error: iErr, context: { creative_id } });
+    return { error: GENERIC_ERROR(ref) };
+  }
+
+  const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  await supabase.from("notifications").insert({
+    user_id: creative_id,
+    kind: "proposal_received",
+    title: "You've been invited to a private job",
+    body: `${me?.full_name || "A client"} invited you to "${title}"`,
+    link: `/jobs/${job.id}`,
+    actor_id: user.id,
+    target_type: "job",
+    target_id: job.id,
+  });
+
+  revalidatePath(`/creatives/${creative_id}`);
+  return { ok: true };
+}
+
 export async function respondToInvite(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -2002,10 +2075,15 @@ export async function requestTopUp(formData: FormData): Promise<{ ok?: boolean; 
   if (!Number.isFinite(amount_mwk) || amount_mwk <= 0) return { error: "Enter an amount greater than zero." };
   if (reason.length < 20) return { error: "Explain briefly why the extra amount is needed (at least 20 characters)." };
 
-  const { data: job } = await supabase.from("jobs").select("id, client_id, title, status").eq("id", job_id).maybeSingle();
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, status, escrow_status").eq("id", job_id).maybeSingle();
   if (!job) return { error: "Job not found." };
   if (!TOPUP_ACTIVE_JOB_STATUSES.has(job.status)) {
     return { error: `Top-ups can only be requested while a job is in progress (current: ${job.status}).` };
+  }
+  // ponytail: top-ups only while funds are held. After release we'd need a
+  // second escrow cycle; tips-after-release is a separate feature (backlog).
+  if (job.escrow_status !== "payment_held") {
+    return { error: "Top-ups can only be added while funds are held in escrow." };
   }
 
   const { data: accepted } = await supabase.from("proposals")
@@ -2050,12 +2128,15 @@ export async function payTopUp(formData: FormData): Promise<{ ok?: boolean; erro
   if (!topup_id) return { error: "Missing top-up id." };
 
   const { data: t } = await supabase.from("payment_topups")
-    .select("id, job_id, amount_mwk, status, job:jobs!payment_topups_job_id_fkey(client_id, title, status)")
+    .select("id, job_id, amount_mwk, status, job:jobs!payment_topups_job_id_fkey(client_id, title, status, escrow_status)")
     .eq("id", topup_id).maybeSingle();
   if (!t) return { error: "Top-up not found." };
   const job = t.job as any;
   if (!job || job.client_id !== user.id) return { error: "Only the job's client can pay a top-up." };
   if (t.status !== "pending") return { error: "This top-up is not pending." };
+  if (job.escrow_status !== "payment_held") {
+    return { error: "Funds have already been released — this top-up can no longer be paid." };
+  }
 
   const { initiatePayment } = await import("@/lib/payments");
   const { clientCharge } = await import("@/lib/fees");

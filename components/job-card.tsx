@@ -44,7 +44,7 @@ export function JobCard({
         )}
 
         <Link href={`/jobs/${job.id}`} className="block">
-          <h3 className="pr-10 font-display text-xl font-semibold leading-tight text-ink md:text-2xl">
+          <h3 className="pr-10 font-display text-xl font-semibold leading-tight text-ink md:text-2xl break-words">
             {job.title}
           </h3>
         </Link>
@@ -73,9 +73,12 @@ export function JobCard({
           <span>Budget: {job.budget_mwk != null ? formatMwk(job.budget_mwk) : "Open"}</span>
         </div>
 
-        <Link href={`/jobs/${job.id}`} className="mt-4 block">
-          <p className="line-clamp-3 text-sm leading-relaxed text-ink/75">
+        <Link href={`/jobs/${job.id}`} className="group/desc mt-4 block">
+          <p className="line-clamp-2 break-words text-sm leading-relaxed text-ink/75">
             {job.brief || "No description provided."}
+          </p>
+          <p className="mt-1.5 text-xs font-medium text-stamp underline-offset-4 group-hover/desc:underline">
+            More info →
           </p>
         </Link>
 

@@ -3,6 +3,32 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-13 — Minimum payout floor on cancellations (MWK 1,000)
+
+Below MWK 1,000 the PayChangu transfer fee eats most or all of the money, so paying it out is theatre — recipient sees zero, platform loses fees. New `MIN_PAYOUT_MWK` in `lib/fees.ts`: any cancellation leg whose after-reserve amount falls below it skips `initiatePayout` entirely and stays with the platform. Admin queue shows exactly what happens ("payout MWK 0 — below MWK 1,000 floor — rolled to platform") and the amber warning explains why. Honest to the recipient (they'd get zero either way) and stops us burning transfer fees on dust.
+
+## 2026-07-13 — Cancellation payout-fee reserve (flat 15% off each side)
+
+Platform's 10% cut on a cancellation was being eaten by PayChangu's per-payout transfer fees (bank is MWK 700 flat), turning small cancellations into a loss. New rule: each side's cancellation share is reduced by a flat 15% reserve (`CANCELLATION_PAYOUT_RESERVE_PCT` in `lib/fees.ts`) before we hand it to `initiatePayout`, so PayChangu's fee comes out of the recipient's slice, not the platform's. Admin queue now shows the pre-reserve share, the reserve deducted, and the actual payout — plus a warning when either side's share is under MWK 4,700 (where 15% no longer covers the MWK 700 bank flat). Tune the constant if reality disagrees. Removed the redundant [BACKLOG.md](BACKLOG.md#payments) entry for this.
+
+## 2026-07-13 — Admin cancellation queue: include paid top-ups in gross
+
+The queue displayed `collection_amount_mwk || accepted_bid_mwk` as the gross to split, which ignored paid top-ups. `adminResolveCancellation` was already validating against `total_paid_mwk`, so the enforcement was correct — only the UI showed the wrong number and misleading split percentages. Switched display to `total_paid_mwk || collection_amount_mwk || accepted_bid_mwk` and added a breakdown line for top-up jobs: `(original X + top-ups Y)`. Testing Step 4 caught this: a MWK 9k job with a paid MWK 5k top-up showed "gross 9,270" instead of 14,000.
+
+## 2026-07-13 — Top-ups locked to `payment_held`; creative fee-net line
+
+Testing Step 4 surfaced a math problem: after `payment_released`, top-ups could still be created and paid, which meant "in escrow" numbers no longer matched what was actually held. New rule — top-ups only while `escrow_status = 'payment_held'`. `requestTopUp` and `payTopUp` both reject otherwise; the creative-side request form is hidden post-release. Tips-after-release moved to [BACKLOG.md](BACKLOG.md#payments).
+
+While there, added a small fee-net hint on the creative's `EscrowPanel` when funds are held: "You'll receive ~MWK {net} after Ganyu's 15% fee." Uses `creativeAmount()` on `total_paid_mwk`. Client side unchanged — they think in gross, creative thinks in net.
+
+## 2026-07-13 — Payout: round decimals + remove duplicate refresh button
+
+`verifyPayout` was returning PayChangu's raw decimals for `amount` / `fee`. `reconcilePayout` then wrote them into the int columns `payout_amount_mwk` / `payout_fee_mwk`, which Postgres silently rejects, so `payout_status` stayed `"pending"` even though the UI toast said "Payout confirmed. Status updated to Released." Rounded both to integers, same fix already applied to `verifyPayment`. Also deleted a duplicated "Refresh payout status" JSX block in `escrow-panel.tsx`.
+
+## 2026-07-13 — Fix job page 500 (revalidatePath during render)
+
+`app/jobs/[id]/page.tsx` calls `reconcilePayout()` at render time to settle missed payout webhooks. `reconcilePayout` internally called `revalidatePath`, which Next 14 forbids during render — the whole page threw and users saw "Something went sideways" on any job with a pending payout. Gave `reconcilePayout` an optional `{ skipRevalidate: true }` mode; the render-path caller uses it (the page re-fetches the row right after, so revalidate is redundant there). Form-action callers in `escrow-panel` unchanged.
+
 ## 2026-07-12 — Disambiguate jobs↔proposals PostgREST embeds
 
 Session C's new `jobs.pending_accept_proposal_id` FK created a second `jobs↔proposals` relationship, so every unqualified PostgREST embed started returning `PGRST201` and zero rows — silently on the dashboards. Pinned the three embeds in `app/dashboard/jobs/page.tsx` and `app/dashboard/proposals/page.tsx` to `!proposals_job_id_fkey`. (An earlier one-off fix on `bada1cb` handled the actions layer; this catches the read-side pages that failed later, uncovered by the E2E rerun.)

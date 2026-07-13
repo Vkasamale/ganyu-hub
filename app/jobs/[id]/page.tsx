@@ -34,13 +34,19 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   // ask PayChangu directly and settle before we render. Same pattern as the
   // collection callback route. Cheap: one API call per pending-payout view.
   if (job.payout_status === "pending" && job.payout_ref) {
-    await reconcilePayout(job.id);
+    await reconcilePayout(job.id, { skipRevalidate: true });
     const { data: refreshed } = await supabase.from("jobs").select("*").eq("id", params.id).single();
     if (refreshed) job = refreshed;
   }
   const { data: client } = await supabase.from("profiles").select("id, full_name").eq("id", job.client_id).single();
   const { data: { user } } = await supabase.auth.getUser();
   const isClient = user?.id === job.client_id;
+  if (job.visibility === "private" && !isClient) {
+    if (!user) notFound();
+    const { data: inv } = await supabase.from("job_invites")
+      .select("id").eq("job_id", job.id).eq("creative_id", user.id).maybeSingle();
+    if (!inv) notFound();
+  }
   if (user && !isClient) await recordView("job", params.id);
   let isSaved = false;
   if (user && !isClient) {
@@ -225,7 +231,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} />
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} />
       )}
       {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
         <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
@@ -290,7 +296,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               </div>
             )}
 
-            {!pendingTopup && !isClient && isAcceptedCreative && topupJobStatuses.has(job.status) && (
+            {!pendingTopup && !isClient && isAcceptedCreative && topupJobStatuses.has(job.status) && job.escrow_status === "payment_held" && (
               <SavingForm action={requestTopUp} successText="Top-up requested." className="space-y-3">
                 <input type="hidden" name="job_id" value={job.id} />
                 <div className="space-y-1.5">

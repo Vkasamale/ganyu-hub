@@ -23,7 +23,7 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
   const maxP = searchParams.max_price ? Number(searchParams.max_price) : null;
   const sort = searchParams.sort || "newest";
 
-  let query = supabase.from("jobs").select("*").eq("status", "open").is("hidden_at", null);
+  let query = supabase.from("jobs").select("*").eq("status", "open").eq("visibility", "public").is("hidden_at", null);
   if (q) {
     const s = sanitize(q);
     query = query.or(`title.ilike.%${s}%,brief.ilike.%${s}%`);
