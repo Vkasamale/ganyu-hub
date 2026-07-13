@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-13 — Payout: round decimals + remove duplicate refresh button
+
+`verifyPayout` was returning PayChangu's raw decimals for `amount` / `fee`. `reconcilePayout` then wrote them into the int columns `payout_amount_mwk` / `payout_fee_mwk`, which Postgres silently rejects, so `payout_status` stayed `"pending"` even though the UI toast said "Payout confirmed. Status updated to Released." Rounded both to integers, same fix already applied to `verifyPayment`. Also deleted a duplicated "Refresh payout status" JSX block in `escrow-panel.tsx`.
+
 ## 2026-07-13 — Fix job page 500 (revalidatePath during render)
 
 `app/jobs/[id]/page.tsx` calls `reconcilePayout()` at render time to settle missed payout webhooks. `reconcilePayout` internally called `revalidatePath`, which Next 14 forbids during render — the whole page threw and users saw "Something went sideways" on any job with a pending payout. Gave `reconcilePayout` an optional `{ skipRevalidate: true }` mode; the render-path caller uses it (the page re-fetches the row right after, so revalidate is redundant there). Form-action callers in `escrow-panel` unchanged.

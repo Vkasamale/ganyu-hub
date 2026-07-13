@@ -242,8 +242,12 @@ export async function verifyPayout(chargeId: string, method: "mobile" | "bank"):
       : raw === "failed" || raw === "reversed" || raw === "cancelled" ? "failed"
       : "pending";
   const providerId = data?.ref_id || data?.trans_id || data?.reference || data?.id;
-  const amount = Number(data?.amount);
-  const fee = Number(data?.transaction_charges?.amount);
+  // ponytail: PayChangu returns decimals; payout_amount_mwk / payout_fee_mwk
+  // are int columns and silently reject non-integers, same trap as verifyPayment.
+  const amountRaw = Number(data?.amount);
+  const amount = Number.isFinite(amountRaw) ? Math.round(amountRaw) : amountRaw;
+  const feeRaw = Number(data?.transaction_charges?.amount);
+  const fee = Number.isFinite(feeRaw) ? Math.round(feeRaw) : feeRaw;
   const rail = data?.mobile_money?.name || data?.payment_method;
   return {
     status,

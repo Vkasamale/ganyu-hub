@@ -75,14 +75,6 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus }: { jobId
             </SavingForm>
           </div>
         )}
-        {payoutPending && (
-          <div className="mt-3">
-            <SavingForm action={reconcilePayout} successText="Checked with PayChangu.">
-              <input type="hidden" name="job_id" value={jobId} />
-              <SubmitButton size="sm" variant="outline" pendingText="Checking…">Refresh payout status</SubmitButton>
-            </SavingForm>
-          </div>
-        )}
         {role === "creative" && escrowStatus === "none" && (
           <p className="mt-2 text-xs text-neutral-500">Waiting for the client to send funds to escrow.</p>
         )}
