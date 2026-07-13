@@ -1672,7 +1672,7 @@ export async function adminResolveCancellation(formData: FormData): Promise<{ ok
   if (job.status !== "cancellation_requested" && job.status !== "disputed") {
     return { error: `Cannot resolve cancellation on a job in state '${job.status}'.` };
   }
-  if (titleConfirm !== job.title) {
+  if (titleConfirm.trim().toLowerCase() !== String(job.title || "").trim().toLowerCase()) {
     return { error: "Type the job title exactly to confirm this action." };
   }
 
