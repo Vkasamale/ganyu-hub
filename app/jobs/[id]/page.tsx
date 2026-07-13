@@ -225,7 +225,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} />
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} />
       )}
       {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
         <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
@@ -290,7 +290,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               </div>
             )}
 
-            {!pendingTopup && !isClient && isAcceptedCreative && topupJobStatuses.has(job.status) && (
+            {!pendingTopup && !isClient && isAcceptedCreative && topupJobStatuses.has(job.status) && job.escrow_status === "payment_held" && (
               <SavingForm action={requestTopUp} successText="Top-up requested." className="space-y-3">
                 <input type="hidden" name="job_id" value={job.id} />
                 <div className="space-y-1.5">

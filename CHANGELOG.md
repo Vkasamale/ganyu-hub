@@ -3,6 +3,12 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-13 — Top-ups locked to `payment_held`; creative fee-net line
+
+Testing Step 4 surfaced a math problem: after `payment_released`, top-ups could still be created and paid, which meant "in escrow" numbers no longer matched what was actually held. New rule — top-ups only while `escrow_status = 'payment_held'`. `requestTopUp` and `payTopUp` both reject otherwise; the creative-side request form is hidden post-release. Tips-after-release moved to [BACKLOG.md](BACKLOG.md#payments).
+
+While there, added a small fee-net hint on the creative's `EscrowPanel` when funds are held: "You'll receive ~MWK {net} after Ganyu's 15% fee." Uses `creativeAmount()` on `total_paid_mwk`. Client side unchanged — they think in gross, creative thinks in net.
+
 ## 2026-07-13 — Payout: round decimals + remove duplicate refresh button
 
 `verifyPayout` was returning PayChangu's raw decimals for `amount` / `fee`. `reconcilePayout` then wrote them into the int columns `payout_amount_mwk` / `payout_fee_mwk`, which Postgres silently rejects, so `payout_status` stayed `"pending"` even though the UI toast said "Payout confirmed. Status updated to Released." Rounded both to integers, same fix already applied to `verifyPayment`. Also deleted a duplicated "Refresh payout status" JSX block in `escrow-panel.tsx`.

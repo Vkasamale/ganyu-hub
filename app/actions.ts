@@ -2004,10 +2004,15 @@ export async function requestTopUp(formData: FormData): Promise<{ ok?: boolean; 
   if (!Number.isFinite(amount_mwk) || amount_mwk <= 0) return { error: "Enter an amount greater than zero." };
   if (reason.length < 20) return { error: "Explain briefly why the extra amount is needed (at least 20 characters)." };
 
-  const { data: job } = await supabase.from("jobs").select("id, client_id, title, status").eq("id", job_id).maybeSingle();
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, status, escrow_status").eq("id", job_id).maybeSingle();
   if (!job) return { error: "Job not found." };
   if (!TOPUP_ACTIVE_JOB_STATUSES.has(job.status)) {
     return { error: `Top-ups can only be requested while a job is in progress (current: ${job.status}).` };
+  }
+  // ponytail: top-ups only while funds are held. After release we'd need a
+  // second escrow cycle; tips-after-release is a separate feature (backlog).
+  if (job.escrow_status !== "payment_held") {
+    return { error: "Top-ups can only be added while funds are held in escrow." };
   }
 
   const { data: accepted } = await supabase.from("proposals")
@@ -2052,12 +2057,15 @@ export async function payTopUp(formData: FormData): Promise<{ ok?: boolean; erro
   if (!topup_id) return { error: "Missing top-up id." };
 
   const { data: t } = await supabase.from("payment_topups")
-    .select("id, job_id, amount_mwk, status, job:jobs!payment_topups_job_id_fkey(client_id, title, status)")
+    .select("id, job_id, amount_mwk, status, job:jobs!payment_topups_job_id_fkey(client_id, title, status, escrow_status)")
     .eq("id", topup_id).maybeSingle();
   if (!t) return { error: "Top-up not found." };
   const job = t.job as any;
   if (!job || job.client_id !== user.id) return { error: "Only the job's client can pay a top-up." };
   if (t.status !== "pending") return { error: "This top-up is not pending." };
+  if (job.escrow_status !== "payment_held") {
+    return { error: "Funds have already been released — this top-up can no longer be paid." };
+  }
 
   const { initiatePayment } = await import("@/lib/payments");
   const { clientCharge } = await import("@/lib/fees");
