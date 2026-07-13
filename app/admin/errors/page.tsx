@@ -35,10 +35,42 @@ export default async function AdminErrorsPage({ searchParams }: { searchParams: 
   const errors = (errorsRaw || []).filter((e: any) => activeGroup === "all" || groupOperation(e.operation) === activeGroup);
 
   const jobIds = Array.from(new Set(errors.map((e: any) => e.job_id).filter(Boolean)));
-  let jobTitles = new Map<string, string>();
+  const userIds = Array.from(new Set(errors.map((e: any) => e.user_id).filter(Boolean)));
+
+  type JobMeta = { title: string; clientName: string | null; creativeName: string | null };
+  const jobMeta = new Map<string, JobMeta>();
+  const userNames = new Map<string, string>();
+
   if (jobIds.length) {
-    const { data: jobs } = await supabase.from("jobs").select("id, title").in("id", jobIds);
-    jobTitles = new Map((jobs || []).map((j: any) => [j.id, j.title]));
+    const { data: jobs } = await supabase
+      .from("jobs")
+      .select("id, title, client:profiles!jobs_client_id_fkey(full_name), proposals!inner(status, creative:profiles!proposals_creative_id_fkey(full_name))")
+      .in("id", jobIds)
+      .eq("proposals.status", "accepted");
+    const embedded = new Set<string>();
+    for (const j of (jobs || []) as any[]) {
+      const p = Array.isArray(j.proposals) ? j.proposals[0] : j.proposals;
+      jobMeta.set(j.id, {
+        title: j.title,
+        clientName: j.client?.full_name || null,
+        creativeName: p?.creative?.full_name || null,
+      });
+      embedded.add(j.id);
+    }
+    const missing = jobIds.filter((id) => !embedded.has(id));
+    if (missing.length) {
+      const { data: rest } = await supabase
+        .from("jobs")
+        .select("id, title, client:profiles!jobs_client_id_fkey(full_name)")
+        .in("id", missing);
+      for (const j of (rest || []) as any[]) {
+        jobMeta.set(j.id, { title: j.title, clientName: j.client?.full_name || null, creativeName: null });
+      }
+    }
+  }
+  if (userIds.length) {
+    const { data: users } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+    for (const u of users || []) userNames.set(u.id, u.full_name || "");
   }
 
   return (
@@ -96,15 +128,31 @@ export default async function AdminErrorsPage({ searchParams }: { searchParams: 
           <CardContent className="space-y-2 text-sm">
             <p className="whitespace-pre-wrap rounded bg-ink/5 p-2 font-mono text-xs">{e.message}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink/70">
-              {e.job_id && (
+              {e.job_id && (() => {
+                const m = jobMeta.get(e.job_id);
+                return (
+                  <span>
+                    Job:{" "}
+                    <Link href={`/jobs/${e.job_id}`} className="underline underline-offset-2 hover:text-ink">
+                      {m?.title || `${e.job_id.slice(0, 8)}…`}
+                    </Link>{" "}
+                    <span className="font-mono text-ink/40">({e.job_id.slice(0, 8)}…)</span>
+                  </span>
+                );
+              })()}
+              {e.job_id && jobMeta.get(e.job_id)?.clientName && (
+                <span>Client: <span className="text-ink/85">{jobMeta.get(e.job_id)!.clientName}</span></span>
+              )}
+              {e.job_id && jobMeta.get(e.job_id)?.creativeName && (
+                <span>Creative: <span className="text-ink/85">{jobMeta.get(e.job_id)!.creativeName}</span></span>
+              )}
+              {e.user_id && (
                 <span>
-                  Job:{" "}
-                  <Link href={`/jobs/${e.job_id}`} className="underline underline-offset-2 hover:text-ink">
-                    {jobTitles.get(e.job_id) || `${e.job_id.slice(0, 8)}…`}
-                  </Link>
+                  Triggered by:{" "}
+                  <span className="text-ink/85">{userNames.get(e.user_id) || "Unknown"}</span>{" "}
+                  <span className="font-mono text-ink/40">({e.user_id.slice(0, 8)}…)</span>
                 </span>
               )}
-              {e.user_id && <span>User: <span className="font-mono">{e.user_id.slice(0, 8)}…</span></span>}
               {e.context && (
                 <details className="text-ink/60">
                   <summary className="cursor-pointer">Context</summary>
