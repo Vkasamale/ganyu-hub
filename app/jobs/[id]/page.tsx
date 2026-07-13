@@ -34,7 +34,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   // ask PayChangu directly and settle before we render. Same pattern as the
   // collection callback route. Cheap: one API call per pending-payout view.
   if (job.payout_status === "pending" && job.payout_ref) {
-    await reconcilePayout(job.id);
+    await reconcilePayout(job.id, { skipRevalidate: true });
     const { data: refreshed } = await supabase.from("jobs").select("*").eq("id", params.id).single();
     if (refreshed) job = refreshed;
   }

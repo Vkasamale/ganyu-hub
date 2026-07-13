@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-13 — Fix job page 500 (revalidatePath during render)
+
+`app/jobs/[id]/page.tsx` calls `reconcilePayout()` at render time to settle missed payout webhooks. `reconcilePayout` internally called `revalidatePath`, which Next 14 forbids during render — the whole page threw and users saw "Something went sideways" on any job with a pending payout. Gave `reconcilePayout` an optional `{ skipRevalidate: true }` mode; the render-path caller uses it (the page re-fetches the row right after, so revalidate is redundant there). Form-action callers in `escrow-panel` unchanged.
+
 ## 2026-07-12 — Disambiguate jobs↔proposals PostgREST embeds
 
 Session C's new `jobs.pending_accept_proposal_id` FK created a second `jobs↔proposals` relationship, so every unqualified PostgREST embed started returning `PGRST201` and zero rows — silently on the dashboards. Pinned the three embeds in `app/dashboard/jobs/page.tsx` and `app/dashboard/proposals/page.tsx` to `!proposals_job_id_fkey`. (An earlier one-off fix on `bada1cb` handled the actions layer; this catches the read-side pages that failed later, uncovered by the E2E rerun.)

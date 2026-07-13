@@ -1513,8 +1513,10 @@ export async function recordView(target_type: "job" | "creative", target_id: str
 // Callable two ways:
 //   1. Auto: from the job page loader when payout_status='pending'.
 //   2. Manual: from the "Refresh payout status" button in EscrowPanel.
-export async function reconcilePayout(input: string | FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+export async function reconcilePayout(input: string | FormData, opts?: { skipRevalidate?: boolean }): Promise<{ ok?: boolean; error?: string; info?: string }> {
   const job_id = typeof input === "string" ? input : String(input.get("job_id"));
+  // ponytail: called from JobDetailPage render where revalidatePath throws.
+  const revalidate = (p: string) => { if (!opts?.skipRevalidate) revalidatePath(p); };
   if (!job_id) return { error: "Missing job id." };
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -1548,7 +1550,7 @@ export async function reconcilePayout(input: string | FormData): Promise<{ ok?: 
       payout_amount_mwk: verified.amount ?? null,
       payout_fee_mwk: verified.fee ?? null,
     }).eq("id", job_id);
-    revalidatePath(`/jobs/${job_id}`);
+    revalidate(`/jobs/${job_id}`);
     return { ok: true, info: "Payout confirmed. Status updated to Released." };
   }
   if (verified.status === "failed") {
@@ -1556,7 +1558,7 @@ export async function reconcilePayout(input: string | FormData): Promise<{ ok?: 
       payout_status: "failed",
       payout_error: "PayChangu reported failed payout.",
     }).eq("id", job_id);
-    revalidatePath(`/jobs/${job_id}`);
+    revalidate(`/jobs/${job_id}`);
     return { ok: true, info: "PayChangu reports the payout failed." };
   }
   return { ok: true, info: "PayChangu still shows the payout as pending. Try again in a minute." };
