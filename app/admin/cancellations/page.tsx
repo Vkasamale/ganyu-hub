@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { adminResolveCancellation, adminRejectCancellation } from "@/app/actions";
 import { formatMwk } from "@/lib/utils";
-import { cancellationPayoutReserve } from "@/lib/fees";
+import { cancellationPayoutReserve, MIN_PAYOUT_MWK } from "@/lib/fees";
 
 export default async function AdminCancellationsPage() {
   const supabase = createClient();
@@ -54,18 +54,28 @@ export default async function AdminCancellationsPage() {
                 const creativeShare = Math.floor(gross * suggestion.creative / 100);
                 const clientReserve = cancellationPayoutReserve(clientShare);
                 const creativeReserve = cancellationPayoutReserve(creativeShare);
-                const clientNet = Math.max(0, clientShare - clientReserve);
-                const creativeNet = Math.max(0, creativeShare - creativeReserve);
-                const tinyPayout = (clientShare > 0 && clientShare < 4700) || (creativeShare > 0 && creativeShare < 4700);
+                const clientAfter = Math.max(0, clientShare - clientReserve);
+                const creativeAfter = Math.max(0, creativeShare - creativeReserve);
+                const clientPayout = clientAfter >= MIN_PAYOUT_MWK ? clientAfter : 0;
+                const creativePayout = creativeAfter >= MIN_PAYOUT_MWK ? creativeAfter : 0;
+                const clientRolled = clientShare > 0 && clientPayout === 0;
+                const creativeRolled = creativeShare > 0 && creativePayout === 0;
+                const platform = gross - clientPayout - creativePayout;
                 return (
                   <div className="rounded-md bg-ink/5 p-3 text-sm space-y-1">
                     <p className="font-medium">Suggested split ({phase})</p>
-                    <p>Client refund: {suggestion.client}% = {formatMwk(clientShare)} → payout {formatMwk(clientNet)} (−{formatMwk(clientReserve)} fee reserve)</p>
-                    <p>Creative cut: {suggestion.creative}% = {formatMwk(creativeShare)} → payout {formatMwk(creativeNet)} (−{formatMwk(creativeReserve)} fee reserve)</p>
-                    <p>Platform: {100 - suggestion.client - suggestion.creative}% ({formatMwk(gross - clientShare - creativeShare)}) + fee reserves</p>
-                    {tinyPayout && (
+                    <p>
+                      Client refund: {suggestion.client}% = {formatMwk(clientShare)} → payout {formatMwk(clientPayout)}
+                      {clientRolled ? " (below MWK 1,000 floor — rolled to platform)" : ` (−${formatMwk(clientReserve)} fee reserve)`}
+                    </p>
+                    <p>
+                      Creative cut: {suggestion.creative}% = {formatMwk(creativeShare)} → payout {formatMwk(creativePayout)}
+                      {creativeRolled ? " (below MWK 1,000 floor — rolled to platform)" : ` (−${formatMwk(creativeReserve)} fee reserve)`}
+                    </p>
+                    <p>Platform net: {formatMwk(platform)} ({100 - suggestion.client - suggestion.creative}% + fee reserves{(clientRolled || creativeRolled) ? " + rolled shares" : ""})</p>
+                    {(clientRolled || creativeRolled) && (
                       <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-                        ⚠ One side's payout is under MWK 4,700 — the 15% flat reserve may not cover the actual PayChangu transfer fee (bank flat is MWK 700). Consider adjusting the split or rejecting.
+                        ⚠ {clientRolled && creativeRolled ? "Both sides are" : (clientRolled ? "Client refund is" : "Creative cut is")} under the MWK {MIN_PAYOUT_MWK.toLocaleString()} payout floor — PayChangu's transfer fee would eat it. Money stays on the platform. Adjust the split if you want an actual payout.
                       </p>
                     )}
                   </div>

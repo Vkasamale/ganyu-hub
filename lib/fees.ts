@@ -46,6 +46,11 @@ export function creativeNet(bid: number, rail: PayoutRail): number {
 // large payouts. Tune here if reality disagrees.
 export const CANCELLATION_PAYOUT_RESERVE_PCT = 0.15;
 
+// Below this, PayChangu's transfer fee eats most/all of the money — skip the
+// payout entirely and roll to platform. Honest to the recipient (MWK 700 minus
+// MWK 700 fee is MWK 0 anyway) and stops us burning fees on dust.
+export const MIN_PAYOUT_MWK = 1000;
+
 export function cancellationPayoutReserve(share: number): number {
   return Math.ceil(share * CANCELLATION_PAYOUT_RESERVE_PCT);
 }

@@ -1677,14 +1677,16 @@ export async function adminResolveCancellation(formData: FormData): Promise<{ ok
   const creativeId = accepted?.creative_id;
   if (!creativeId) return { error: "No accepted creative on this job — nothing to split." };
 
-  const { cancellationPayoutReserve } = await import("@/lib/fees");
+  const { cancellationPayoutReserve, MIN_PAYOUT_MWK } = await import("@/lib/fees");
   const gross = job.total_paid_mwk ?? job.collection_amount_mwk ?? job.accepted_bid_mwk ?? 0;
   const clientShare = Math.floor(gross * (clientPctRaw / 100));
   const creativeShare = Math.floor(gross * (creativePctRaw / 100));
-  // ponytail: flat payout-fee reserve keeps platform's 10% clean. Each side
-  // absorbs its own transfer fee out of their share.
-  const clientAmount = Math.max(0, clientShare - cancellationPayoutReserve(clientShare));
-  const creativeAmount = Math.max(0, creativeShare - cancellationPayoutReserve(creativeShare));
+  const clientAfterReserve = Math.max(0, clientShare - cancellationPayoutReserve(clientShare));
+  const creativeAfterReserve = Math.max(0, creativeShare - cancellationPayoutReserve(creativeShare));
+  // ponytail: below MIN_PAYOUT_MWK the transfer fee eats the money — skip
+  // the payout leg and roll to platform. Recipient sees zero either way.
+  const clientAmount = clientAfterReserve >= MIN_PAYOUT_MWK ? clientAfterReserve : 0;
+  const creativeAmount = creativeAfterReserve >= MIN_PAYOUT_MWK ? creativeAfterReserve : 0;
 
   const { initiatePayout } = await import("@/lib/payments");
 
