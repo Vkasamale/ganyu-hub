@@ -233,6 +233,94 @@ Now: hero band (uploaded cover image, or teal fallback with the title stamped in
 
 Dashboard sidebar was a full vertical list stacked on top of content on mobile. Replaced with a native `<details>` dropdown showing the current page as the label, expanding to a vertical list of all nav items. Zero JS state; desktop (≥md) sidebar unchanged.
 
+## 2026-07-07 — CategoryPicker restyled as chips
+
+CategoryPicker rebuilt to render as filter-style chips matching the `/browse` filter row, so the picker on profile edit and job posting stops looking like a plain multi-select and lines up with the rest of the taxonomy UI (commit `0809734`).
+
+## 2026-07-07 — Money layer uses accepted bid as the agreed amount
+
+`lib/money.ts` and all downstream reads (dashboard, payments, jobs) now treat the accepted proposal's bid as the agreed amount, not the client's posted budget. Posted budget stays a hint at listing time; once a proposal is accepted the bid is the number that flows through commitment and payout math (commit `d769031`).
+
+## 2026-07-07 — DEPLOY.md
+
+Added `DEPLOY.md` with the required env vars, Vercel setup steps, and Supabase migration sequence so the deploy story lives outside a chat window (commit `ed5f8d7`).
+
+## 2026-07-06 — Money source-of-truth (lib/money.ts) + MK → MWK
+
+New `lib/money.ts` gives one place to answer "how much has the client actually spent" (released) and "how much is committed" (accepted, whether released or still held). Dashboard, `/dashboard/payments`, and job pages repointed to those helpers so numbers stop drifting across pages. Currency label switched from placeholder `MK` to `MWK` everywhere (commit `a2aeae9`).
+
+## 2026-07-06 — Reviews loop + portfolio detail/edit + private job-file attachments
+
+Completed jobs now prompt both sides for a 1–5 star review with an optional comment via `submitReview`; RLS locks inserts to parties of a completed job. Star average + recent reviews render on `/creatives/[id]` (replacing the fake "Response time" stat) and `/browse` cards show real stars via a per-profile rollup.
+
+Portfolio items got a proper detail route and an edit route so creatives can manage pieces without leaving the app.
+
+Message attachments moved off public URLs onto a private `job-files` Supabase Storage bucket, with signed URLs minted per-view (RLS scopes reads to thread participants). New `AttachmentPicker`, `MessageAttachment`, `ImagePicker`, and `MultiImagePicker` components underpin the flow. Also switched image renders to `next/image` where sane and added `tests/e2e/mobile.spec.ts` covering the newly responsive screens (commit `a2aeae9`).
+
+## 2026-07-06 — Category taxonomy constrained to canonical six
+
+Seed data and post/edit forms constrained to the canonical six categories (Photography renamed to Video & Photography; Content Creation added). Added audit + normalise scripts (`scripts/audit-categories.mjs`, `scripts/normalize-categories.mjs`) to detect and fix drift already in the DB (commits `a2aeae9`, `7f736ca`).
+
+## 2026-07-06 — E2E: stable fixtures + broaden test-DB wipe
+
+Test-DB wipe expanded to cover the new tables added since the last reseed, and Playwright fixtures reworked to hand tests a predictable starting state instead of re-deriving one every run (commit `9d9e1ee`).
+
+## 2026-07-06 — E2E: client-job-flow aligned to Active/Open taxonomy + dispute timing
+
+`tests/e2e/client-job-flow.spec.ts` updated for the split of Active vs Open on `/dashboard/jobs` and for the new timing on dispute raise (needs the job to have moved past `scope_pending`) so the spec matches what a real client actually does (commit `b95e25f`).
+
+## 2026-07-02 — PRODUCT.md: document business decisions
+
+Started `PRODUCT.md` as the durable record of business decisions that don't live naturally in code or the changelog — commission %, refund policy, category taxonomy, moderation stance, deferred pre-launch decisions (commit `129d5d6`).
+
+## 2026-07-02 — Verify remaining status flows + fix SavingForm silent prop
+
+Walked the remaining job status transitions live and cleared them off the test log. Fixed a bug in `SavingForm` where `silent` was being passed through to the DOM as an unknown attribute, producing a React warning on every form that used it (commit `8954ef0`).
+
+## 2026-07-01 — Motion P1 polish
+
+Second motion pass after the sitewide animation layer landed: entry timings tightened, hover transitions synced, and a couple of jitter cases removed on route change (commit `d6fe9e7`).
+
+## 2026-07-01 — Brand red placeholder swapped to teal #069494
+
+Replaced the placeholder brand red with `#069494` teal everywhere it appeared as `stamp` / brand accent — buttons, links, badges, focus rings. No structural changes, purely a token swap (commit `5f8bff7`).
+
+## 2026-07-01 — Honor `prefers-reduced-motion` + init PRODUCT.md
+
+Animation layer now respects the OS reduced-motion preference: transitions collapse to instant when the user has that set. Also spun up `PRODUCT.md` as a placeholder for the business-decisions record that lands the next day (commit `1594d2c`).
+
+## 2026-07-01 — Fix RSC revalidation race + landing switcher + surface email info
+
+Fixed an RSC race where a form action's `revalidatePath` landed before the redirect, leaving stale UI on the next page. Landing hero got a category switcher, and `SavingForm` now surfaces server-action `info` strings alongside errors so messages like "Check your inbox to confirm the new email" actually render (commit `dd1dad0`).
+
+## 2026-07-01 — Forgot-password flow + e2e specs for untested surfaces
+
+`/forgot-password` page + `/reset-password` page wired through `supabase.auth.resetPasswordForEmail` with `redirectTo=/auth/callback?type=recovery`. Added Playwright specs for password recovery, empty states, error pages, and other previously untested surfaces (commit `4e295d2`).
+
+## 2026-07-01 — Portfolio analytics for creatives
+
+Dashboard gained a Profile Insights section with four KPIs (views, saves, proposals sent, save rate) plus a small trend chart, all sourced from the `interactions` table (commit `64df767`).
+
+## 2026-07-01 — Password recovery, proposal cap, availability, UI polish
+
+Bundle commit covering: initial password-recovery scaffolding, the first cut of the per-job proposal cap (10/job), creative availability selector on `/dashboard/profile`, and a raft of small UI polish across cards, headers, and forms (commit `616bd5b`).
+
+## 2026-07-01 — Recharts across admin/dashboard + sitewide animation layer + landing polish
+
+Introduced Recharts as the charting library and used it for the admin signups/status/category charts and the dashboard's Profile Insights trend. Also added a sitewide animation layer (page/route transitions, card pop on hover, subtle motion primitives in `components/animated.tsx`) and another pass of landing-page polish (commit `b780bd9`).
+
+## 2026-06-30 — White theme, Inter font, dual-mode hero, payments scaffold, seed script
+
+Broad visual reset: white theme, Inter typeface, dual-mode landing hero (creative-first / client-first switcher). Payments got its first scaffold — dashboard route, currency helpers, and the shape of what a real integration would populate. `scripts/seed.mjs` added so a fresh DB can be brought to a demo state without hand-clicking (commit `2eddaeb`).
+
+## 2026-06-29 — Editorial redesign (Ganyu Press): landing, dashboard, profile, messages
+
+Three commits landed together as an editorial visual system:
+
+- **Ganyu Press landing** and editorial dashboard — full-bleed hero, magazine-style typography, tabbed dashboard replacing the flat stack (commit `34575d8`).
+- **Sticky nav** on every route, editorial rework of the public profile and the messages surface, and the full-bleed hero polished for real content (commit `09612d8`).
+- **Profile-completeness gate** blocking creatives from being public until they have a bio, at least one portfolio piece, and a service; card-pop hover motion applied across creative + job cards; new **admin shell** so the admin routes render inside their own layout instead of the dashboard (commit `02c73a0`).
+
 ## 2026-06-28 — Dispute resolution flow (P1)
 
 A real dispute path with context, not a one-click status flip.
