@@ -67,6 +67,23 @@ export default async function AdminErrorsPage({ searchParams }: { searchParams: 
         jobMeta.set(j.id, { title: j.title, clientName: j.client?.full_name || null, creativeName: null });
       }
     }
+    // Fallback creative: any proposal on the job, most recent first. Covers
+    // errors that happened before a proposal was ever accepted.
+    const stillNoCreative = jobIds.filter((id) => !jobMeta.get(id)?.creativeName);
+    if (stillNoCreative.length) {
+      const { data: props } = await supabase
+        .from("proposals")
+        .select("job_id, created_at, creative:profiles!proposals_creative_id_fkey(full_name)")
+        .in("job_id", stillNoCreative)
+        .order("created_at", { ascending: false });
+      const seen = new Set<string>();
+      for (const p of (props || []) as any[]) {
+        if (seen.has(p.job_id)) continue;
+        seen.add(p.job_id);
+        const m = jobMeta.get(p.job_id);
+        if (m && !m.creativeName) m.creativeName = p.creative?.full_name || null;
+      }
+    }
   }
   if (userIds.length) {
     const { data: users } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
