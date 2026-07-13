@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { AttachmentPicker } from "@/components/attachment-picker";
 import { MessageAttachment } from "@/components/message-attachment";
+import { MessageBody, type EmbeddedJob } from "@/components/message-body";
+import { MessageJobPicker } from "@/components/message-job-picker";
+import { extractJobIds } from "@/lib/message-markers";
 import { timeAgo } from "@/lib/utils";
 
 export default async function ThreadPage({ params: paramsP }: { params: Promise<{ threadId: string }> }) {
@@ -41,6 +44,35 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     (signed || []).forEach((s) => {
       if (s.signedUrl && s.path) signedMap.set(s.path, s.signedUrl);
     });
+  }
+
+  // Embedded-job cards: collect all [[job:UUID]] refs across this thread's
+  // messages and batch-fetch metadata in one round-trip.
+  const referencedJobIds = Array.from(new Set((messages || []).flatMap((m: any) => extractJobIds(m.body))));
+  const embeddedJobs = new Map<string, EmbeddedJob>();
+  if (referencedJobIds.length) {
+    const { data: rows } = await supabase.from("jobs")
+      .select("id, title, status, budget_mwk")
+      .in("id", referencedJobIds);
+    for (const j of (rows || []) as any[]) {
+      embeddedJobs.set(j.id, { id: j.id, title: j.title, status: j.status, budget_mwk: j.budget_mwk });
+    }
+  }
+
+  // Attachable jobs for the composer picker: jobs the sender is party to.
+  // Client's own jobs + jobs the creative has proposals on.
+  const [{ data: myClientJobs }, { data: myProposals }] = await Promise.all([
+    supabase.from("jobs").select("id, title").eq("client_id", user.id).order("created_at", { ascending: false }).limit(50),
+    supabase.from("proposals").select("job_id, jobs!inner(id, title, created_at)").eq("creative_id", user.id).order("created_at", { ascending: false }).limit(50),
+  ]);
+  const attachableJobs: { id: string; title: string }[] = [];
+  const attachSeen = new Set<string>();
+  for (const j of (myClientJobs || []) as any[]) {
+    if (!attachSeen.has(j.id)) { attachSeen.add(j.id); attachableJobs.push({ id: j.id, title: j.title }); }
+  }
+  for (const p of (myProposals || []) as any[]) {
+    const j = Array.isArray(p.jobs) ? p.jobs[0] : p.jobs;
+    if (j && !attachSeen.has(j.id)) { attachSeen.add(j.id); attachableJobs.push({ id: j.id, title: j.title }); }
   }
 
   const { data: threads } = await supabase
@@ -136,7 +168,11 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         : "max-w-[75%] rounded-2xl rounded-bl-sm border border-ink/10 bg-paper px-4 py-2.5 text-sm text-ink shadow-sm"
                     }
                   >
-                    {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
+                    {m.body && (
+                      <div className="text-sm">
+                        <MessageBody body={m.body} jobs={embeddedJobs} mine={mine} />
+                      </div>
+                    )}
                     {m.attachment_url && (
                       <MessageAttachment
                         url={m.attachment_url.startsWith("http") ? m.attachment_url : (signedMap.get(m.attachment_url) || "")}
@@ -159,7 +195,8 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
           <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex flex-wrap items-center gap-2 border-t border-ink/10 bg-paper px-5 py-4">
             <input type="hidden" name="thread_id" value={thread.id} />
             <AttachmentPicker />
-            <Input name="body" placeholder="Type a message or attach a file" className="min-w-0 flex-1" />
+            <MessageJobPicker jobs={attachableJobs} />
+            <Input name="body" placeholder="Type a message, attach a file, or link a job" className="min-w-0 flex-1" />
             <SubmitButton pendingText="Sending…">Send</SubmitButton>
           </SavingForm>
         </section>
