@@ -2,6 +2,10 @@
 
 Things that work but could be better. Not urgent, not blocking. Pull from here when there's room.
 
+## Landing / Marketing
+
+- **Landing proof row with real numbers.** Replace the placeholder "jobs completed / MWK paid out / creatives live" tiles on `app/page.tsx` with real numbers pulled from the same money-summary computation used on `/admin`. Adds credibility once the numbers are non-trivial (e.g. >5 completed jobs). Small change: server component, one query, three numbers rendered.
+
 ## Infrastructure
 
 - **Verify `ganyu.com` in Resend.** Domain added 2026-06-25, currently Pending DNS verification. Until verified, emails route through Resend sandbox (`onboarding@resend.dev`) and only deliver to the Resend account owner (`vinnykasa@gmail.com`). When status flips to Verified: update `EMAIL_FROM` in `.env.local` to `Ganyu Hub <notifications@ganyu.com>` (or similar) and redeploy.

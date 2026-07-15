@@ -24,10 +24,27 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+const siteUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://ganyu-hub.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Ganyu Hub — hire Malawian creatives",
   description: "The marketplace for hiring Malawian designers, developers, and creatives.",
   icons: { icon: "/logo-g.png" },
+  openGraph: {
+    title: "Ganyu Hub — hire Malawian creatives",
+    description: "The marketplace for hiring Malawian designers, developers, and creatives.",
+    url: siteUrl,
+    siteName: "Ganyu Hub",
+    images: [{ url: "/logo-g.png", width: 512, height: 512 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Ganyu Hub — hire Malawian creatives",
+    description: "The marketplace for hiring Malawian designers, developers, and creatives.",
+    images: ["/logo-g.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

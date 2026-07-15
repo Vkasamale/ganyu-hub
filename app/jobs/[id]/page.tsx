@@ -1,6 +1,35 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { formatMwk as _formatMwkMeta } from "@/lib/utils";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createClient();
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("title, brief, budget_mwk, category, visibility")
+    .eq("id", id)
+    .single();
+  if (!job) return { title: "Job — Ganyu Hub" };
+  if (job.visibility === "private") {
+    return {
+      title: "Private invite — Ganyu Hub",
+      description: "This is a private job. Sign in as the invited creative to view details.",
+      robots: { index: false, follow: false },
+    };
+  }
+  const title = `${job.title} — Ganyu Hub`;
+  const budget = job.budget_mwk ? _formatMwkMeta(job.budget_mwk) : null;
+  const descParts = [job.category, budget ? `Budget ${budget}` : null, job.brief?.slice(0, 140)].filter(Boolean);
+  return {
+    title,
+    description: descParts.join(" · "),
+    openGraph: { title, description: descParts.join(" · "), type: "article" },
+    twitter: { card: "summary", title, description: descParts.join(" · ") },
+  };
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

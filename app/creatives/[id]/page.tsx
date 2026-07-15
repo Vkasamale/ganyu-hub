@@ -1,5 +1,44 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, headline, avatar_url, categories")
+    .eq("id", id)
+    .single();
+  if (!profile) return { title: "Creative — Ganyu Hub" };
+
+  const { data: reviews } = await supabase.from("reviews").select("rating").eq("reviewee_id", id);
+  const count = reviews?.length || 0;
+  const avg = count ? (reviews!.reduce((s, r) => s + r.rating, 0) / count).toFixed(1) : null;
+
+  const name = profile.full_name || "Creative";
+  const cat = (profile.categories || [])[0];
+  const title = `${name}${cat ? ` · ${cat}` : ""} — Ganyu Hub`;
+  const descParts = [profile.headline?.trim(), avg ? `★ ${avg} (${count} ${count === 1 ? "review" : "reviews"})` : null].filter(Boolean);
+  const description = descParts.join(" · ") || `Hire ${name} on Ganyu Hub.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: profile.avatar_url ? [{ url: profile.avatar_url }] : undefined,
+      type: "profile",
+    },
+    twitter: {
+      card: profile.avatar_url ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: profile.avatar_url ? [profile.avatar_url] : undefined,
+    },
+  };
+}
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
