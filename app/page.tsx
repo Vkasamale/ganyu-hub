@@ -412,7 +412,7 @@ function RotatingCategories({ t, hrefPrefix }: { t: typeof THEME[Mode]; hrefPref
       <ul className="space-y-0">
         <li>
           <CategoryLink href={seeAllHref} t={t}>
-            See all {CATEGORIES.length} →
+            See all {CATEGORIES.length}
           </CategoryLink>
         </li>
       </ul>

@@ -290,7 +290,7 @@ function JobsTableBody({ rows, empty }: { rows: any[]; empty: React.ReactNode })
             <td className="px-6 py-4 text-xs text-ink/60">{timeAgo(r.created_at)}</td>
             <td className="px-6 py-4 text-right">
               <Link href={`/jobs/${r.jobId}`} className="text-xs text-stamp underline underline-offset-4 hover:text-stamp-dark">
-                Open →
+                Open
               </Link>
             </td>
           </tr>
@@ -322,7 +322,7 @@ function ProposalsTableBody({ rows }: { rows: any[] }) {
             <td className="px-6 py-4 text-xs text-ink/60">{timeAgo(p.created_at)}</td>
             <td className="px-6 py-4 text-right">
               <Link href={`/jobs/${p.job?.id}`} className="text-xs text-stamp underline underline-offset-4 hover:text-stamp-dark">
-                Open →
+                Open
               </Link>
             </td>
           </tr>

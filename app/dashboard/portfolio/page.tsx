@@ -67,7 +67,7 @@ export default async function PortfolioPage() {
                   <CardContent className="p-4">
                     <p className="font-semibold">{it.title}</p>
                     {it.description && <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{it.description}</p>}
-                    <p className="mt-2 text-xs text-ink/50">Click to edit →</p>
+                    <p className="mt-2 text-xs text-ink/50">Click to edit</p>
                   </CardContent>
                 </Card>
               </Link>

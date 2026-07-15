@@ -49,7 +49,7 @@ function JobCard({ id, job, mine }: { id: string; job: EmbeddedJob | undefined; 
     return (
       <Link href={`/jobs/${id}`} className={cardCls}>
         <p className={labelCls}>Job</p>
-        <p className="mt-0.5 font-medium">Open job →</p>
+        <p className="mt-0.5 font-medium">Open job</p>
       </Link>
     );
   }

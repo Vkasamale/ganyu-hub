@@ -78,7 +78,7 @@ export function JobCard({
             {job.brief || "No description provided."}
           </p>
           <p className="mt-1.5 text-xs font-medium text-stamp underline-offset-4 group-hover/desc:underline">
-            More info →
+            More info
           </p>
         </Link>
 

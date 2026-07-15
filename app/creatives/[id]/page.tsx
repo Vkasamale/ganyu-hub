@@ -95,7 +95,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                   href={m.href}
                   className="inline-flex items-center gap-1 rounded-full bg-amber-900 px-3 py-1 text-xs font-medium text-amber-50 hover:bg-amber-800"
                 >
-                  {m.label} →
+                  {m.label}
                 </Link>
               </li>
             ))}

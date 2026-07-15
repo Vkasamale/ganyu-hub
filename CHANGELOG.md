@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-15 — Site-wide: killed the "→" affordance arrow
+
+Stripped the trailing `→` from every link/button label on the site — job cards ("More info"), homepage ("See all N"), message-embedded job cards ("Open job"), dashboard job rows ("Open"), dashboard "See all", admin disputes "Open job", creative profile completeness chips, portfolio grid "Click to edit", and the "See all" on the public portfolio detail page. The affordance now comes from the button/link styling itself. Kept: decorative rotating badge arrow in `hero-art.tsx` (art, not affordance) and arithmetic arrows in `admin/cancellations` labels ("MWK X → payout Y" as split math).
+
 ## 2026-07-15 — Admin nav shortcuts + trend bar color + policy pages as cards
 
 Admin sidebar picks up jump-links for **Money**, **Trends**, and **People & activity** (hash anchors to sections on `/admin`). PeriodBarChart historical bars swapped from muted ink-gray to a soft stamp tint so the trend charts read as teal-family, not grey — current week stays full stamp. `/terms`, `/privacy`, and `/content-policy` sections wrapped in `card-soft` so each rule reads as its own tile instead of a wall of paragraphs.

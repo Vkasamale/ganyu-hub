@@ -51,7 +51,7 @@ export default async function AdminDisputesPage() {
               )}
               <div className="flex flex-wrap items-center gap-2">
                 <Link href={`/jobs/${j.id}`} className="text-xs text-ink/60 underline underline-offset-4 hover:text-ink">
-                  Open job →
+                  Open job
                 </Link>
                 <div className="ml-auto flex flex-wrap gap-2">
                   <SavingForm action={adminResolveDispute} silent>

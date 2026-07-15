@@ -282,7 +282,7 @@ export default async function DashboardPage() {
                   <td className="px-6 py-4"><StatusBadge status={p.status} /></td>
                   <td className="px-6 py-4 text-right">
                     <Link href={`/jobs/${p.id}`} className="text-xs text-stamp underline underline-offset-4 hover:text-stamp-dark">
-                      Open →
+                      Open
                     </Link>
                   </td>
                 </tr>

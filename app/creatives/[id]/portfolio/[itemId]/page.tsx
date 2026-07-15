@@ -246,7 +246,7 @@ export default async function PortfolioItemPage({
               href={`/creatives/${id}`}
               className="text-sm text-stamp hover:underline"
             >
-              See all →
+              See all
             </Link>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
