@@ -54,6 +54,12 @@ export default async function SignupPage({ searchParams: searchParamsP }: { sear
               </div>
             </div>
             <Button type="submit" className="w-full">Create account</Button>
+            <p className="text-center text-xs text-neutral-500">
+              By signing up you agree to our{" "}
+              <Link href="/terms" className="underline hover:text-ink">Terms</Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline hover:text-ink">Privacy Policy</Link>.
+            </p>
             <p className="text-center text-sm text-neutral-500">
               Have an account? <Link href="/login" className="text-brand hover:underline">Log in</Link>
             </p>

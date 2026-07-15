@@ -59,7 +59,7 @@ Core marketplace (auth, roles, profiles, portfolios, jobs, proposals, messaging,
 - [ ] Claude Code session: CHANGELOG backfill from git log (2026-06-29 to 07-06 gap). Prompt already provided.
 - [ ] Claude Code session: portfolio image upload (replace cover_url text field with ImagePicker + Supabase Storage). Prompt already provided. Verify click by click with the live recruit's account, including that old pasted-URL items still render.
 - [ ] Supabase dashboard check: Authentication settings, is "Confirm email" ON? If ON, either space beta signups out (rate limit is a few auth emails per hour) or switch it OFF for the closed beta and note it in this doc to re-enable at public launch.
-- [ ] Claude Code session: /terms and /privacy pages. Plain English: who holds money, the 15% fee, dispute process, ID storage, no off-platform payments. Link from footer and signup.
+- [x] Claude Code session: /terms and /privacy pages. Plain English: who holds money, the 15% fee, dispute process, ID storage, no off-platform payments. Link from footer and signup. (Shipped 2026-07-15.)
 - [ ] Book the PayChangu office visit. Bring: registration certificate, your ID, bank details, expected monthly volumes, and the escrow flow explained on one page. Goal: production keys + written confirmation of live fees + their blessing of the hold-and-release model.
 
 ### Week 2: Supply becomes real (free)

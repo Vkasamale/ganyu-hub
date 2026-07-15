@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-15 — /terms and /privacy pages
+
+Plain-English Terms of Service and Privacy Policy at `/terms` and `/privacy`. Covers who holds the money (escrow via PayChangu), the flat 15% commission, cancellation splits, dispute process, ID storage, and the no-off-platform-payments rule. Business name "Ganyu Hub", address "Blantyre, Malawi". Linked from the footer alongside Content policy / Report; signup form now has a "By signing up you agree to…" line above the Log in link.
+
 ## 2026-07-13 — Merged to prod: 6-step manual plan green
 
 Full sandbox test plan cleared before merging `sandbox-test → main` (cbc0c33): PayChangu accept → checkout → escrow held; release with real payout fee; top-up on same job; cancel with paid top-up; direct invite lets 3×-declined creative submit; 4th proposal without invite blocked.
