@@ -1,13 +1,14 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { updatePortfolioItem, deletePortfolioItem } from "@/app/actions";
+import { updatePortfolioItem, deletePortfolioItem, addPortfolioImages, removePortfolioImage } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { MultiImagePicker } from "@/components/multi-image-picker";
 
 export default async function EditPortfolioItemPage({
   params,
@@ -80,28 +81,61 @@ export default async function EditPortfolioItemPage({
         </CardContent>
       </Card>
 
-      {all.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Images ({all.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-3 text-xs text-ink/55">
-              Image add/remove coming soon. Delete this item and re-add if you need to change images.
-            </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Images ({all.length}/10)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {all.length > 0 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {all.map((url) => (
-                <img
-                  key={url}
-                  src={url}
-                  alt=""
-                  className="aspect-square w-full rounded-md border border-ink/10 object-cover"
-                />
+              {all.map((url, i) => (
+                <div key={url} className="relative">
+                  <img
+                    src={url}
+                    alt=""
+                    className="aspect-square w-full rounded-md border border-ink/10 object-cover"
+                  />
+                  {i === 0 && (
+                    <span className="absolute left-1.5 top-1.5 rounded-full bg-ink/85 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-paper">
+                      cover
+                    </span>
+                  )}
+                  <SavingForm action={removePortfolioImage} silent className="absolute right-1.5 top-1.5">
+                    <input type="hidden" name="id" value={item.id} />
+                    <input type="hidden" name="url" value={url} />
+                    <button
+                      type="submit"
+                      aria-label="Remove image"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink/85 text-paper transition-colors hover:bg-ink"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </SavingForm>
+                </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+
+          {all.length < 10 && (
+            <SavingForm action={addPortfolioImages} successText="Added." className="space-y-3 border-t border-ink/10 pt-4">
+              <input type="hidden" name="id" value={item.id} />
+              <p className="text-xs text-ink/55">
+                Add more images (up to {10 - all.length} more). First image becomes the cover if there isn't one yet.
+              </p>
+              <MultiImagePicker name="cover_files" max={10 - all.length} />
+              <SubmitButton pendingText="Uploading…">Add images</SubmitButton>
+            </SavingForm>
+          )}
+          {all.length === 10 && (
+            <p className="border-t border-ink/10 pt-4 text-xs text-ink/55">
+              Item is at the 10-image limit. Remove one to add another.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-5">

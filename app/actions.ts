@@ -498,6 +498,96 @@ export async function updatePortfolioItem(formData: FormData) {
   return { ok: true };
 }
 
+export async function addPortfolioImages(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const id = String(formData.get("id") || "");
+  if (!id) return { error: "Missing id" };
+
+  const { data: item } = await supabase.from("portfolio_items")
+    .select("cover_url, images").eq("id", id).eq("profile_id", user.id).maybeSingle();
+  if (!item) return { error: "Not found." };
+
+  const files = formData.getAll("cover_files").filter(
+    (f): f is File => f instanceof File && f.size > 0,
+  );
+  if (files.length === 0) return { error: "Pick at least one image." };
+
+  const currentCount = (item.cover_url ? 1 : 0) + (Array.isArray(item.images) ? item.images.length : 0);
+  if (currentCount + files.length > 10) return { error: `Up to 10 images per item (this would make ${currentCount + files.length}).` };
+
+  const uploaded: string[] = [];
+  for (const file of files) {
+    if (file.size > 10 * 1024 * 1024) return { error: `"${file.name}" is over 10MB.` };
+    if (!file.type.startsWith("image/")) return { error: `"${file.name}" is not an image.` };
+    const ext = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+    const path = `${user.id}/portfolio/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("portfolio").upload(path, file, { contentType: file.type });
+    if (upErr) return { error: upErr.message };
+    uploaded.push(supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl);
+  }
+
+  const existingImages = Array.isArray(item.images) ? item.images : [];
+  const patch: { cover_url?: string; images: string[] } = { images: existingImages };
+  if (!item.cover_url) {
+    patch.cover_url = uploaded[0];
+    patch.images = [...existingImages, ...uploaded.slice(1)];
+  } else {
+    patch.images = [...existingImages, ...uploaded];
+  }
+
+  const { error } = await supabase.from("portfolio_items").update(patch)
+    .eq("id", id).eq("profile_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath(`/dashboard/portfolio/${id}`);
+  revalidatePath("/dashboard/portfolio");
+  revalidatePath(`/creatives/${user.id}`);
+  return { ok: true, info: `Added ${uploaded.length} image${uploaded.length === 1 ? "" : "s"}.` };
+}
+
+export async function removePortfolioImage(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const id = String(formData.get("id") || "");
+  const url = String(formData.get("url") || "");
+  if (!id || !url) return { error: "Missing id or url." };
+
+  const { data: item } = await supabase.from("portfolio_items")
+    .select("cover_url, images").eq("id", id).eq("profile_id", user.id).maybeSingle();
+  if (!item) return { error: "Not found." };
+
+  const currentImages: string[] = Array.isArray(item.images) ? item.images : [];
+  let newCover: string | null = item.cover_url;
+  let newImages: string[] = currentImages;
+
+  if (item.cover_url === url) {
+    newCover = currentImages[0] ?? null;
+    newImages = currentImages.slice(1);
+  } else {
+    newImages = currentImages.filter((u) => u !== url);
+  }
+
+  // Best-effort delete the storage object if it's one of ours (public URL from
+  // our portfolio bucket). Legacy pasted external URLs are left alone.
+  const marker = "/storage/v1/object/public/portfolio/";
+  const idx = url.indexOf(marker);
+  if (idx >= 0) {
+    const path = decodeURIComponent(url.slice(idx + marker.length));
+    await supabase.storage.from("portfolio").remove([path]).catch(() => undefined);
+  }
+
+  const { error } = await supabase.from("portfolio_items")
+    .update({ cover_url: newCover, images: newImages })
+    .eq("id", id).eq("profile_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath(`/dashboard/portfolio/${id}`);
+  revalidatePath("/dashboard/portfolio");
+  revalidatePath(`/creatives/${user.id}`);
+  return { ok: true };
+}
+
 export async function deletePortfolioItem(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
