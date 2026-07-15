@@ -517,15 +517,27 @@ export async function addPortfolioImages(formData: FormData) {
   const currentCount = (item.cover_url ? 1 : 0) + (Array.isArray(item.images) ? item.images.length : 0);
   if (currentCount + files.length > 10) return { error: `Up to 10 images per item (this would make ${currentCount + files.length}).` };
 
-  const uploaded: string[] = [];
   for (const file of files) {
     if (file.size > 10 * 1024 * 1024) return { error: `"${file.name}" is over 10MB.` };
     if (!file.type.startsWith("image/")) return { error: `"${file.name}" is not an image.` };
-    const ext = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-    const path = `${user.id}/portfolio/${crypto.randomUUID()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("portfolio").upload(path, file, { contentType: file.type });
-    if (upErr) return { error: upErr.message };
-    uploaded.push(supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl);
+  }
+
+  // ponytail: parallel uploads so N files take ~1× per-file, not N×. Serial
+  // hit the ~10s Vercel Hobby server-action ceiling on batches of ~8+.
+  let uploaded: string[];
+  try {
+    uploaded = await Promise.all(files.map(async (file) => {
+      const ext = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+      const path = `${user.id}/portfolio/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("portfolio")
+        .upload(path, file, { contentType: file.type });
+      if (upErr) throw new Error(`${file.name}: ${upErr.message}`);
+      return supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl;
+    }));
+  } catch (e: any) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "portfolio_add_images", userId: user.id, error: e, context: { id, fileCount: files.length } });
+    return { error: e?.message || GENERIC_ERROR(ref) };
   }
 
   const existingImages = Array.isArray(item.images) ? item.images : [];
