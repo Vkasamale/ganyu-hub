@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-15 — User menu: scrollable on short screens
+
+Dropdown had `overflow-hidden` with no height cap, so on short viewports items at the bottom (notably the Admin link for admin accounts) were clipped with no way to reach them. Added `max-h-[calc(100vh-5rem)]` + `overflow-y-auto` and swapped the panel to a flex column so it scrolls internally.
+
 ## 2026-07-15 — /terms and /privacy pages
 
 Plain-English Terms of Service and Privacy Policy at `/terms` and `/privacy`. Covers who holds the money (escrow via PayChangu), the flat 15% commission, cancellation splits, dispute process, ID storage, and the no-off-platform-payments rule. Business name "Ganyu Hub", address "Blantyre, Malawi". Linked from the footer alongside Content policy / Report; signup form now has a "By signing up you agree to…" line above the Log in link.
