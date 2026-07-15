@@ -710,6 +710,18 @@ export async function submitProposal(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
+  // ponytail: rate limit — max 5 proposals per creative per minute across all
+  // jobs. Stops a single account from spamming every open job in seconds.
+  const windowIso = new Date(Date.now() - 60_000).toISOString();
+  const { count: recentProposals } = await supabase
+    .from("proposals")
+    .select("id", { count: "exact", head: true })
+    .eq("creative_id", user.id)
+    .gte("created_at", windowIso);
+  if ((recentProposals ?? 0) >= 5) {
+    return { error: "Slow down — you're submitting proposals too quickly. Wait a minute and try again." };
+  }
+
   const job_id = String(formData.get("job_id"));
 
   const { data: jobRow } = await supabase
@@ -1476,6 +1488,19 @@ export async function sendMessage(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+
+  // ponytail: rate limit — max 20 messages per sender per minute, all threads.
+  // Stops flood-spam of a thread or bulk DM harassment across users.
+  const windowIso = new Date(Date.now() - 60_000).toISOString();
+  const { count: recentMsgs } = await supabase
+    .from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("sender_id", user.id)
+    .gte("created_at", windowIso);
+  if ((recentMsgs ?? 0) >= 20) {
+    return { error: "Slow down — you're sending messages too quickly. Wait a minute and try again." };
+  }
+
   const thread_id = String(formData.get("thread_id"));
   const body = String(formData.get("body") || "").trim();
 

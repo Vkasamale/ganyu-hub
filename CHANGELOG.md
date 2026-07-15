@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-15 — Rate limits on submitProposal + sendMessage
+
+Two guards for the "we're taking real money and inviting real users" era. `submitProposal` now blocks any creative who has already submitted 5 proposals in the last 60 seconds across all jobs — stops spamming every open job in one burst. `sendMessage` blocks any sender who has already sent 20 messages in the last 60 seconds across all threads — stops thread-flooding and cross-user harassment. Both use a `SELECT count(*)` pre-check on the existing table (no new tables, no new deps). Skipped signup/login: Supabase Auth already rate-limits those server-side.
+
 ## 2026-07-15 — OG rich-preview cards for creative profiles + jobs
 
 Pasting a creative profile or job link into WhatsApp, Facebook, or any preview-aware surface now renders a proper card instead of a bare URL. Root layout `app/layout.tsx` gets a `metadataBase` and site-wide OG/Twitter defaults (title, description, logo). `/creatives/[id]` gets a per-profile `generateMetadata` that pulls name + primary category + headline + avg star rating; uses the creative's avatar as the OG image when available. `/jobs/[id]` gets a per-job `generateMetadata` that surfaces title, category, budget, and first 140 chars of the brief. Private direct-invite jobs return a generic "Private invite" title with `robots: noindex, nofollow` — no leaking the title or brief in link previews or search. Verify by pasting a live URL into WhatsApp after the deploy settles.
