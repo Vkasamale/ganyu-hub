@@ -21,6 +21,7 @@ type Props = {
 const SORTS: Record<Kind, { value: string; label: string }[]> = {
   creatives: [
     { value: "newest", label: "Newest" },
+    { value: "top_rated", label: "Top rated" },
     { value: "rate_asc", label: "Lowest rate" },
     { value: "rate_desc", label: "Highest rate" },
   ],

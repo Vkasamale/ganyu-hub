@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-15 — Ratings into ranking (Browse + For You)
+
+Reviews now shape discovery. `/browse` gets a new **Top rated** sort option in the FiltersBar — profiles are ranked by `avg × log(count+1)` so a 4.8-with-20-reviews outranks a lone 5-star, and unrated creatives sink to the bottom. `getForYouCreatives` (dashboard + homepage feed) quietly does the same re-rank: it now fetches a 4× candidate pool from the category-matched query and re-ranks by the same Bayesian-ish score before returning the top N. Recency remains the default browse sort — only clients who opt into "Top rated" or land on For You get the review-weighted view. Uses the existing `reviews` table; no schema, no new indexes.
+
 ## 2026-07-15 — Rate limits on submitProposal + sendMessage
 
 Two guards for the "we're taking real money and inviting real users" era. `submitProposal` now blocks any creative who has already submitted 5 proposals in the last 60 seconds across all jobs — stops spamming every open job in one burst. `sendMessage` blocks any sender who has already sent 20 messages in the last 60 seconds across all threads — stops thread-flooding and cross-user harassment. Both use a `SELECT count(*)` pre-check on the existing table (no new tables, no new deps). Skipped signup/login: Supabase Auth already rate-limits those server-side.

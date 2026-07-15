@@ -16,8 +16,30 @@ export async function getForYouCreatives(supabase: SupabaseClient, userId: strin
   const cats = Array.from(new Set((myJobs || []).map((j: any) => j.category)));
   let q = supabase.from("profiles").select("*").in("role", ["creative", "agency"]).neq("id", userId);
   if (cats.length) q = q.overlaps("categories", cats);
-  const { data } = await q.order("created_at", { ascending: false }).limit(limit);
-  return data || [];
+  // ponytail: fetch a wider pool so rating can re-rank the top N. Early days
+  // the pool is small anyway — this is a no-op until reviews accumulate.
+  const pool = Math.max(limit * 4, 24);
+  const { data } = await q.order("created_at", { ascending: false }).limit(pool);
+  const candidates = data || [];
+  if (candidates.length <= limit) return candidates;
+  const ids = candidates.map((c: any) => c.id);
+  const { data: reviews } = await supabase.from("reviews").select("reviewee_id, rating").in("reviewee_id", ids);
+  const sums = new Map<string, { total: number; count: number }>();
+  (reviews || []).forEach((r: any) => {
+    const cur = sums.get(r.reviewee_id) || { total: 0, count: 0 };
+    cur.total += r.rating;
+    cur.count += 1;
+    sums.set(r.reviewee_id, cur);
+  });
+  const scored = candidates.map((c: any) => {
+    const s = sums.get(c.id);
+    const avg = s && s.count > 0 ? s.total / s.count : 0;
+    // Bayesian-ish: rating * log(count+1). Unrated sink, but not to zero if
+    // nobody has reviews yet — the sort is stable so recency still wins ties.
+    return { row: c, score: avg * Math.log((s?.count || 0) + 1) };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map((x) => x.row);
 }
 
 export async function getTrending(supabase: SupabaseClient, kind: "job" | "creative", limit = 6) {

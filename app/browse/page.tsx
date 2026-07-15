@@ -87,9 +87,20 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
     sums.forEach((v, id) => ratingByProfile.set(id, { avg: v.total / v.count, count: v.count }));
   }
 
-  const visibleProfiles = (profiles || []).filter((p) =>
+  let visibleProfiles = (profiles || []).filter((p) =>
     checkProfileComplete(p, portfolioCountByProfile.get(p.id) || 0, serviceCountByProfile.get(p.id) || 0).complete,
   );
+  if (sort === "top_rated") {
+    // ponytail: Bayesian-ish shrinkage — one 5-star review shouldn't outrank a
+    // 4.8 with 20 reviews. score = avg * log(count+1). Unrated profiles sink.
+    visibleProfiles = [...visibleProfiles].sort((a, b) => {
+      const ra = ratingByProfile.get(a.id);
+      const rb = ratingByProfile.get(b.id);
+      const sa = ra ? ra.avg * Math.log((ra.count || 0) + 1) : 0;
+      const sb = rb ? rb.avg * Math.log((rb.count || 0) + 1) : 0;
+      return sb - sa;
+    });
+  }
   const visibleCount = visibleProfiles.length;
 
   return (
