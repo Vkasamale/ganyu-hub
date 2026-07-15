@@ -104,7 +104,7 @@ export function PeriodBarChart({
         <Bar dataKey="value" fill={STAMP} radius={[4, 4, 0, 0]}>
           {highlightLast &&
             data.map((_, i) => (
-              <Cell key={i} fill={i === data.length - 1 ? STAMP : "rgba(26,22,17,0.18)"} />
+              <Cell key={i} fill={i === data.length - 1 ? STAMP : "hsla(180, 60%, 55%, 0.45)"} />
             ))}
         </Bar>
       </BarChart>

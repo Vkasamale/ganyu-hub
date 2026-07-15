@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           collect, why, and what we do with it.
         </p>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">1. What we collect</h2>
           <ul className="list-disc space-y-1 pl-5">
             <li><strong>Account:</strong> full name, email, password (stored hashed by Supabase Auth), role.</li>
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           </ul>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">2. Why we collect it</h2>
           <ul className="list-disc space-y-1 pl-5">
             <li>Run the marketplace (match clients with creatives, show profiles, deliver messages).</li>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
           </ul>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">3. Who we share it with</h2>
           <ul className="list-disc space-y-1 pl-5">
             <li><strong>The other party on a job</strong> — once escrow is funded, both sides see each other&apos;s contact info.</li>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">4. How long we keep it</h2>
           <p>
             Account and job data: for as long as your account exists, plus a
@@ -66,7 +66,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">5. Your rights</h2>
           <p>
             You can see and edit your profile and account settings any time in
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">6. Security</h2>
           <p>
             Passwords are hashed by Supabase Auth (we never see your plaintext
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">7. Cookies</h2>
           <p>
             We use a small number of cookies to keep you signed in. We don&apos;t
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">8. Changes</h2>
           <p>
             If we change this policy in a material way we&apos;ll flag it in-app.

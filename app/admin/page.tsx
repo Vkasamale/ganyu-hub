@@ -101,7 +101,7 @@ export default async function AdminPage() {
         <p className="mt-1 text-sm text-ink/60">Money, activity, and moderation queues.</p>
       </header>
 
-      <section>
+      <section id="money" className="scroll-mt-24">
         <div className="flex items-baseline justify-between">
           <p className="eyebrow">Money</p>
           <span className="text-xs text-ink/50">All-time · MWK</span>
@@ -116,7 +116,7 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      <section>
+      <section id="trends" className="scroll-mt-24">
         <div className="flex items-baseline justify-between">
           <p className="eyebrow">Trends · last {weeks} weeks (weekly)</p>
           <span className="text-xs text-ink/50">Rightmost bar = this week</span>
@@ -137,7 +137,7 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      <section>
+      <section id="people" className="scroll-mt-24">
         <div className="flex items-baseline justify-between">
           <p className="eyebrow">People & activity</p>
           <span className="text-xs text-ink/50">{userCount || 0} users · {jobCount || 0} jobs</span>

@@ -10,21 +10,21 @@ export default function ContentPolicyPage() {
         </p>
       </header>
 
-      <section className="space-y-2">
+      <section className="card-soft space-y-2 p-5">
         <h2 className="text-lg font-semibold">No adult or sexual content</h2>
         <p className="text-ink/80">
           Don&apos;t post jobs, portfolios, or messages containing sexual, nude, or explicit material.
         </p>
       </section>
 
-      <section className="space-y-2">
+      <section className="card-soft space-y-2 p-5">
         <h2 className="text-lg font-semibold">No political campaign material</h2>
         <p className="text-ink/80">
           Don&apos;t use Ganyu Hub to produce material for political parties, candidates, or campaigns.
         </p>
       </section>
 
-      <section className="space-y-2">
+      <section className="card-soft space-y-2 p-5">
         <h2 className="text-lg font-semibold">No MLM or pyramid recruitment</h2>
         <p className="text-ink/80">
           Don&apos;t post work that recruits people into multi-level marketing schemes or pyramid programs.

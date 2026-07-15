@@ -15,7 +15,7 @@ export default function TermsPage() {
           site you agree to these terms. If you don&apos;t agree, don&apos;t use the site.
         </p>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">1. Who we are</h2>
           <p>
             &quot;Ganyu Hub&quot;, &quot;we&quot;, &quot;us&quot; means Ganyu Hub, Blantyre, Malawi. Contact us
@@ -23,7 +23,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">2. How money moves (escrow)</h2>
           <p>
             When a client accepts a proposal, the client pays the full amount
@@ -40,7 +40,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">3. Our fee</h2>
           <p>
             We take a flat <strong>15% commission</strong> on the agreed job price,
@@ -55,7 +55,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">4. Cancellations</h2>
           <p>
             Either side can request a cancellation. The split of the held money
@@ -70,7 +70,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">5. Disputes</h2>
           <p>
             If a client and creative can&apos;t agree, either side can open a
@@ -80,7 +80,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">6. Your account and ID</h2>
           <p>
             Creatives must submit a valid ID before receiving any payout. Clients
@@ -95,7 +95,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">7. Content rules</h2>
           <p>
             No adult content. No political campaigning. No pyramid / MLM schemes.
@@ -105,7 +105,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">8. What we don&apos;t promise</h2>
           <p>
             We are a marketplace. We are not the employer, not the client, and
@@ -115,7 +115,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section>
+        <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">9. Changes</h2>
           <p>
             We may update these terms. The &quot;Last updated&quot; date at the top will
