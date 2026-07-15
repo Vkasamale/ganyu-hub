@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-15 — Admin overview: analyst dashboard (money + trends)
+
+Rebuilt `/admin` around what a data analyst actually looks for. Headline is now a 6-tile **Money** row: GMV, platform revenue (15% of completed + cancellation take), MWK currently in escrow, paid to creatives, refunded to clients, average completed job value. Below it, **Trends** — 8-week weekly bars for GMV, jobs posted, signups, and disputes, with the current week highlighted. People & activity strip breaks users down by role (clients / creatives / agencies) and links each into `/admin/users?role=`. Existing daily-signups line + jobs-by-status + jobs-by-category charts kept, but pushed below the money view. Moderation queues (disputes / cancellations / errors) demoted to the bottom of the page — they only visually flag when non-zero. Killed the "→" arrow affordance on the KPI tiles; the whole card is the click target with a hover elevation + border tint. All computed server-side in one Promise.all — no new tables, no schema changes.
+
 ## 2026-07-15 — User menu: scrollable on short screens
 
 Dropdown had `overflow-hidden` with no height cap, so on short viewports items at the bottom (notably the Admin link for admin accounts) were clipped with no way to reach them. Added `max-h-[calc(100vh-5rem)]` + `overflow-y-auto` and swapped the panel to a flex column so it scrolls internally.
