@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-16 — Portfolio uploads: client-side direct to Supabase
+
+Killed the last real blocker on portfolio-image uploads: files no longer round-trip through Vercel. `MultiImagePicker` now uses the Supabase browser client to upload each file straight to Storage the moment it's picked (parallel), with per-tile spinner / cover / failed states. The hidden input the parent form posts to the server is now a JSON array of already-uploaded URLs, not File objects. `addPortfolioItem` and `addPortfolioImages` server actions dropped their upload code — they just parse the URL array and write to the DB. Consequence: Vercel's 4.5MB body cap and 10-second server-action timeout are no longer in play, so a creative can add 10 unedited phone photos (30MB+ total) in one shot. Kept the same `name="cover_files"` prop so both callers (`app/dashboard/portfolio/page.tsx`, `app/dashboard/portfolio/[id]/page.tsx`) needed no change. Existing storage RLS at `supabase/schema.sql:436` (auth.uid must match the first path segment) already permits this — no policy migration.
+
 ## 2026-07-15 — Ratings into ranking (Browse + For You)
 
 Reviews now shape discovery. `/browse` gets a new **Top rated** sort option in the FiltersBar — profiles are ranked by `avg × log(count+1)` so a 4.8-with-20-reviews outranks a lone 5-star, and unrated creatives sink to the bottom. `getForYouCreatives` (dashboard + homepage feed) quietly does the same re-rank: it now fetches a 4× candidate pool from the category-matched query and re-ranks by the same Bayesian-ish score before returning the top N. Recency remains the default browse sort — only clients who opt into "Top rated" or land on For You get the review-weighted view. Uses the existing `reviews` table; no schema, no new indexes.
