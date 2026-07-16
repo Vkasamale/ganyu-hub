@@ -4,9 +4,13 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-13 (6-step manual plan — 5/6 cleared)
+Last updated: 2026-07-16 (portfolio uploads verified live)
 
 ---
+
+## 2026-07-16 — Client-side portfolio upload (verified live)
+
+✅ User confirmed: unedited phone photos upload without hitting Vercel's 4.5MB body cap. Browser uploads each file straight to Supabase Storage; server action just writes the returned URLs. Cover-tile badge appears, spinner during upload, remove button works. Fix retired the "keep photos under 2MB" workaround.
 
 ## 2026-07-13 — 6-step manual test plan progress
 
