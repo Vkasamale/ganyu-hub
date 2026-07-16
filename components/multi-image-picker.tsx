@@ -154,7 +154,7 @@ export function MultiImagePicker({
           {uploadedUrls.length}/{max} uploaded · first image is the cover
         </p>
         {anyUploading && (
-          <span className="text-[11px] font-medium text-stamp">
+          <span className="text-[11px] font-medium text-stamp-dark">
             Uploading… don&apos;t save yet
           </span>
         )}

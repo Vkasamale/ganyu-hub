@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-17 — WCAG contrast sweep pass 2 (text-stamp)
+
+Full swap of `text-stamp` → `text-stamp-dark` across 12 files (components/{job-card,filters-bar,multi-image-picker}, app/admin/{page,users/page}, app/creatives/[id]/{page,portfolio/[itemId]/page}, app/dashboard/{layout,page,jobs/page,payments/page,proposals/page}). Covers small-text links (~text-xs), stamped badges on `bg-stamp/10`, and the admin "warn" stat tile. #069494 → #046B6B lifts contrast on white from ~3.7:1 to ~5.4:1 (AA-passing for normal text). Reverted the two decorative italic display headings (`app/dashboard/page.tsx:146`, `app/dashboard/jobs/page.tsx:135`) back to bright `text-stamp` — those are large text and part of the brand's teal accent; they already meet AA-large at 3:1. Closes the backlog item.
+
 ## 2026-07-16 — Accessibility audit: reduced-motion + WCAG contrast pass 1
 
 Reduced-motion: nothing to do — `app/globals.css:36` already zeros out animation/transition durations under `prefers-reduced-motion: reduce`. Verified.

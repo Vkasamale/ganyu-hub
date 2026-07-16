@@ -205,7 +205,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                 {profile.headline ? (
                   <p className="mt-1 text-sm text-ink/70 md:text-base">{profile.headline}</p>
                 ) : isOwner ? (
-                  <Link href="/dashboard/account" className="mt-1 inline-block text-sm text-stamp underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp md:text-base">
+                  <Link href="/dashboard/account" className="mt-1 inline-block text-sm text-stamp-dark underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp md:text-base">
                     No headline yet — Add one
                   </Link>
                 ) : null}

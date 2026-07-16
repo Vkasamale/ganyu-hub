@@ -96,7 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <p className="eyebrow">Reminders</p>
           {reminders.length > 0 && (
             <span
-              className="font-display text-xs italic text-stamp"
+              className="font-display text-xs italic text-stamp-dark"
               style={{ fontStyle: "italic", fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
             >
               {reminders.length}
@@ -114,7 +114,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <span
                 className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
                   r.priority === "high"
-                    ? "bg-stamp/10 text-stamp"
+                    ? "bg-stamp/10 text-stamp-dark"
                     : r.priority === "medium"
                     ? "bg-mark/10 text-mark"
                     : "bg-ink/10 text-ink/70"

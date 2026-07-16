@@ -215,7 +215,7 @@ function EscrowBadge({ status }: { status: string | null }) {
   const label = status.replace("payment_", "").replace("_", " ");
   const cls =
     status === "payment_held"
-      ? "bg-stamp/10 text-stamp"
+      ? "bg-stamp/10 text-stamp-dark"
       : status === "payment_released"
       ? "bg-mark/10 text-mark"
       : "bg-ink/10 text-ink/60";

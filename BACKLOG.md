@@ -10,7 +10,7 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 ## Accessibility
 
-- **Finish the WCAG contrast sweep.** Audited 2026-07-16. `text-brand` swapped to `text-brand-dark` on auth pages (login/signup/forgot-password/jobs signup CTA) — those are AA-compliant now. Still to do: `text-stamp` used as small-text links across dashboard/browse (`app/dashboard/page.tsx`, `app/dashboard/jobs/page.tsx`, `components/filters-bar.tsx`, `app/creatives/[id]/page.tsx`, and status badges on `app/dashboard/payments/page.tsx`) — #069494 on white = ~3.7:1, fails AA for normal text (needs 4.5:1). Safe fix: `text-stamp` → `text-stamp-dark` (#046B6B ≈ 5.4:1) anywhere it's on a white background. Skip usages on colored backgrounds like `bg-stamp/10` badges (those still meet contrast). Reduced-motion is already handled globally via `app/globals.css:36` — nothing to do there.
+- ~~**Finish the WCAG contrast sweep.**~~ **Shipped 2026-07-17.** Full `text-stamp` → `text-stamp-dark` swap across 12 files; decorative italic display headings kept as bright `text-stamp` (large text, AA-passing at 3:1). See CHANGELOG 2026-07-17.
 
 ## Payments
 

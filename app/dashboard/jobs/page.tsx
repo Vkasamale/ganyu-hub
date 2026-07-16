@@ -227,7 +227,7 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
                 empty={
                   <>
                     No active jobs.{" "}
-                    <Link href={isClient ? "/jobs/new" : "/jobs"} className="text-stamp underline underline-offset-4">
+                    <Link href={isClient ? "/jobs/new" : "/jobs"} className="text-stamp-dark underline underline-offset-4">
                       {isClient ? "Post a job" : "Find jobs"}
                     </Link>
                     .
@@ -241,7 +241,7 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
                 empty={
                   <>
                     No open posts.{" "}
-                    <Link href="/jobs/new" className="text-stamp underline underline-offset-4">
+                    <Link href="/jobs/new" className="text-stamp-dark underline underline-offset-4">
                       Post a job
                     </Link>
                     .
@@ -289,7 +289,7 @@ function JobsTableBody({ rows, empty }: { rows: any[]; empty: React.ReactNode })
             <td className="px-6 py-4"><StatusBadge status={r.status} /></td>
             <td className="px-6 py-4 text-xs text-ink/60">{timeAgo(r.created_at)}</td>
             <td className="px-6 py-4 text-right">
-              <Link href={`/jobs/${r.jobId}`} className="text-xs text-stamp underline underline-offset-4 hover:text-stamp-dark">
+              <Link href={`/jobs/${r.jobId}`} className="text-xs text-stamp-dark underline underline-offset-4 hover:text-stamp-dark">
                 Open
               </Link>
             </td>
@@ -321,7 +321,7 @@ function ProposalsTableBody({ rows }: { rows: any[] }) {
             <td className="px-6 py-4"><ProposalBadge status={p.status} /></td>
             <td className="px-6 py-4 text-xs text-ink/60">{timeAgo(p.created_at)}</td>
             <td className="px-6 py-4 text-right">
-              <Link href={`/jobs/${p.job?.id}`} className="text-xs text-stamp underline underline-offset-4 hover:text-stamp-dark">
+              <Link href={`/jobs/${p.job?.id}`} className="text-xs text-stamp-dark underline underline-offset-4 hover:text-stamp-dark">
                 Open
               </Link>
             </td>
@@ -337,9 +337,9 @@ function StatusBadge({ status }: { status: string }) {
     open: { bg: "bg-ink/10", fg: "text-ink/70", label: "Open" },
     scope_pending: { bg: "bg-mark/10", fg: "text-mark", label: "Scope" },
     in_progress: { bg: "bg-mark/10", fg: "text-mark", label: "In progress" },
-    submitted: { bg: "bg-stamp/10", fg: "text-stamp", label: "Submitted" },
-    revision_requested: { bg: "bg-stamp/10", fg: "text-stamp", label: "Revisions" },
-    disputed: { bg: "bg-stamp/15", fg: "text-stamp", label: "Disputed" },
+    submitted: { bg: "bg-stamp/10", fg: "text-stamp-dark", label: "Submitted" },
+    revision_requested: { bg: "bg-stamp/10", fg: "text-stamp-dark", label: "Revisions" },
+    disputed: { bg: "bg-stamp/15", fg: "text-stamp-dark", label: "Disputed" },
     completed: { bg: "bg-mark/10", fg: "text-mark", label: "Completed" },
     cancelled: { bg: "bg-ink/10", fg: "text-ink/55", label: "Cancelled" },
   };
@@ -351,7 +351,7 @@ function ProposalBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; fg: string; label: string }> = {
     pending: { bg: "bg-ink/10", fg: "text-ink/70", label: "Pending" },
     accepted: { bg: "bg-mark/10", fg: "text-mark", label: "Accepted" },
-    declined: { bg: "bg-stamp/10", fg: "text-stamp", label: "Declined" },
+    declined: { bg: "bg-stamp/10", fg: "text-stamp-dark", label: "Declined" },
     withdrawn: { bg: "bg-ink/10", fg: "text-ink/55", label: "Withdrawn" },
   };
   const s = map[status] || map.pending;

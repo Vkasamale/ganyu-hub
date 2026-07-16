@@ -80,7 +80,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
               <p className="text-xs text-ink/55">{p.role} · joined {formatSAST(p.created_at)}</p>
             </div>
             {p.is_admin && (
-              <span className="rounded-full bg-stamp/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stamp">admin</span>
+              <span className="rounded-full bg-stamp/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stamp-dark">admin</span>
             )}
           </div>
         ))}

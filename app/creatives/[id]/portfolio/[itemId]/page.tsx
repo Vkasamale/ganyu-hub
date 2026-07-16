@@ -224,7 +224,7 @@ export default async function PortfolioItemPage({
                       href={item.project_url}
                       target="_blank"
                       rel="noopener"
-                      className="text-stamp hover:underline"
+                      className="text-stamp-dark hover:underline"
                     >
                       Open ↗
                     </a>
@@ -244,7 +244,7 @@ export default async function PortfolioItemPage({
             </h2>
             <Link
               href={`/creatives/${id}`}
-              className="text-sm text-stamp hover:underline"
+              className="text-sm text-stamp-dark hover:underline"
             >
               See all
             </Link>

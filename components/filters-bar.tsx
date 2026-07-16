@@ -120,7 +120,7 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
             {skillList.map((s) => <Chip key={`s-${s}`} id={`s-${s}`} label={s} href={removeSkillUrl(s)} />)}
             {minPrice && <Chip id="min" label={`Min MWK ${Number(minPrice).toLocaleString()}`} href={removeMinUrl} />}
             {maxPrice && <Chip id="max" label={`Max MWK ${Number(maxPrice).toLocaleString()}`} href={removeMaxUrl} />}
-            <Link href={action} className="text-xs font-medium text-stamp underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp">
+            <Link href={action} className="text-xs font-medium text-stamp-dark underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp">
               Clear all
             </Link>
           </div>

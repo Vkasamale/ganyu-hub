@@ -9,7 +9,7 @@ type Tab = "sent" | "received";
 const STATUS_PILL: Record<string, string> = {
   accepted: "bg-mark/10 text-mark",
   pending: "bg-ink/10 text-ink/70",
-  declined: "bg-stamp/10 text-stamp",
+  declined: "bg-stamp/10 text-stamp-dark",
   withdrawn: "bg-ink/10 text-ink/50",
 };
 
@@ -225,7 +225,7 @@ function StatPill({ label, value, tone }: { label: string; value: number; tone: 
     tone === "mark"
       ? "bg-mark/10 text-mark"
       : tone === "stamp"
-      ? "bg-stamp/10 text-stamp"
+      ? "bg-stamp/10 text-stamp-dark"
       : "bg-ink/10 text-ink/75";
   return (
     <div className={`flex items-baseline gap-1.5 rounded-lg px-3 py-1.5 ${toneClass}`}>

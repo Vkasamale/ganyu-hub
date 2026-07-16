@@ -258,7 +258,7 @@ export default async function DashboardPage() {
         {projects.length === 0 ? (
           <p className="px-6 py-8 text-sm text-ink/55">
             No active jobs yet.{" "}
-            <Link href={isClient ? "/jobs/new" : "/jobs"} className="text-stamp underline underline-offset-4">
+            <Link href={isClient ? "/jobs/new" : "/jobs"} className="text-stamp-dark underline underline-offset-4">
               {isClient ? "Post a job" : "Find jobs"}
             </Link>
             .
@@ -281,7 +281,7 @@ export default async function DashboardPage() {
                   <td className="px-6 py-4 text-ink/70">{isClient ? "" : p.counterparty}</td>
                   <td className="px-6 py-4"><StatusBadge status={p.status} /></td>
                   <td className="px-6 py-4 text-right">
-                    <Link href={`/jobs/${p.id}`} className="text-xs text-stamp underline underline-offset-4 hover:text-stamp-dark">
+                    <Link href={`/jobs/${p.id}`} className="text-xs text-stamp-dark underline underline-offset-4 hover:text-stamp-dark">
                       Open
                     </Link>
                   </td>
@@ -301,9 +301,9 @@ function StatusBadge({ status }: { status: string }) {
     open: { bg: "bg-ink/10", fg: "text-ink/70", label: "Open" },
     scope_pending: { bg: "bg-mark/10", fg: "text-mark", label: "Scope" },
     in_progress: { bg: "bg-mark/10", fg: "text-mark", label: "In progress" },
-    submitted: { bg: "bg-stamp/10", fg: "text-stamp", label: "Submitted" },
-    revision_requested: { bg: "bg-stamp/10", fg: "text-stamp", label: "Revisions" },
-    disputed: { bg: "bg-stamp/15", fg: "text-stamp", label: "Disputed" },
+    submitted: { bg: "bg-stamp/10", fg: "text-stamp-dark", label: "Submitted" },
+    revision_requested: { bg: "bg-stamp/10", fg: "text-stamp-dark", label: "Revisions" },
+    disputed: { bg: "bg-stamp/15", fg: "text-stamp-dark", label: "Disputed" },
     completed: { bg: "bg-mark/10", fg: "text-mark", label: "Completed" },
     cancelled: { bg: "bg-ink/10", fg: "text-ink/55", label: "Cancelled" },
   };

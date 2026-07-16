@@ -200,7 +200,7 @@ function MoneyTile({
   tone: "stamp" | "warn" | "ink";
   help?: string;
 }) {
-  const toneCls = tone === "stamp" ? "text-stamp" : tone === "warn" ? "text-amber-600" : "text-ink";
+  const toneCls = tone === "stamp" ? "text-stamp-dark" : tone === "warn" ? "text-amber-600" : "text-ink";
   return (
     <div className="card-soft p-4" title={help}>
       <p className="text-[10px] font-medium uppercase tracking-wider text-ink/55">{label}</p>
@@ -227,7 +227,7 @@ function StatTile({
       className={`card-soft group block p-4 transition-all hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-md ${alert ? "ring-1 ring-stamp/40" : ""}`}
     >
       <p className="text-[10px] font-medium uppercase tracking-wider text-ink/55">{label}</p>
-      <p className={`mt-1 font-display text-2xl font-semibold ${alert ? "text-stamp" : "text-ink"}`}>
+      <p className={`mt-1 font-display text-2xl font-semibold ${alert ? "text-stamp-dark" : "text-ink"}`}>
         {value.toLocaleString()}
       </p>
     </Link>
