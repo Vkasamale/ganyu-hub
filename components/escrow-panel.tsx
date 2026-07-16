@@ -38,12 +38,18 @@ function clientActions(status: Escrow): { next: Escrow; label: string; variant?:
   return [];
 }
 
-export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null }) {
+export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, paymentHeldAt }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null; paymentHeldAt?: string | null }) {
   const payoutPending = payoutStatus === "pending";
-  // Hide the release action entirely while a payout is in flight. Server also
-  // enforces via atomic claim — this just keeps the UI from tempting a retry.
+  // PayChangu T+1: funds only settle to main balance the next business day.
+  // Block the Release button until 24h after payment_held, matching the server.
+  const HOLD_MS = 24 * 60 * 60 * 1000;
+  const heldMs = paymentHeldAt ? Date.now() - new Date(paymentHeldAt).getTime() : Infinity;
+  const holdActive = escrowStatus === "payment_held" && heldMs < HOLD_MS;
+  const hoursLeft = holdActive ? Math.ceil((HOLD_MS - heldMs) / (60 * 60 * 1000)) : 0;
+  // Hide the release action entirely while a payout is in flight or the T+1
+  // hold is still ticking. Server also enforces both.
   const actions = role === "client"
-    ? clientActions(escrowStatus).filter((a) => !(payoutPending && a.next === "payment_released"))
+    ? clientActions(escrowStatus).filter((a) => !((payoutPending || holdActive) && a.next === "payment_released"))
     : [];
 
   return (
@@ -76,6 +82,11 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk }
               <SubmitButton size="sm" variant="outline" pendingText="Checking…">Refresh payout status</SubmitButton>
             </SavingForm>
           </div>
+        )}
+        {holdActive && (
+          <p className="mt-3 text-xs text-neutral-500">
+            PayChangu clears funds the next business day (T+1). Release opens in ~{hoursLeft}h.
+          </p>
         )}
         {role === "creative" && escrowStatus === "none" && (
           <p className="mt-2 text-xs text-neutral-500">Waiting for the client to send funds to escrow.</p>

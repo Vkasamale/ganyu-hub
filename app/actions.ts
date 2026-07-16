@@ -1249,13 +1249,24 @@ export async function updateEscrowStatus(formData: FormData) {
   const job_id = String(formData.get("job_id"));
   const next = String(formData.get("escrow_status")) as EscrowStatus;
 
-  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk, total_paid_mwk, payout_status, payout_ref").eq("id", job_id).single();
+  const { data: job } = await supabase.from("jobs").select("id, client_id, title, escrow_status, accepted_bid_mwk, total_paid_mwk, payout_status, payout_ref, payment_held_at").eq("id", job_id).single();
   if (!job) return { error: "Job not found" };
   if (user.id !== job.client_id) return { error: "Only the client controls payment state." };
 
   // Client asked to release funds to the creative → initiate PayChangu payout.
   // The webhook (HMAC-verified) is what flips escrow_status to payment_released.
   if (job.escrow_status === "payment_held" && next === "payment_released") {
+    // PayChangu settles collections T+1: funds sit in collection until the
+    // next business day. Reject a release attempt inside the 24h hold window.
+    // ponytail: flat 24h; legacy jobs (null payment_held_at) skip the check.
+    if (job.payment_held_at) {
+      const heldMs = Date.now() - new Date(job.payment_held_at).getTime();
+      const HOLD_MS = 24 * 60 * 60 * 1000;
+      if (heldMs < HOLD_MS) {
+        const hoursLeft = Math.ceil((HOLD_MS - heldMs) / (60 * 60 * 1000));
+        return { error: `Funds are still clearing with PayChangu (T+1). Try again in ~${hoursLeft}h.` };
+      }
+    }
     // Idempotency: never let a second click fire a second real payout.
     if (job.payout_status === "pending") {
       return { error: "A payout for this job is already processing. Wait for PayChangu to confirm before trying again." };

@@ -4,7 +4,9 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-16 (portfolio uploads verified live)
+Last updated: 2026-07-16 (T+1 payout hold shipped; verify on first real prod job)
+
+🕒 **T+1 release hold** — code shipped 2026-07-16. Verify on next real paid job: (1) pay a job into escrow, (2) immediately try to release — button should be hidden, panel should show "Release opens in ~24h", server should reject with T+1 message if forced. (3) Wait past 24h, re-check that Release button reappears and payout initiates normally. Requires the `payment_held_at` migration to be run in Supabase first.
 
 ---
 

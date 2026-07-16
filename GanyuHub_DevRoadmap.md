@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-16
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-16 (T+1 payout hold)
 
 ---
 

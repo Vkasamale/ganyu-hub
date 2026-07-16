@@ -101,6 +101,7 @@ export async function POST(req: Request) {
   if (verified.status === "success" && job.escrow_status === "payment_pending") {
     await supabase.from("jobs").update({
       escrow_status: "payment_held",
+      payment_held_at: new Date().toISOString(),
       payment_provider_id: verified.providerId || null,
       collection_amount_mwk: verified.amount ?? null,
       collection_fee_mwk: verified.fee ?? null,

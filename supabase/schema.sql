@@ -613,6 +613,13 @@ alter table jobs add column if not exists payout_fee_mwk integer;
 alter table jobs add column if not exists payout_amount_mwk integer;
 alter table jobs add column if not exists payment_rail text;
 
+-- PayChangu settles collections T+1: funds only land in our main balance the
+-- next business day, so payouts can't be released immediately after job
+-- approval. Stamp when escrow flips to payment_held so we can gate releases.
+-- ponytail: flat 24h wall-clock hold; add business-day logic if a Sunday hold
+--           creates real complaints.
+alter table jobs add column if not exists payment_held_at timestamptz;
+
 -- Pending accept: which proposal the client is trying to pay for. Cleared on
 -- payment success (proposal is promoted) or on cancellation. Job stays 'open'
 -- and other proposals stay 'pending' the whole time.

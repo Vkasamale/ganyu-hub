@@ -49,6 +49,7 @@ export async function GET(req: Request) {
       if (verified.status === "success") {
         await supabase.from("jobs").update({
           escrow_status: "payment_held",
+          payment_held_at: new Date().toISOString(),
           payment_provider_id: verified.providerId || null,
           collection_amount_mwk: verified.amount ?? null,
           collection_fee_mwk: verified.fee ?? null,
