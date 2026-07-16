@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-16 — Plausible analytics (pageviews only)
+
+Added the Plausible script to `app/layout.tsx`, gated by `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`. Inert until the env var is set in Vercel — no accidental data leak, no perf hit. To turn on: (1) create a free Plausible account, add site `ganyu-hub.vercel.app` (later `ganyuhub.com`), (2) set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyu-hub.vercel.app` in Vercel env, (3) redeploy. That gives pageviews, unique visitors, referrers, top pages — enough for the Monday ritual to start (signups = /signup views, jobs page traffic, etc.). Ponytail: no custom events yet; add `plausible('job_posted')` etc. only when pageview data can't answer a real question.
+
 ## 2026-07-16 — T+1 release hold on payouts
 
 PayChangu settles collections the next business day (T+1) — funds don't hit our main balance immediately, so a client who paid at 11pm and approved at 11:05pm can't actually be paid out until the next business day. Enforced now on both server and UI. New nullable column `jobs.payment_held_at` gets stamped whenever escrow flips to `payment_held` (both `app/api/paychangu/callback/route.ts` and `app/api/paychangu/webhook/route.ts`). `updateEscrowStatus` rejects a `payment_held → payment_released` transition when `payment_held_at` is under 24h old, returning a message with hours remaining. `EscrowPanel` hides the Release button during the hold window and shows "PayChangu clears funds the next business day (T+1). Release opens in ~Nh." Legacy jobs (null timestamp) skip the check. Ponytail: flat 24h wall-clock hold — upgrade to real business-day logic if a weekend hold ever generates a complaint. Reference: https://support.paychangu.com/
