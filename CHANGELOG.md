@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-16 — Landing proof row with real numbers
+
+Homepage now has a "Real numbers · Ganyu Hub to date" row under the hero: GMV, jobs completed, creatives live — all pulled from the same money computation used on `/admin`. Row is guarded by `jobsCompleted >= 3` so it stays hidden until the numbers are worth showing (avoids "MWK 0 · 0 jobs · 1 creative" during pre-launch). Required a small refactor: the old fully-client `app/page.tsx` is now split — `components/home-hero.tsx` keeps the interactive mode-toggle hero, and `app/page.tsx` is a server component that renders the hero + the new proof row. No schema changes.
+
 ## 2026-07-16 — Portfolio uploads: client-side direct to Supabase
 
 Killed the last real blocker on portfolio-image uploads: files no longer round-trip through Vercel. `MultiImagePicker` now uses the Supabase browser client to upload each file straight to Storage the moment it's picked (parallel), with per-tile spinner / cover / failed states. The hidden input the parent form posts to the server is now a JSON array of already-uploaded URLs, not File objects. `addPortfolioItem` and `addPortfolioImages` server actions dropped their upload code — they just parse the URL array and write to the DB. Consequence: Vercel's 4.5MB body cap and 10-second server-action timeout are no longer in play, so a creative can add 10 unedited phone photos (30MB+ total) in one shot. Kept the same `name="cover_files"` prop so both callers (`app/dashboard/portfolio/page.tsx`, `app/dashboard/portfolio/[id]/page.tsx`) needed no change. Existing storage RLS at `supabase/schema.sql:436` (auth.uid must match the first path segment) already permits this — no policy migration.
