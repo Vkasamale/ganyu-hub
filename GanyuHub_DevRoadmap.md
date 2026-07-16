@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-16 (Plausible analytics)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-16 (a11y audit pass 1)
 
 ---
 

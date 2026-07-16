@@ -3,6 +3,12 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-16 — Accessibility audit: reduced-motion + WCAG contrast pass 1
+
+Reduced-motion: nothing to do — `app/globals.css:36` already zeros out animation/transition durations under `prefers-reduced-motion: reduce`. Verified.
+
+WCAG contrast: audited teal usage on white. `text-brand` (#069494) = ~3.7:1, fails AA for normal text. Swapped to `text-brand-dark` (#046B6B ≈ 5.4:1, passes) in the four auth/CTA link sites (`app/login/page.tsx`, `app/signup/page.tsx`, `app/forgot-password/page.tsx`, `app/jobs/[id]/page.tsx`). Same #069494 issue applies to `text-stamp` used as small-text links across the dashboard — logged in BACKLOG for a full sweep. Badges on tinted `bg-stamp/10` still meet contrast and were left alone.
+
 ## 2026-07-16 — Plausible analytics (pageviews only)
 
 Added the Plausible script to `app/layout.tsx`, gated by `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`. Inert until the env var is set in Vercel — no accidental data leak, no perf hit. To turn on: (1) create a free Plausible account, add site `ganyu-hub.vercel.app` (later `ganyuhub.com`), (2) set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyu-hub.vercel.app` in Vercel env, (3) redeploy. That gives pageviews, unique visitors, referrers, top pages — enough for the Monday ritual to start (signups = /signup views, jobs page traffic, etc.). Ponytail: no custom events yet; add `plausible('job_posted')` etc. only when pageview data can't answer a real question.

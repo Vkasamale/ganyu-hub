@@ -61,7 +61,7 @@ export default async function SignupPage({ searchParams: searchParamsP }: { sear
               <Link href="/privacy" className="underline hover:text-ink">Privacy Policy</Link>.
             </p>
             <p className="text-center text-sm text-neutral-500">
-              Have an account? <Link href="/login" className="text-brand hover:underline">Log in</Link>
+              Have an account? <Link href="/login" className="text-brand-dark hover:underline">Log in</Link>
             </p>
           </form>
         </CardContent>

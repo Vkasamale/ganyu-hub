@@ -445,7 +445,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       {!user && (
         <Card className="mt-6">
           <CardContent className="p-6">
-            <Link href="/signup" className="text-brand hover:underline">Sign up</Link> as a creative to send a proposal.
+            <Link href="/signup" className="text-brand-dark hover:underline">Sign up</Link> as a creative to send a proposal.
           </CardContent>
         </Card>
       )}

@@ -4,7 +4,13 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 ## Infrastructure
 
+- **Turn on Plausible analytics.** Script tag shipped 2026-07-16, gated by env var. To activate: (1) sign up free at plausible.io, (2) add site `ganyu-hub.vercel.app` (later `ganyuhub.com`), (3) set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyu-hub.vercel.app` in Vercel env, (4) redeploy. Pageviews only — custom events (`job_posted`, `job_completed`) added later if pageview data can't answer the question.
+
 - **Verify `ganyu.com` in Resend.** Domain added 2026-06-25, currently Pending DNS verification. Until verified, emails route through Resend sandbox (`onboarding@resend.dev`) and only deliver to the Resend account owner (`vinnykasa@gmail.com`). When status flips to Verified: update `EMAIL_FROM` in `.env.local` to `Ganyu Hub <notifications@ganyu.com>` (or similar) and redeploy.
+
+## Accessibility
+
+- **Finish the WCAG contrast sweep.** Audited 2026-07-16. `text-brand` swapped to `text-brand-dark` on auth pages (login/signup/forgot-password/jobs signup CTA) — those are AA-compliant now. Still to do: `text-stamp` used as small-text links across dashboard/browse (`app/dashboard/page.tsx`, `app/dashboard/jobs/page.tsx`, `components/filters-bar.tsx`, `app/creatives/[id]/page.tsx`, and status badges on `app/dashboard/payments/page.tsx`) — #069494 on white = ~3.7:1, fails AA for normal text (needs 4.5:1). Safe fix: `text-stamp` → `text-stamp-dark` (#046B6B ≈ 5.4:1) anywhere it's on a white background. Skip usages on colored backgrounds like `bg-stamp/10` badges (those still meet contrast). Reduced-motion is already handled globally via `app/globals.css:36` — nothing to do there.
 
 ## Payments
 
