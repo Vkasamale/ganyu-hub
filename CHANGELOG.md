@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-17 — SERVICES.md (financial single source of truth)
+
+New top-level [SERVICES.md](SERVICES.md) — every paid service by stage (Beta / Money Unlock Day / Public Launch / Scale), with real prices verified from provider pricing pages (Vercel Pro $20, Supabase Pro $25, Resend Free/Pro $0/$20, Plausible Starter $9/mo yearly, UptimeRobot Free/Solo $0/$8, Namecheap ganyuhub.com $6.79 y1 promo / $11.28/yr). PayChangu section pulls actual rates from `lib/fees.ts` (mobile 3%/1.8%, bank 2%/1.5%+MWK700, 15% platform commission kept in full since PayChangu fees are pass-through). Running totals per stage: $0/mo → ~$46/mo (Stage 2) → ~$83/mo (Stage 3). Break-even at Stage 3: ~970k MWK GMV/month.
+
 ## 2026-07-17 — WCAG contrast sweep pass 2 (text-stamp)
 
 Full swap of `text-stamp` → `text-stamp-dark` across 12 files (components/{job-card,filters-bar,multi-image-picker}, app/admin/{page,users/page}, app/creatives/[id]/{page,portfolio/[itemId]/page}, app/dashboard/{layout,page,jobs/page,payments/page,proposals/page}). Covers small-text links (~text-xs), stamped badges on `bg-stamp/10`, and the admin "warn" stat tile. #069494 → #046B6B lifts contrast on white from ~3.7:1 to ~5.4:1 (AA-passing for normal text). Reverted the two decorative italic display headings (`app/dashboard/page.tsx:146`, `app/dashboard/jobs/page.tsx:135`) back to bright `text-stamp` — those are large text and part of the brand's teal accent; they already meet AA-large at 3:1. Closes the backlog item.
