@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-18 — Delete stale skipped dispute E2E test
+
+Removed the `test.skip(...)` "raise a dispute while job is scope_pending" block from `tests/e2e/client-job-flow.spec.ts`. Was gated on PayChangu sandbox wiring — now unblocked via manual sandbox pass, but the accept flow requires a real PayChangu checkout that Playwright can't drive. Dispute UI is already covered elsewhere (`admin.spec.ts` + manual walkthrough), so the test was rot. Also enabled Plausible in prod (`NEXT_PUBLIC_PLAUSIBLE_DOMAIN` set in Vercel, redeployed) — backlog Infrastructure entry can close.
+
 ## 2026-07-17 — SERVICES.md (financial single source of truth)
 
 New top-level [SERVICES.md](SERVICES.md) — every paid service by stage (Beta / Money Unlock Day / Public Launch / Scale), with real prices verified from provider pricing pages (Vercel Pro $20, Supabase Pro $25, Resend Free/Pro $0/$20, Plausible Starter $9/mo yearly, UptimeRobot Free/Solo $0/$8, Namecheap ganyuhub.com $6.79 y1 promo / $11.28/yr). PayChangu section pulls actual rates from `lib/fees.ts` (mobile 3%/1.8%, bank 2%/1.5%+MWK700, 15% platform commission kept in full since PayChangu fees are pass-through). Running totals per stage: $0/mo → ~$46/mo (Stage 2) → ~$83/mo (Stage 3). Break-even at Stage 3: ~970k MWK GMV/month.

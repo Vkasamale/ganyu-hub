@@ -4,9 +4,11 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-16 (Plausible analytics wired, awaiting env var)
+Last updated: 2026-07-18 (Plausible live; stale dispute E2E deleted)
 
-🕒 **Plausible pageviews** — script tag shipped 2026-07-16. Verify after setting `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` in Vercel + redeploy: DevTools → Network → visit any page → confirm a request to `plausible.io/api/event`. Then confirm the pageview shows up on the Plausible dashboard within a minute.
+✅ **Plausible pageviews** — env var set + redeployed 2026-07-18, pageviews landing on dashboard.
+
+✅ **PayChangu sandbox top-up (manual)** — full accept → Pay → PayChangu → webhook → scope_pending chain walked by hand 2026-07-18. Skipped dispute E2E test (`tests/e2e/client-job-flow.spec.ts`) deleted since Playwright can't drive the sandbox and the dispute UI itself is covered by `admin.spec.ts` + this manual walk.
 
 🕒 **T+1 release hold** — code shipped 2026-07-16. Verify on next real paid job: (1) pay a job into escrow, (2) immediately try to release — button should be hidden, panel should show "Release opens in ~24h", server should reject with T+1 message if forced. (3) Wait past 24h, re-check that Release button reappears and payout initiates normally. Requires the `payment_held_at` migration to be run in Supabase first.
 

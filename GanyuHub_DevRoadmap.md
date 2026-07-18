@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-17 (SERVICES.md financial doc)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-18 (Plausible live in prod; stale dispute E2E deleted)
 
 ---
 
