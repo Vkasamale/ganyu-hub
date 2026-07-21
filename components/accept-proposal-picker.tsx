@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { decideProposal } from "@/app/actions";
-import { COLLECTION_RATES, clientCharge, railLabel, type CollectionRail } from "@/lib/fees";
+import { COLLECTION_RATES, clientCharge, railLabel, BETA_ZERO_COMMISSION, type CollectionRail } from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
 
 const RAILS: CollectionRail[] = ["mobile_money", "bank_transfer", "card"];
@@ -33,6 +33,7 @@ export function AcceptProposalPicker({ proposalId, bidMwk }: { proposalId: strin
       <p className="text-sm font-medium">Choose how you'll pay</p>
       <p className="text-xs text-ink/70">
         PayChangu adds a fee on top of the bid. The full bid still lands in escrow.
+        {BETA_ZERO_COMMISSION && " No platform fee during beta — the creative keeps 100% of the bid."}
       </p>
       <div className="flex flex-wrap gap-2">
         {RAILS.map((r) => (

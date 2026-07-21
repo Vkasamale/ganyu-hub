@@ -4,7 +4,9 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-18 (Plausible live; stale dispute E2E deleted)
+Last updated: 2026-07-21 (beta zero-commission waiver shipped)
+
+🕒 **Beta zero-commission waiver** — code shipped 2026-07-21. `BETA_ZERO_COMMISSION` defaults ON. Verified via typecheck + node math check: `creativeGross(10000) = 10000` when flag on. Full paid-flow verification (post → accept → PayChangu sandbox pay → release; confirm creative payout summary + client quote both show "waived during beta" copy, and /admin still logs theoretical 15%) needs a manual walk — same constraint as 2026-07-18 top-up test.
 
 ✅ **Plausible pageviews** — env var set + redeployed 2026-07-18, pageviews landing on dashboard.
 

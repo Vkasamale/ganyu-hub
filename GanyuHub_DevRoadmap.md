@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-18 (Plausible live in prod; stale dispute E2E deleted)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-21 (beta zero-commission waiver shipped — creatives keep 100% during beta; one-line env flip restores 15% at public launch)
 
 ---
 

@@ -3,6 +3,12 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-21 — Beta zero-commission waiver + backlog OTP/IDV research
+
+Added `BETA_ZERO_COMMISSION` flag in `lib/fees.ts` (env-driven, default ON). Creatives keep 100% of the bid during beta; PayChangu payout fee pass-through unchanged. `creativeGross` routes through `effectiveCommission()`; `lib/payments.ts:creativeAmount` delegates through it so escrow-panel + cancellation split honor the flag. UI copy updated in `proposal-payout-preview.tsx` ("Waived during beta"), `accept-proposal-picker.tsx` ("No platform fee during beta"), `escrow-panel.tsx` (creative help line). Admin money tile now labeled "Platform revenue (waived during beta)" but still logs the theoretical 15% so visibility is preserved. One-line launch flip: set `NEXT_PUBLIC_BETA_ZERO_COMMISSION=false` in Vercel + redeploy.
+
+BACKLOG: added Identity & Trust section (phone OTP research — eSMS Africa Malawi rate unconfirmed, Africa's Talking backup; IDV vendors Smile/Youverify/Trulioo ~$0.50–$2/verify unconfirmed for Malawi). Rewrote Resend entry — `ganyu.com` is not owned; buy `ganyuhub.com` instead.
+
 ## 2026-07-18 — Delete stale skipped dispute E2E test
 
 Removed the `test.skip(...)` "raise a dispute while job is scope_pending" block from `tests/e2e/client-job-flow.spec.ts`. Was gated on PayChangu sandbox wiring — now unblocked via manual sandbox pass, but the accept flow requires a real PayChangu checkout that Playwright can't drive. Dispute UI is already covered elsewhere (`admin.spec.ts` + manual walkthrough), so the test was rot. Also enabled Plausible in prod (`NEXT_PUBLIC_PLAUSIBLE_DOMAIN` set in Vercel, redeployed) — backlog Infrastructure entry can close.

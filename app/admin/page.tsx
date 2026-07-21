@@ -7,7 +7,7 @@ import {
   JobCategoryBarChart,
   PeriodBarChart,
 } from "@/components/admin-charts";
-import { PLATFORM_COMMISSION } from "@/lib/fees";
+import { PLATFORM_COMMISSION, BETA_ZERO_COMMISSION } from "@/lib/fees";
 
 export default async function AdminPage() {
   const supabase = createClient();
@@ -108,7 +108,14 @@ export default async function AdminPage() {
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <MoneyTile label="GMV" value={money.gmv} tone="stamp" help="Total moved through the platform (funded jobs)." />
-          <MoneyTile label="Platform revenue" value={money.revenue} tone="stamp" help="15% commission on completed jobs + cancellation take." />
+          <MoneyTile
+            label={BETA_ZERO_COMMISSION ? "Platform revenue (waived during beta)" : "Platform revenue"}
+            value={money.revenue}
+            tone="stamp"
+            help={BETA_ZERO_COMMISSION
+              ? "Theoretical 15% commission on completed jobs + cancellation take. NOT collected — creatives keep 100% during beta."
+              : "15% commission on completed jobs + cancellation take."}
+          />
           <MoneyTile label="In escrow" value={money.inEscrow} tone="warn" help="Client funds we're currently holding." />
           <MoneyTile label="Paid to creatives" value={money.payouts} tone="ink" help="Sum of released payouts (net of payout fees)." />
           <MoneyTile label="Refunded to clients" value={money.refunds} tone="ink" help="Cancellation refunds paid back to clients." />

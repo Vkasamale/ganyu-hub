@@ -141,9 +141,10 @@ export async function getSupportedBanks(currency = "MWK"): Promise<SupportedBank
 
 // ----- Payouts -----
 
-export const CREATIVE_SHARE = 0.85; // 15% commission -> creative gets 85%
+import { creativeGross } from "@/lib/fees";
+export const CREATIVE_SHARE = 0.85; // pre-beta rate; live math flows through creativeGross so BETA_ZERO_COMMISSION is honored.
 export function creativeAmount(agreedMwk: number) {
-  return Math.floor(agreedMwk * CREATIVE_SHARE);
+  return creativeGross(agreedMwk);
 }
 
 export type PayoutDest =

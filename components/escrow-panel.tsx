@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { updateEscrowStatus, reconcilePayout } from "@/app/actions";
 import { creativeAmount, CREATIVE_SHARE } from "@/lib/payments";
+import { BETA_ZERO_COMMISSION } from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
 
 type Role = "client" | "creative";
@@ -93,8 +94,9 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
         )}
         {role === "creative" && escrowStatus === "payment_held" && heldMwk != null && heldMwk > 0 && (
           <p className="mt-3 text-xs text-neutral-500">
-            You'll receive ~{formatMwk(creativeAmount(heldMwk))} after Ganyu's {Math.round((1 - CREATIVE_SHARE) * 100)}% fee.
-            Your payout provider may deduct a small transfer charge on top.
+            {BETA_ZERO_COMMISSION
+              ? <>You'll receive ~{formatMwk(creativeAmount(heldMwk))} — no platform fee during beta. Your payout provider may deduct a small transfer charge on top.</>
+              : <>You'll receive ~{formatMwk(creativeAmount(heldMwk))} after Ganyu's {Math.round((1 - CREATIVE_SHARE) * 100)}% fee. Your payout provider may deduct a small transfer charge on top.</>}
           </p>
         )}
       </CardContent>

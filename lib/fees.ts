@@ -3,6 +3,17 @@
 
 export const PLATFORM_COMMISSION = 0.15;
 
+// Beta waiver: creatives keep 100% of the bid (minus PayChangu's payout fee).
+// Default ON. To restore the 15% cut at public launch, set
+// NEXT_PUBLIC_BETA_ZERO_COMMISSION=false in the deployment env (one-line flip).
+// NEXT_PUBLIC_ prefix so client components see the same value as server code.
+export const BETA_ZERO_COMMISSION =
+  process.env.NEXT_PUBLIC_BETA_ZERO_COMMISSION !== "false";
+
+export function effectiveCommission(): number {
+  return BETA_ZERO_COMMISSION ? 0 : PLATFORM_COMMISSION;
+}
+
 export type CollectionRail = "mobile_money" | "card" | "bank_transfer";
 export type PayoutRail = "mobile" | "bank";
 
@@ -26,7 +37,7 @@ export function clientCharge(bid: number, rail: CollectionRail): number {
 }
 
 export function creativeGross(bid: number): number {
-  return Math.floor(bid * (1 - PLATFORM_COMMISSION));
+  return Math.floor(bid * (1 - effectiveCommission()));
 }
 
 export function payoutFee(gross: number, rail: PayoutRail): number {

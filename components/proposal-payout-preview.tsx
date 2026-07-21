@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { creativeGross, payoutFee, creativeNet, PAYOUT_RATES, type PayoutRail } from "@/lib/fees";
+import { creativeGross, payoutFee, creativeNet, PAYOUT_RATES, BETA_ZERO_COMMISSION, type PayoutRail } from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
 
 const RAILS: PayoutRail[] = ["mobile", "bank"];
@@ -39,7 +39,11 @@ export function ProposalPayoutPreview() {
       {bid > 0 && (
         <div className="text-sm space-y-1">
           <Row label="Agreed bid" value={formatMwk(bid)} />
-          <Row label="− Platform 15%" value={`−${formatMwk(bid - creativeGross(bid))}`} muted />
+          {BETA_ZERO_COMMISSION ? (
+            <Row label="Platform fee" value="Waived during beta" muted />
+          ) : (
+            <Row label="− Platform 15%" value={`−${formatMwk(bid - creativeGross(bid))}`} muted />
+          )}
           <Row
             label={`− Payout fee (${(PAYOUT_RATES[rail].pct * 100).toFixed(1)}%${
               PAYOUT_RATES[rail].flat ? ` + MWK ${PAYOUT_RATES[rail].flat}` : ""
