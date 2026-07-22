@@ -17,42 +17,50 @@ export default function TermsPage() {
 
         <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">1. Who we are</h2>
+
           <p>
-            Ganyu Hub is a registered Malawian business, started in Blantyre, built with input from
-            creatives, clients, and friends who wanted the same thing: a safe place to hire and be hired.
+            Ganyu Hub is a <strong>registered Malawian business</strong>, started in Blantyre and
+            built with input from creatives, clients, and friends who wanted the same thing: a safe
+            place to hire and be hired.
           </p>
+
           <p>
-            The idea came from watching the same thing happen over and over. Someone pays for a job
-            upfront. The deadline passes. Messages stop being answered. The work never comes, or when
-            it does, it isn&apos;t what was agreed. Sometimes the person disappears completely. There&apos;s
-            no receipt, no proof, no one to complain to. The client loses the money and the creative
-            loses nothing but their reputation, and even that quietly comes back a few months later
-            under a different name.
+            <strong>Why we exist.</strong> The idea came from watching the same thing happen too
+            often. Someone pays for a job upfront. The deadline passes. Messages stop being
+            answered. The work never comes, or when it does, it isn&apos;t what was agreed. Sometimes
+            the person disappears completely. There&apos;s no receipt, no proof, no one to complain to.
+            The client loses the money, the creative loses their reputation, and even that quietly
+            comes back a few months later under a different name.
           </p>
+
           <p>
-            The creative space here runs on trust that too often isn&apos;t earned. Ganyu Hub is the
-            middle ground. A regulated space where money is held in escrow until the work is
-            delivered, where both sides can see who they&apos;re dealing with, and where a real person is
-            behind the platform if something goes wrong. Both the client and the creative are
-            protected. Both are accountable.
+            <strong>The middle ground.</strong> Ganyu Hub is a regulated space where money is{" "}
+            <strong>held in escrow</strong> until the work is delivered, where both sides can see
+            who they&apos;re dealing with, and where a real person is behind the platform if something
+            goes wrong. <strong>Both the client and the creative are protected. Both are
+            accountable.</strong>
           </p>
+
           <p>
-            It&apos;s also built for the creatives most platforms overlook. If you have the skill but not
-            the certificate, your portfolio is the qualification here. Clients see your work, your
-            rates, and your history. That&apos;s what they hire on. Not a degree, not a title.
+            <strong>Built for skill, not certificates.</strong> If you have the skill but not the
+            paperwork, your portfolio is the qualification here. Clients hire on your work, your
+            rates, and your history. Not a degree, not a title.
           </p>
+
           <p>
-            The word &quot;ganyu&quot; means hard work. Project work. A day, a week, a month, or on and off
-            for a year. It might be for a corporate client, but it isn&apos;t a 9-to-5 desk job. It&apos;s
-            work you do on your own terms, for a fair price, and get paid for properly.
+            <strong>What &quot;ganyu&quot; means.</strong> Hard work. Project work. A day, a week, a month,
+            or on and off for a year. It might be for a corporate client, but it isn&apos;t a 9-to-5
+            desk job. It&apos;s work you do on your own terms, for a fair price, and get paid for
+            properly.
           </p>
+
           <p>
-            If you need us, the report form in the footer comes straight to us, or you can reach us
-            on WhatsApp / call at <a className="underline" href="tel:+265886072933">+265 886 072 933</a> or by email at{" "}
-            <a className="underline" href="mailto:CiTiMrKt@gmail.com">CiTiMrKt@gmail.com</a>. This is a
-            space where creativity, honesty, and efficiency thrive. The better you bring those, the
-            better your experience will be. And if something goes sideways, you don&apos;t have to chase
-            anyone. You come to us. You won&apos;t have to chase us either. We&apos;re right here.
+            <strong>Reach us anytime.</strong> The report form in the footer comes straight to us.
+            You can also reach us on WhatsApp or call at{" "}
+            <a className="underline" href="tel:+265886072933">+265 886 072 933</a>, or by email at{" "}
+            <a className="underline" href="mailto:CiTiMrKt@gmail.com">CiTiMrKt@gmail.com</a>. If
+            something goes sideways, you don&apos;t have to chase anyone. You come to us. You won&apos;t
+            have to chase us either. We&apos;re right here.
           </p>
         </section>
 

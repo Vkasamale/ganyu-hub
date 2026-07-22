@@ -64,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
             <span>© Ganyu Hub</span>
             <div className="flex flex-wrap gap-4">
+              <a href="/contact" className="underline hover:text-ink">Contact</a>
               <a href="/terms" className="underline hover:text-ink">Terms</a>
               <a href="/privacy" className="underline hover:text-ink">Privacy</a>
               <a href="/content-policy" className="underline hover:text-ink">Content policy</a>

@@ -3,6 +3,12 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-22 (d) — Terms §1 formatting pass + Contact page
+
+Reformatted Terms §1 with bold lead-ins per paragraph ("Why we exist.", "The middle ground.", "Built for skill, not certificates.", "What 'ganyu' means.", "Reach us anytime.") matching Section 2's rhythm. Bolded key phrases: "registered Malawian business", "held in escrow", "Both the client and the creative are protected. Both are accountable." Reads scannable instead of a wall of text.
+
+Added `/contact` route (`app/contact/page.tsx`): WhatsApp/call, email, report-form pointer, location. Footer link added in `app/layout.tsx` as first item in the nav row.
+
 ## 2026-07-22 (c) — Terms §1 rewrite in founder voice
 
 Replaced the placeholder "Who we are" section with a longer, personal, first-person origin: registered Malawian business, started in Blantyre. The "why" is now the broader pattern of upfront payment + disappearing service providers in the local creative space, not a single anecdote. Reinforces escrow + accountability positioning. Contact block now surfaces WhatsApp/call (+265 886 072 933) and email (CiTiMrKt@gmail.com) alongside the report form.
