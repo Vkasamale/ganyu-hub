@@ -1,4 +1,4 @@
-export const metadata = { title: "Content policy — Ganyu Hub" };
+export const metadata = { title: "Content policy | Ganyu Hub" };
 
 export default function ContentPolicyPage() {
   return (

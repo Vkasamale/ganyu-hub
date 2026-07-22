@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-21 (beta zero-commission waiver shipped — creatives keep 100% during beta; one-line env flip restores 15% at public launch)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-22 (double-fee at checkout fixed; user-facing PayChangu name genericized; live release countdown; escrow-funded client notification; Terms/Privacy/Content-policy dash sweep; Terms §1 rewritten in founder voice)
 
 ---
 

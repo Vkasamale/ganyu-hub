@@ -851,7 +851,11 @@ export async function decideProposal(formData: FormData) {
   const railRaw = String(formData.get("rail") || "mobile_money");
   const rail = (railRaw === "card" || railRaw === "bank_transfer" ? railRaw : "mobile_money") as
     "mobile_money" | "card" | "bank_transfer";
-  const totalMwk = clientCharge(proposal.bid_mwk, rail);
+  // ponytail: processor treats `amount` as base and adds its fee on top for the
+  // customer — sending clientCharge(...) here double-charged the fee.
+  // Send the raw bid; the full bid still lands in escrow.
+  const totalMwk = proposal.bid_mwk;
+  void clientCharge;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in." };
   const { data: cprofile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
@@ -2260,7 +2264,10 @@ export async function payTopUp(formData: FormData): Promise<{ ok?: boolean; erro
 
   const { initiatePayment } = await import("@/lib/payments");
   const { clientCharge } = await import("@/lib/fees");
-  const totalMwk = clientCharge(t.amount_mwk, rail);
+  // ponytail: processor `amount` is the base — its fee is added on top for the
+  // customer. Send the raw top-up amount so the fee isn't charged twice.
+  const totalMwk = t.amount_mwk;
+  void clientCharge; void rail;
   const { data: cprofile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
   const [firstName, ...rest] = (cprofile?.full_name || "Client").split(" ");
   const { data: myDefault } = await supabase.from("payout_methods")

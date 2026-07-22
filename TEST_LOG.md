@@ -4,7 +4,15 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-21 (beta zero-commission waiver shipped)
+Last updated: 2026-07-22 (double-fee fix, dash sweep, release countdown, escrow notification, Terms §1 rewrite)
+
+🕒 **Double-fee fix (checkout)** — `app/actions.ts` now sends raw bid to processor instead of `clientCharge(bid, rail)`. Manual sandbox pay needed to confirm the customer is charged bid + one processor fee (not two). Expected on 10,000 MWK bid via bank rail: checkout shows ~10,200 total.
+
+🕒 **Live release countdown** — `components/hold-countdown.tsx` renders `Release opens in HHh MMm SSs` and ticks every 1s while a `payment_held` job is inside the 24h settlement window. Release button visible-but-disabled during hold. Server 24h gate unchanged.
+
+🕒 **Escrow-funded notification** — `escrow_funded` kind inserts from both webhook + callback (first-writer-wins dedup via `payment_pending` guard). Verify by paying into escrow → client's notification bell shows "Payment is safely in escrow".
+
+🕒 **Terms/Privacy/Content-policy dash sweep + Terms §1 rewrite** — no code path, just static routes. Visual verify by loading `/terms`, `/privacy`, `/content-policy` and confirming no em/en dashes remain in body copy.
 
 🕒 **Beta zero-commission waiver** — code shipped 2026-07-21. `BETA_ZERO_COMMISSION` defaults ON. Verified via typecheck + node math check: `creativeGross(10000) = 10000` when flag on. Full paid-flow verification (post → accept → PayChangu sandbox pay → release; confirm creative payout summary + client quote both show "waived during beta" copy, and /admin still logs theoretical 15%) needs a manual walk — same constraint as 2026-07-18 top-up test.
 

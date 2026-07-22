@@ -63,7 +63,7 @@ export default async function EditProfilePage() {
           <p className="text-sm text-ink/60">
             {isClient
               ? "Saved so you don't have to re-type them at checkout. You can add multiple and pick a default."
-              : "Where PayChangu sends your money when a client releases payment. Add multiple; the default is used unless a specific job overrides it."}
+              : "Where your money is sent when a client releases payment. Add multiple; the default is used unless a specific job overrides it."}
           </p>
         </CardHeader>
         <CardContent className="space-y-6">

@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const { data: job } = await supabase.from("jobs").select("id, escrow_status").eq("payment_ref", txRef).maybeSingle();
+  const { data: job } = await supabase.from("jobs").select("id, escrow_status, client_id, title").eq("payment_ref", txRef).maybeSingle();
   if (!job) return NextResponse.json({ ok: true });
 
   if (verified.status === "success" && job.escrow_status === "payment_pending") {
@@ -108,6 +108,17 @@ export async function POST(req: Request) {
       payment_rail: verified.rail ?? null,
     }).eq("id", job.id);
     await promotePendingAcceptance(supabase, job.id);
+    // Confirm to the client that funds landed. Creative gets their own
+    // notification from promotePendingAcceptance (proposal accepted).
+    await supabase.from("notifications").insert({
+      user_id: job.client_id,
+      kind: "escrow_funded",
+      title: "Payment is safely in escrow",
+      body: `Funds for "${job.title}" are held. The creative can begin work. You'll be able to release payment the next business day.`,
+      link: `/jobs/${job.id}`,
+      target_type: "job",
+      target_id: job.id,
+    });
   } else if (verified.status === "failed" && job.escrow_status === "payment_pending") {
     await supabase.from("jobs").update({
       escrow_status: "none",

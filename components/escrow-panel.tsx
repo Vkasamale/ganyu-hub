@@ -5,6 +5,7 @@ import { updateEscrowStatus, reconcilePayout } from "@/app/actions";
 import { creativeAmount, CREATIVE_SHARE } from "@/lib/payments";
 import { BETA_ZERO_COMMISSION } from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
+import { HoldCountdown } from "@/components/hold-countdown";
 
 type Role = "client" | "creative";
 type Escrow = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
@@ -18,9 +19,9 @@ const LABELS: Record<Escrow, string> = {
 };
 
 const HINTS: Record<Escrow, string> = {
-  none: "Pay the agreed amount into escrow to secure the work. You'll be redirected to PayChangu's checkout.",
-  payment_pending: "Waiting on PayChangu to confirm the payment. This page updates as soon as it clears.",
-  payment_held: "Funds are held. Release when the work is complete, or flag a dispute if there's a problem.",
+  none: "Pay the agreed amount into escrow to secure the work. You'll be redirected to our secure checkout. Once paid, funds settle and become releasable the next business day.",
+  payment_pending: "Waiting for the payment to confirm. This page updates as soon as it clears.",
+  payment_held: "Funds are held. They become releasable the next business day after payment clears — release when the work is complete, or flag a dispute if there's a problem.",
   payment_released: "Funds released to the creative. Done.",
   payment_disputed: "Payment is in dispute. Resolve by releasing or by re-holding while you sort it out.",
 };
@@ -41,17 +42,18 @@ function clientActions(status: Escrow): { next: Escrow; label: string; variant?:
 
 export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, paymentHeldAt }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null; paymentHeldAt?: string | null }) {
   const payoutPending = payoutStatus === "pending";
-  // PayChangu T+1: funds only settle to main balance the next business day.
-  // Block the Release button until 24h after payment_held, matching the server.
+  // Funds only settle to main balance the next business day. Server enforces
+  // the 24h gate too; here we only surface it in the UI.
   const HOLD_MS = 24 * 60 * 60 * 1000;
   const heldMs = paymentHeldAt ? Date.now() - new Date(paymentHeldAt).getTime() : Infinity;
   const holdActive = escrowStatus === "payment_held" && heldMs < HOLD_MS;
-  const hoursLeft = holdActive ? Math.ceil((HOLD_MS - heldMs) / (60 * 60 * 1000)) : 0;
-  // Hide the release action entirely while a payout is in flight or the T+1
-  // hold is still ticking. Server also enforces both.
-  const actions = role === "client"
-    ? clientActions(escrowStatus).filter((a) => !((payoutPending || holdActive) && a.next === "payment_released"))
-    : [];
+  // Keep the Release button visible during the hold but disabled — clearer
+  // than hiding it. The countdown text right below tells them why.
+  const rawActions = role === "client" ? clientActions(escrowStatus) : [];
+  const actions = rawActions.map((a) => ({
+    ...a,
+    disabled: (payoutPending || holdActive) && a.next === "payment_released",
+  }));
 
   return (
     <Card className="mt-6">
@@ -62,7 +64,7 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
         </div>
         <p className="mt-2 text-sm text-neutral-600">
           {payoutPending
-            ? "Payout to the creative is processing with PayChangu. This page will update as soon as it's confirmed."
+            ? "Payout to the creative is processing. This page will update as soon as it's confirmed."
             : HINTS[escrowStatus]}
         </p>
         {actions.length > 0 && (
@@ -71,22 +73,22 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
               <SavingForm key={a.next} action={updateEscrowStatus} successText={`Payment ${a.next.replace(/_/g, " ")}.`}>
                 <input type="hidden" name="job_id" value={jobId} />
                 <input type="hidden" name="escrow_status" value={a.next} />
-                <SubmitButton size="sm" variant={a.variant} pendingText="Saving…">{a.label}</SubmitButton>
+                <SubmitButton size="sm" variant={a.variant} pendingText="Saving…" disabled={a.disabled}>{a.label}</SubmitButton>
               </SavingForm>
             ))}
           </div>
         )}
         {payoutPending && (
           <div className="mt-3">
-            <SavingForm action={reconcilePayout} successText="Checked with PayChangu.">
+            <SavingForm action={reconcilePayout} successText="Payout status refreshed.">
               <input type="hidden" name="job_id" value={jobId} />
               <SubmitButton size="sm" variant="outline" pendingText="Checking…">Refresh payout status</SubmitButton>
             </SavingForm>
           </div>
         )}
-        {holdActive && (
+        {holdActive && paymentHeldAt && (
           <p className="mt-3 text-xs text-neutral-500">
-            PayChangu clears funds the next business day (T+1). Release opens in ~{hoursLeft}h.
+            Funds settle the next business day after payment. <HoldCountdown paymentHeldAt={paymentHeldAt} holdMs={HOLD_MS} />
           </p>
         )}
         {role === "creative" && escrowStatus === "none" && (

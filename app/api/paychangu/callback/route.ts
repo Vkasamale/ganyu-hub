@@ -43,7 +43,7 @@ export async function GET(req: Request) {
   }
 
   if (txRef) {
-    const { data: job } = await supabase.from("jobs").select("id, escrow_status").eq("payment_ref", txRef).maybeSingle();
+    const { data: job } = await supabase.from("jobs").select("id, escrow_status, client_id, title").eq("payment_ref", txRef).maybeSingle();
     if (job && job.escrow_status === "payment_pending") {
       const verified = await verifyPayment(txRef);
       if (verified.status === "success") {
@@ -56,6 +56,18 @@ export async function GET(req: Request) {
           payment_rail: verified.rail ?? null,
         }).eq("id", job.id);
         await promotePendingAcceptance(supabase, job.id);
+        // Whichever path fires first (callback vs webhook) inserts this; the
+        // other's branch is guarded by escrow_status === "payment_pending", so
+        // the second attempt skips the update AND this insert.
+        await supabase.from("notifications").insert({
+          user_id: job.client_id,
+          kind: "escrow_funded",
+          title: "Payment is safely in escrow",
+          body: `Funds for "${job.title}" are held. The creative can begin work. You'll be able to release payment the next business day.`,
+          link: `/jobs/${job.id}`,
+          target_type: "job",
+          target_id: job.id,
+        });
       } else if (verified.status === "failed") {
         await supabase.from("jobs").update({
           escrow_status: "none",

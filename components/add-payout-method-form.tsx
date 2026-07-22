@@ -66,7 +66,7 @@ export function AddPayoutMethodForm({ banks }: { banks: Bank[] }) {
             <Label htmlFor="bank_account_number">Account number</Label>
             <Input id="bank_account_number" name="bank_account_number" />
           </div>
-          <p className="text-xs text-ink/50">Bank payouts may need PayChangu support to activate. Mobile money works out of the box.</p>
+          <p className="text-xs text-ink/50">Bank payouts may need support activation — contact us if yours doesn't go through. Mobile money works out of the box.</p>
         </div>
       )}
 

@@ -3,6 +3,26 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-22 (c) — Terms §1 rewrite in founder voice
+
+Replaced the placeholder "Who we are" section with a longer, personal, first-person origin: registered Malawian business, started in Blantyre. The "why" is now the broader pattern of upfront payment + disappearing service providers in the local creative space, not a single anecdote. Reinforces escrow + accountability positioning. Contact block now surfaces WhatsApp/call (+265 886 072 933) and email (CiTiMrKt@gmail.com) alongside the report form.
+
+## 2026-07-22 (b) — Dash sweep, live release countdown, escrow-funded notification
+
+Stripped em/en dashes from `/terms`, `/privacy`, `/content-policy` (AI-tell). Replaced with commas, periods, or colons — no wording changes. Rewrote Terms §1 "Who we are" in first-person, more human voice ("We're a small team based in Blantyre…").
+
+Release-payment button: was hidden during the 24h settlement hold. Now visible-but-disabled with a live countdown ("Release opens in 14h 22m 03s") that ticks every second. New `components/hold-countdown.tsx` client component. Server enforcement of the 24h gate unchanged.
+
+Client notification when payment lands in escrow: `escrow_funded` kind, inserted from both the PayChangu webhook and callback paths (whichever fires first wins — the other's branch is guarded by `escrow_status === "payment_pending"` so no duplicates). Copy: "Payment is safely in escrow — Funds for [job] are held. The creative can begin work. You'll be able to release payment the next business day."
+
+## 2026-07-22 — Double-fee fix + PayChangu name removed from user-facing copy
+
+Fixed double-charge on checkout: `app/actions.ts` was passing `clientCharge(bid, rail)` (bid + our fee estimate) as the `amount` to the processor, which then added its own fee on top of that, so the customer paid the fee twice (10,000 bid → shown 10,200 → actually charged ~10,404). Both `acceptProposal` and the top-up payment path now pass the raw bid — the processor adds its fee on top for the customer, and the full bid still lands in escrow. `clientCharge` stays for UI display.
+
+Rebranded user-facing "PayChangu" mentions to generic language ("our secure checkout", "processing fee", "payment") in `escrow-panel.tsx`, `accept-proposal-picker.tsx`, `jobs/[id]/page.tsx`, `add-payout-method-form.tsx`, `dashboard/profile/page.tsx`. Support issues will route to us instead of the vendor. Legal disclosure in `terms/page.tsx` + `privacy/page.tsx` keeps the vendor name (required disclosure). Admin pages also keep it (internal, useful for diagnosis).
+
+T+1 language softened: "PayChangu clears funds the next business day (T+1)" → "Funds settle the next business day after payment." Client now sees the settlement notice up-front in the `payment_held` hint AND at accept-time in the payment picker, so they know money can't be released instantly.
+
 ## 2026-07-21 — Beta zero-commission waiver + backlog OTP/IDV research
 
 Added `BETA_ZERO_COMMISSION` flag in `lib/fees.ts` (env-driven, default ON). Creatives keep 100% of the bid during beta; PayChangu payout fee pass-through unchanged. `creativeGross` routes through `effectiveCommission()`; `lib/payments.ts:creativeAmount` delegates through it so escrow-panel + cancellation split honor the flag. UI copy updated in `proposal-payout-preview.tsx` ("Waived during beta"), `accept-proposal-picker.tsx` ("No platform fee during beta"), `escrow-panel.tsx` (creative help line). Admin money tile now labeled "Platform revenue (waived during beta)" but still logs the theoretical 15% so visibility is preserved. One-line launch flip: set `NEXT_PUBLIC_BETA_ZERO_COMMISSION=false` in Vercel + redeploy.

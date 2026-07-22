@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Privacy Policy — Ganyu Hub" };
+export const metadata = { title: "Privacy Policy | Ganyu Hub" };
 
 export default function PrivacyPage() {
   return (
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold">1. What we collect</h2>
           <ul className="list-disc space-y-1 pl-5">
             <li><strong>Account:</strong> full name, email, password (stored hashed by Supabase Auth), role.</li>
-            <li><strong>Profile:</strong> bio, headline, avatar, cover image, portfolio pieces, rate cards. This is public — it&apos;s how clients find you.</li>
+            <li><strong>Profile:</strong> bio, headline, avatar, cover image, portfolio pieces, rate cards. This is public. It&apos;s how clients find you.</li>
             <li><strong>Contact:</strong> phone number, WhatsApp. These stay private until a job is funded, then become visible to the other party.</li>
             <li><strong>ID documents:</strong> Creatives submit an ID image before payout. Stored in a private Supabase Storage bucket; only admins can see it.</li>
             <li><strong>Payments:</strong> job amounts, PayChangu transaction references, payout method details (mobile money number or bank account) you save.</li>
@@ -41,11 +41,11 @@ export default function PrivacyPage() {
         <section className="card-soft p-5">
           <h2 className="text-lg font-semibold">3. Who we share it with</h2>
           <ul className="list-disc space-y-1 pl-5">
-            <li><strong>The other party on a job</strong> — once escrow is funded, both sides see each other&apos;s contact info.</li>
-            <li><strong>PayChangu</strong> — our payments partner. They handle collection, holding, and payout of MWK. They see the amounts and the payer/payee details needed to move the money.</li>
-            <li><strong>Supabase</strong> — our database and storage provider. Your data lives on their infrastructure.</li>
-            <li><strong>Resend</strong> — our email provider. They see the email address we send to and the message contents.</li>
-            <li><strong>Vercel</strong> — our hosting provider.</li>
+            <li><strong>The other party on a job</strong>:once escrow is funded, both sides see each other&apos;s contact info.</li>
+            <li><strong>PayChangu</strong>:our payments partner. They handle collection, holding, and payout of MWK. They see the amounts and the payer/payee details needed to move the money.</li>
+            <li><strong>Supabase</strong>:our database and storage provider. Your data lives on their infrastructure.</li>
+            <li><strong>Resend</strong>:our email provider. They see the email address we send to and the message contents.</li>
+            <li><strong>Vercel</strong>:our hosting provider.</li>
           </ul>
           <p>
             We <strong>don&apos;t sell your data</strong> to advertisers or data
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
           <p>
             Passwords are hashed by Supabase Auth (we never see your plaintext
             password). ID documents sit in a private storage bucket that isn&apos;t
-            publicly reachable. Payments are handled by PayChangu — we never see
+            publicly reachable. Payments are handled by PayChangu. We never see
             your full card or bank credentials. That said, no online service is
             100% secure. Use a strong, unique password.
           </p>

@@ -247,7 +247,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <Card className="mt-6 border-amber-200 bg-amber-50">
           <CardContent className="p-5 text-sm text-amber-900">
             <p className="font-medium">Payment pending — this creative isn't locked in yet.</p>
-            <p className="mt-1">Complete payment on PayChangu to finalise acceptance. Until then this job stays open and other proposals can still come in. Use "Cancel pending payment" below to release the hold.</p>
+            <p className="mt-1">Complete the checkout to finalise acceptance. Until then this job stays open and other proposals can still come in. Use "Cancel pending payment" below to release the hold.</p>
           </CardContent>
         </Card>
       )}
@@ -255,7 +255,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <Card className="mt-6 border-amber-200 bg-amber-50">
           <CardContent className="p-5 text-sm text-amber-900">
             <p className="font-medium">The client started payment for your proposal.</p>
-            <p className="mt-1">Nothing is locked in until PayChangu confirms the payment. You'll be notified when it clears.</p>
+            <p className="mt-1">Nothing is locked in until the payment confirms. You'll be notified when it clears.</p>
           </CardContent>
         </Card>
       )}

@@ -32,7 +32,7 @@ export function AcceptProposalPicker({ proposalId, bidMwk }: { proposalId: strin
     <div className="w-full rounded-lg border border-ink/15 bg-paper p-4 space-y-3">
       <p className="text-sm font-medium">Choose how you'll pay</p>
       <p className="text-xs text-ink/70">
-        PayChangu adds a fee on top of the bid. The full bid still lands in escrow.
+        A processing fee is added on top of the bid at checkout. The full bid still lands in escrow. Funds settle and become releasable the next business day.
         {BETA_ZERO_COMMISSION && " No platform fee during beta — the creative keeps 100% of the bid."}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -52,7 +52,7 @@ export function AcceptProposalPicker({ proposalId, bidMwk }: { proposalId: strin
       <div className="rounded-md bg-ink/5 p-3 text-sm space-y-1">
         <div className="flex justify-between"><span>Bid to escrow</span><span>{formatMwk(bidMwk)}</span></div>
         <div className="flex justify-between text-ink/70">
-          <span>+ PayChangu fee ({(COLLECTION_RATES[rail] * 100).toFixed(0)}%)</span>
+          <span>+ Processing fee ({(COLLECTION_RATES[rail] * 100).toFixed(0)}%)</span>
           <span>{formatMwk(fee)}</span>
         </div>
         <div className="flex justify-between font-semibold pt-1 border-t border-ink/10">
