@@ -49,9 +49,10 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
   if (skills.length) query = query.overlaps("skills", skills);
   // Empty array ⇒ no creative matched the price range ⇒ zero results (correct).
   if (priceProfileIds != null) query = query.in("id", priceProfileIds);
-  if (sort === "rate_asc") query = query.order("hourly_rate_mwk", { ascending: true, nullsFirst: false });
-  else if (sort === "rate_desc") query = query.order("hourly_rate_mwk", { ascending: false, nullsFirst: false });
-  else query = query.order("created_at", { ascending: false });
+  // ponytail: rate sort has to happen in memory — hourly_rate_mwk is dead;
+  // real prices live in `services` and are aggregated into fromPrice below.
+  // DB-side we just default to newest and re-sort after fromPrice is built.
+  query = query.order("created_at", { ascending: false });
 
   const { data: profiles } = await query;
   const { data: { user } } = await supabase.auth.getUser();
@@ -99,6 +100,17 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
       const sa = ra ? ra.avg * Math.log((ra.count || 0) + 1) : 0;
       const sb = rb ? rb.avg * Math.log((rb.count || 0) + 1) : 0;
       return sb - sa;
+    });
+  } else if (sort === "rate_asc" || sort === "rate_desc") {
+    // Priced profiles first, cheapest/priciest by their lowest service price.
+    // Profiles with no priced service sink to the bottom either way.
+    visibleProfiles = [...visibleProfiles].sort((a, b) => {
+      const pa = fromPrice.get(a.id);
+      const pb = fromPrice.get(b.id);
+      if (pa == null && pb == null) return 0;
+      if (pa == null) return 1;
+      if (pb == null) return -1;
+      return sort === "rate_asc" ? pa - pb : pb - pa;
     });
   }
   const visibleCount = visibleProfiles.length;

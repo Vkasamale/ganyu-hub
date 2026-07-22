@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-22 (f) — /browse rate sort was broken (dead column)
+
+`Sort by "Lowest rate" / "Highest rate"` on `/browse` was ordering by `profiles.hourly_rate_mwk` — a column the codebase itself already marked dead (real prices live in `services`). Result: the sort effectively did nothing. Fixed by dropping the DB `.order("hourly_rate_mwk")` branch and re-sorting `visibleProfiles` in memory by the already-computed `fromPrice` map (min service price per profile). Profiles with no priced service sink to the bottom either direction. `top_rated` and `newest` unchanged.
+
 ## 2026-07-22 (e) — Live char counters on Brief + Deliverables; revisions backlog note
 
 Replaced "(min 200 characters)" / "(min 50 characters)" label suffixes on the job-post form (`app/jobs/new/page.tsx`) and the private-invite form (`app/creatives/[id]/invite/page.tsx`) with a live `count/min` counter under the textarea. New `components/char-count-textarea.tsx` client component; server-side `minLength` still enforced via prop pass-through.
