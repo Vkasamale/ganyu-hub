@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { CharCountTextarea } from "@/components/char-count-textarea";
 import { inviteCreative, sendInviteWithNewJob } from "@/app/actions";
 import { CATEGORIES } from "@/lib/types";
 
@@ -106,12 +107,12 @@ export default async function InviteCreativePage({ params }: { params: Promise<{
             <Input id="deadline" name="deadline" type="date" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="brief">Brief (min 200 chars)</Label>
-            <Textarea id="brief" name="brief" rows={6} required minLength={200} placeholder="What's the job, why it matters, who it's for, any constraints." />
+            <Label htmlFor="brief">Brief</Label>
+            <CharCountTextarea id="brief" name="brief" rows={6} required minLength={200} placeholder="What's the job, why it matters, who it's for, any constraints." />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="deliverables">Deliverables (min 50 chars)</Label>
-            <Textarea id="deliverables" name="deliverables" rows={3} required minLength={50} placeholder="Exactly what you'll receive at the end." />
+            <Label htmlFor="deliverables">Deliverables</Label>
+            <CharCountTextarea id="deliverables" name="deliverables" rows={3} required minLength={50} placeholder="Exactly what you'll receive at the end." />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="message">Message to {name} (optional)</Label>

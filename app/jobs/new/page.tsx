@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { postJob } from "@/app/actions";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { CharCountTextarea } from "@/components/char-count-textarea";
 import { CATEGORIES } from "@/lib/types";
 
 export default async function NewJobPage() {
@@ -30,12 +30,12 @@ export default async function NewJobPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="brief">Brief (min 200 characters)</Label>
-              <Textarea id="brief" name="brief" required rows={7} minLength={200} placeholder="Describe what you need, the audience, tone, references, and anything the creative needs to know before starting. Accepting a proposal is a contract — the more specific here, the fewer disputes later." />
+              <Label htmlFor="brief">Brief</Label>
+              <CharCountTextarea id="brief" name="brief" required rows={7} minLength={200} placeholder="Describe what you need, the audience, tone, references, and anything the creative needs to know before starting. Accepting a proposal is a contract. The more specific here, the fewer disputes later." />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="deliverables">Deliverables (min 50 characters)</Label>
-              <Textarea id="deliverables" name="deliverables" required rows={4} minLength={50} placeholder="What exactly will you receive? e.g.&#10;- Final logo in PNG and SVG&#10;- 3 color variants&#10;- Source file (.ai or .fig)" />
+              <Label htmlFor="deliverables">Deliverables</Label>
+              <CharCountTextarea id="deliverables" name="deliverables" required rows={4} minLength={50} placeholder="What exactly will you receive? e.g.&#10;- Final logo in PNG and SVG&#10;- 3 color variants&#10;- Source file (.ai or .fig)" />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">

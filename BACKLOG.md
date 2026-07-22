@@ -18,6 +18,10 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - ~~**Finish the WCAG contrast sweep.**~~ **Shipped 2026-07-17.** Full `text-stamp` → `text-stamp-dark` swap across 12 files; decorative italic display headings kept as bright `text-stamp` (large text, AA-passing at 3:1). See CHANGELOG 2026-07-17.
 
+## Scope / proposals
+
+- **Move "revisions included" from the client to the creative.** Currently the client sets `revisions_included` on the job post form (`app/jobs/new/page.tsx`, `app/creatives/[id]/invite/page.tsx`), which is backwards: the creative is the one whose price is a function of how many rounds of changes they'll absorb. The client can't correctly guess a number that keeps the bid math sensible. The right shape: keep the field on the job form as an optional *ask* ("how many revisions would you like?"), but make the creative set the actual committed number on their proposal, alongside bid and turnaround. That number is what shows in the accepted scope and what the dispute path enforces. Schema: add `revisions_offered int` to `proposals`; on accept, copy to `jobs.revisions_included` so the rest of the flow keeps working unchanged.
+
 ## Payments
 
 - **Tips after release.** Once escrow is released the fund cycle is closed — no more top-ups (enforced 2026-07-13). A separate "Send a tip" flow could let clients add money post-release without re-opening escrow: goes straight to the creative through a fresh PayChangu payout, no back-and-forth. Nice to have; not urgent.

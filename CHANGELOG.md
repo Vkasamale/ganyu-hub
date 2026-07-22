@@ -3,6 +3,12 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-22 (e) — Live char counters on Brief + Deliverables; revisions backlog note
+
+Replaced "(min 200 characters)" / "(min 50 characters)" label suffixes on the job-post form (`app/jobs/new/page.tsx`) and the private-invite form (`app/creatives/[id]/invite/page.tsx`) with a live `count/min` counter under the textarea. New `components/char-count-textarea.tsx` client component; server-side `minLength` still enforced via prop pass-through.
+
+Backlog: added "Move 'revisions included' from the client to the creative" under a new Scope/proposals section. Creative should commit revisions in the proposal since the number is a function of their price, not the client's guess.
+
 ## 2026-07-22 (d) — Terms §1 formatting pass + Contact page
 
 Reformatted Terms §1 with bold lead-ins per paragraph ("Why we exist.", "The middle ground.", "Built for skill, not certificates.", "What 'ganyu' means.", "Reach us anytime.") matching Section 2's rhythm. Bolded key phrases: "registered Malawian business", "held in escrow", "Both the client and the creative are protected. Both are accountable." Reads scannable instead of a wall of text.
