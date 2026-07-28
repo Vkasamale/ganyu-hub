@@ -5,6 +5,7 @@ import { Inter, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import { Toaster } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
+import { Analytics } from "@vercel/analytics/next";
 
 const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </footer>
         <Toaster position="bottom-right" richColors closeButton />
+        <Analytics />
       </body>
     </html>
   );
