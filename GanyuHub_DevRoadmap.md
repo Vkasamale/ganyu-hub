@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-24 (BUG-001 onboarding-save mitigations shipped: profiles upsert + affected-row checks + non-fatal cover upload + Vercel logging; new BUG_LOG.md at repo root back-populated from CHANGELOG history)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-24 (BUG_LOG.md fully back-populated from day zero — 30 historical fixes documented with symptom/cause/fix, in addition to BUG-001 still In Progress)
 
 ---
 

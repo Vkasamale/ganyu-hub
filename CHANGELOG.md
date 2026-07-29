@@ -3,6 +3,12 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-24 (b) — BUG_LOG.md fully back-populated from day zero
+
+Combed the entire CHANGELOG.md (624 lines, 2026-06-24 → today) and pulled every entry with a clear bug-to-fix arc into `BUG_LOG.md`. 30 historical fixes now logged in `FIX-YYYY-MM-DD-<letter>` format under a Fixed section, newest first, grouped by date. Each entry has symptom / cause / fix. Coverage spans payment double-charges, PostgREST embed regressions, dead-column sort, silent 0-row updates, RLS gaps, image-upload capping, WCAG contrast failures, cron scheduling, RSC render-time race, prop leakage, deadline defaults, taxonomy drift, layout clipping, and duplicate JSX. Pure feature ships excluded.
+
+BUG-001 stays In Progress at the top until the reporter re-tests on the new deploy.
+
 ## 2026-07-24 — BUG-001 mitigations + BUG_LOG.md
 
 Creative reported that "Finish & go to dashboard" on `/onboarding/creative` redirected them but saved nothing. Redirect firing while nothing lands points at a silent 0-row mutation, most likely a missing profiles base row so `.update().eq('id', user.id)` matched nothing (Supabase JS treats 0-row updates as success). Shipped defensive changes:
