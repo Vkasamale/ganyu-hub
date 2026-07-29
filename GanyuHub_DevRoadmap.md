@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-22 (double-fee at checkout fixed; user-facing PayChangu name genericized; live release countdown; escrow-funded client notification; Terms/Privacy/Content-policy dash sweep; Terms §1 rewritten in founder voice)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-24 (BUG-001 onboarding-save mitigations shipped: profiles upsert + affected-row checks + non-fatal cover upload + Vercel logging; new BUG_LOG.md at repo root back-populated from CHANGELOG history)
 
 ---
 

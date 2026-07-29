@@ -3,6 +3,17 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-24 — BUG-001 mitigations + BUG_LOG.md
+
+Creative reported that "Finish & go to dashboard" on `/onboarding/creative` redirected them but saved nothing. Redirect firing while nothing lands points at a silent 0-row mutation, most likely a missing profiles base row so `.update().eq('id', user.id)` matched nothing (Supabase JS treats 0-row updates as success). Shipped defensive changes:
+
+- `profiles.update` → `profiles.upsert(..., { onConflict: 'id' })` so a missing row auto-creates.
+- Chained `.select('id')` on all three writes (`profiles`, `portfolio_items`, `services`); explicit user error + `console.error` to Vercel logs if any affected 0 rows.
+- Cover-image upload now non-fatal — logs and continues with `cover_url = null` on failure so the creative doesn't lose their bio over a storage RLS hiccup.
+- Success log `[onboarding] creative onboarded <user_id> cover=<bool>` for trace visibility.
+
+New `BUG_LOG.md` at repo root: problem/cause/fix format, open bugs at top, fixed section back-populated with the notable historical fixes from CHANGELOG (rate sort, double-fee, payout-pending, PGRST201, 3-attempts cap, etc.). Going forward all beta bug reports are logged here first.
+
 ## 2026-07-22 (f) — /browse rate sort was broken (dead column)
 
 `Sort by "Lowest rate" / "Highest rate"` on `/browse` was ordering by `profiles.hourly_rate_mwk` — a column the codebase itself already marked dead (real prices live in `services`). Result: the sort effectively did nothing. Fixed by dropping the DB `.order("hourly_rate_mwk")` branch and re-sorting `visibleProfiles` in memory by the already-computed `fromPrice` map (min service price per profile). Profiles with no priced service sink to the bottom either direction. `top_rated` and `newest` unchanged.

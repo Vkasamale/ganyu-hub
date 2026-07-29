@@ -4,7 +4,11 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-22 (double-fee fix, dash sweep, release countdown, escrow notification, Terms §1 rewrite)
+Last updated: 2026-07-24 (BUG-001 onboarding-save mitigations shipped; awaiting real-user re-test)
+
+🕒 **BUG-001 onboarding re-test** — the beta creative who hit the "Finish & go to dashboard doesn't save" bug needs to try again on the new deploy. If it succeeds: the upsert + affected-row check was the fix. If it fails: check Vercel logs for `[onboarding]` lines — the new logging names the exact failing step (upload / profiles / portfolio_items / services). Backfill the earlier failed submission manually from Supabase Studio if needed.
+
+
 
 🕒 **Double-fee fix (checkout)** — `app/actions.ts` now sends raw bid to processor instead of `clientCharge(bid, rail)`. Manual sandbox pay needed to confirm the customer is charged bid + one processor fee (not two). Expected on 10,000 MWK bid via bank rail: checkout shows ~10,200 total.
 

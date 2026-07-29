@@ -14,6 +14,10 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **ID + liveness verification badge for creatives.** Upgrades current KYC (ID captured before payout) to a certified badge: document scan + liveness check, verified creatives surfaced as more trustworthy / more likely to be hired. Handled by dedicated IDV vendors (e.g. Smile Identity, Youverify, Trulioo), not SMS gateways. Rough industry pricing ballpark ~$0.50–$2+ per verification depending on provider/coverage/liveness — meaningfully more expensive than OTP, unconfirmed for Malawi specifically, needs a real quote before committing. Not needed at beta scale (6 personally-recruited creatives you can call directly); revisit once supply is large enough that you can't personally vouch for everyone.
 
+## Theming
+
+- **Dark mode for public launch.** Site is heavy on white surfaces (`bg-paper`, `bg-white`, `card-soft`) and the reading experience gets tiring on long pages (Terms, dashboards, `/browse`). Ship a dark theme for the public-launch marketing push — not urgent for beta since the surface is still moving weekly and every color change would need re-QA in both themes. Approach: add a `dark:` variant sweep across the design tokens (`text-ink`, `text-ink/60`, `bg-paper`, `bg-wash`, `border-ink/10`, `card-soft`), toggle in the navbar with `next-themes`, respect `prefers-color-scheme` on first visit. Budget half a day to a day plus visual QA across every route. Do NOT ship piecemeal — half-themed pages look broken.
+
 ## Accessibility
 
 - ~~**Finish the WCAG contrast sweep.**~~ **Shipped 2026-07-17.** Full `text-stamp` → `text-stamp-dark` swap across 12 files; decorative italic display headings kept as bright `text-stamp` (large text, AA-passing at 3:1). See CHANGELOG 2026-07-17.

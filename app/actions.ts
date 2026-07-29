@@ -163,6 +163,9 @@ export async function completeCreativeOnboarding(formData: FormData) {
   const piece_description = String(formData.get("piece_description") || "").trim();
   const piece_project_url = String(formData.get("piece_project_url") || "").trim() || null;
 
+  // ponytail: image upload is the fragile step (storage.objects RLS). If it
+  // fails, log and continue with null cover so the profile + service still land
+  // — the creative can re-add the image later from /dashboard/portfolio.
   let piece_cover_url: string | null = null;
   const pieceCover = formData.get("piece_cover_file");
   if (pieceCover instanceof File && pieceCover.size > 0) {
@@ -173,8 +176,11 @@ export async function completeCreativeOnboarding(formData: FormData) {
     const { error: upErr } = await supabase.storage
       .from("portfolio")
       .upload(path, pieceCover, { contentType: pieceCover.type });
-    if (upErr) return { error: upErr.message };
-    piece_cover_url = supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl;
+    if (upErr) {
+      console.error("[onboarding] portfolio cover upload failed:", upErr.message, "path=", path);
+    } else {
+      piece_cover_url = supabase.storage.from("portfolio").getPublicUrl(path).data.publicUrl;
+    }
   }
   const service_title = String(formData.get("service_title") || "").trim();
   const service_price_mwk = Number(formData.get("service_price_mwk")) || null;
@@ -191,29 +197,56 @@ export async function completeCreativeOnboarding(formData: FormData) {
   if (!service_title) return { error: "Add at least one service to your rate card." };
   if (!service_price_mwk) return { error: "Add a starting price for the service." };
 
-  const { error: pErr } = await supabase.from("profiles").update({
+  // ponytail: upsert (not update) — if the profiles row was never created for
+  // this auth user (e.g. signup path skipped the trigger), `update().eq(id)`
+  // silently affects zero rows and the client sees a redirect with no data
+  // saved. Upsert guarantees the row exists.
+  const { data: pRows, error: pErr } = await supabase.from("profiles").upsert({
+    id: user.id,
     headline, bio, categories, skills,
     onboarded_at: new Date().toISOString(),
-  }).eq("id", user.id);
-  if (pErr) return { error: pErr.message };
+  }, { onConflict: "id" }).select("id");
+  if (pErr) {
+    console.error("[onboarding] profiles.upsert failed:", pErr.message);
+    return { error: pErr.message };
+  }
+  if (!pRows || pRows.length === 0) {
+    console.error("[onboarding] profiles.upsert affected 0 rows for user=", user.id);
+    return { error: "Couldn't save your profile. Please try again or contact support." };
+  }
 
-  const { error: iErr } = await supabase.from("portfolio_items").insert({
+  const { data: iRows, error: iErr } = await supabase.from("portfolio_items").insert({
     profile_id: user.id,
     title: piece_title,
     description: piece_description || null,
     cover_url: piece_cover_url,
     project_url: piece_project_url,
-  });
-  if (iErr) return { error: iErr.message };
+  }).select("id");
+  if (iErr) {
+    console.error("[onboarding] portfolio_items.insert failed:", iErr.message);
+    return { error: iErr.message };
+  }
+  if (!iRows || iRows.length === 0) {
+    console.error("[onboarding] portfolio_items.insert affected 0 rows for user=", user.id);
+    return { error: "Couldn't save your portfolio piece. Please try again." };
+  }
 
-  const { error: sErr } = await supabase.from("services").insert({
+  const { data: sRows, error: sErr } = await supabase.from("services").insert({
     profile_id: user.id,
     title: service_title,
     price_mwk: service_price_mwk,
     price_mwk_max: service_price_mwk_max,
     delivery_days: service_delivery_days,
-  });
-  if (sErr) return { error: sErr.message };
+  }).select("id");
+  if (sErr) {
+    console.error("[onboarding] services.insert failed:", sErr.message);
+    return { error: sErr.message };
+  }
+  if (!sRows || sRows.length === 0) {
+    console.error("[onboarding] services.insert affected 0 rows for user=", user.id);
+    return { error: "Couldn't save your service. Please try again." };
+  }
+  console.log("[onboarding] creative onboarded", user.id, "cover=", !!piece_cover_url);
 
   revalidatePath("/dashboard");
   revalidatePath(`/creatives/${user.id}`);
