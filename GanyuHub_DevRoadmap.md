@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-24 (BUG_LOG.md fully back-populated from day zero — 30 historical fixes documented with symptom/cause/fix, in addition to BUG-001 still In Progress)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-07-25 (Job activity timeline session 1 of 4 shipped: job_events table + RLS + logJobEvent service-role helper + proposal_accepted wire at promotePendingAcceptance + JobTimeline component on the job detail page — additive, existing status badge untouched. Migration required.)
 
 ---
 

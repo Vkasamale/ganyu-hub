@@ -48,6 +48,7 @@ import { CancelJobPanel } from "@/components/cancel-job-panel";
 import { DeadlineExtensionPanel } from "@/components/deadline-extension-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
+import { JobTimeline, type JobEventRow } from "@/components/job-timeline";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout, requestTopUp, declineTopUp, payTopUp } from "@/app/actions";
 import { collectionFee } from "@/lib/fees";
 import { StarRatingInput } from "@/components/star-rating-input";
@@ -122,6 +123,18 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
   const isAcceptedCreative = !isClient && myProposal?.status === "accepted";
   const isParty = isClient || isAcceptedCreative;
+
+  // Timeline events (session 1 of 4). RLS on job_events already restricts to
+  // client/accepted-creative/admin; the isParty gate here just avoids the
+  // roundtrip when a non-party lands on the page.
+  const isAcceptedCreativeForEvents = !isClient && myProposal?.status === "accepted";
+  const isPartyForEvents = isClient || isAcceptedCreativeForEvents;
+  const { data: jobEvents } = isPartyForEvents
+    ? await supabase.from("job_events")
+        .select("id, event_type, note, created_at")
+        .eq("job_id", job.id)
+        .order("created_at", { ascending: true })
+    : { data: null };
 
   const CANCELLABLE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
   const canRequestCancel = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
@@ -228,6 +241,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
         <JobStatusPanel jobId={job.id} status={job.status || "open"} role="creative" />
+      )}
+
+      {isPartyForEvents && jobEvents && jobEvents.length > 0 && (
+        <JobTimeline events={jobEvents as JobEventRow[]} />
       )}
 
       {job.status === "disputed" && (

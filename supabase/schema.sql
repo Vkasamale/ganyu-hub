@@ -719,3 +719,41 @@ returns void language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.increment_total_paid(uuid, integer) from public, anon;
 grant execute on function public.increment_total_paid(uuid, integer) to authenticated, service_role;
+
+-- Job activity timeline. Append-only, human-readable log of significant
+-- lifecycle events on a job. Writes go through the server-side logJobEvent
+-- helper using the service role — no client insert policy on purpose.
+create table if not exists job_events (
+  id uuid primary key default gen_random_uuid(),
+  job_id uuid not null references jobs(id) on delete cascade,
+  event_type text not null,
+  actor_id uuid references profiles(id) on delete set null,
+  note text,
+  metadata jsonb,
+  created_at timestamptz not null default now(),
+  constraint job_events_event_type_check check (event_type in (
+    'proposal_accepted',
+    'escrow_funded',
+    'work_started',
+    'files_delivered',
+    'revision_requested',
+    'revision_delivered',
+    'job_completed',
+    'dispute_filed',
+    'dispute_resolved',
+    'cancelled',
+    'deadline_extended'
+  ))
+);
+create index if not exists job_events_job_id_created_at_idx on job_events(job_id, created_at);
+alter table job_events enable row level security;
+
+drop policy if exists "job_events read parties" on job_events;
+create policy "job_events read parties" on job_events for select using (
+  public.is_admin(auth.uid())
+  or auth.uid() in (select client_id from jobs where id = job_id)
+  or auth.uid() in (select creative_id from proposals where job_id = job_events.job_id and status = 'accepted')
+);
+-- No insert / update / delete policies on purpose. All writes route through
+-- the service-role helper (lib/job-events.ts:logJobEvent) so nothing on the
+-- client can forge or alter the timeline.

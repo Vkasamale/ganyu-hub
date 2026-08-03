@@ -4,7 +4,11 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-07-24 (BUG-001 onboarding-save mitigations shipped; awaiting real-user re-test)
+Last updated: 2026-07-25 (Job activity timeline session 1 shipped — awaiting manual walk of post→accept→pay to confirm proposal_accepted event renders)
+
+🕒 **Job activity timeline (session 1)** — new `job_events` table + `logJobEvent` helper + `JobTimeline` component + one wire point at `promotePendingAcceptance`. Verify manually per session-1 browser steps: post a job, submit + accept a proposal (through PayChangu sandbox), open job page and confirm a "Proposal accepted" entry with sensible relative timestamp; check Supabase Studio for the `job_events` row (job_id + actor_id = client). Confirm a third unrelated account cannot see the timeline (RLS gate). **Migration must be applied first** — re-run `supabase/schema.sql` in Supabase SQL editor before testing.
+
+
 
 🕒 **BUG-001 onboarding re-test** — the beta creative who hit the "Finish & go to dashboard doesn't save" bug needs to try again on the new deploy. If it succeeds: the upsert + affected-row check was the fix. If it fails: check Vercel logs for `[onboarding]` lines — the new logging names the exact failing step (upload / profiles / portfolio_items / services). Backfill the earlier failed submission manually from Supabase Studio if needed.
 

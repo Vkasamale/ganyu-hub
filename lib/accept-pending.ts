@@ -3,11 +3,13 @@
 // Kept out of app/actions.ts because that file's "use server" exports are all
 // RPC-callable, and this helper shouldn't be triggerable from the client.
 
+import { logJobEvent } from "@/lib/job-events";
+
 type Admin = any;
 
 export async function promotePendingAcceptance(admin: Admin, jobId: string) {
   const { data: job } = await admin.from("jobs")
-    .select("id, pending_accept_proposal_id, status")
+    .select("id, pending_accept_proposal_id, status, client_id")
     .eq("id", jobId).maybeSingle();
   if (!job || !job.pending_accept_proposal_id) return;
 
@@ -19,9 +21,19 @@ export async function promotePendingAcceptance(admin: Admin, jobId: string) {
 
   // Payment confirmed = scope agreement. Skip the scope_pending step entirely.
   // Only flip job.status if it's still open — never demote a further-along state.
-  await admin.from("jobs").update({
+  const { data: flipped } = await admin.from("jobs").update({
     status: "in_progress",
     pending_accept_proposal_id: null,
     payment_confirmed_at: new Date().toISOString(),
-  }).eq("id", jobId).eq("status", "open");
+  }).eq("id", jobId).eq("status", "open").select("id");
+
+  // Only log on the true transition. `flipped` empty ⇒ another writer already
+  // promoted this job (webhook + callback race) — skip the timeline write so
+  // we don't get duplicate 'proposal_accepted' rows.
+  if (flipped && flipped.length > 0) {
+    await logJobEvent(jobId, "proposal_accepted", null, {
+      actorId: job.client_id ?? null,
+      metadata: { proposal_id: pinnedId },
+    });
+  }
 }

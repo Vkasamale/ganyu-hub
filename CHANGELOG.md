@@ -3,6 +3,20 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-07-25 — Job activity timeline: schema + first event + render (session 1 of 4)
+
+Foundation for the multi-session job activity/timeline system. New `job_events` table (append-only): `id uuid pk`, `job_id fk jobs`, `event_type text CHECK` (11 initial values covering the full lifecycle), `actor_id fk profiles nullable`, `note text nullable`, `metadata jsonb nullable`, `created_at`. Index on `(job_id, created_at)`. RLS: select allowed for the client, the accepted creative, and admin. No insert/update/delete policies on purpose — the only writer is the service-role helper.
+
+New `lib/job-events.ts:logJobEvent(jobId, eventType, note?, opts?)` — service-role insert via the same `createServerClient` pattern as `lib/admin-errors.ts`. Missing service key is a soft-fail (logs, doesn't throw) so a misconfigured deploy can't take down the acceptance path.
+
+Wired at exactly one call site this session (proof of concept): `lib/accept-pending.ts:promotePendingAcceptance` now logs `proposal_accepted` with `actor_id = client_id` and `metadata.proposal_id`. The log call is gated on the affected-rows of the guarded `jobs.update ... eq("status", "open")` so webhook + callback races don't produce duplicate rows.
+
+New `components/job-timeline.tsx` — presentational server component. Vertical timeline, oldest→newest, dot + inline SVG icon + human label + `timeAgo` (reused from `lib/utils.ts`). Rendered on `app/jobs/[id]/page.tsx` just below `JobStatusPanel`, visible to both parties, hidden when there are no events. Existing status badge untouched — timeline is additive per spec.
+
+**Migration required:** re-run `supabase/schema.sql` for `job_events` and its policy.
+
+Sessions 2–4 will fan more writers into `logJobEvent` (escrow_funded, files_delivered, revisions, completion, dispute, cancel, deadline) and eventually mirror timeline entries into the message thread.
+
 ## 2026-07-24 (b) — BUG_LOG.md fully back-populated from day zero
 
 Combed the entire CHANGELOG.md (624 lines, 2026-06-24 → today) and pulled every entry with a clear bug-to-fix arc into `BUG_LOG.md`. 30 historical fixes now logged in `FIX-YYYY-MM-DD-<letter>` format under a Fixed section, newest first, grouped by date. Each entry has symptom / cause / fix. Coverage spans payment double-charges, PostgREST embed regressions, dead-column sort, silent 0-row updates, RLS gaps, image-upload capping, WCAG contrast failures, cron scheduling, RSC render-time race, prop leakage, deadline defaults, taxonomy drift, layout clipping, and duplicate JSX. Pure feature ships excluded.
