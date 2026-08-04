@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — GlassUploadButton: shared glassy-pill upload CTA
+
+New `components/glass-upload-button.tsx` — pure CSS approximation of the Dribbble shader-upload-button reference: glossy white pill with inner highlight + subtle depth shadow, cloud-up icon, hover raises the button with a conic chromatic-gradient halo blurred behind it, active state presses in. Three sizes (sm/md/lg). Swapped in as the trigger for `ImagePicker` (sm), `MultiImagePicker` (md), and `JobDeliverySubmit` (md — the native `<Input type="file">` was replaced with a hidden input + glass trigger + inline filename). `AttachmentPicker` deliberately skipped — that's a paperclip icon inside the message composer, wrong context for a large pill CTA. No new deps; no shader/webgl.
+
 ## 2026-08-04 — Session 7 polish 2: progress bar clip fix + brief card redesign
 
 Progress bar container gets `py-2 px-2` so the current dot's ring + `scale-110` bump aren't clipped vertically by `overflow-x-auto` (which forces `overflow-y: auto` under it). Brief card on `/jobs/[id]` redesigned: eyebrow "Project brief" label, brief text bumped to serif `text-lg`/`text-xl` with `leading-relaxed`, deliverables section separated by a hairline divider, meta row (Budget · Deadline · Revisions · Format) rebuilt as a compact `<dl>` strip with uppercase labels and `font-display` tabular-nums on Budget. Removed the standalone bold "Budget: MWK X" line — budget now lives inside the meta strip.

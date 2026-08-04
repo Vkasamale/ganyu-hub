@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { GlassUploadButton } from "@/components/glass-upload-button";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ACCEPT =
@@ -52,9 +53,9 @@ export function JobDeliverySubmit({ jobId }: { jobId: string }) {
         <SavingForm action={submitDelivery} successText="Delivery sent." resetOnSuccess className="mt-4 space-y-4">
           <input type="hidden" name="job_id" value={jobId} />
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="delivery_file">File (up to 10MB)</Label>
-            <Input
+            <input
               id="delivery_file"
               name="delivery_file"
               type="file"
@@ -62,10 +63,20 @@ export function JobDeliverySubmit({ jobId }: { jobId: string }) {
               ref={fileInputRef}
               onChange={onPickFile}
               disabled={link.trim().length > 0}
+              className="sr-only"
             />
-            {file && !fileError && (
-              <p className="text-xs text-ink/60">Selected: {file.name} ({fmtBytes(file.size)})</p>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <GlassUploadButton
+                size="md"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={link.trim().length > 0}
+              >
+                {file ? "Change file" : "Choose file"}
+              </GlassUploadButton>
+              {file && !fileError && (
+                <span className="text-xs text-ink/70">{file.name} · {fmtBytes(file.size)}</span>
+              )}
+            </div>
             {fileError && (
               <p className="text-xs text-red-600">{fileError}</p>
             )}

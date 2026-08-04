@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { GlassUploadButton } from "@/components/glass-upload-button";
 
 type Status = "uploading" | "done" | "error";
 type Item = {
@@ -137,19 +138,13 @@ export function MultiImagePicker({
       )}
 
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
+        <GlassUploadButton
+          size="md"
           onClick={() => fileInputRef.current?.click()}
           disabled={items.length >= max || !userId}
-          className="inline-flex items-center gap-2 rounded-md border border-ink/20 bg-paper px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink/40 disabled:opacity-50"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
           {items.length === 0 ? "Upload images" : "Add more"}
-        </button>
+        </GlassUploadButton>
         <p className="text-[11px] text-ink/50">
           {uploadedUrls.length}/{max} uploaded · first image is the cover
         </p>

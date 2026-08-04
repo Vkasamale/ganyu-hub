@@ -4,6 +4,13 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-04 — GlassUploadButton
+
+🕒 Portfolio uploader (`/dashboard/portfolio/[id]`) shows the glass pill for "Upload images"/"Add more".
+🕒 Profile/service avatar pickers show the glass pill for "Change"/"Choose image".
+🕒 Job delivery submit (`/jobs/[id]`) uses hidden input + glass "Choose file" trigger, filename shows inline.
+🕒 Hover raises the button and reveals the chromatic halo; disabled state greys out without lift.
+
 ## 2026-08-04 — Session 7 polish 2 (bar clip fix + brief card)
 
 ✅ /jobs/[id] loads (was throwing → "oops" after `"use client"` pulled `job-stages.ts` into the client bundle; `require.main === module` referenced undefined `module`). Confirmed live by user on prod after redeploy of `6f1df0b`.
