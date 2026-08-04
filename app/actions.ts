@@ -202,18 +202,23 @@ export async function completeCreativeOnboarding(formData: FormData) {
   // this auth user (e.g. signup path skipped the trigger), `update().eq(id)`
   // silently affects zero rows and the client sees a redirect with no data
   // saved. Upsert guarantees the row exists.
+  // All failure paths route through logAdminError → user sees a case ID, we
+  // see the raw Postgres error in /admin/errors. Never leak error.message
+  // verbatim (it exposes RLS policy names + table structure).
+  const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+
   const { data: pRows, error: pErr } = await supabase.from("profiles").upsert({
     id: user.id,
     headline, bio, categories, skills,
     onboarded_at: new Date().toISOString(),
   }, { onConflict: "id" }).select("id");
   if (pErr) {
-    console.error("[onboarding] profiles.upsert failed:", pErr.message);
-    return { error: pErr.message };
+    const ref = await logAdminError({ operation: "onboarding_profiles_upsert", userId: user.id, error: pErr, context: { code: (pErr as any).code } });
+    return { error: GENERIC_ERROR(ref) };
   }
   if (!pRows || pRows.length === 0) {
-    console.error("[onboarding] profiles.upsert affected 0 rows for user=", user.id);
-    return { error: "Couldn't save your profile. Please try again or contact support." };
+    const ref = await logAdminError({ operation: "onboarding_profiles_zero_rows", userId: user.id, error: "profiles.upsert affected 0 rows" });
+    return { error: GENERIC_ERROR(ref) };
   }
 
   const { data: iRows, error: iErr } = await supabase.from("portfolio_items").insert({
@@ -224,12 +229,12 @@ export async function completeCreativeOnboarding(formData: FormData) {
     project_url: piece_project_url,
   }).select("id");
   if (iErr) {
-    console.error("[onboarding] portfolio_items.insert failed:", iErr.message);
-    return { error: iErr.message };
+    const ref = await logAdminError({ operation: "onboarding_portfolio_insert", userId: user.id, error: iErr, context: { code: (iErr as any).code } });
+    return { error: GENERIC_ERROR(ref) };
   }
   if (!iRows || iRows.length === 0) {
-    console.error("[onboarding] portfolio_items.insert affected 0 rows for user=", user.id);
-    return { error: "Couldn't save your portfolio piece. Please try again." };
+    const ref = await logAdminError({ operation: "onboarding_portfolio_zero_rows", userId: user.id, error: "portfolio_items.insert affected 0 rows" });
+    return { error: GENERIC_ERROR(ref) };
   }
 
   const { data: sRows, error: sErr } = await supabase.from("services").insert({
@@ -240,12 +245,12 @@ export async function completeCreativeOnboarding(formData: FormData) {
     delivery_days: service_delivery_days,
   }).select("id");
   if (sErr) {
-    console.error("[onboarding] services.insert failed:", sErr.message);
-    return { error: sErr.message };
+    const ref = await logAdminError({ operation: "onboarding_services_insert", userId: user.id, error: sErr, context: { code: (sErr as any).code } });
+    return { error: GENERIC_ERROR(ref) };
   }
   if (!sRows || sRows.length === 0) {
-    console.error("[onboarding] services.insert affected 0 rows for user=", user.id);
-    return { error: "Couldn't save your service. Please try again." };
+    const ref = await logAdminError({ operation: "onboarding_services_zero_rows", userId: user.id, error: "services.insert affected 0 rows" });
+    return { error: GENERIC_ERROR(ref) };
   }
   console.log("[onboarding] creative onboarded", user.id, "cover=", !!piece_cover_url);
 

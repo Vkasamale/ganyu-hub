@@ -279,6 +279,13 @@ drop policy if exists "profiles read" on profiles;
 create policy "profiles read" on profiles for select using (true);
 drop policy if exists "profiles update self" on profiles;
 create policy "profiles update self" on profiles for update using (auth.uid() = id);
+-- Required for `profiles.upsert(..., { onConflict: 'id' })` in the onboarding
+-- action: Postgres checks the INSERT policy on any upsert regardless of which
+-- branch (INSERT vs UPDATE) actually executes. Without this, users whose
+-- profile row exists still hit "new row violates row-level security policy"
+-- because the statement is INSERT ... ON CONFLICT DO UPDATE.
+drop policy if exists "profiles insert self" on profiles;
+create policy "profiles insert self" on profiles for insert with check (auth.uid() = id);
 
 drop policy if exists "portfolio read" on portfolio_items;
 create policy "portfolio read" on portfolio_items for select using (true);

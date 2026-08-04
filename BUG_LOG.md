@@ -15,16 +15,24 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-002] Onboarding "Finish & go to dashboard" leaked raw Postgres RLS error + wasn't logged.** — reported 2026-08-04 by beta creative on `/onboarding/creative`.
+  - **Repro:** creative fills onboarding, presses Finish. Red banner appears: `new row violates row-level security policy for table "profiles"`. Nothing lands in `/admin/errors`.
+  - **Cause:** BUG-001's fix changed `profiles.update` → `profiles.upsert(..., { onConflict: 'id' })`. Postgres checks the INSERT policy on any upsert regardless of which branch (INSERT vs UPDATE) actually executes. Schema only had `profiles update self`, no INSERT policy — so upsert failed for every existing user. Secondary: `completeCreativeOnboarding` returned `pErr.message` verbatim (leaked DB internals) and never called `logAdminError` (so admins had no signal).
+  - **Fix shipped (2026-08-04):**
+    - Added `profiles insert self` policy scoped to `auth.uid() = id` in `supabase/schema.sql` — makes upsert work whether the row exists or not.
+    - Rewrote all six failure branches in `completeCreativeOnboarding` to route through `logAdminError` + `GENERIC_ERROR(ref)` — users now see a case ID, `/admin/errors` gets the raw Postgres error + code.
+  - **Migration required:** re-run `supabase/schema.sql` in Supabase Studio to add the new policy. Fix is inert without it.
+
 - **[BUG-001] Creative onboarding "Finish & go to dashboard" does not save uploaded data.** — reported 2026-07-24 by beta creative, on `/onboarding/creative`.
   - **Repro:** creative fills headline, bio, categories, skills, portfolio piece with cover image, service; presses "Finish & go to dashboard". Redirects to `/dashboard`. Data is not visible on their profile or services page.
-  - **Cause (suspected):** redirect firing while data is missing means the mutations returned success but affected 0 rows. Most likely the `profiles` row was never created for this auth user, so `profiles.update().eq('id', user.id)` matched nothing (Supabase JS treats 0-row updates as success and never errors). Secondary suspect: storage bucket `portfolio` RLS rejecting the upload with a hard error that killed the whole action before any DB write.
+  - **Cause (suspected):** redirect firing while data is missing means the mutations returned success but affected 0 rows. Most likely the `profiles` row was never created for this auth user, so `profiles.update().eq('id', user.id)` matched nothing (Supabase JS treats 0-row updates as success and never errors). Secondary suspect: storage bucket `portfolio` RLS rejecting the upload with a hard error that killed the whole action before any DB write. **Update 2026-08-04**: the upsert fix from `2ffcefe` was itself blocked by a missing INSERT policy — see BUG-002. That's why the reporter kept hitting a hard error instead of a silent no-save.
   - **Mitigations shipped (`2ffcefe`, 2026-07-24):**
     - `profiles.update` → `profiles.upsert(..., { onConflict: 'id' })` so the row is created if missing.
     - `.select('id')` chained on all three writes (`profiles`, `portfolio_items`, `services`); explicit user error + `console.error` to Vercel logs on any 0-row result.
     - Cover-image upload made non-fatal (logs and continues with `cover_url = null`) so a storage RLS hiccup doesn't wipe the whole submission.
     - Success log `[onboarding] creative onboarded <user_id> cover=<bool>` added for trace visibility.
-  - **Next step:** ask the reporting creative to try again. If it still fails, Vercel logs will now name the exact failing step.
-  - **Status:** in progress — awaiting re-test in prod.
+  - **Next step:** after BUG-002's INSERT policy migration lands, ask the reporting creative to try again. If it still fails, `/admin/errors` (now populated) will name the exact failing step.
+  - **Status:** in progress — awaiting re-test in prod post-BUG-002 fix.
 
 ## Open
 
