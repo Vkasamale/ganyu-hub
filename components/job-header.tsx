@@ -1,5 +1,5 @@
 import { formatMwk } from "@/lib/utils";
-import { creativeGross } from "@/lib/fees";
+import { creativeGross, payoutFee } from "@/lib/fees";
 import { computeJobStage, type JobEventLite, type JobStageInput } from "@/lib/job-stages";
 import { JobProgressBar } from "@/components/job-progress-bar";
 
@@ -27,7 +27,12 @@ export function JobHeader({
 }) {
   const stage = computeJobStage(job, events);
   const escrow = job.total_paid_mwk ?? job.collection_amount_mwk ?? job.accepted_bid_mwk ?? 0;
-  const payout = creativeGross(escrow);
+  const gross = creativeGross(escrow);
+  // Show the pessimistic net so the number doesn't shrink at cash-out. Whichever
+  // rail costs more at this amount wins (bank's flat 700 dominates small payouts,
+  // mobile's higher % dominates large ones).
+  const worstFee = Math.max(payoutFee(gross, "bank"), payoutFee(gross, "mobile"));
+  const payout = Math.max(0, gross - worstFee);
 
   return (
     <div className="rounded-lg border border-ink/10 bg-white p-5 sm:p-6">
@@ -42,7 +47,8 @@ export function JobHeader({
           {formatMwk(escrow)}
         </div>
         <div className="mt-1 text-sm text-ink/70">
-          Creative receives: <span className="font-medium tabular-nums">{formatMwk(payout)}</span>
+          Creative receives (est., after cash-out fee):{" "}
+          <span className="font-medium tabular-nums">{formatMwk(payout)}</span>
         </div>
       </div>
 

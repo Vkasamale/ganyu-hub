@@ -4,6 +4,12 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-04 — Session 7 polish (animated bar + pessimistic payout)
+
+🕒 Progress bar mount animation on `/jobs/[id]` — connectors sweep left→right on load, per-stage colors, completed = check only, current = ringed empty dot, numeric guide row underneath.
+🕒 Header payout line now reads "Creative receives (est., after cash-out fee)" and equals `gross − max(bank fee, mobile fee)`.
+🕒 375px width — header + animated bar still don't overflow.
+
 Last updated: 2026-08-04 (session 7 job progress bar + at-a-glance header shipped; typechecks clean; awaiting live UI walkthrough)
 
 🕒 **Session 7 — job lifecycle progress bar + redesigned header.** Code shipped; `tsc --noEmit` clean. Pure display layer over existing `jobs.status` + `job_events` — zero schema/RLS changes. Verification to run: open an in-progress test job and confirm the stepper highlights the correct stage and the header shows escrow amount (from `total_paid_mwk`) and payout amount (`creativeGross(escrow)` — should equal escrow while `BETA_ZERO_COMMISSION` is on). Fund a fresh job from open → completion and watch stages advance. Cancel one partway and confirm the red "Cancelled here" marker lands on the correct stage (walks `job_events` to find the stage the cancellation event fired at). Check 375px width — the stepper container uses `overflow-x: auto` with `min-w-[520px]` so it scrolls horizontally on narrow viewports rather than breaking the header layout.
