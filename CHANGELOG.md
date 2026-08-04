@@ -3,6 +3,18 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — Session security hardening (BUG-003/004/005/006)
+
+Triggered by a founder-side demo: friend copied a valid `sb-*-auth-token` cookie from one browser into another and was logged in as the victim. Root cause was three-layered — none critical on its own, all critical together — plus a fourth silent-failure paper-cut spotted in the same audit.
+
+- **BUG-003** — `lib/supabase/server.ts` + `lib/supabase/middleware.ts` passed Supabase SSR's default cookie options through verbatim, so `sb-*-auth-token*` was set without `HttpOnly` / `Secure` / `SameSite`. Any XSS could read the cookie. Added `hardenCookie()` helper on both write paths: forces `httpOnly: true`, `secure: true` in prod (off in dev so localhost stays on `http://`), `sameSite: "lax"`, `path: "/"`. Existing sessions re-flag on next token refresh.
+- **BUG-004** — `app/auth/signout/route.ts` called `signOut()` with the default `local` scope (only clears the current cookie store). A cookie already exfiltrated survived the victim clicking Sign out. Changed to `signOut({ scope: "global" })` — every refresh token for the user is now revoked, so the copied cookie dies on the click.
+- **BUG-005** — `components/reset-password-form.tsx` had the same footgun on the reset-password flow. Anyone who loaded a recovery link before the real user (email prefetch, security scanner, browser history, over-the-shoulder) held a full session that survived the password change. Reset now `signOut({ scope: "global" })` after `updateUser({ password })` — every session minted from the recovery code dies the moment the real user sets their new password.
+- **BUG-006** — `app/auth/callback/route.ts` discarded the `error` return from `exchangeCodeForSession(code)`. Expired/invalid/replayed magic-link codes still redirected to `/dashboard`, where page-level guards bounced the user with no context. Now redirects to `/login?error=Sign-in link expired or invalid...` on failure.
+
+**Migration:** none required.
+**One-time cleanup for the demonstrated hijack:** have the victim sign out once on the post-`8967c8a` deploy. That single global-scope signout revokes every existing session including the copied one.
+
 ## 2026-08-04 — Job activity timeline: sessions 2 + 3 + 4 (batch)
 
 Ships the remaining three sessions of the timeline system in one drop. Nobody was on platform, so batching kept the beta database in one consistent shape rather than three intermediate ones.

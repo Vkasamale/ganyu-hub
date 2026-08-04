@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (Job activity timeline sessions 2 + 3 + 4 batched: all status transitions wired into logJobEvent, file delivery via private job-deliverables bucket with 10MB cap + external-link fallback, revision limits + paid overage routed through the existing top-up escrow rail. Migration required — job-deliverables bucket + 4 revision columns.)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (Session security hardening: BUG-003 cookie hardening, BUG-004 global-scope signout, BUG-005 recovery-session revocation, BUG-006 auth-callback error handling — triggered by founder-side session-hijack demo. Prior same-day: Job activity timeline sessions 2 + 3 + 4 batched. No new migrations for security batch; timeline migration still required if not yet applied.)
 
 ---
 
