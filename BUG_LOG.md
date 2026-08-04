@@ -15,6 +15,13 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-007] Paid revision overage (session 4) is completely broken — RLS blocks the top-up insert.** — found 2026-08-04 during full E2E walk (Job C).
+  - **Repro:** client uses all included revisions, then clicks "Request extra revision" → confirms "Pay MWK X & continue" on a job with `extra_revision_rate` set. No error is visible in the UI (toast fails silently in some paths / user just sees nothing happen); no PayChangu checkout appears; `payment_topups` gets zero new rows; `jobs.revisions_used` never advances past the included count.
+  - **Cause:** `requestRevision`'s paid-overage branch (`app/actions.ts`, case C) is invoked by the **client** and inserts into `payment_topups` with `requested_by_creative_id: accepted.creative_id` — but the insert runs through the client's own authenticated Supabase client. The RLS policy `"topups insert creative"` in `supabase/schema.sql` requires `auth.uid() = requested_by_creative_id`. Since `auth.uid()` here is the *client's* id, not the creative's, every insert is rejected by RLS and `tErr` is set; the function returns `{ error: tErr.message }` (a raw Postgres RLS string) and nothing is ever created. This is the same "upsert/insert checked against the wrong policy" shape as BUG-002, just on a different table.
+  - **Fix (not yet shipped):** either (a) run this insert with the service-role client (matches the pattern already used by `submitDelivery`'s service-role upload), or (b) add an additional RLS branch on `payment_topups` insert allowing `auth.uid() = (select client_id from jobs where id = job_id)` when the row's `reason` carries the `EXTRA_REVISION|` marker. Route (a) is the smaller diff and keeps the RLS policy's intent ("creative requests, client just pays") intact from an audit standpoint — flag for next session, don't apply mid-audit.
+  - **Verified broken live:** `supabase/schema.sql:698-705` policy vs. `app/actions.ts` `requestRevision` case C, confirmed via full E2E walk 2026-08-04 (Job C1: `revisions_used` stuck at 1/1, `payment_topups` empty after both attempts).
+  - **Status:** open, not fixed this session (test-only run, no auth/RLS changes made per task scope).
+
 - **[BUG-006] Auth callback silently redirected to /dashboard on failed code exchange.** — reported 2026-08-04 during security audit.
   - **Repro:** expired/invalid/replayed magic-link `?code=` still redirected to `/dashboard`, where page-level guards then bounced the user with no context.
   - **Cause:** `app/auth/callback/route.ts` discarded the `error` from `exchangeCodeForSession(code)`.

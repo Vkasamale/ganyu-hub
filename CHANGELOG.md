@@ -3,6 +3,17 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — Full E2E test walk: BUG-001 confirmed fixed, BUG-007 found
+
+Ran a full manual/scripted walk of the job activity timeline (sessions 1-4) end to end against the real Supabase project with live PayChangu keys, using a temporary local-only `verifyPayment()` bypass (`TEST_MODE_SKIP_PAYCHANGU_VERIFY`, reverted before commit — zero diff on `lib/payments.ts`) so escrow could clear via the real `/api/paychangu/callback` route without touching PayChangu's hosted checkout.
+
+- **BUG-001 re-tested and confirmed fixed** — fresh creative onboarding (`creative-a@test.local`) saved headline/bio/portfolio piece/service in one submission with no RLS error, `profiles.onboarded_at` set correctly.
+- **Job A (full lifecycle)** — post → propose → accept-and-pay → escrow_funded → proposal_accepted → work_started → submitted → completed, all events landed on the timeline in order. Release Payment intentionally not clicked (live payout keys). Outsider RLS held.
+- **Job B (file delivery)** — under-10MB upload, over-10MB client-side rejection, external-link delivery all confirmed live; outsider couldn't see the delivery form or any delivery events.
+- **Job C (revisions) — found BUG-007**: the paid-revision-overage top-up (client confirms "Pay MWK X & continue" after included revisions are used) silently fails — RLS on `payment_topups` insert requires `auth.uid() = requested_by_creative_id`, but this code path is invoked by the client inserting on the creative's behalf. No topup row is ever created, the revision counter never advances. Logged as BUG-007, not fixed this session (test-only run, no RLS/auth changes). Free within-limit revisions and the blank-rate "not available" path both work correctly.
+
+**Migration:** none. **Cleanup:** `.env.local`'s test-only env var removed; three test accounts (`client-a@test.local`, `creative-a@test.local`, `outsider@test.local`) left in the DB for the founder to delete via the SQL snippet provided in the test session output.
+
 ## 2026-08-04 — Session security hardening (BUG-003/004/005/006)
 
 Triggered by a founder-side demo: friend copied a valid `sb-*-auth-token` cookie from one browser into another and was logged in as the victim. Root cause was three-layered — none critical on its own, all critical together — plus a fourth silent-failure paper-cut spotted in the same audit.

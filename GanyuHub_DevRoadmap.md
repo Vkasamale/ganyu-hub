@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (Session security hardening: BUG-003 cookie hardening, BUG-004 global-scope signout, BUG-005 recovery-session revocation, BUG-006 auth-callback error handling — triggered by founder-side session-hijack demo. Prior same-day: Job activity timeline sessions 2 + 3 + 4 batched. No new migrations for security batch; timeline migration still required if not yet applied.)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (Full E2E test walk: BUG-001 confirmed fixed live, job timeline sessions 1-3 confirmed working end to end, session 4's paid-revision-overage top-up found broken — BUG-007, open, RLS blocks the client-initiated `payment_topups` insert. Prior same-day: session security hardening BUG-003/004/005/006, and Job activity timeline sessions 2 + 3 + 4 batched. No new migrations required.)
 
 ---
 
