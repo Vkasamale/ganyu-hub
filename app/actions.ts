@@ -2177,7 +2177,18 @@ export async function requestRevision(formData: FormData): Promise<{ ok?: boolea
   // Encode the note into the topup reason so the callback can pull it back
   // out and stamp the timeline row correctly after payment clears.
   const reasonPacked = `${EXTRA_REVISION_MARKER}${note.slice(0, 400)}`;
-  const { data: topupRow, error: tErr } = await supabase.from("payment_topups")
+  // ponytail: BUG-007 — RLS on payment_topups requires auth.uid() = requested_by_creative_id,
+  // but this branch runs as the client. Service-role insert; policy intent preserved.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
+  }
+  const { createServerClient: createServerClientTopup } = await import("@supabase/ssr");
+  const adminTopup = createServerClientTopup(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+  const { data: topupRow, error: tErr } = await adminTopup.from("payment_topups")
     .insert({
       job_id,
       requested_by_creative_id: accepted.creative_id,

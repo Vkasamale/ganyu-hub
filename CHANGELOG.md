@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — BUG-007 fix: paid revision overage top-up now uses service-role client
+
+`requestRevision` case C (paid-overage branch in `app/actions.ts`) previously ran the `payment_topups` insert through the client's own authenticated Supabase client, tripping the `auth.uid() = requested_by_creative_id` RLS check and silently blocking every paid revision. Switched that single insert to a service-role client (same pattern as `releasePayment`'s payout profile lookup). RLS policy unchanged; creative-initiated inserts still enforce the original rule. Requires `SUPABASE_SERVICE_ROLE_KEY` (already required by release/payout paths).
+
 ## 2026-08-04 — Full E2E test walk: BUG-001 confirmed fixed, BUG-007 found
 
 Ran a full manual/scripted walk of the job activity timeline (sessions 1-4) end to end against the real Supabase project with live PayChangu keys, using a temporary local-only `verifyPayment()` bypass (`TEST_MODE_SKIP_PAYCHANGU_VERIFY`, reverted before commit — zero diff on `lib/payments.ts`) so escrow could clear via the real `/api/paychangu/callback` route without touching PayChangu's hosted checkout.
