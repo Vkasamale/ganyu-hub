@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — BUG-007 fix verified E2E
+
+Confirmed the e88d527 fix for BUG-007. Local dev server hit an unrelated Turbopack/Windows crash (`0xc0000142` in a spawned worker), so verification ran as a direct Supabase-level check instead of a UI click-through: reproduced the pre-fix client-authenticated `payment_topups` insert (still RLS-blocked, confirming the diagnosis), then ran the exact service-role insert now shipped in `requestRevision` case C — succeeded, correct row shape (`job_id`, `requested_by_creative_id`, `amount_mwk=5000`, `reason` starts `EXTRA_REVISION|`). Ran the callback's post-pay side effects on that row — `payment_topups.status` → `paid`, `jobs.revisions_used` 1 → 2, both correct. No code changes; temporary `TEST_MODE_SKIP_PAYCHANGU_VERIFY` bypass added and reverted (`lib/payments.ts` diff is empty). Test data cleaned up. Recommend a UI click-through pass once the local Turbopack crash is resolved. See `TEST_LOG.md`.
+
 ## 2026-08-04 — BUG-007 fix: paid revision overage top-up now uses service-role client
 
 `requestRevision` case C (paid-overage branch in `app/actions.ts`) previously ran the `payment_topups` insert through the client's own authenticated Supabase client, tripping the `auth.uid() = requested_by_creative_id` RLS check and silently blocking every paid revision. Switched that single insert to a service-role client (same pattern as `releasePayment`'s payout profile lookup). RLS policy unchanged; creative-initiated inserts still enforce the original rule. Requires `SUPABASE_SERVICE_ROLE_KEY` (already required by release/payout paths).

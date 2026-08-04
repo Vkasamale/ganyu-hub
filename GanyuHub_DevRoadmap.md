@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (BUG-007 fixed: `requestRevision` case C now inserts into `payment_topups` via service-role client, unblocking the paid-revision overage flow. Earlier same-day: full E2E walk found BUG-007; BUG-001 confirmed fixed live; session security hardening BUG-003/004/005/006; Job activity timeline sessions 2+3+4 batched. No new migrations required.)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (BUG-007 fix verified E2E: service-role `payment_topups` insert confirmed working, `jobs.revisions_used` advances correctly on paid overage — see TEST_LOG.md; UI click-through still pending, local Turbopack crash blocked the dev server this pass. Earlier same-day: BUG-007 fixed and shipped: `requestRevision` case C now inserts into `payment_topups` via service-role client, unblocking the paid-revision overage flow. Earlier same-day: full E2E walk found BUG-007; BUG-001 confirmed fixed live; session security hardening BUG-003/004/005/006; Job activity timeline sessions 2+3+4 batched. No new migrations required.)
 
 ---
 
