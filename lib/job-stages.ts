@@ -81,34 +81,6 @@ export function computeJobStage(job: JobStageInput, events: JobEventLite[] = [])
   return { currentIdx, overlay: null };
 }
 
-// ponytail: single self-check via `node --loader tsx lib/job-stages.ts` or
-// during tsc. Trivial constants intentionally untested.
-if (typeof require !== "undefined" && require.main === module) {
-  const assert = (cond: unknown, msg: string) => { if (!cond) throw new Error("FAIL: " + msg); };
-
-  const a = computeJobStage({ status: "scope_pending", escrow_status: "payment_held" }, []);
-  assert(a.currentIdx === 1 && a.overlay === null, "escrow held → stage 1");
-
-  const b = computeJobStage({ status: "completed", escrow_status: "payment_released" }, []);
-  assert(b.currentIdx === 4 && b.overlay === null, "completed → stage 4");
-
-  const events: JobEventLite[] = [
-    { event_type: "proposal_accepted", created_at: "2026-01-01T00:00:00Z" },
-    { event_type: "escrow_funded", created_at: "2026-01-01T01:00:00Z" },
-    { event_type: "cancelled", created_at: "2026-01-01T02:00:00Z" },
-  ];
-  const c = computeJobStage({ status: "cancelled", escrow_status: "payment_released" }, events);
-  assert(c.overlay?.kind === "cancelled" && c.overlay.stageIdx === 1, "cancel after escrow → overlay at 1");
-
-  const events2: JobEventLite[] = [
-    { event_type: "proposal_accepted", created_at: "2026-01-01T00:00:00Z" },
-    { event_type: "escrow_funded", created_at: "2026-01-01T01:00:00Z" },
-    { event_type: "work_started", created_at: "2026-01-01T02:00:00Z" },
-    { event_type: "files_delivered", created_at: "2026-01-01T03:00:00Z" },
-    { event_type: "dispute_filed", created_at: "2026-01-01T04:00:00Z" },
-  ];
-  const d = computeJobStage({ status: "disputed", escrow_status: "payment_disputed" }, events2);
-  assert(d.overlay?.kind === "disputed" && d.overlay.stageIdx === 3, "dispute after delivery → overlay at 3");
-
-  console.log("ok");
-}
+// ponytail: self-check removed — file is now pulled into the client bundle by
+// JobProgressBar, and the `require.main === module` idiom trips on `module`
+// not being defined there. Behaviour tested in browser via job page.
