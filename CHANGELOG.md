@@ -3,6 +3,14 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — Session 7 polish 2: progress bar clip fix + brief card redesign
+
+Progress bar container gets `py-2 px-2` so the current dot's ring + `scale-110` bump aren't clipped vertically by `overflow-x-auto` (which forces `overflow-y: auto` under it). Brief card on `/jobs/[id]` redesigned: eyebrow "Project brief" label, brief text bumped to serif `text-lg`/`text-xl` with `leading-relaxed`, deliverables section separated by a hairline divider, meta row (Budget · Deadline · Revisions · Format) rebuilt as a compact `<dl>` strip with uppercase labels and `font-display` tabular-nums on Budget. Removed the standalone bold "Budget: MWK X" line — budget now lives inside the meta strip.
+
+## 2026-08-04 — Fix: /jobs/[id] "oops" — client-bundle ReferenceError in job-stages
+
+Removed the top-level `if (require.main === module)` self-check in `lib/job-stages.ts`. Once `JobProgressBar` became `"use client"` (previous polish push), this file was pulled into the browser bundle, where `module` isn't defined — every job detail page threw `ReferenceError` caught by `app/error.tsx`.
+
 ## 2026-08-04 — Session 7 polish: animated multi-color progress bar, pessimistic payout estimate
 
 Progress bar (`components/job-progress-bar.tsx`) is now client-side with a mount animation — connectors sweep left→right (700ms, 180ms stagger) matching the recharts feel used on the dashboard. Each stage has its own color (sky → indigo → violet → amber → emerald); completed dots show a check only (no number), current dot is empty with a colored ring + scale bump, upcoming dots show grey numbers. Permanent 1-5 numeric guide rendered under each label. Job header (`components/job-header.tsx`) payout line now shows the pessimistic net after cash-out fee: `gross − max(payoutFee(gross,"bank"), payoutFee(gross,"mobile"))`, so the number can't shrink at cash-out regardless of which rail the creative picks. Label updated to "Creative receives (est., after cash-out fee)".

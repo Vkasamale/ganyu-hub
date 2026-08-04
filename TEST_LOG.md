@@ -4,6 +4,12 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-04 — Session 7 polish 2 (bar clip fix + brief card)
+
+✅ /jobs/[id] loads (was throwing → "oops" after `"use client"` pulled `job-stages.ts` into the client bundle; `require.main === module` referenced undefined `module`). Confirmed live by user on prod after redeploy of `6f1df0b`.
+🕒 Current-stage dot no longer clipped (added `py-2` on scrollable container).
+🕒 Brief card new hierarchy (eyebrow label, serif body, meta strip) on `/jobs/[id]` — Vinny to eyeball on a job with a longer brief + full meta.
+
 ## 2026-08-04 — Session 7 polish (animated bar + pessimistic payout)
 
 🕒 Progress bar mount animation on `/jobs/[id]` — connectors sweep left→right on load, per-stage colors, completed = check only, current = ringed empty dot, numeric guide row underneath.

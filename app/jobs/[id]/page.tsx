@@ -230,19 +230,34 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </p>
       </div>
       <Card className="mt-4">
-        <CardContent>
-          <p className="whitespace-pre-wrap break-words text-neutral-700">{job.brief}</p>
+        <CardContent className="p-5 sm:p-6">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
+            Project brief
+          </div>
+          <p className="mt-2 whitespace-pre-wrap break-words font-serif text-lg leading-relaxed text-ink/85 sm:text-xl">
+            {job.brief}
+          </p>
+
           {job.deliverables && (
-            <div className="mt-4">
-              <p className="text-sm font-medium text-ink">Deliverables</p>
-              <p className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-700">{job.deliverables}</p>
+            <div className="mt-6 border-t border-ink/10 pt-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
+                Deliverables
+              </div>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/80">
+                {job.deliverables}
+              </p>
             </div>
           )}
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm">
+
+          <dl className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ink/10 pt-4 text-sm">
+            <div className="flex items-baseline gap-2">
+              <dt className="text-xs uppercase tracking-wide text-ink/50">Budget</dt>
+              <dd className="font-display text-base font-medium tabular-nums text-ink">{formatMwk(job.budget_mwk)}</dd>
+            </div>
             {job.deadline && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-neutral-500">Deadline:</span>
-                <span className="font-medium">{formatDeadline(job.deadline)}</span>
+              <div className="flex items-center gap-2">
+                <dt className="text-xs uppercase tracking-wide text-ink/50">Deadline</dt>
+                <dd className="font-medium text-ink">{formatDeadline(job.deadline)}</dd>
                 {(() => {
                   const d = daysUntil(job.deadline);
                   const label = d > 0 ? `${d} day${d === 1 ? "" : "s"} left` : d === 0 ? "due today" : `${-d} day${d === -1 ? "" : "s"} overdue`;
@@ -252,13 +267,18 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               </div>
             )}
             {job.revisions_included != null && (
-              <div><span className="text-neutral-500">Revisions:</span> <span className="font-medium">{job.revisions_included}</span></div>
+              <div className="flex items-baseline gap-2">
+                <dt className="text-xs uppercase tracking-wide text-ink/50">Revisions</dt>
+                <dd className="font-medium text-ink">{job.revisions_included}</dd>
+              </div>
             )}
             {job.format_spec && (
-              <div><span className="text-neutral-500">Format:</span> <span className="font-medium">{job.format_spec}</span></div>
+              <div className="flex items-baseline gap-2">
+                <dt className="text-xs uppercase tracking-wide text-ink/50">Format</dt>
+                <dd className="font-medium text-ink">{job.format_spec}</dd>
+              </div>
             )}
-          </div>
-          <p className="mt-4 font-semibold">Budget: {formatMwk(job.budget_mwk)}</p>
+          </dl>
         </CardContent>
       </Card>
 

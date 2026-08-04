@@ -27,8 +27,8 @@ export function JobProgressBar({ stage }: { stage: JobStageResult }) {
   }, []);
 
   return (
-    <div className="w-full overflow-x-auto">
-      <ol className="flex min-w-[520px] items-start justify-between gap-2 px-1 sm:min-w-0" aria-label="Job progress">
+    <div className="w-full overflow-x-auto py-2">
+      <ol className="flex min-w-[520px] items-start justify-between gap-2 px-2 sm:min-w-0" aria-label="Job progress">
         {STAGES.map((s, i) => {
           const done = !jobDead && i < currentIdx;
           const current = !jobDead && i === currentIdx;
