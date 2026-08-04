@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { CATEGORIES } from "@/lib/types";
+import { logJobEvent, type JobEventType } from "@/lib/job-events";
 
 // Trust-boundary guard: keep only canonical categories. The CategoryPicker
 // submits repeated name="categories" checkboxes, so read them with getAll().
@@ -406,6 +407,11 @@ export async function adminResolveDispute(formData: FormData) {
   const { error } = await supabase.from("jobs").update({ status: outcome }).eq("id", job_id);
   if (error) return { error: error.message };
 
+  await logJobEvent(job_id, "dispute_resolved", `Admin resolved as ${outcome}.`, {
+    actorId: gate.userId,
+    metadata: { outcome },
+  });
+
   const { data: acceptedProposal } = await supabase
     .from("proposals")
     .select("creative_id")
@@ -777,11 +783,21 @@ export async function submitProposal(formData: FormData) {
     return { error: "You already have an active proposal on this job." };
   }
 
+  // Session 4: revisions offered + optional extra-revision rate. Null rate
+  // means the included count is a hard limit (client can't request extras).
+  const revisionsRaw = Number(formData.get("revisions_offered"));
+  const revisions_offered = Number.isFinite(revisionsRaw) && revisionsRaw >= 0 ? Math.floor(revisionsRaw) : 1;
+  const rateRaw = formData.get("extra_revision_rate");
+  const rateNum = rateRaw != null && String(rateRaw).trim() !== "" ? Number(rateRaw) : NaN;
+  const extra_revision_rate = Number.isFinite(rateNum) && rateNum > 0 ? Math.floor(rateNum) : null;
+
   const { error } = await supabase.from("proposals").insert({
     job_id,
     creative_id: user.id,
     cover_letter: String(formData.get("cover_letter")),
     bid_mwk: Number(formData.get("bid_mwk")),
+    revisions_offered,
+    extra_revision_rate,
   });
   if (error) {
     const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
@@ -983,6 +999,15 @@ export async function updateJobStatus(formData: FormData) {
   const { error } = await supabase.from("jobs").update({ status: next }).eq("id", job_id);
   if (error) return { error: error.message };
 
+  // Timeline: log terminal-ish transitions. files_delivered / revisions land
+  // in sessions 3 and 4; disputed goes through raiseDispute, not this action.
+  const timelineFor: Partial<Record<JobStatus, JobEventType>> = {
+    completed: "job_completed",
+    cancelled: "cancelled",
+  };
+  const evt = timelineFor[next];
+  if (evt) await logJobEvent(job_id, evt, null, { actorId: user.id });
+
   if (creativeId) {
     const recipient = isClient ? creativeId : job.client_id;
     const recipientIsCreative = recipient === creativeId;
@@ -1055,6 +1080,10 @@ export async function raiseDispute(formData: FormData) {
     dispute_raised_at: new Date().toISOString(),
   }).eq("id", job_id);
   if (error) return { error: error.message };
+
+  await logJobEvent(job_id, "dispute_filed", reason.length > 200 ? reason.slice(0, 197) + "…" : reason, {
+    actorId: user.id,
+  });
 
   await supabase.from("payment_topups").update({
     status: "cancelled",
@@ -1135,6 +1164,11 @@ export async function confirmScope(formData: FormData) {
 
   const { error } = await supabase.from("jobs").update(patch).eq("id", job_id);
   if (error) return { error: error.message };
+
+  // Second confirmation flips scope_pending → in_progress. Timeline event.
+  if (patch.status === "in_progress") {
+    await logJobEvent(job_id, "work_started", null, { actorId: user.id });
+  }
 
   if (creativeId) {
     const recipient = isClient ? creativeId : job.client_id;
@@ -1916,6 +1950,11 @@ export async function adminResolveCancellation(formData: FormData): Promise<{ ok
     creative_cut_status: creativeStatus,
   }).eq("id", job_id);
 
+  await logJobEvent(job_id, "cancelled", `Admin resolved cancellation: ${clientPctRaw}% client / ${creativePctRaw}% creative.`, {
+    actorId: user.id,
+    metadata: { client_pct: clientPctRaw, creative_pct: creativePctRaw, client_amount: clientAmount, creative_amount: creativeAmount },
+  });
+
   revalidatePath(`/jobs/${job_id}`);
   revalidatePath("/admin/cancellations");
   return { ok: true, info: `Cancellation resolved. Refund ${clientAmount.toLocaleString()} to client, cut ${creativeAmount.toLocaleString()} to creative.` };
@@ -2024,11 +2063,251 @@ export async function respondToDeadlineExtension(formData: FormData): Promise<{ 
   if (approve) {
     await supabase.from("deadline_extensions").update({ status: "approved", responded_at: new Date().toISOString() }).eq("id", extension_id);
     await supabase.from("jobs").update({ deadline: ext.proposed_deadline }).eq("id", ext.job_id);
+    await logJobEvent(ext.job_id, "deadline_extended", `New deadline: ${ext.proposed_deadline}.`, {
+      actorId: user.id,
+      metadata: { extension_id, new_deadline: ext.proposed_deadline, proposed_by: ext.proposed_by },
+    });
   } else {
     await supabase.from("deadline_extensions").update({ status: "declined", responded_at: new Date().toISOString() }).eq("id", extension_id);
   }
   revalidatePath(`/jobs/${ext.job_id}`);
   return { ok: true };
+}
+
+// ============================================================================
+// Session 4: Revision requests + paid overage
+// ============================================================================
+
+// Marker written into payment_topups.reason so callback/webhook can tell a
+// revision-overage topup apart from a regular top-up and fire the right
+// post-payment side effects.
+const EXTRA_REVISION_MARKER = "EXTRA_REVISION|";
+
+const REVISION_ACTIVE_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
+
+export async function requestRevision(formData: FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const job_id = String(formData.get("job_id") || "");
+  const note = String(formData.get("note") || "").trim().slice(0, 500);
+  const confirmPaid = String(formData.get("confirm_paid") || "") === "true";
+  if (!job_id) return { error: "Missing job id." };
+
+  const { data: job } = await supabase.from("jobs")
+    .select("id, client_id, title, status, escrow_status, revisions_included, revisions_used, extra_revision_rate")
+    .eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  if (user.id !== job.client_id) return { error: "Only the client can request changes." };
+  if (!REVISION_ACTIVE_STATUSES.has(job.status)) {
+    return { error: `Can't request changes on a '${job.status}' job.` };
+  }
+
+  const included = Number(job.revisions_included ?? 0);
+  const used = Number(job.revisions_used ?? 0);
+  const rate = job.extra_revision_rate == null ? null : Number(job.extra_revision_rate);
+
+  const nextUsed = used + 1;
+  const withinLimit = nextUsed <= included;
+
+  // Case A: within the included limit — free, log immediately.
+  if (withinLimit) {
+    // Atomic guard on the counter so a double-click doesn't double-log.
+    const { data: bumped } = await supabase.from("jobs").update({
+      revisions_used: nextUsed,
+    }).eq("id", job_id).eq("revisions_used", used).select("id");
+    if (!bumped || bumped.length === 0) {
+      return { error: "Someone else just updated this job — refresh and try again." };
+    }
+
+    await logJobEvent(job_id, "revision_requested", note || null, {
+      actorId: user.id,
+      metadata: { revision_number: nextUsed, of: included, paid: false },
+    });
+
+    const { data: accepted } = await supabase.from("proposals")
+      .select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+    if (accepted?.creative_id) {
+      await supabase.from("notifications").insert({
+        user_id: accepted.creative_id,
+        kind: "message_received",
+        title: "Revision requested",
+        body: note || `The client requested a revision on "${job.title}".`,
+        link: `/jobs/${job_id}`,
+        actor_id: user.id,
+        target_type: "job",
+        target_id: job_id,
+      });
+    }
+    revalidatePath(`/jobs/${job_id}`);
+    return { ok: true, info: `Revision ${nextUsed} of ${included} requested.` };
+  }
+
+  // Case B: over the limit, no rate configured — hard stop.
+  if (rate == null || rate <= 0) {
+    return {
+      error: "You've used your included revisions. Extra revisions aren't available for this job — please discuss directly with the creative.",
+    };
+  }
+
+  // Case C: over the limit, rate set. Client must have confirmed the paid
+  // overage on the client-side prompt; then we create a topup and initiate
+  // payment. On success the callback/webhook increments the counter + logs
+  // the event via the EXTRA_REVISION marker in reason.
+  if (!confirmPaid) {
+    // Return a signal for the UI: prompt with the amount, don't log yet.
+    return {
+      error: `PAID_REVISION_REQUIRED:${rate}`,
+    };
+  }
+  if (job.escrow_status !== "payment_held") {
+    return { error: "Extra revisions can only be added while funds are held in escrow." };
+  }
+
+  const { data: accepted } = await supabase.from("proposals")
+    .select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  if (!accepted?.creative_id) return { error: "No accepted creative on this job." };
+
+  // Encode the note into the topup reason so the callback can pull it back
+  // out and stamp the timeline row correctly after payment clears.
+  const reasonPacked = `${EXTRA_REVISION_MARKER}${note.slice(0, 400)}`;
+  const { data: topupRow, error: tErr } = await supabase.from("payment_topups")
+    .insert({
+      job_id,
+      requested_by_creative_id: accepted.creative_id,
+      amount_mwk: rate,
+      reason: reasonPacked,
+    })
+    .select("id").single();
+  if (tErr || !topupRow) {
+    if ((tErr as any)?.code === "23505") return { error: "You already have a pending top-up on this job — resolve it first." };
+    return { error: tErr?.message || "Couldn't start the extra-revision payment." };
+  }
+
+  const { initiatePayment } = await import("@/lib/payments");
+  const { data: cprofile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+  const [firstName, ...rest] = (cprofile?.full_name || "Client").split(" ");
+
+  try {
+    const { checkoutUrl, txRef } = await initiatePayment({
+      jobId: job_id,
+      topupId: topupRow.id,
+      amountMwk: rate,
+      email: user.email || "",
+      firstName,
+      lastName: rest.join(" ") || "-",
+      title: `Extra revision on "${job.title}"`.slice(0, 60),
+    });
+    await supabase.from("payment_topups").update({ payment_ref: txRef }).eq("id", topupRow.id);
+    redirect(checkoutUrl);
+  } catch (e: any) {
+    if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
+    const { logAdminError, GENERIC_MONEY_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "extra_revision_payment_init", jobId: job_id, error: e, context: { topup_id: topupRow.id } });
+    return { error: GENERIC_MONEY_ERROR(ref) };
+  }
+}
+
+// ============================================================================
+// Session 3: File delivery
+// ============================================================================
+
+const DELIVERY_MAX_BYTES = 10 * 1024 * 1024; // keep in sync with the client component
+const DELIVERY_ACTIVE_STATUSES = new Set(["in_progress", "revision_requested", "submitted"]);
+// Simple https-only URL check for the external-link fallback. Not
+// paranoid about hostnames — the client is trusting the creative to send a
+// real Drive/WeTransfer/Dropbox link, and the timeline labels the link as
+// external so no one is fooled.
+function isPlausibleExternalLink(s: string): boolean {
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:" && u.hostname.includes(".") && s.length < 2000;
+  } catch {
+    return false;
+  }
+}
+
+export async function submitDelivery(formData: FormData): Promise<{ ok?: boolean; error?: string; info?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const job_id = String(formData.get("job_id") || "");
+  const note = String(formData.get("note") || "").trim().slice(0, 500) || null;
+  const external_link = String(formData.get("external_link") || "").trim();
+  const file = formData.get("delivery_file");
+  if (!job_id) return { error: "Missing job id." };
+
+  const hasFile = file instanceof File && file.size > 0;
+  const hasLink = external_link.length > 0;
+  // Exactly one, not both, not neither.
+  if (hasFile && hasLink) return { error: "Send a file OR a link — not both." };
+  if (!hasFile && !hasLink) return { error: "Attach a file or paste an external link." };
+
+  const { data: job } = await supabase.from("jobs").select("id, client_id, status").eq("id", job_id).maybeSingle();
+  if (!job) return { error: "Job not found." };
+  if (!DELIVERY_ACTIVE_STATUSES.has(job.status)) {
+    return { error: `Can't submit a delivery while the job is '${job.status}'.` };
+  }
+
+  const { data: accepted } = await supabase.from("proposals")
+    .select("creative_id").eq("job_id", job_id).eq("status", "accepted").maybeSingle();
+  if (!accepted || accepted.creative_id !== user.id) {
+    return { error: "Only the accepted creative can send a delivery." };
+  }
+
+  let metadata: Record<string, unknown>;
+  if (hasFile) {
+    const f = file as File;
+    if (f.size > DELIVERY_MAX_BYTES) {
+      return { error: "File is over the 10MB limit. Share a Google Drive / WeTransfer / Dropbox link instead." };
+    }
+    const rawExt = (f.name.split(".").pop() || "bin").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "bin";
+    const objectPath = `${job_id}/${crypto.randomUUID()}.${rawExt}`;
+    const { error: upErr } = await supabase.storage
+      .from("job-deliverables")
+      .upload(objectPath, f, { contentType: f.type || "application/octet-stream" });
+    if (upErr) {
+      console.error("[submitDelivery] upload failed:", upErr.message, { objectPath, size: f.size });
+      return { error: `Upload failed: ${upErr.message}` };
+    }
+    metadata = { file_url: objectPath, file_name: f.name.slice(0, 200), file_type: f.type || null, size_bytes: f.size };
+  } else {
+    if (!isPlausibleExternalLink(external_link)) {
+      return { error: "That doesn't look like a valid https:// link." };
+    }
+    metadata = { external_link };
+  }
+
+  // Revision detection: was the most recent delivery-relevant event on this
+  // job a revision_requested with no files_delivered/revision_delivered after?
+  // Fetch a small slice ordered newest-first and take the first hit.
+  const { data: recent } = await supabase.from("job_events")
+    .select("event_type")
+    .eq("job_id", job_id)
+    .in("event_type", ["revision_requested", "files_delivered", "revision_delivered"])
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const isRevision = !!recent?.length && recent[0].event_type === "revision_requested";
+  const evt: JobEventType = isRevision ? "revision_delivered" : "files_delivered";
+
+  await logJobEvent(job_id, evt, note, { actorId: user.id, metadata });
+
+  // Notify the client that a delivery landed.
+  await supabase.from("notifications").insert({
+    user_id: job.client_id,
+    kind: "message_received",
+    title: isRevision ? "Revision delivered" : "Files delivered",
+    body: note || (hasFile ? "Delivery attached." : "External download link shared."),
+    link: `/jobs/${job_id}`,
+    actor_id: user.id,
+    target_type: "job",
+    target_id: job_id,
+  });
+
+  revalidatePath(`/jobs/${job_id}`);
+  return { ok: true, info: isRevision ? "Revision sent." : "Delivery sent." };
 }
 
 

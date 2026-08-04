@@ -757,3 +757,61 @@ create policy "job_events read parties" on job_events for select using (
 -- No insert / update / delete policies on purpose. All writes route through
 -- the service-role helper (lib/job-events.ts:logJobEvent) so nothing on the
 -- client can forge or alter the timeline.
+
+-- Session 3: private storage for job deliverables. Files under 10MB stored
+-- here; larger files go through external-link metadata on the job_events row.
+-- Path pattern: <job_id>/<uuid>.<ext> — foldername[1] = job_id.
+insert into storage.buckets (id, name, public)
+values ('job-deliverables', 'job-deliverables', false)
+on conflict (id) do nothing;
+
+-- Read: admin, the job's client, or the accepted creative.
+drop policy if exists "job-deliverables read parties" on storage.objects;
+create policy "job-deliverables read parties" on storage.objects for select
+  using (
+    bucket_id = 'job-deliverables'
+    and (
+      public.is_admin(auth.uid())
+      or auth.uid() in (
+        select client_id from jobs where id::text = (storage.foldername(name))[1]
+      )
+      or auth.uid() in (
+        select creative_id from proposals
+        where job_id::text = (storage.foldername(name))[1]
+          and status = 'accepted'
+      )
+    )
+  );
+
+-- Insert: only the accepted creative on that specific job.
+drop policy if exists "job-deliverables insert accepted creative" on storage.objects;
+create policy "job-deliverables insert accepted creative" on storage.objects for insert
+  with check (
+    bucket_id = 'job-deliverables'
+    and auth.uid() in (
+      select creative_id from proposals
+      where job_id::text = (storage.foldername(name))[1]
+        and status = 'accepted'
+    )
+  );
+
+-- Delete: same accepted creative can clean up a mis-upload.
+drop policy if exists "job-deliverables delete own" on storage.objects;
+create policy "job-deliverables delete own" on storage.objects for delete
+  using (
+    bucket_id = 'job-deliverables'
+    and auth.uid() in (
+      select creative_id from proposals
+      where job_id::text = (storage.foldername(name))[1]
+        and status = 'accepted'
+    )
+  );
+
+-- Session 4: revision limits + paid overage.
+-- Creative sets on the proposal; on accept we copy into the job row so the
+-- rest of the flow reads from the job (not the proposal history). Legacy
+-- rows have nulls — treat as "not set" in code.
+alter table proposals add column if not exists revisions_offered integer;
+alter table proposals add column if not exists extra_revision_rate integer;
+alter table jobs add column if not exists extra_revision_rate integer;
+alter table jobs add column if not exists revisions_used integer not null default 0;

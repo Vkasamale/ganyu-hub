@@ -3,6 +3,22 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — Job activity timeline: sessions 2 + 3 + 4 (batch)
+
+Ships the remaining three sessions of the timeline system in one drop. Nobody was on platform, so batching kept the beta database in one consistent shape rather than three intermediate ones.
+
+**Session 2 — status transitions wired into the event log.** `logJobEvent` now fires from every lifecycle mutation: `escrow_funded` (PayChangu callback + webhook, atomic guard via `.eq("escrow_status","payment_pending").select("id")` so callback+webhook race is deduped and the fund-notification only fires once), `work_started` (both `promotePendingAcceptance` for payment-first accept and `confirmScope` when both parties confirm), `job_completed` + `cancelled` (via `updateJobStatus`), `dispute_filed` (via `raiseDispute` and the 72h `cron/non-response-check` with `actorId: null` + "Auto-flagged" note), `dispute_resolved` (via `adminResolveDispute`), `cancelled` (via `adminResolveCancellation` with split percentages in the note), `deadline_extended` (via `respondToDeadlineExtension` on approve).
+
+**Session 3 — file delivery.** New private `job-deliverables` storage bucket, path `<job_id>/<uuid>.<ext>`, RLS: accepted-creative insert/delete, participants + admin read. New `components/job-delivery-submit.tsx` client component (creative-only, active-job-only): file picker with 10MB hard cap (client-side reject before any upload attempt), external-link fallback for larger files, mutual exclusion enforced client + server. New `submitDelivery` server action uploads via the user-scoped client (RLS enforces the accepted-creative-only rule) and writes `{ file_url, file_name, file_type, size_bytes }` or `{ external_link }` into `job_events.metadata`. Revision detection: if the most recent relevant event was `revision_requested`, logs as `revision_delivered` instead of `files_delivered`. Timeline extended to render download links (via batch-minted signed URLs, 1h TTL) or external links inline.
+
+**Session 4 — revision limits + paid overage.** Proposals carry `revisions_offered` (int, default 1) and optional `extra_revision_rate` (int MWK — blank = hard limit). On accept, both copy into `jobs.revisions_included` / `jobs.extra_revision_rate` inside the same guarded update in `promotePendingAcceptance`. New `jobs.revisions_used int default 0` counter. New client-only `RequestRevisionPanel`: within-limit is free, over-limit-with-rate shows an amber confirm prompt then routes through the existing top-up escrow rail (`payment_topups` insert + `initiatePayment` redirect — no parallel payment path), over-limit-no-rate hard-stops with the "please discuss directly" message. Post-payment side effects (increment counter + log `revision_requested`) fire from the PayChangu callback + webhook when the paid top-up's `reason` starts with the `EXTRA_REVISION|` marker. Timeline header now shows **"Revisions: X of Y used"**.
+
+Runtime bug caught locally before push: `EXTRA_REVISION_MARKER` was originally exported from `app/actions.ts`, which is a `"use server"` file — Next.js only allows async function exports there. Dropped the `export` keyword; the marker is used inline in the callback + webhook comparisons anyway.
+
+**Migration required:** re-run `supabase/schema.sql` before this deploy is exercisable. Adds the `job-deliverables` bucket + 3 policies (S3) and the 4 revision columns on `proposals` / `jobs` (S4). Session 1's `job_events` table and CHECK constraint already covered `files_delivered`/`revision_delivered`, so no CHECK update.
+
+Test plan: consolidated Job A/B/C plan in TEST_LOG covers all four sessions in ~25 min instead of four separate runs.
+
 ## 2026-07-25 — Job activity timeline: schema + first event + render (session 1 of 4)
 
 Foundation for the multi-session job activity/timeline system. New `job_events` table (append-only): `id uuid pk`, `job_id fk jobs`, `event_type text CHECK` (11 initial values covering the full lifecycle), `actor_id fk profiles nullable`, `note text nullable`, `metadata jsonb nullable`, `created_at`. Index on `(job_id, created_at)`. RLS: select allowed for the client, the accepted creative, and admin. No insert/update/delete policies on purpose — the only writer is the service-role helper.

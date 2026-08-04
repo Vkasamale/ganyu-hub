@@ -49,6 +49,8 @@ import { DeadlineExtensionPanel } from "@/components/deadline-extension-panel";
 import { ScopeConfirmPanel } from "@/components/scope-confirm-panel";
 import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { JobTimeline, type JobEventRow } from "@/components/job-timeline";
+import { JobDeliverySubmit } from "@/components/job-delivery-submit";
+import { RequestRevisionPanel } from "@/components/request-revision-panel";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout, requestTopUp, declineTopUp, payTopUp } from "@/app/actions";
 import { collectionFee } from "@/lib/fees";
 import { StarRatingInput } from "@/components/star-rating-input";
@@ -124,17 +126,40 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const isAcceptedCreative = !isClient && myProposal?.status === "accepted";
   const isParty = isClient || isAcceptedCreative;
 
-  // Timeline events (session 1 of 4). RLS on job_events already restricts to
+  // Timeline events (session 1). RLS on job_events already restricts to
   // client/accepted-creative/admin; the isParty gate here just avoids the
-  // roundtrip when a non-party lands on the page.
+  // roundtrip when a non-party lands on the page. metadata carries delivery
+  // attachments (file_url path OR external_link).
   const isAcceptedCreativeForEvents = !isClient && myProposal?.status === "accepted";
   const isPartyForEvents = isClient || isAcceptedCreativeForEvents;
   const { data: jobEvents } = isPartyForEvents
     ? await supabase.from("job_events")
-        .select("id, event_type, note, created_at")
+        .select("id, event_type, note, created_at, metadata")
         .eq("job_id", job.id)
         .order("created_at", { ascending: true })
     : { data: null };
+
+  // Session 3: batch-sign download URLs for any uploaded deliveries. RLS on
+  // the job-deliverables bucket enforces the same client/accepted-creative
+  // read scope, so this only returns signed URLs the current user is allowed
+  // to have. 1h expiry — timeline reloads on any navigation.
+  const signedUrls: Record<string, string> = {};
+  const deliveryPaths = (jobEvents || [])
+    .map((e: any) => e?.metadata?.file_url)
+    .filter((p: any): p is string => typeof p === "string" && p.length > 0);
+  if (deliveryPaths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from("job-deliverables")
+      .createSignedUrls(deliveryPaths, 3600);
+    for (const s of signed || []) {
+      if (s.path && s.signedUrl) signedUrls[s.path] = s.signedUrl;
+    }
+  }
+
+  // Delivery form is creative-only, visible while the job is active enough
+  // to be delivered. Same status set the server action enforces.
+  const DELIVERY_ACTIVE = new Set(["in_progress", "revision_requested", "submitted"]);
+  const canSubmitDelivery = isAcceptedCreativeForEvents && DELIVERY_ACTIVE.has(job.status);
 
   const CANCELLABLE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
   const canRequestCancel = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
@@ -244,7 +269,25 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
 
       {isPartyForEvents && jobEvents && jobEvents.length > 0 && (
-        <JobTimeline events={jobEvents as JobEventRow[]} />
+        <JobTimeline
+          events={jobEvents as JobEventRow[]}
+          signedUrls={signedUrls}
+          revisionsIncluded={job.revisions_included}
+          revisionsUsed={job.revisions_used}
+        />
+      )}
+
+      {canSubmitDelivery && (
+        <JobDeliverySubmit jobId={job.id} />
+      )}
+
+      {isClient && DELIVERY_ACTIVE.has(job.status) && (
+        <RequestRevisionPanel
+          jobId={job.id}
+          revisionsIncluded={job.revisions_included}
+          revisionsUsed={job.revisions_used ?? 0}
+          extraRate={job.extra_revision_rate}
+        />
       )}
 
       {job.status === "disputed" && (
@@ -529,6 +572,17 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <Label htmlFor="bid_mwk">Your bid (MWK)</Label>
                 <Input id="bid_mwk" name="bid_mwk" type="number" min={0} required />
               </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="revisions_offered">Revisions included</Label>
+                  <Input id="revisions_offered" name="revisions_offered" type="number" min={0} max={20} defaultValue={1} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="extra_revision_rate">Extra revision rate (MWK, optional)</Label>
+                  <Input id="extra_revision_rate" name="extra_revision_rate" type="number" min={0} placeholder="leave blank for hard limit" />
+                </div>
+              </div>
+              <p className="text-xs text-ink/55">Leave the rate blank to make the included revisions a hard limit — clients won't be able to request more.</p>
               <ProposalPayoutPreview />
               <SubmitButton pendingText="Sending…">Submit proposal</SubmitButton>
             </SavingForm>

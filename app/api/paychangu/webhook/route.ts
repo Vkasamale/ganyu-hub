@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { verifyWebhookSignature, parseWebhook, parsePayoutWebhook, verifyPayment, verifyPayout } from "@/lib/payments";
 import { promotePendingAcceptance } from "@/lib/accept-pending";
+import { logJobEvent } from "@/lib/job-events";
 
 export const runtime = "nodejs";
 
@@ -76,15 +77,31 @@ export async function POST(req: Request) {
 
   if (txRef.startsWith("ghtop_")) {
     const { data: topup } = await supabase.from("payment_topups")
-      .select("id, job_id, amount_mwk, status").eq("payment_ref", txRef).maybeSingle();
+      .select("id, job_id, amount_mwk, status, reason, requested_by_creative_id").eq("payment_ref", txRef).maybeSingle();
     if (topup && topup.status === "pending") {
       if (verified.status === "success") {
-        await supabase.from("payment_topups").update({
+        const { data: flipped } = await supabase.from("payment_topups").update({
           status: "paid",
           payment_provider_id: verified.providerId || null,
           responded_at: new Date().toISOString(),
-        }).eq("id", topup.id);
-        await supabase.rpc("increment_total_paid", { p_job_id: topup.job_id, p_amount: topup.amount_mwk });
+        }).eq("id", topup.id).eq("status", "pending").select("id");
+        if (flipped && flipped.length > 0) {
+          await supabase.rpc("increment_total_paid", { p_job_id: topup.job_id, p_amount: topup.amount_mwk });
+          const reason = String(topup.reason || "");
+          if (reason.startsWith("EXTRA_REVISION|")) {
+            const note = reason.slice("EXTRA_REVISION|".length).trim() || null;
+            const { data: jobRow } = await supabase.from("jobs")
+              .select("id, client_id, revisions_included, revisions_used").eq("id", topup.job_id).maybeSingle();
+            if (jobRow) {
+              const nextUsed = Number(jobRow.revisions_used ?? 0) + 1;
+              await supabase.from("jobs").update({ revisions_used: nextUsed }).eq("id", jobRow.id);
+              await logJobEvent(jobRow.id, "revision_requested", note, {
+                actorId: jobRow.client_id ?? null,
+                metadata: { revision_number: nextUsed, of: jobRow.revisions_included, paid: true, topup_id: topup.id, amount_mwk: topup.amount_mwk },
+              });
+            }
+          }
+        }
       } else if (verified.status === "failed") {
         await supabase.from("payment_topups").update({
           status: "declined",
@@ -99,26 +116,29 @@ export async function POST(req: Request) {
   if (!job) return NextResponse.json({ ok: true });
 
   if (verified.status === "success" && job.escrow_status === "payment_pending") {
-    await supabase.from("jobs").update({
+    // Atomic guard: whichever of (callback, webhook) hits first flips the
+    // escrow. Affected-rows tells us we won so we can fire side effects once.
+    const { data: flipped } = await supabase.from("jobs").update({
       escrow_status: "payment_held",
       payment_held_at: new Date().toISOString(),
       payment_provider_id: verified.providerId || null,
       collection_amount_mwk: verified.amount ?? null,
       collection_fee_mwk: verified.fee ?? null,
       payment_rail: verified.rail ?? null,
-    }).eq("id", job.id);
+    }).eq("id", job.id).eq("escrow_status", "payment_pending").select("id");
+    if (flipped && flipped.length > 0) {
+      await logJobEvent(job.id, "escrow_funded", null, { actorId: job.client_id });
+      await supabase.from("notifications").insert({
+        user_id: job.client_id,
+        kind: "escrow_funded",
+        title: "Payment is safely in escrow",
+        body: `Funds for "${job.title}" are held. The creative can begin work. You'll be able to release payment the next business day.`,
+        link: `/jobs/${job.id}`,
+        target_type: "job",
+        target_id: job.id,
+      });
+    }
     await promotePendingAcceptance(supabase, job.id);
-    // Confirm to the client that funds landed. Creative gets their own
-    // notification from promotePendingAcceptance (proposal accepted).
-    await supabase.from("notifications").insert({
-      user_id: job.client_id,
-      kind: "escrow_funded",
-      title: "Payment is safely in escrow",
-      body: `Funds for "${job.title}" are held. The creative can begin work. You'll be able to release payment the next business day.`,
-      link: `/jobs/${job.id}`,
-      target_type: "job",
-      target_id: job.id,
-    });
   } else if (verified.status === "failed" && job.escrow_status === "payment_pending") {
     await supabase.from("jobs").update({
       escrow_status: "none",

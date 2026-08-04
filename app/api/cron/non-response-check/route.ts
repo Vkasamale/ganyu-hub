@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { logJobEvent } from "@/lib/job-events";
 
 export const runtime = "nodejs";
 
@@ -46,11 +47,19 @@ async function run(): Promise<Response> {
     const { data: accepted } = await admin
       .from("proposals").select("creative_id").eq("job_id", job.id).eq("status", "accepted").maybeSingle();
 
-    await admin.from("jobs").update({
+    const { data: flipped } = await admin.from("jobs").update({
       status: "disputed",
       dispute_reason: `Auto-flagged: no delivery 72h past deadline (${job.deadline}).`,
       dispute_raised_at: new Date().toISOString(),
-    }).eq("id", job.id).eq("status", "in_progress");
+    }).eq("id", job.id).eq("status", "in_progress").select("id");
+
+    // Guard on affected rows so a repeat cron run doesn't double-log.
+    if (!flipped || flipped.length === 0) continue;
+
+    await logJobEvent(job.id, "dispute_filed", `Auto-flagged: no delivery 72h past deadline (${job.deadline}).`, {
+      actorId: null,
+      metadata: { source: "cron_non_response", deadline: job.deadline },
+    });
 
     await admin.from("payment_topups").update({
       status: "cancelled",

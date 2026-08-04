@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-07-25 (Job activity timeline session 1 of 4 shipped: job_events table + RLS + logJobEvent service-role helper + proposal_accepted wire at promotePendingAcceptance + JobTimeline component on the job detail page — additive, existing status badge untouched. Migration required.)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (Job activity timeline sessions 2 + 3 + 4 batched: all status transitions wired into logJobEvent, file delivery via private job-deliverables bucket with 10MB cap + external-link fallback, revision limits + paid overage routed through the existing top-up escrow rail. Migration required — job-deliverables bucket + 4 revision columns.)
 
 ---
 

@@ -7,6 +7,7 @@ export type JobEventRow = {
   event_type: string;
   note: string | null;
   created_at: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 const LABELS: Record<JobEventType, string> = {
@@ -61,16 +62,85 @@ function EventIcon({ type }: { type: string }) {
   }
 }
 
-export function JobTimeline({ events }: { events: JobEventRow[] }) {
+// Delivery attachments live in event.metadata. Uploaded files store the
+// storage path in `file_url` and the page mints a signed URL keyed by path;
+// external links store the raw URL in `external_link`.
+function DeliveryAttachment({
+  metadata,
+  signedUrls,
+}: {
+  metadata: Record<string, unknown> | null | undefined;
+  signedUrls: Record<string, string>;
+}) {
+  if (!metadata) return null;
+  const external = typeof metadata.external_link === "string" ? metadata.external_link : null;
+  const filePath = typeof metadata.file_url === "string" ? metadata.file_url : null;
+  const fileName = typeof metadata.file_name === "string" ? metadata.file_name : "download";
+
+  if (external) {
+    return (
+      <p className="mt-1 text-xs">
+        <a
+          href={external}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-ink underline underline-offset-2 hover:text-ink/80"
+        >
+          {external.length > 60 ? external.slice(0, 57) + "…" : external}
+        </a>
+        <span className="ml-1 text-ink/50">— External link (opens in new tab)</span>
+      </p>
+    );
+  }
+  if (filePath) {
+    const signed = signedUrls[filePath];
+    if (!signed) {
+      return <p className="mt-1 text-xs text-ink/50">{fileName} — link expired, refresh to regenerate</p>;
+    }
+    return (
+      <p className="mt-1 text-xs">
+        <a
+          href={signed}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-ink underline underline-offset-2 hover:text-ink/80"
+        >
+          Download: {fileName}
+        </a>
+      </p>
+    );
+  }
+  return null;
+}
+
+export function JobTimeline({
+  events,
+  signedUrls = {},
+  revisionsIncluded,
+  revisionsUsed,
+}: {
+  events: JobEventRow[];
+  signedUrls?: Record<string, string>;
+  revisionsIncluded?: number | null;
+  revisionsUsed?: number | null;
+}) {
   if (!events || events.length === 0) return null;
 
   // Sorted oldest→newest for a natural reading order.
   const ordered = [...events].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const hasRevisions = revisionsIncluded != null && revisionsIncluded > 0;
 
   return (
     <Card className="mt-6">
       <CardContent className="p-5">
-        <p className="text-sm font-medium text-ink">Activity</p>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-sm font-medium text-ink">Activity</p>
+          {hasRevisions && (
+            <p className="text-xs text-ink/60">
+              Revisions: <strong>{revisionsUsed ?? 0}</strong> of {revisionsIncluded} used
+            </p>
+          )}
+        </div>
         <ol className="mt-4 space-y-4">
           {ordered.map((e, i) => {
             const label = LABELS[e.event_type as JobEventType] ?? e.event_type;
@@ -86,6 +156,7 @@ export function JobTimeline({ events }: { events: JobEventRow[] }) {
                 <div className="pt-0.5">
                   <p className="text-sm text-ink">{label}</p>
                   {e.note && <p className="mt-0.5 text-xs text-ink/60">{e.note}</p>}
+                  <DeliveryAttachment metadata={e.metadata} signedUrls={signedUrls} />
                   <p className="mt-0.5 text-xs text-ink/50">{timeAgo(e.created_at)}</p>
                 </div>
               </li>
