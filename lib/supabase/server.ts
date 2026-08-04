@@ -3,6 +3,16 @@ import { cookies } from "next/headers";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
+function hardenCookie(options?: CookieOptions): CookieOptions {
+  return {
+    ...options,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: options?.sameSite ?? "lax",
+    path: options?.path ?? "/",
+  };
+}
+
 export function createClient() {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

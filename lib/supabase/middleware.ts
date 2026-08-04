@@ -3,6 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
+function hardenCookie(options?: CookieOptions): CookieOptions {
+  return {
+    ...options,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: options?.sameSite ?? "lax",
+    path: options?.path ?? "/",
+  };
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
@@ -17,7 +27,7 @@ export async function updateSession(request: NextRequest) {
           );
           response = NextResponse.next({ request });
           toSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, hardenCookie(options))
           );
         },
       },

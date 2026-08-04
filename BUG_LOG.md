@@ -15,6 +15,11 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-003] Supabase auth cookies missing HttpOnly/Secure/SameSite — session hijack surface.** — reported 2026-08-04 during security review.
+  - **Repro:** DevTools → Application → Cookies on a signed-in session shows `sb-*-auth-token*` cookies without HttpOnly. JS on any page (including any XSS payload) could read them and exfiltrate the session.
+  - **Cause:** `lib/supabase/server.ts` and `lib/supabase/middleware.ts` passed the `options` from `@supabase/ssr`'s `setAll` callback through verbatim. Supabase's own defaults don't force HttpOnly/Secure — they leave it to the app.
+  - **Fix shipped (2026-08-04):** added `hardenCookie()` helper in both files. Every auth-cookie write now forces `httpOnly: true`, `secure: true` in prod (off in dev so localhost still works), `sameSite: "lax"`, `path: "/"`. Existing sessions keep working; cookies re-flag on next token refresh.
+
 - **[BUG-002] Onboarding "Finish & go to dashboard" leaked raw Postgres RLS error + wasn't logged.** — reported 2026-08-04 by beta creative on `/onboarding/creative`.
   - **Repro:** creative fills onboarding, presses Finish. Red banner appears: `new row violates row-level security policy for table "profiles"`. Nothing lands in `/admin/errors`.
   - **Cause:** BUG-001's fix changed `profiles.update` → `profiles.upsert(..., { onConflict: 'id' })`. Postgres checks the INSERT policy on any upsert regardless of which branch (INSERT vs UPDATE) actually executes. Schema only had `profiles update self`, no INSERT policy — so upsert failed for every existing user. Secondary: `completeCreativeOnboarding` returned `pErr.message` verbatim (leaked DB internals) and never called `logAdminError` (so admins had no signal).
