@@ -1,6 +1,13 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (repo moved off OneDrive to `C:\Users\vinny\GANYU HUB`, resolving the intermittent Next 16 / Turbopack `0xc0000142` worker crash — dev server now starts clean from the new path; BUG-007 re-verified from the new path via `tsc --noEmit` (RLS-level behaviour already confirmed in aa6a59d), UI click-through skipped as redundant. Housekeeping: `@vercel/analytics@^2.0.1` added to deps but not yet wired, `tsconfig.tsbuildinfo` gitignored, stale zip files removed. Earlier same-day: BUG-007 fix verified E2E at DB/RLS boundary (aa6a59d), fix shipped (e88d527), session security hardening BUG-003/004/005/006, full E2E walk found BUG-007. No new migrations required.)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (session 5 shipped: creative-initiated client jobs with share link. New surfaces `/jobs/new-for-client`, `/j/[token]`, "Copy client link" banner on `/jobs/[id]`. Two new server actions `createJobForClient` + `acceptJobViaLink`. Uses a synthetic accepted `proposals` row to reuse every existing RLS gate — zero new policies. Root middleware.ts added to expose pathname for chromeless landing. **Schema deltas required in Supabase** — see block below. Earlier same-day: repo moved off OneDrive (Turbopack crash resolved), BUG-007 verified from new path.)
+
+## Session 5 schema deltas (run once in Supabase Studio)
+
+```sql
+alter table jobs alter column client_id drop not null;
+alter table jobs add column if not exists client_link_token text unique;
+```
 
 ---
 

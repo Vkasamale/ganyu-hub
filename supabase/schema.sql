@@ -149,6 +149,13 @@ create table if not exists jobs (
 alter table jobs add column if not exists visibility text not null default 'public'
   check (visibility in ('public','private'));
 
+-- Session 5: creative-initiated jobs. The creative pre-agrees terms off-platform
+-- and creates the job on the client's behalf. `client_id` is nullable until the
+-- real client claims the job via the share-token landing page. `client_link_token`
+-- is a non-guessable random slug used as the public link.
+alter table jobs alter column client_id drop not null;
+alter table jobs add column if not exists client_link_token text unique;
+
 do $$ begin
   create type proposal_status as enum ('pending', 'accepted', 'declined', 'withdrawn');
 exception when duplicate_object then null; end $$;

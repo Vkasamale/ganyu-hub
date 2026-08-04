@@ -50,7 +50,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // ponytail: strip nav/footer chrome on public share-link landing (/j/[token])
+  // so the client sees only the job + signup — no browse/homepage escape hatch.
+  // x-pathname is set by root middleware.ts.
+  const { headers } = await import("next/headers");
+  const pathname = (await headers()).get("x-pathname") || "";
+  const bareLayout = pathname.startsWith("/j/");
   return (
     <html lang="en" className={`${inter.variable} ${plexMono.variable} ${instrumentSerif.variable}`}>
       <body className="min-h-screen bg-white font-sans text-ink">
@@ -58,9 +64,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
         )}
         <RecoveryCatcher />
-        <Navbar />
+        {!bareLayout && <Navbar />}
         <main>{children}</main>
-        <footer className="mt-16 border-t border-ink/10 px-4 py-6 text-sm text-ink/60">
+        {!bareLayout && <footer className="mt-16 border-t border-ink/10 px-4 py-6 text-sm text-ink/60">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
             <span>© Ganyu Hub</span>
             <div className="flex flex-wrap gap-4">
@@ -71,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a href="/dashboard/report" className="underline hover:text-ink">Report an issue</a>
             </div>
           </div>
-        </footer>
+        </footer>}
         <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>

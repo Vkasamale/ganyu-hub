@@ -2663,3 +2663,169 @@ export async function declineTopUp(formData: FormData): Promise<{ ok?: boolean; 
   revalidatePath(`/jobs/${t.job_id}`);
   return { ok: true };
 }
+
+// Session 5: creative-initiated job on behalf of a pre-existing client. Price
+// is already agreed off-platform, so no bidding — the job is created directly
+// in scope_pending with a synthetic accepted proposal so every existing
+// creative-side RLS gate (deliverables, job_events, jobs update) keeps working
+// unchanged. Client claims the job via /j/[token].
+export async function createJobForClient(formData: FormData): Promise<{ ok?: boolean; token?: string; jobId?: string; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const { data: me } = await supabase.from("profiles").select("role, onboarded_at").eq("id", user.id).single();
+  if (me?.role !== "creative") return { error: "Only creatives can create a job for a client." };
+  if (!me?.onboarded_at) return { error: "Finish your profile before creating jobs for clients." };
+
+  const title = String(formData.get("title") || "").trim();
+  const brief = String(formData.get("brief") || "").trim();
+  const deliverables = String(formData.get("deliverables") || "").trim();
+  const category = String(formData.get("category") || "").trim();
+  const priceRaw = Number(formData.get("agreed_price_mwk"));
+  const deadline = String(formData.get("deadline") || "").trim() || null;
+  const revisionsRaw = Number(formData.get("revisions_included"));
+  const extraRateRaw = Number(formData.get("extra_revision_rate"));
+
+  if (!title) return { error: "Give the job a title." };
+  if (!CANONICAL.has(category)) return { error: "Pick a valid category." };
+  if (brief.length < 200) return { error: "Brief must be at least 200 characters — spell out what the job actually is." };
+  if (deliverables.length < 50) return { error: "Deliverables must be at least 50 characters — list what the client will receive." };
+  if (!Number.isFinite(priceRaw) || priceRaw <= 0) return { error: "Agreed price must be a positive number." };
+  if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return { error: "Deadline must be a valid date." };
+  const revisions_included = Number.isFinite(revisionsRaw) && revisionsRaw >= 0 && revisionsRaw <= 10
+    ? Math.floor(revisionsRaw) : 0;
+  const extra_revision_rate = Number.isFinite(extraRateRaw) && extraRateRaw >= 0
+    ? Math.round(extraRateRaw) : null;
+
+  const price = Math.round(priceRaw);
+  const crypto = await import("crypto");
+  const token = crypto.randomBytes(24).toString("base64url");
+
+  // Service role for the whole flow: RLS on jobs insert requires
+  // auth.uid() = client_id, and we intentionally leave client_id null.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
+  }
+  const { createServerClient } = await import("@supabase/ssr");
+  const admin = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
+  const { data: job, error: jErr } = await admin.from("jobs").insert({
+    client_id: null,
+    title,
+    brief,
+    category,
+    deliverables,
+    deadline,
+    budget_mwk: price,
+    accepted_bid_mwk: price,
+    total_paid_mwk: price,
+    revisions_included,
+    extra_revision_rate,
+    visibility: "private",
+    status: "scope_pending",
+    client_link_token: token,
+  }).select("id").single();
+  if (jErr || !job) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "creative_job_create", userId: user.id, error: jErr });
+    return { error: GENERIC_ERROR(ref) };
+  }
+
+  // Synthetic accepted proposal — satisfies every creative-side RLS gate
+  // (proposals-where-accepted) without touching a single policy.
+  const { error: pErr } = await admin.from("proposals").insert({
+    job_id: job.id,
+    creative_id: user.id,
+    bid_mwk: price,
+    cover_letter: "(Job created by creative — terms agreed off-platform.)",
+    status: "accepted",
+  });
+  if (pErr) {
+    await admin.from("jobs").delete().eq("id", job.id);
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "creative_job_synthetic_proposal", jobId: job.id, userId: user.id, error: pErr });
+    return { error: GENERIC_ERROR(ref) };
+  }
+
+  revalidatePath("/dashboard/jobs");
+  redirect(`/jobs/${job.id}`);
+}
+
+// Public — no session required. The client opens /j/[token], enters name +
+// phone + password, and this action attaches them to the job. Existing account
+// by phone → sign in; else sign up with a synthetic email.
+export async function acceptJobViaLink(formData: FormData): Promise<{ error?: string }> {
+  const token = String(formData.get("token") || "").trim();
+  const full_name = String(formData.get("full_name") || "").trim();
+  const phoneRaw = String(formData.get("phone") || "").trim();
+  const password = String(formData.get("password") || "");
+
+  if (!token) return { error: "Missing link token." };
+  if (full_name.length < 2) return { error: "Enter your full name." };
+  const phone = phoneRaw.replace(/[^\d+]/g, "");
+  if (phone.length < 9) return { error: "Enter a valid phone number." };
+  if (password.length < 8) return { error: "Password must be at least 8 characters." };
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
+  }
+  const { createServerClient } = await import("@supabase/ssr");
+  const admin = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
+  const { data: job } = await admin.from("jobs")
+    .select("id, client_id, title, client_link_token")
+    .eq("client_link_token", token).maybeSingle();
+  if (!job) return { error: "This link is invalid or has expired." };
+  if (job.client_id) return { error: "This job has already been claimed. Sign in to view it." };
+
+  // Existing account by phone?
+  const { data: existing } = await admin.from("profiles")
+    .select("id").eq("phone", phone).maybeSingle();
+
+  const supabase = createClient();
+  let userId: string;
+
+  if (existing) {
+    const { data: email } = await admin.rpc("get_user_email", { uid: existing.id });
+    if (!email || typeof email !== "string") return { error: "Account exists but email lookup failed. Contact support." };
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInErr) return { error: "Password incorrect for this phone number." };
+    userId = existing.id;
+  } else {
+    const syntheticEmail = `${phone.replace(/^\+/, "")}@ganyu-phone.local`;
+    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      email: syntheticEmail,
+      password,
+      options: { data: { full_name, role: "client", phone } },
+    });
+    if (signUpErr) return { error: signUpErr.message };
+    userId = signUpData.user?.id || "";
+    if (!userId) return { error: "Signup succeeded but no user id was returned." };
+    await admin.from("profiles").upsert({
+      id: userId, full_name, phone, role: "client",
+    }, { onConflict: "id" });
+  }
+
+  const { error: uErr } = await admin.from("jobs").update({ client_id: userId }).eq("id", job.id);
+  if (uErr) {
+    const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
+    const ref = await logAdminError({ operation: "accept_job_via_link_attach", jobId: job.id, userId, error: uErr });
+    return { error: GENERIC_ERROR(ref) };
+  }
+
+  await logJobEvent(job.id, "proposal_accepted" as JobEventType, "Client joined via share link", {
+    actorId: userId,
+    metadata: { via: "client_link" },
+  });
+
+  redirect(`/jobs/${job.id}`);
+}

@@ -138,9 +138,13 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
           </h1>
           <p className="mt-2 text-sm text-ink/60">Every job you posted or worked on.</p>
         </div>
-        {isClient && (
+        {isClient ? (
           <Link href="/jobs/new" className="rounded-full bg-stamp px-5 py-2 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark">
             Post a job
+          </Link>
+        ) : (
+          <Link href="/jobs/new-for-client" className="rounded-full bg-stamp px-5 py-2 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark">
+            Create a job for a client
           </Link>
         )}
       </header>

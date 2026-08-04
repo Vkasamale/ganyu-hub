@@ -41,6 +41,7 @@ import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
+import { ClientLinkCopy } from "@/components/client-link-copy";
 import { JobPayoutMethodPicker } from "@/components/job-payout-method-picker";
 import { AcceptProposalPicker } from "@/components/accept-proposal-picker";
 import { ProposalPayoutPreview } from "@/components/proposal-payout-preview";
@@ -70,14 +71,22 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     const { data: refreshed } = await supabase.from("jobs").select("*").eq("id", params.id).single();
     if (refreshed) job = refreshed;
   }
-  const { data: client } = await supabase.from("profiles").select("id, full_name").eq("id", job.client_id).single();
+  const { data: client } = job.client_id
+    ? await supabase.from("profiles").select("id, full_name").eq("id", job.client_id).single()
+    : { data: null as { id: string; full_name: string | null } | null };
   const { data: { user } } = await supabase.auth.getUser();
-  const isClient = user?.id === job.client_id;
+  const isClient = !!(user && job.client_id && user.id === job.client_id);
   if (job.visibility === "private" && !isClient) {
     if (!user) notFound();
-    const { data: inv } = await supabase.from("job_invites")
-      .select("id").eq("job_id", job.id).eq("creative_id", user.id).maybeSingle();
-    if (!inv) notFound();
+    // Session 5: unclaimed creative-initiated jobs — the creative on the
+    // synthetic accepted proposal must be able to see and manage the job.
+    const { data: myAcceptedProposal } = await supabase.from("proposals")
+      .select("id").eq("job_id", job.id).eq("creative_id", user.id).eq("status", "accepted").maybeSingle();
+    if (!myAcceptedProposal) {
+      const { data: inv } = await supabase.from("job_invites")
+        .select("id").eq("job_id", job.id).eq("creative_id", user.id).maybeSingle();
+      if (!inv) notFound();
+    }
   }
   if (user && !isClient) await recordView("job", params.id);
   let isSaved = false;
@@ -190,12 +199,19 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     myReview = r;
   }
 
+  const showClientLink = !job.client_id && !!job.client_link_token && isAcceptedCreative;
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       {user && <JobRealtime jobId={job.id} />}
       <Link href="/jobs" className="text-sm text-neutral-500 hover:underline">
         All jobs
       </Link>
+      {showClientLink && (
+        <div className="mt-4">
+          <ClientLinkCopy token={job.client_link_token!} />
+        </div>
+      )}
       <Card className="mt-4">
         <CardHeader>
           <div className="flex items-start justify-between gap-3">

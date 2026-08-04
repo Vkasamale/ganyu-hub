@@ -4,7 +4,9 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-08-04 (repo moved off OneDrive; Turbopack crash resolved; BUG-007 typecheck-verified from new path)
+Last updated: 2026-08-04 (session 5 creative-initiated client-job flow shipped; typechecks clean; awaiting live UI walkthrough)
+
+🕒 **Session 5 — creative-initiated client job with share link.** Code shipped; `tsc --noEmit` clean. Not yet UI-verified. To test: apply the schema deltas (`jobs.client_id` nullable, `jobs.client_link_token text unique`), sign in as a creative, hit `/jobs/new-for-client`, submit the form, land on the job page, copy the client link from the amber banner, open the link in an incognito window, verify: no navbar/footer, job details + creative profile visible, minimal name+phone+password form. Submit → should land inside `/jobs/[id]`. Fund escrow from there. Confirm the private job does NOT appear on `/jobs` or `/browse`. Existing account by phone should sign in instead of creating a duplicate.
 
 ✅ **Repo relocation — Turbopack crash resolved 2026-08-04.** Moved working copy from `C:\Users\vinny\OneDrive\Documents\Code\GANYU HUB` to `C:\Users\vinny\GANYU HUB`. Dev server (`npm run dev`) now starts cleanly from the new path — `Ready in 460ms`, `GET / 200`, no `0xc0000142` worker crash. Turbopack noticed prior corruption from the OneDrive-era crashes and reset its filesystem cache once on first start. Confirms the crash was OneDrive's on-demand file provider racing Turbopack worker writes, not a Next 16 bug. BUG-007 re-verified from the new path via `tsc --noEmit` (zero errors) — the runtime path was already confirmed at the RLS/DB boundary in aa6a59d, so the additional UI click-through was skipped as redundant.
 
