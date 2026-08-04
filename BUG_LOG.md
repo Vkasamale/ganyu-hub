@@ -15,6 +15,21 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-006] Auth callback silently redirected to /dashboard on failed code exchange.** — reported 2026-08-04 during security audit.
+  - **Repro:** expired/invalid/replayed magic-link `?code=` still redirected to `/dashboard`, where page-level guards then bounced the user with no context.
+  - **Cause:** `app/auth/callback/route.ts` discarded the `error` from `exchangeCodeForSession(code)`.
+  - **Fix shipped (2026-08-04):** check the error and redirect to `/login?error=Sign-in link expired or invalid...` when exchange fails.
+
+- **[BUG-005] Password-recovery link mints a full session on GET (Supabase footgun) with no post-reset revocation.** — reported 2026-08-04 during security audit.
+  - **Repro:** anyone who loads the recovery link (email prefetch, security scanner, browser history, shoulder surfer) is logged in as the target user. The real user later resetting their password only killed their own local cookie — the prefetcher's session survived.
+  - **Cause:** `components/reset-password-form.tsx` called `signOut()` (default `local` scope) after password change, so any other session minted from the same recovery code remained valid on Supabase's side.
+  - **Fix shipped (2026-08-04):** `signOut({ scope: "global" })` — updating the password now revokes every refresh token, kicking any prefetcher out immediately.
+
+- **[BUG-004] Signout only cleared the local cookie; server-side refresh token stayed valid.** — reported 2026-08-04 by founder ("friend copied a session cookie into another browser and got in").
+  - **Repro:** attacker copies `sb-*-auth-token` from victim's browser into their own. Victim clicks "Sign out". Attacker's copied cookie still works — the refresh token was never revoked server-side.
+  - **Cause:** `app/auth/signout/route.ts` called `supabase.auth.signOut()` with the default `local` scope. `@supabase/ssr` defaults to `local`, which only wipes the current cookie store.
+  - **Fix shipped (2026-08-04):** `signOut({ scope: "global" })` — every refresh token for the user is now revoked on signout, so any copied cookie dies with the click.
+
 - **[BUG-003] Supabase auth cookies missing HttpOnly/Secure/SameSite — session hijack surface.** — reported 2026-08-04 during security review.
   - **Repro:** DevTools → Application → Cookies on a signed-in session shows `sb-*-auth-token*` cookies without HttpOnly. JS on any page (including any XSS payload) could read them and exfiltrate the session.
   - **Cause:** `lib/supabase/server.ts` and `lib/supabase/middleware.ts` passed the `options` from `@supabase/ssr`'s `setAll` callback through verbatim. Supabase's own defaults don't force HttpOnly/Secure — they leave it to the app.

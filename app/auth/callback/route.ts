@@ -7,7 +7,10 @@ export async function GET(request: Request) {
   const type = searchParams.get("type");
   if (code) {
     const supabase = createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent("Sign-in link expired or invalid. Please request a new one.")}`);
+    }
   }
   if (type === "recovery") return NextResponse.redirect(`${origin}/reset-password`);
   return NextResponse.redirect(`${origin}/dashboard`);

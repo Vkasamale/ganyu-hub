@@ -36,7 +36,7 @@ export function ResetPasswordForm() {
     const supabase = createClient();
     const { error: updateErr } = await supabase.auth.updateUser({ password });
     if (updateErr) { setError(updateErr.message); setPending(false); return; }
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "global" });
     setDone(true);
     setPending(false);
   }

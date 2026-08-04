@@ -3,6 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const supabase = createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "global" });
   return NextResponse.redirect(new URL("/", request.url), { status: 302 });
 }
