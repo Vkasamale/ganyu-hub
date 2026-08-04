@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-04 — Repo moved off OneDrive; Turbopack crash resolved
+
+Working copy moved from `C:\Users\vinny\OneDrive\Documents\Code\GANYU HUB` to `C:\Users\vinny\GANYU HUB`. The intermittent Next 16 / Turbopack `0xc0000142` worker crash was environmental — OneDrive's on-demand file provider was racing Turbopack's cache writes. Dev server from the new path: clean start, `GET / 200`, Turbopack noticed prior corruption and reset its cache once. BUG-007 re-verified via `tsc --noEmit` (typecheck clean; RLS-level behaviour was already confirmed in aa6a59d). Housekeeping: `@vercel/analytics@^2.0.1` added to deps (not yet wired), `tsconfig.tsbuildinfo` added to `.gitignore` (regenerable), obsolete `GANYU HUB dcos .zip` / `Docs.zip` removed.
+
 ## 2026-08-04 — BUG-007 fix verified E2E
 
 Confirmed the e88d527 fix for BUG-007. Local dev server hit an unrelated Turbopack/Windows crash (`0xc0000142` in a spawned worker), so verification ran as a direct Supabase-level check instead of a UI click-through: reproduced the pre-fix client-authenticated `payment_topups` insert (still RLS-blocked, confirming the diagnosis), then ran the exact service-role insert now shipped in `requestRevision` case C — succeeded, correct row shape (`job_id`, `requested_by_creative_id`, `amount_mwk=5000`, `reason` starts `EXTRA_REVISION|`). Ran the callback's post-pay side effects on that row — `payment_topups.status` → `paid`, `jobs.revisions_used` 1 → 2, both correct. No code changes; temporary `TEST_MODE_SKIP_PAYCHANGU_VERIFY` bypass added and reverted (`lib/payments.ts` diff is empty). Test data cleaned up. Recommend a UI click-through pass once the local Turbopack crash is resolved. See `TEST_LOG.md`.

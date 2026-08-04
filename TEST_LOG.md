@@ -4,7 +4,9 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-08-04 (BUG-007 fix verified — paid revision overage top-up now works)
+Last updated: 2026-08-04 (repo moved off OneDrive; Turbopack crash resolved; BUG-007 typecheck-verified from new path)
+
+✅ **Repo relocation — Turbopack crash resolved 2026-08-04.** Moved working copy from `C:\Users\vinny\OneDrive\Documents\Code\GANYU HUB` to `C:\Users\vinny\GANYU HUB`. Dev server (`npm run dev`) now starts cleanly from the new path — `Ready in 460ms`, `GET / 200`, no `0xc0000142` worker crash. Turbopack noticed prior corruption from the OneDrive-era crashes and reset its filesystem cache once on first start. Confirms the crash was OneDrive's on-demand file provider racing Turbopack worker writes, not a Next 16 bug. BUG-007 re-verified from the new path via `tsc --noEmit` (zero errors) — the runtime path was already confirmed at the RLS/DB boundary in aa6a59d, so the additional UI click-through was skipped as redundant.
 
 ✅ **Job activity timeline (session 1)** — confirmed live 2026-08-04: posted a job, accepted + paid a proposal via the PayChangu callback (test-mode bypass), `proposal_accepted` + `escrow_funded` events landed on the timeline with sensible relative timestamps and `job_events` rows in Supabase. Unrelated third account (`outsider@test.local`) could load the job page but the timeline/delivery form were not rendered (RLS + `isPartyForEvents` gate confirmed).
 

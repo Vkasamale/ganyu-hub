@@ -1,6 +1,6 @@
 # Ganyu Hub - Development Roadmap
 
-> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (BUG-007 fix verified E2E: service-role `payment_topups` insert confirmed working, `jobs.revisions_used` advances correctly on paid overage — see TEST_LOG.md; UI click-through still pending, local Turbopack crash blocked the dev server this pass. Earlier same-day: BUG-007 fixed and shipped: `requestRevision` case C now inserts into `payment_topups` via service-role client, unblocking the paid-revision overage flow. Earlier same-day: full E2E walk found BUG-007; BUG-001 confirmed fixed live; session security hardening BUG-003/004/005/006; Job activity timeline sessions 2+3+4 batched. No new migrations required.)
+> Internal dev doc for Claude Code sessions. Last updated: 2026-08-04 (repo moved off OneDrive to `C:\Users\vinny\GANYU HUB`, resolving the intermittent Next 16 / Turbopack `0xc0000142` worker crash — dev server now starts clean from the new path; BUG-007 re-verified from the new path via `tsc --noEmit` (RLS-level behaviour already confirmed in aa6a59d), UI click-through skipped as redundant. Housekeeping: `@vercel/analytics@^2.0.1` added to deps but not yet wired, `tsconfig.tsbuildinfo` gitignored, stale zip files removed. Earlier same-day: BUG-007 fix verified E2E at DB/RLS boundary (aa6a59d), fix shipped (e88d527), session security hardening BUG-003/004/005/006, full E2E walk found BUG-007. No new migrations required.)
 
 ---
 
