@@ -42,6 +42,7 @@ import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
 import { ClientLinkCopy } from "@/components/client-link-copy";
+import { JobHeader } from "@/components/job-header";
 import { JobPayoutMethodPicker } from "@/components/job-payout-method-picker";
 import { AcceptProposalPicker } from "@/components/accept-proposal-picker";
 import { ProposalPayoutPreview } from "@/components/proposal-payout-preview";
@@ -212,20 +213,23 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           <ClientLinkCopy token={job.client_link_token!} />
         </div>
       )}
-      <Card className="mt-4">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-3">
-            <CardTitle className="text-2xl">{job.title}</CardTitle>
-            <div className="flex items-center gap-2">
+      <div className="mt-4">
+        <JobHeader
+          job={job}
+          events={jobEvents || []}
+          right={
+            <>
               <Badge>{job.category}</Badge>
               <Badge className="bg-white">{(job.status || "open").replace("_", " ")}</Badge>
               {user && !isClient && <SaveButton targetType="job" targetId={job.id} saved={isSaved} />}
-            </div>
-          </div>
-          <p className="text-sm text-neutral-500">
-            Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}
-          </p>
-        </CardHeader>
+            </>
+          }
+        />
+        <p className="mt-2 px-1 text-sm text-neutral-500">
+          Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}
+        </p>
+      </div>
+      <Card className="mt-4">
         <CardContent>
           <p className="whitespace-pre-wrap break-words text-neutral-700">{job.brief}</p>
           {job.deliverables && (

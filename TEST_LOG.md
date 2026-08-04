@@ -4,7 +4,9 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-Last updated: 2026-08-04 (session 5 creative-initiated client-job flow shipped; typechecks clean; awaiting live UI walkthrough)
+Last updated: 2026-08-04 (session 7 job progress bar + at-a-glance header shipped; typechecks clean; awaiting live UI walkthrough)
+
+🕒 **Session 7 — job lifecycle progress bar + redesigned header.** Code shipped; `tsc --noEmit` clean. Pure display layer over existing `jobs.status` + `job_events` — zero schema/RLS changes. Verification to run: open an in-progress test job and confirm the stepper highlights the correct stage and the header shows escrow amount (from `total_paid_mwk`) and payout amount (`creativeGross(escrow)` — should equal escrow while `BETA_ZERO_COMMISSION` is on). Fund a fresh job from open → completion and watch stages advance. Cancel one partway and confirm the red "Cancelled here" marker lands on the correct stage (walks `job_events` to find the stage the cancellation event fired at). Check 375px width — the stepper container uses `overflow-x: auto` with `min-w-[520px]` so it scrolls horizontally on narrow viewports rather than breaking the header layout.
 
 🕒 **Session 5 — creative-initiated client job with share link.** Code shipped; `tsc --noEmit` clean. Not yet UI-verified. To test: apply the schema deltas (`jobs.client_id` nullable, `jobs.client_link_token text unique`), sign in as a creative, hit `/jobs/new-for-client`, submit the form, land on the job page, copy the client link from the amber banner, open the link in an incognito window, verify: no navbar/footer, job details + creative profile visible, minimal name+phone+password form. Submit → should land inside `/jobs/[id]`. Fund escrow from there. Confirm the private job does NOT appear on `/jobs` or `/browse`. Existing account by phone should sign in instead of creating a duplicate.
 
