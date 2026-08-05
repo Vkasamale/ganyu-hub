@@ -112,8 +112,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const { data: job } = await supabase.from("jobs").select("id, escrow_status, client_id, title").eq("payment_ref", txRef).maybeSingle();
+  const { data: job } = await supabase.from("jobs").select("id, escrow_status, client_id, title, accepted_bid_mwk").eq("payment_ref", txRef).maybeSingle();
   if (!job) return NextResponse.json({ ok: true });
+
+  // Underpayment guard: don't hold escrow if the verified amount is less than
+  // the agreed bid. Leave it pending and flag for admin rather than advancing
+  // the job as fully funded for less money.
+  if (
+    verified.status === "success" &&
+    job.escrow_status === "payment_pending" &&
+    job.accepted_bid_mwk != null &&
+    (verified.amount ?? 0) < job.accepted_bid_mwk
+  ) {
+    const { logAdminError } = await import("@/lib/admin-errors");
+    await logAdminError({ operation: "payment_underpaid", jobId: job.id, error: "verified amount below accepted bid", context: { txRef, paid: verified.amount, expected: job.accepted_bid_mwk } });
+    return NextResponse.json({ ok: true });
+  }
 
   if (verified.status === "success" && job.escrow_status === "payment_pending") {
     // Atomic guard: whichever of (callback, webhook) hits first flips the

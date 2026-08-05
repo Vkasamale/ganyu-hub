@@ -3,6 +3,15 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Security audit round 3: underpayment guard, rate limiting, storage cap
+
+Closed the four flagged follow-ups from round 2.
+- **(A) Underpayment guard** — `paychangu/callback` + `webhook` routes now select `accepted_bid_mwk` and refuse to flip escrow to `payment_held` when the PayChangu-verified amount is below the agreed bid; logs an admin error (`payment_underpaid`) and leaves the job pending for manual handling.
+- **(B/D) Rate limiting** — new Postgres-backed fixed-window limiter (`rate_limits` table + `check_rate_limit` RPC in `schema.sql`, `lib/rate-limit.ts` helper using the service-role client + client IP). Wired into `signIn` (10/10min per IP+email), `signUp` (5/hr per IP), and `acceptJobViaLink` (8/10min per IP). The share-link claim's wrong-password error is now generic ("We couldn't sign you in…") so it's no longer an account-enumeration / password-testing oracle.
+- **(C) Storage cap** — `job-deliverables` bucket now carries a DB-level `file_size_limit` of 10MB (`on conflict do update`), so a direct Supabase SDK upload can't bypass the app's server-side size check. No DB MIME allow-list (design formats have unreliable MIME types; bucket is private + signed-URL only, so stored files never execute in-origin).
+
+**Still needs you:** (1) run the updated `schema.sql` in Supabase Studio — the `rate_limits` table, `check_rate_limit` function, and bucket size cap are inert until then (rate-limit helper fails open, so nothing breaks meanwhile). (2) CAPTCHA on auth forms still requires a provider (hCaptcha/Cloudflare Turnstile) + env keys — server-side rate limiting is in, but a CAPTCHA is the other half against determined bots; say the word and provide keys to wire it.
+
 ## 2026-08-05 — Security audit round 2: TOCTOU claim guard + timing-safe cron
 
 Deeper auditor pass (payment routes, full server-action authz sweep, public no-session surface). Two code fixes shipped: (1) `acceptJobViaLink` now claims the job with an atomic `.is("client_id", null)` filtered update + row-count check — two concurrent submissions on the same share link can no longer both attach (last-write-wins race closed). (2) `app/api/cron/non-response-check` bearer check switched from `!==` to `crypto.timingSafeEqual` (length-gated) so `CRON_SECRET` can't be timing-recovered. Confirmed safe in this pass: all `admin*` actions gate on `is_admin` via the user-session client; `updateEscrowStatus` (release) is client-only with T+1 hold, payout idempotency, server-computed `creativeNet`, and destination scoped to the creative's own `payout_methods`. Flagged for decision (not auto-fixed): collection webhook/callback don't hard-reject underpayment (`verified.amount < accepted_bid_mwk` still flips escrow to held); `acceptJobViaLink` is a password-test/enumeration oracle with no rate limit once a valid token is held; storage bucket lacks DB-level size/MIME caps; no rate-limiting/CAPTCHA on any auth surface.

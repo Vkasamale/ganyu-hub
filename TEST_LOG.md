@@ -4,6 +4,15 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Security audit round 3 (underpayment, rate limit, storage cap)
+
+⬜ **ACTION REQUIRED: re-run `supabase/schema.sql` in Supabase Studio** — adds `rate_limits` table, `check_rate_limit()` RPC, and the `job-deliverables` 10MB `file_size_limit`. Until run: rate limiter fails open (no limiting) and direct-SDK oversized uploads still possible.
+🕒 Verify after running:
+  - Underpayment: simulate a PayChangu success with amount < accepted_bid → job stays `payment_pending`, `admin_errors` gets a `payment_underpaid` row, escrow NOT held.
+  - Rate limit: 11 rapid failed logins from one IP+email → 11th returns "Too many attempts…"; share-link claim wrong-password 9× → 9th rate-limited; error text never reveals whether the phone exists.
+  - Storage cap: direct `supabase.storage.from('job-deliverables').upload()` of an 11MB file → rejected by the bucket.
+✅ tsc --noEmit clean after all round-3 changes.
+
 ## 2026-08-05 — Security audit + RLS/trigger fixes
 
 ⬜ **ACTION REQUIRED: run the updated policies + trigger in `supabase/schema.sql` in Supabase Studio.** The source-of-truth is fixed but the live DB is NOT patched until you run: the new `proposals update`, `proposals insert`, `topups update parties` policies and the `guard_jobs_creative_update()` function + `trg_guard_jobs_creative_update` trigger.

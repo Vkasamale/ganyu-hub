@@ -844,9 +844,14 @@ create policy "job_events read parties" on job_events for select using (
 -- Session 3: private storage for job deliverables. Files under 10MB stored
 -- here; larger files go through external-link metadata on the job_events row.
 -- Path pattern: <job_id>/<uuid>.<ext> — foldername[1] = job_id.
-insert into storage.buckets (id, name, public)
-values ('job-deliverables', 'job-deliverables', false)
-on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('job-deliverables', 'job-deliverables', false, 10485760)  -- 10 MB
+on conflict (id) do update set file_size_limit = excluded.file_size_limit;
+-- Security (2026-08-05 audit): DB-level 10MB cap so a direct Supabase SDK
+-- upload can't bypass the app's server-side size check. No MIME allow-list —
+-- design formats (.psd/.ai/.fig) have unreliable MIME types and the bucket is
+-- private + served only via signed URLs, so stored files never execute in our
+-- origin; size is the real abuse vector.
 
 -- Read: admin, the job's client, or the accepted creative.
 drop policy if exists "job-deliverables read parties" on storage.objects;
@@ -898,3 +903,44 @@ alter table proposals add column if not exists revisions_offered integer;
 alter table proposals add column if not exists extra_revision_rate integer;
 alter table jobs add column if not exists extra_revision_rate integer;
 alter table jobs add column if not exists revisions_used integer not null default 0;
+
+-- Security (2026-08-05 audit): fixed-window rate limiter, backed by Postgres so
+-- it works on unauthenticated endpoints (auth forms, public share-link claim).
+-- Called only via the service-role client from lib/rate-limit.ts.
+create table if not exists rate_limits (
+  key text primary key,
+  window_start timestamptz not null default now(),
+  count int not null default 0
+);
+
+-- Returns true if the caller is still WITHIN the limit (allowed), false if over.
+-- Resets the window lazily when the current one has expired.
+-- ponytail: fixed window, not sliding — a burst straddling a boundary can do up
+-- to 2x briefly. Fine for abuse control; swap to a sliding log only if needed.
+create or replace function check_rate_limit(p_key text, p_max int, p_window_seconds int)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := now();
+  v_count int;
+begin
+  insert into rate_limits (key, window_start, count)
+    values (p_key, v_now, 1)
+    on conflict (key) do update
+      set count = case
+            when rate_limits.window_start < v_now - make_interval(secs => p_window_seconds)
+              then 1
+            else rate_limits.count + 1
+          end,
+          window_start = case
+            when rate_limits.window_start < v_now - make_interval(secs => p_window_seconds)
+              then v_now
+            else rate_limits.window_start
+          end
+    returning count into v_count;
+  return v_count <= p_max;
+end;
+$$;

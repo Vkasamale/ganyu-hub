@@ -63,9 +63,19 @@ export async function GET(req: Request) {
   }
 
   if (txRef) {
-    const { data: job } = await supabase.from("jobs").select("id, escrow_status, client_id, title").eq("payment_ref", txRef).maybeSingle();
+    const { data: job } = await supabase.from("jobs").select("id, escrow_status, client_id, title, accepted_bid_mwk").eq("payment_ref", txRef).maybeSingle();
     if (job && job.escrow_status === "payment_pending") {
       const verified = await verifyPayment(txRef);
+      // Underpayment guard: don't hold escrow for less than the agreed bid.
+      if (
+        verified.status === "success" &&
+        job.accepted_bid_mwk != null &&
+        (verified.amount ?? 0) < job.accepted_bid_mwk
+      ) {
+        const { logAdminError } = await import("@/lib/admin-errors");
+        await logAdminError({ operation: "payment_underpaid", jobId: job.id, error: "verified amount below accepted bid", context: { txRef, paid: verified.amount, expected: job.accepted_bid_mwk } });
+        return NextResponse.redirect(new URL(`/jobs/${job.id}`, url.origin));
+      }
       if (verified.status === "success") {
         // Atomic guard: only one of (callback, webhook) wins the transition.
         // Affected-rows tells us we won and lets us fire side effects once.

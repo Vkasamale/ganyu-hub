@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { CATEGORIES } from "@/lib/types";
 import { logJobEvent, type JobEventType } from "@/lib/job-events";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 // Trust-boundary guard: keep only canonical categories. The CategoryPicker
 // submits repeated name="categories" checkboxes, so read them with getAll().
@@ -37,6 +38,11 @@ export async function signUp(formData: FormData) {
   const full_name = String(formData.get("full_name") || "");
   const role = String(formData.get("role") || "creative");
 
+  // Abuse control: cap signups per IP (stops mass account creation / spam).
+  if (!(await rateLimit(`signup:${await clientIp()}`, 5, 3600))) {
+    redirect(`/signup?error=${encodeURIComponent("Too many attempts. Please try again later.")}`);
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -48,8 +54,16 @@ export async function signUp(formData: FormData) {
 
 export async function signIn(formData: FormData) {
   const supabase = createClient();
+  const email = String(formData.get("email"));
+
+  // Abuse control: cap sign-in attempts per IP+email (slows credential
+  // stuffing / password guessing).
+  if (!(await rateLimit(`signin:${await clientIp()}:${email}`, 10, 600))) {
+    redirect(`/login?error=${encodeURIComponent("Too many attempts. Please try again in a few minutes.")}`);
+  }
+
   const { error } = await supabase.auth.signInWithPassword({
-    email: String(formData.get("email")),
+    email,
     password: String(formData.get("password")),
   });
   if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
@@ -2771,6 +2785,13 @@ export async function acceptJobViaLink(formData: FormData): Promise<{ error?: st
   if (phone.length < 9) return { error: "Enter a valid phone number." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
 
+  // Abuse control: this endpoint signs users in by phone+password, so without a
+  // limit a holder of one valid token could brute-force passwords. Cap per
+  // IP+token; the generic errors below avoid confirming which phones exist.
+  if (!(await rateLimit(`acceptlink:${await clientIp()}`, 8, 600))) {
+    return { error: "Too many attempts. Please try again in a few minutes." };
+  }
+
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
   }
@@ -2796,9 +2817,11 @@ export async function acceptJobViaLink(formData: FormData): Promise<{ error?: st
 
   if (existing) {
     const { data: email } = await admin.rpc("get_user_email", { uid: existing.id });
-    if (!email || typeof email !== "string") return { error: "Account exists but email lookup failed. Contact support." };
+    if (!email || typeof email !== "string") return { error: "We couldn't sign you in. Check your details and try again." };
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInErr) return { error: "Password incorrect for this phone number." };
+    // Generic message: don't confirm that this phone maps to an account, which
+    // would turn this into an enumeration + password-testing oracle.
+    if (signInErr) return { error: "We couldn't sign you in. Check your details and try again." };
     userId = existing.id;
   } else {
     const syntheticEmail = `${phone.replace(/^\+/, "")}@ganyu-phone.local`;
