@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { timingSafeEqual } from "crypto";
 import { logJobEvent } from "@/lib/job-events";
 
 export const runtime = "nodejs";
 
+// Constant-time bearer check so the secret can't be recovered by timing the
+// response. timingSafeEqual throws on length mismatch, so gate on length first.
+function bearerOk(header: string): boolean {
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  const a = Buffer.from(header);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization") || "";
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || !bearerOk(auth)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {

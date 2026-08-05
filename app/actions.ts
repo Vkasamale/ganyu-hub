@@ -2815,11 +2815,19 @@ export async function acceptJobViaLink(formData: FormData): Promise<{ error?: st
     }, { onConflict: "id" });
   }
 
-  const { error: uErr } = await admin.from("jobs").update({ client_id: userId }).eq("id", job.id);
+  // Atomic claim: only attach if still unclaimed. Without .is(client_id,null)
+  // two concurrent submissions on the same link both pass the read-check above
+  // and both write (last-wins). The filtered update + row-count makes it a race
+  // exactly one submission can win.
+  const { data: claimed, error: uErr } = await admin.from("jobs")
+    .update({ client_id: userId }).eq("id", job.id).is("client_id", null).select("id");
   if (uErr) {
     const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");
     const ref = await logAdminError({ operation: "accept_job_via_link_attach", jobId: job.id, userId, error: uErr });
     return { error: GENERIC_ERROR(ref) };
+  }
+  if (!claimed || claimed.length === 0) {
+    return { error: "This job was just claimed by someone else. Sign in to view it." };
   }
 
   await logJobEvent(job.id, "proposal_accepted" as JobEventType, "Client joined via share link", {

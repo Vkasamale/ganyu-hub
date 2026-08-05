@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Security audit round 2: TOCTOU claim guard + timing-safe cron
+
+Deeper auditor pass (payment routes, full server-action authz sweep, public no-session surface). Two code fixes shipped: (1) `acceptJobViaLink` now claims the job with an atomic `.is("client_id", null)` filtered update + row-count check — two concurrent submissions on the same share link can no longer both attach (last-write-wins race closed). (2) `app/api/cron/non-response-check` bearer check switched from `!==` to `crypto.timingSafeEqual` (length-gated) so `CRON_SECRET` can't be timing-recovered. Confirmed safe in this pass: all `admin*` actions gate on `is_admin` via the user-session client; `updateEscrowStatus` (release) is client-only with T+1 hold, payout idempotency, server-computed `creativeNet`, and destination scoped to the creative's own `payout_methods`. Flagged for decision (not auto-fixed): collection webhook/callback don't hard-reject underpayment (`verified.amount < accepted_bid_mwk` still flips escrow to held); `acceptJobViaLink` is a password-test/enumeration oracle with no rate limit once a valid token is held; storage bucket lacks DB-level size/MIME caps; no rate-limiting/CAPTCHA on any auth surface.
+
 ## 2026-08-05 — Security: close creative→job privilege-escalation chain (RLS + trigger)
 
 Static security audit (2026-08-05) found a self-service privilege-escalation path reachable by any logged-in creative via raw PostgREST calls, no UI needed. Fixes in `supabase/schema.sql` — **must be run in Supabase Studio to take effect** (source-of-truth updated; DB not yet migrated):
