@@ -3,6 +3,37 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — "Continue with Google" login (OAuth) + one-time role step
+
+Added Google OAuth sign-in end-to-end. A `GoogleSignin` button
+(`components/google-signin.tsx`) on `/login` and `/signup` submits a
+server-action form (`signInWithGoogle` in `app/actions.ts`) that calls
+`supabase.auth.signInWithOAuth({ provider: "google", redirectTo: <site>/auth/callback })`
+and hops the browser to Google. The existing `app/auth/callback/route.ts`
+completes the code exchange (`exchangeCodeForSession`) and lands the user on
+`/dashboard` — unchanged, verified.
+
+**The role wrinkle (the real work).** Email signup captures `role` via `signUp`
+metadata; Google users skip that form. The DB trigger previously *defaulted*
+absent roles to `'creative'`, silently mis-roling every Google client. Fixed at
+the root: `profiles.role` is now **nullable with no default** and the
+`handle_new_user` trigger no longer coalesces — a Google user arrives with
+`role = null` = "hasn't chosen". A new `/onboarding/role` page asks
+"creative or client?" once (server action `chooseRole` writes the role, then
+hands off to the matching onboarding form). The dashboard layout routes any
+un-onboarded, null-role user to `/onboarding/role` before the role-specific
+onboarding, so there's no bypass. Onboarding completion also self-heals the role
+(`completeClientOnboarding` → `client`, `completeCreativeOnboarding` →
+`creative`) so it's correct regardless of path. Existing null-tolerant reads
+(`(profile?.role as Role) || "creative"`) mean no other flow breaks on null.
+
+Confirm-email doesn't apply to OAuth (Google already verified the address).
+
+**Requires re-running `supabase/schema.sql`** in Supabase (drops the not-null +
+default on `profiles.role` and updates the trigger). Also requires the Google
+OAuth client + Client ID/Secret configured in Supabase → Auth → Providers →
+Google, and enabled.
+
 ## 2026-08-05 — Footer version badge + "What's new"
 
 Added a clickable `v0.8.0` badge in the footer next to "© Ganyu Hub". Clicking

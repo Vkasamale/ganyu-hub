@@ -23,6 +23,11 @@ create table if not exists profiles (
 alter table profiles add column if not exists phone text;
 alter table profiles add column if not exists onboarded_at timestamptz;
 alter table profiles add column if not exists is_admin boolean not null default false;
+-- Google/OAuth users never pick a role (no signup form), so `role` must be
+-- allowed to be null = "hasn't chosen yet". App routes null-role users through
+-- /onboarding/role. Email signups always carry a role in metadata → non-null.
+alter table profiles alter column role drop not null;
+alter table profiles alter column role drop default;
 alter table jobs add column if not exists hidden_at timestamptz;
 alter table jobs add column if not exists proposal_limit integer not null default 10;
 
@@ -49,7 +54,9 @@ begin
   insert into public.profiles (id, full_name, role)
   values (new.id,
           coalesce(new.raw_user_meta_data->>'full_name', ''),
-          coalesce((new.raw_user_meta_data->>'role')::user_role, 'creative'));
+          -- null when absent (OAuth). Do NOT default to 'creative' — that
+          -- silently mis-roles Google clients. /onboarding/role fills it in.
+          (new.raw_user_meta_data->>'role')::user_role);
   return new;
 end; $$;
 

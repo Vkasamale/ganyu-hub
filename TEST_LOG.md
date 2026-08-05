@@ -4,6 +4,15 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — "Continue with Google" login (OAuth) + role step
+
+✅ tsc --noEmit clean.
+✅ Unit: `tests/actions/chooseRole.test.ts` — 5/5 pass. Covers signed-out → `/login`; off-vocab role ("agency") → re-ask `/onboarding/role` with no write; `client`/`creative` → save + hand off to matching onboarding; update error → `/onboarding/role?error=`.
+✅ Static trace: callback exchanges `code` and lands `/dashboard`; dashboard layout routes null-role un-onboarded users to `/onboarding/role`; `/onboarding/role` guards already-onboarded (→ dashboard) and already-roled (→ specific onboarding).
+✅ Supabase setup confirmed done (2026-08-05): schema.sql re-run (`profiles.role` `is_nullable=YES`), Google provider enabled with Client ID/Secret, `http://localhost:3000/auth/callback` + `https://ganyu-hub.vercel.app/auth/callback` allow-listed, Site URL = prod, Confirm-email ON.
+✅ Live dev walk (localhost:3000, 2026-08-05): "Continue with Google" renders on `/login`, "Sign up with Google" on `/signup`. Clicking → real Google consent screen at accounts.google.com with correct `client_id` (…0dt.apps.googleusercontent.com) and `redirect_uri=https://jbczoiiewuerssckkiuq.supabase.co/auth/v1/callback`. `/onboarding/role` correctly redirects a signed-out visitor to `/login`. Email signup form unchanged (creative/client/agency radios intact).
+🕒 **Final human step (needs a real Google account — Claude can't sign in):** complete the consent → first-time Google user should land on `/onboarding/role` → pick "Client" → `/onboarding/client` → finish → `/dashboard` as a client. Repeat with "Creative". Sign out / back in → straight to `/dashboard`, no re-ask. Verify prod after deploy (local tree not yet pushed — no git repo).
+
 ## 2026-08-05 — Footer version badge + "What's new"
 
 ✅ tsc --noEmit clean.

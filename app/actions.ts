@@ -6,6 +6,7 @@ import { sendEmail } from "@/lib/email";
 import { CATEGORIES } from "@/lib/types";
 import { logJobEvent, type JobEventType } from "@/lib/job-events";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { absUrl } from "@/lib/site-url";
 
 // Trust-boundary guard: keep only canonical categories. The CategoryPicker
 // submits repeated name="categories" checkboxes, so read them with getAll().
@@ -84,6 +85,32 @@ export async function signIn(formData: FormData) {
   });
   if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
   redirect("/dashboard");
+}
+
+export async function signInWithGoogle() {
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: absUrl("/auth/callback") },
+  });
+  if (error || !data?.url) {
+    redirect(`/login?error=${encodeURIComponent(error?.message || "Couldn't start Google sign-in. Try again.")}`);
+  }
+  redirect(data.url); // hop to Google; Supabase sends the code back to /auth/callback
+}
+
+// Google users arrive with no role (see handle_new_user trigger). This one-time
+// picker fills it in, then hands off to the matching onboarding form. Email
+// users already have a role and never reach here (guarded in the page + layout).
+export async function chooseRole(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const role = String(formData.get("role"));
+  if (role !== "creative" && role !== "client") redirect("/onboarding/role");
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", user.id);
+  if (error) redirect(`/onboarding/role?error=${encodeURIComponent(error.message)}`);
+  redirect(`/onboarding/${role}`);
 }
 
 export async function updateAvailability(formData: FormData) {
@@ -239,6 +266,7 @@ export async function completeCreativeOnboarding(formData: FormData) {
 
   const { data: pRows, error: pErr } = await supabase.from("profiles").upsert({
     id: user.id,
+    role: "creative", // self-heal: finishing creative onboarding fixes a null (OAuth) role
     headline, bio, categories, skills,
     onboarded_at: new Date().toISOString(),
   }, { onConflict: "id" }).select("id");
@@ -408,6 +436,7 @@ export async function completeClientOnboarding(formData: FormData) {
   if (!full_name) return { error: "Add a name or company name." };
 
   const { error } = await supabase.from("profiles").update({
+    role: "client", // self-heal: finishing client onboarding fixes a null (OAuth) role
     full_name, headline, bio, categories,
     onboarded_at: new Date().toISOString(),
   }).eq("id", user.id);

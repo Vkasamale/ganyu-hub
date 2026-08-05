@@ -12,6 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role, onboarded_at, is_admin").eq("id", user.id).single();
   if (profile && !profile.onboarded_at) {
+    if (!profile.role) redirect("/onboarding/role"); // OAuth users pick a role first
     redirect(profile.role === "client" ? "/onboarding/client" : "/onboarding/creative");
   }
   const role: Role = (profile?.role as Role) || "creative";

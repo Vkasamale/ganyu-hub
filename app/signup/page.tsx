@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Turnstile } from "@/components/turnstile";
+import { GoogleSignin } from "@/components/google-signin";
 
 type Role = "creative" | "client" | "agency";
 const VALID_ROLES: Role[] = ["creative", "client", "agency"];
@@ -27,6 +28,10 @@ export default async function SignupPage({ searchParams: searchParamsP }: { sear
               {decodeURIComponent(error)}
             </p>
           )}
+          <GoogleSignin label="Sign up with Google" />
+          <div className="my-4 flex items-center gap-3 text-xs text-neutral-400">
+            <span className="h-px flex-1 bg-neutral-200" />or<span className="h-px flex-1 bg-neutral-200" />
+          </div>
           <form action={signUp} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="full_name">Full name</Label>

@@ -4,6 +4,7 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 ## Auth / Login (next-session task — scoped 2026-08-05)
 
+- ~~**"Continue with Google" login.**~~ **Built 2026-08-05.** Button on `/login` + `/signup` → `signInWithGoogle` server action → `signInWithOAuth`; callback verified. Role wrinkle solved at the root: `profiles.role` made nullable (no default), `handle_new_user` no longer defaults to creative, new `/onboarding/role` picker (`chooseRole`) + dashboard-layout gate route null-role users to pick once. Unit tests green, tsc clean. **Pending activation:** re-run `schema.sql` + configure/enable Google provider in Supabase (see CHANGELOG + DevRoadmap). Original scope below for reference.
 - **"Continue with Google" login.** Build end-to-end; plumbing already exists (`app/auth/callback/route.ts`, SSR clients in `lib/supabase/`).
   - **User prerequisite (do first):** create a Google OAuth client — Google Cloud Console → APIs & Services → Credentials → OAuth client ID → Web application. Authorized redirect URI = `https://jbczoiiewuerssckkiuq.supabase.co/auth/v1/callback`. Paste Client ID + Secret into Supabase → Authentication → Auth Providers → **Google**, enable, save. (Provider is Disabled as of 2026-08-05.)
   - **App build:** add a "Continue with Google" button on `app/login/page.tsx` + `app/signup/page.tsx` calling `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: <site>/auth/callback } })`. Verify `app/auth/callback/route.ts` completes the code exchange and lands the user correctly.
