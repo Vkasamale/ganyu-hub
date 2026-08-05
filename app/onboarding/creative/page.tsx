@@ -48,7 +48,7 @@ export default async function CreativeOnboardingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone / WhatsApp</Label>
-                <Input id="phone" name="phone" type="tel" placeholder="e.g. +265 99 123 4567" defaultValue={phoneDefault} />
+                <Input id="phone" name="phone" type="tel" required placeholder="e.g. +265 99 123 4567" defaultValue={phoneDefault} />
               </div>
             </div>
             <div className="space-y-1.5">

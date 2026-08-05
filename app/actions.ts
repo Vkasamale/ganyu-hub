@@ -215,7 +215,7 @@ export async function completeCreativeOnboarding(formData: FormData) {
   if (!user) return { error: "Not signed in" };
 
   const full_name = String(formData.get("full_name") || "").trim();
-  const phone = String(formData.get("phone") || "").trim() || null;
+  const phone = String(formData.get("phone") || "").trim();
   const headline = String(formData.get("headline") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
   const categories = parseCategories(formData);
@@ -253,6 +253,7 @@ export async function completeCreativeOnboarding(formData: FormData) {
       : null;
   const service_delivery_days = Number(formData.get("service_delivery_days")) || 7;
 
+  if (!phone) return { error: "Add a phone or WhatsApp number so clients can reach you." };
   if (!headline) return { error: "Add a headline so clients know what you do." };
   if (!bio) return { error: "Write a short bio." };
   if (!piece_title) return { error: "Add at least one piece of work." };
@@ -437,10 +438,11 @@ export async function completeClientOnboarding(formData: FormData) {
   const full_name = String(formData.get("full_name") || "").trim();
   const headline = String(formData.get("headline") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
-  const phone = String(formData.get("phone") || "").trim() || null;
+  const phone = String(formData.get("phone") || "").trim();
   const categories = parseCategories(formData);
 
   if (!full_name) return { error: "Add a name or company name." };
+  if (!phone) return { error: "Add a phone or WhatsApp number so creatives can reach you." };
 
   // upsert (not update): OAuth user whose profiles row is missing would update 0 rows.
   const { error } = await supabase.from("profiles").upsert({
