@@ -89,9 +89,17 @@ export async function signIn(formData: FormData) {
 
 export async function signInWithGoogle() {
   const supabase = createClient();
+  // Build the callback from the domain this request actually came in on, not from
+  // APP_URL — a stale APP_URL (e.g. localhost on Vercel) sends Supabase a redirectTo
+  // that isn't allow-listed, so it dumps the code on the Site-URL root ("/") instead.
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") || h.get("host");
+  const proto = h.get("x-forwarded-proto") || "https";
+  const redirectTo = host ? `${proto}://${host}/auth/callback` : absUrl("/auth/callback");
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: absUrl("/auth/callback") },
+    options: { redirectTo },
   });
   if (error || !data?.url) {
     redirect(`/login?error=${encodeURIComponent(error?.message || "Couldn't start Google sign-in. Try again.")}`);
