@@ -48,12 +48,18 @@ export async function signUp(formData: FormData) {
     redirect(`/signup?error=${encodeURIComponent("Please complete the human-verification check and try again.")}`);
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name, role } },
   });
   if (error) redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+  // With Supabase "Confirm email" on, signUp returns no session until the user
+  // clicks the confirmation link — send them to a "check your inbox" notice
+  // instead of /dashboard (which would just bounce an unconfirmed user).
+  if (!data.session) {
+    redirect(`/login?info=${encodeURIComponent("Almost there — check your inbox and confirm your email to finish signing up.")}`);
+  }
   redirect("/dashboard");
 }
 

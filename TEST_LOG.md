@@ -4,6 +4,13 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Email verification (Supabase confirm-email) + v0.8.0
+
+✅ tsc --noEmit clean.
+✅ `signUp` routes on session presence: session absent → `/login?info=check-inbox`, session present → `/dashboard`. Login page renders the green `info` banner.
+🕒 Activate in Supabase (toggle "Confirm email" ON, Authentication → Providers → Email), then test: sign up with a fresh address → expect "check your inbox" on /login, a Supabase confirmation email, and no dashboard access until confirmed. Try a bogus address → never confirms → no access.
+🕒 Confirm Supabase's built-in mailer actually delivers (default mailer has low daily limits; swap to a verified Resend domain before real traffic).
+
 ## 2026-08-05 — Social share buttons + link previews
 
 ✅ tsc --noEmit clean.

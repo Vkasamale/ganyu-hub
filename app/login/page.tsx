@@ -6,13 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Turnstile } from "@/components/turnstile";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; info?: string }> }) {
+  const { error, info } = await searchParams;
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <Card>
         <CardHeader><CardTitle>Welcome back</CardTitle></CardHeader>
         <CardContent>
+          {info && (
+            <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              {decodeURIComponent(info)}
+            </p>
+          )}
           {error && (
             <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {decodeURIComponent(error)}

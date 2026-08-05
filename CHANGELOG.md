@@ -3,6 +3,22 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Email verification (Supabase confirm-email) + v0.8.0
+
+Turned on the path for Supabase Auth's built-in "Confirm email" so fake/typo'd
+emails can't create usable accounts. `signUp` now checks the returned session:
+with confirm-email on, Supabase returns no session until the user clicks the
+link, so we redirect to `/login?info=…` ("check your inbox…") instead of
+`/dashboard` (which would just bounce an unconfirmed user). Added a green info
+banner to the login page (`info` searchParam) to render that message. Chose
+Supabase's built-in mailer for delivery (Resend sandbox only reaches the owner
+address, and no domain is bought yet) — **activate by toggling "Confirm email"
+ON in Supabase → Authentication → Providers → Email**; the code already handles
+both states (session present → dashboard; absent → check-inbox notice).
+
+Also stamped a real version: `package.json` 0.1.0 → **0.8.0** (roughly session 8
+of dev) so "where are we" has a concrete answer.
+
 ## 2026-08-05 — Social share buttons + rich link previews
 
 New `components/share-buttons.tsx` — a reusable social-share row (WhatsApp, X, Facebook, Instagram, native Share, copy) wired onto **creative profiles** (`/creatives/[id]`), **jobs** (`/jobs/[id]`), **finished work** (`/creatives/[id]/portfolio/[itemId]`), and the **client-link banner** (so a creative can send the claim link via any network). The three primary links (WhatsApp/X/Facebook) are plain anchors whose absolute hrefs are computed server-side via new `lib/site-url.ts` (`absUrl`), so they render correct in the SSR HTML and work with zero JS. Instagram has no web link-share intent, so that button copies the link with a "paste into your story/DM" hint; the native Share button (mobile) is the real path to IG/Messenger/etc.
