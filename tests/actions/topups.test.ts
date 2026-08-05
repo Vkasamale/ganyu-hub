@@ -28,7 +28,7 @@ describe("requestTopUp", () => {
     supabaseHolder.client = makeSupabase({
       user: CLIENT,
       tables: {
-        jobs: [{ data: { id: "job-1", client_id: "client-1", title: "T", status: "in_progress" } }],
+        jobs: [{ data: { id: "job-1", client_id: "client-1", title: "T", status: "in_progress", escrow_status: "payment_held" } }],
         proposals: [{ data: { creative_id: "creative-1" } }],
       },
     });
@@ -49,7 +49,7 @@ describe("requestTopUp", () => {
     supabaseHolder.client = makeSupabase({
       user: CREATIVE,
       tables: {
-        jobs: [{ data: { id: "job-1", client_id: "client-1", title: "T", status: "in_progress" } }],
+        jobs: [{ data: { id: "job-1", client_id: "client-1", title: "T", status: "in_progress", escrow_status: "payment_held" } }],
         proposals: [{ data: { creative_id: "creative-1" } }],
         payment_topups: [{ error: { code: "23505", message: "duplicate" } }],
       },
@@ -62,7 +62,7 @@ describe("requestTopUp", () => {
     supabaseHolder.client = makeSupabase({
       user: CREATIVE,
       tables: {
-        jobs: [{ data: { id: "job-1", client_id: "client-1", title: "T", status: "in_progress" } }],
+        jobs: [{ data: { id: "job-1", client_id: "client-1", title: "T", status: "in_progress", escrow_status: "payment_held" } }],
         proposals: [{ data: { creative_id: "creative-1" } }],
         payment_topups: [{ error: null }],
         profiles: [{ data: { full_name: "Creative" } }],
@@ -102,7 +102,7 @@ describe("payTopUp", () => {
       user: CLIENT,
       tables: {
         payment_topups: [
-          { data: { id: "t1", job_id: "job-1", amount_mwk: 5000, status: "pending", job: { client_id: "client-1", title: "T", status: "in_progress" } } },
+          { data: { id: "t1", job_id: "job-1", amount_mwk: 5000, status: "pending", job: { client_id: "client-1", title: "T", status: "in_progress", escrow_status: "payment_held" } } },
           { error: null }, // update payment_ref
         ],
         profiles: [{ data: { full_name: "Client Name" } }],

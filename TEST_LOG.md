@@ -4,6 +4,34 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Google login: first-run routing + identity prefill
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42 (added `.upsert` to the mock chain).
+✅ Static trace: dashboard gate now routes **missing profile OR null role** →
+`/onboarding/role` (was silently rendering a default-creative dashboard — the
+"lands on main page" symptom). `chooseRole` + `completeClientOnboarding` upsert so
+a missing profiles row is created, not a 0-row update.
+✅ Prefill wired: creative + client onboarding seed name from
+`profiles.full_name || user_metadata.full_name || name`, show email read-only from
+`user.email`, and expose a phone field (`profiles.phone`). Creative form gained the
+name/email/phone block it lacked.
+⚠️ **Google does not provide phone** via sign-in scopes (openid/email/profile) —
+name + email prefill, phone is manual. Documented, not a bug.
+🕒 **Re-test the first-run flow (needs a reset account):** an already-onboarded
+Google account correctly goes straight to `/dashboard`. To see role→onboarding
+again, delete the user in Supabase → Authentication → Users (cascades the profile
+row) and sign in fresh → expect `/onboarding/role` → pick role → onboarding form
+**pre-filled with your Google name + email**. Confirm the deployed Vercel build is
+the latest commit (routing fix only takes effect once deployed).
+
+## 2026-08-05 — Unit suite green: stale mockSupabase fixtures realigned
+
+✅ `npx vitest run` — **42/42 pass** (was 11 failing, all pre-existing, unrelated to Google-login). No production code changed — only test fixtures and one mock-helper gap. Root cause was queue-based `mockSupabase` fixtures drifting behind guards/reads the actions had since added:
+- `tests/actions/topups.test.ts` (4): `requestTopUp`/`payTopUp` now guard `jobs.escrow_status === "payment_held"` before the creative/pending checks → added `escrow_status: "payment_held"` to the job rows/embeds that assert a later branch.
+- `tests/actions/submitProposal.test.ts` (5): `submitProposal` now issues a leading rate-limit `proposals` count → prepended one `{ count: 0 }` to each `proposals` queue. Also added `.gte/.lte/.gt` passthroughs to the mock chain (the rate-limit query chains `.gte("created_at", …)`, which the mock didn't expose).
+- `tests/api/cron-non-response.test.ts` (1): the disputed-status `update` chains `.select("id")` and the route flags only on affected rows → update fixture now returns `data: [{ id: "job-1" }]`.
+- `tests/api/paychangu-webhook.test.ts` (1): the top-up paid-flip `update` chains `.select("id")`; `increment_total_paid` fires only on affected rows → update fixture now returns `data: [{ id: "t1" }]`.
+
 ## 2026-08-05 — "Continue with Google" login (OAuth) + role step
 
 ✅ tsc --noEmit clean.

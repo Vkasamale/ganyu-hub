@@ -42,7 +42,7 @@ describe("POST /api/paychangu/webhook", () => {
       tables: {
         payment_topups: [
           { data: { id: "t1", job_id: "job-1", amount_mwk: 5000, status: "pending" } },
-          { error: null }, // update to paid
+          { data: [{ id: "t1" }] }, // update to paid .select("id") returns affected row
         ],
       },
       rpc: { increment_total_paid: { data: null, error: null } },

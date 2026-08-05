@@ -16,6 +16,12 @@ export default async function ClientOnboardingPage() {
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (profile?.onboarded_at) redirect("/dashboard");
 
+  // Prefill from the Google identity (name + email; Google doesn't expose phone).
+  const meta = (user.user_metadata || {}) as Record<string, string | undefined>;
+  const nameDefault = profile?.full_name || meta.full_name || meta.name || "";
+  const phoneDefault = profile?.phone || meta.phone || "";
+  const email = user.email || meta.email || "";
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
       <div>
@@ -32,7 +38,17 @@ export default async function ClientOnboardingPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="full_name">Name or company</Label>
-              <Input id="full_name" name="full_name" required defaultValue={profile?.full_name || ""} placeholder="e.g. Acme Coffee" />
+              <Input id="full_name" name="full_name" required defaultValue={nameDefault} placeholder="e.g. Acme Coffee" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} readOnly disabled className="bg-neutral-50 text-neutral-500" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">Phone / WhatsApp (optional)</Label>
+                <Input id="phone" name="phone" type="tel" placeholder="e.g. +265 99 123 4567" defaultValue={phoneDefault} />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="headline">One-line description (optional)</Label>

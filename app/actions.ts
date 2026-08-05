@@ -108,7 +108,9 @@ export async function chooseRole(formData: FormData) {
   if (!user) redirect("/login");
   const role = String(formData.get("role"));
   if (role !== "creative" && role !== "client") redirect("/onboarding/role");
-  const { error } = await supabase.from("profiles").update({ role }).eq("id", user.id);
+  // upsert, not update: an OAuth user whose profiles row was never created (trigger
+  // skipped / pre-existing auth user) would otherwise update 0 rows and loop back here.
+  const { error } = await supabase.from("profiles").upsert({ id: user.id, role }, { onConflict: "id" });
   if (error) redirect(`/onboarding/role?error=${encodeURIComponent(error.message)}`);
   redirect(`/onboarding/${role}`);
 }
@@ -212,6 +214,8 @@ export async function completeCreativeOnboarding(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
+  const full_name = String(formData.get("full_name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim() || null;
   const headline = String(formData.get("headline") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
   const categories = parseCategories(formData);
@@ -267,6 +271,8 @@ export async function completeCreativeOnboarding(formData: FormData) {
   const { data: pRows, error: pErr } = await supabase.from("profiles").upsert({
     id: user.id,
     role: "creative", // self-heal: finishing creative onboarding fixes a null (OAuth) role
+    ...(full_name ? { full_name } : {}),
+    phone,
     headline, bio, categories, skills,
     onboarded_at: new Date().toISOString(),
   }, { onConflict: "id" }).select("id");
@@ -431,15 +437,18 @@ export async function completeClientOnboarding(formData: FormData) {
   const full_name = String(formData.get("full_name") || "").trim();
   const headline = String(formData.get("headline") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
+  const phone = String(formData.get("phone") || "").trim() || null;
   const categories = parseCategories(formData);
 
   if (!full_name) return { error: "Add a name or company name." };
 
-  const { error } = await supabase.from("profiles").update({
+  // upsert (not update): OAuth user whose profiles row is missing would update 0 rows.
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id,
     role: "client", // self-heal: finishing client onboarding fixes a null (OAuth) role
-    full_name, headline, bio, categories,
+    full_name, headline, bio, phone, categories,
     onboarded_at: new Date().toISOString(),
-  }).eq("id", user.id);
+  }, { onConflict: "id" });
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard");

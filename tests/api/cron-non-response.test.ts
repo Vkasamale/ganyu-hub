@@ -42,7 +42,7 @@ describe("GET /api/cron/non-response-check", () => {
       tables: {
         jobs: [
           { data: [{ id: "job-1", title: "T", client_id: "client-1", deadline: "2020-01-01" }] },
-          { error: null }, // job status -> disputed update
+          { data: [{ id: "job-1" }] }, // job status -> disputed update .select("id") returns affected row
         ],
         deadline_extensions: [{ data: null }],
         proposals: [{ data: { creative_id: "creative-1" } }],

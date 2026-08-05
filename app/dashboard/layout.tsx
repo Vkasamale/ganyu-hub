@@ -11,8 +11,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role, onboarded_at, is_admin").eq("id", user.id).single();
-  if (profile && !profile.onboarded_at) {
-    if (!profile.role) redirect("/onboarding/role"); // OAuth users pick a role first
+  // No profile row yet, or an OAuth user who hasn't picked a role → send them to
+  // pick one. A missing row must NOT fall through to a default-creative dashboard.
+  if (!profile || !profile.role) redirect("/onboarding/role");
+  if (!profile.onboarded_at) {
     redirect(profile.role === "client" ? "/onboarding/client" : "/onboarding/creative");
   }
   const role: Role = (profile?.role as Role) || "creative";

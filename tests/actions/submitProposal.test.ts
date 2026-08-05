@@ -33,6 +33,7 @@ describe("submitProposal", () => {
           { data: { client_id: "client-1", title: "Job" } }, // notify lookup
         ],
         proposals: [
+          { count: 0 }, // rate-limit window count
           { count: 0 }, // total count vs limit
           { count: 0 }, // rejected count
           { count: 0 }, // active count
@@ -53,7 +54,7 @@ describe("submitProposal", () => {
       user: CREATIVE,
       tables: {
         jobs: [{ data: { proposal_limit: 10 } }],
-        proposals: [{ count: 2 }, { count: 3 }],
+        proposals: [{ count: 0 }, { count: 2 }, { count: 3 }],
         job_invites: [{ data: null }],
       },
     });
@@ -70,6 +71,7 @@ describe("submitProposal", () => {
           { data: { client_id: "client-1", title: "Job" } },
         ],
         proposals: [
+          { count: 0 }, // rate-limit window count
           { count: 2 },
           { count: 3 },
           { count: 0 }, // active count
@@ -91,7 +93,7 @@ describe("submitProposal", () => {
       user: CREATIVE,
       tables: {
         jobs: [{ data: { proposal_limit: 10 } }],
-        proposals: [{ count: 1 }, { count: 0 }, { count: 1 }],
+        proposals: [{ count: 0 }, { count: 1 }, { count: 0 }, { count: 1 }],
       },
     });
     const res = await submitProposal(fd(baseForm));
@@ -117,7 +119,7 @@ describe("submitProposal", () => {
       user: CREATIVE,
       tables: {
         jobs: [{ data: { proposal_limit: 2 } }],
-        proposals: [{ count: 2 }],
+        proposals: [{ count: 0 }, { count: 2 }],
       },
     });
     const res = await submitProposal(fd(baseForm));

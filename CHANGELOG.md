@@ -3,6 +3,28 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Google login: robust first-run routing + identity prefill
+
+Follow-up on the OAuth login. Two fixes:
+
+1. **Post-login routing no longer silently lands OAuth users on the dashboard.**
+   The dashboard gate previously only redirected `if (profile && !profile.onboarded_at)`,
+   so a **missing** profiles row (trigger skipped / pre-existing auth user) fell
+   through to a default-`creative` dashboard instead of onboarding. Now: no
+   profile **or** no role → `/onboarding/role`; then un-onboarded → role-specific
+   onboarding. `chooseRole` and `completeClientOnboarding` switched from
+   `update().eq(id)` to `upsert({id,...})` so a missing row is created rather than
+   updating zero rows.
+2. **Onboarding prefills the Google identity.** Both onboarding forms
+   (`app/onboarding/creative`, `app/onboarding/client`) now seed **name** and show
+   **email** read-only from `user.user_metadata` + `user.email`, plus a **phone /
+   WhatsApp** field (saved to `profiles.phone`). Note: Google's sign-in scopes
+   return name + email + avatar only — **not phone** — so phone stays a manual
+   (prefilled-if-known) field. Creative onboarding gained the name/email/phone
+   block it never had; both save `full_name`/`phone` on completion.
+
+Unit suite 42/42 green (added `.gte/.lte/.gt` and `.upsert` to the test mock).
+
 ## 2026-08-05 — "Continue with Google" login (OAuth) + one-time role step
 
 Added Google OAuth sign-in end-to-end. A `GoogleSignin` button

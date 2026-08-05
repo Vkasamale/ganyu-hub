@@ -59,6 +59,9 @@ export function makeSupabase(opts: {
     obj.order = (..._args: any[]) => obj;
     obj.limit = (..._args: any[]) => obj;
     obj.lt = (..._args: any[]) => obj;
+    obj.gte = (..._args: any[]) => obj;
+    obj.lte = (..._args: any[]) => obj;
+    obj.gt = (..._args: any[]) => obj;
     obj.not = (..._args: any[]) => obj;
     obj.is = (..._args: any[]) => obj;
     obj.eq = (col: string, val: unknown) => { validate(table, col, val); return obj; };
@@ -71,6 +74,7 @@ export function makeSupabase(opts: {
     obj.single = () => Promise.resolve(resolve());
     obj.maybeSingle = () => Promise.resolve(resolve());
     obj.insert = (..._args: any[]) => obj;
+    obj.upsert = (..._args: any[]) => obj;
     obj.update = (..._args: any[]) => obj;
     obj.delete = () => obj;
     obj.then = (res: any, rej: any) => Promise.resolve(resolve()).then(res, rej);
