@@ -1,7 +1,41 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { ShareButtons } from "@/components/share-buttons";
+import { absUrl } from "@/lib/site-url";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string; itemId: string }> }): Promise<Metadata> {
+  const { id, itemId } = await params;
+  const supabase = createClient();
+  const { data: item } = await supabase
+    .from("portfolio_items")
+    .select("title, description, cover_url, profile:profiles!portfolio_items_profile_id_fkey(full_name)")
+    .eq("id", itemId)
+    .eq("profile_id", id)
+    .single();
+  if (!item) return { title: "Work — Ganyu Hub" };
+  const by = (item.profile as any)?.full_name;
+  const title = `${item.title}${by ? ` by ${by}` : ""} — Ganyu Hub`;
+  const description = item.description?.trim() || `Work by ${by || "a creative"} on Ganyu Hub.`;
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: item.cover_url ? [{ url: item.cover_url }] : undefined,
+      type: "article",
+    },
+    twitter: {
+      card: item.cover_url ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: item.cover_url ? [item.cover_url] : undefined,
+    },
+  };
+}
 
 export default async function PortfolioItemPage({
   params,
@@ -106,9 +140,16 @@ export default async function PortfolioItemPage({
             ))}
             <span className="ml-auto text-xs text-ink/50">Added {created}</span>
           </div>
-          <h1 className="mt-3 font-display text-3xl font-semibold text-ink md:text-4xl">
-            {item.title}
-          </h1>
+          <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+            <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">
+              {item.title}
+            </h1>
+            <ShareButtons
+              url={absUrl(`/creatives/${id}/portfolio/${itemId}`)}
+              title={`${item.title}${profile?.full_name ? ` by ${profile.full_name}` : ""} — Ganyu Hub`}
+              text={`Check out "${item.title}"${profile?.full_name ? ` by ${profile.full_name}` : ""} on Ganyu Hub`}
+            />
+          </div>
           {item.project_url && (
             <a
               href={item.project_url}

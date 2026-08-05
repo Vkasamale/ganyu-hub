@@ -43,6 +43,8 @@ import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
 import { ClientLinkCopy } from "@/components/client-link-copy";
 import { JobHeader } from "@/components/job-header";
+import { ShareButtons } from "@/components/share-buttons";
+import { absUrl } from "@/lib/site-url";
 import { JobPayoutMethodPicker } from "@/components/job-payout-method-picker";
 import { AcceptProposalPicker } from "@/components/accept-proposal-picker";
 import { ProposalPayoutPreview } from "@/components/proposal-payout-preview";
@@ -225,9 +227,16 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             </>
           }
         />
-        <p className="mt-2 px-1 text-sm text-neutral-500">
-          Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1">
+          <p className="text-sm text-neutral-500">
+            Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}
+          </p>
+          <ShareButtons
+            url={absUrl(`/jobs/${job.id}`)}
+            title={`${job.title} — job on Ganyu Hub`}
+            text={`${job.title} — a job on Ganyu Hub`}
+          />
+        </div>
       </div>
       <Card className="mt-4">
         <CardContent className="p-5 sm:p-6">

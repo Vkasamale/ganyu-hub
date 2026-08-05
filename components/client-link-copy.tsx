@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ShareButtons } from "@/components/share-buttons";
+import { absUrl } from "@/lib/site-url";
 
 export function ClientLinkCopy({ token }: { token: string }) {
   const [copied, setCopied] = useState(false);
@@ -38,6 +40,14 @@ export function ClientLinkCopy({ token }: { token: string }) {
         <Button type="button" onClick={copy} size="sm">
           {copied ? "Copied!" : "Copy link"}
         </Button>
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <span className="text-xs text-amber-800/80">Or send it via:</span>
+        <ShareButtons
+          url={absUrl(`/j/${token}`)}
+          title="You've got a job on Ganyu Hub"
+          text="I've set up a job for you on Ganyu Hub — open this link to review it and fund escrow:"
+        />
       </div>
     </div>
   );

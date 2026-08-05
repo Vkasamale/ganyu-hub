@@ -35,18 +35,18 @@ export const metadata: Metadata = {
   description: "The marketplace for hiring Malawian designers, developers, and creatives.",
   icons: { icon: "/logo-g.png" },
   openGraph: {
+    // images intentionally omitted — app/opengraph-image.tsx supplies the
+    // branded 1200x630 card that Next injects automatically.
     title: "Ganyu Hub — hire Malawian creatives",
     description: "The marketplace for hiring Malawian designers, developers, and creatives.",
     url: siteUrl,
     siteName: "Ganyu Hub",
-    images: [{ url: "/logo-g.png", width: 512, height: 512 }],
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Ganyu Hub — hire Malawian creatives",
     description: "The marketplace for hiring Malawian designers, developers, and creatives.",
-    images: ["/logo-g.png"],
   },
 };
 

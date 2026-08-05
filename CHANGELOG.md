@@ -3,6 +3,14 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Social share buttons + rich link previews
+
+New `components/share-buttons.tsx` — a reusable social-share row (WhatsApp, X, Facebook, Instagram, native Share, copy) wired onto **creative profiles** (`/creatives/[id]`), **jobs** (`/jobs/[id]`), **finished work** (`/creatives/[id]/portfolio/[itemId]`), and the **client-link banner** (so a creative can send the claim link via any network). The three primary links (WhatsApp/X/Facebook) are plain anchors whose absolute hrefs are computed server-side via new `lib/site-url.ts` (`absUrl`), so they render correct in the SSR HTML and work with zero JS. Instagram has no web link-share intent, so that button copies the link with a "paste into your story/DM" hint; the native Share button (mobile) is the real path to IG/Messenger/etc.
+
+Rich link previews: added a branded 1200×630 OG card at `app/opengraph-image.tsx` (logo + wordmark on brand teal) for the homepage and any page without its own image, and switched the root card to `summary_large_image`. Added per-page OG to the portfolio-work page (had none) — previews now show the work's cover image + title. Creative profiles already had avatar-based OG.
+
+**Known limitation:** on the data-backed routes (creative/job), the *interactive* buttons (copy / native-share / Instagram-copy) depend on the route content hydrating, which didn't hydrate in the dev preview (the whole route content, not just the share row — the layout shell hydrates, `/login` hydrates). The WhatsApp/X/Facebook links and all previews work regardless (server-rendered). Needs a prod-build check to confirm whether the copy/native buttons come alive there.
+
 ## 2026-08-05 — CAPTCHA extended to share-link claim form
 
 Wired Cloudflare Turnstile onto the `/j/[token]` public claim/sign-in form too. `acceptJobViaLink` now verifies the `cf-turnstile-response` token (after the rate-limit check, same fail-open behaviour as auth) and returns "Verification failed…" on a bad token; `app/j/[token]/page.tsx` renders `<Turnstile />` above the submit button. Turnstile live in production on `ganyu-hub.vercel.app` (keys added in Vercel, confirmed rendering on `/login`). All three CAPTCHA surfaces — login, signup, share-link claim — now covered.

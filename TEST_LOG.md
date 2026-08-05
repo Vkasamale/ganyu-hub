@@ -4,6 +4,14 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Social share buttons + link previews
+
+✅ tsc --noEmit clean.
+✅ Share links baked into SSR HTML with correct absolute URLs (verified via curl on `/creatives/[id]`): WhatsApp carries full text+URL, X `url=` populated, Facebook `u=` populated. Work with zero JS.
+✅ OG meta verified via curl: creative profile → og:image = avatar, twitter:card = summary_large_image; branded `/opengraph-image` renders 1200×630 (tab title "opengraph-image (1200×630)").
+⚠️ Copy / native-share / Instagram-copy buttons did NOT hydrate in dev preview on `/creatives/[id]` and `/jobs/[id]` — the whole route *content* isn't hydrating there (layout shell + `/login` do hydrate; no console/overlay error). Appears independent of the share components (share links themselves render server-side and work). 🕒 Re-check on the deployed prod build: click Copy on a live profile → expect "Link copied!" flash. If still dead in prod, investigate the route-hydration mismatch separately.
+🕒 Verify link previews on prod: paste a `/creatives/[id]`, `/jobs/[id]`, and homepage URL into WhatsApp/X → expect avatar/cover/branded-logo card respectively.
+
 ## 2026-08-05 — CAPTCHA on share-link claim form
 
 ✅ Turnstile live in production (login confirmed rendering). Share-link claim form now also renders `<Turnstile />`; `acceptJobViaLink` verifies the token after rate-limit.

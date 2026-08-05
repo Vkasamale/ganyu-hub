@@ -50,6 +50,8 @@ import { startThread, recordView, requestCustomService, inviteCreative } from "@
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
+import { ShareButtons } from "@/components/share-buttons";
+import { absUrl } from "@/lib/site-url";
 
 export default async function CreativePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -212,21 +214,28 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                 <p className="mt-0.5 text-xs text-ink/55">{profile.location || "Malawi"}</p>
               </div>
             </div>
-            {user && !isOwner && (
-              <div className="flex flex-wrap items-center gap-2">
-                <SavingForm action={startThread} silent>
-                  <input type="hidden" name="creative_id" value={profile.id} />
-                  <Button type="submit">Message</Button>
-                </SavingForm>
-                <Link
-                  href={`/creatives/${profile.id}/invite`}
-                  className="rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5"
-                >
-                  Invite to job
-                </Link>
-                <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {user && !isOwner && (
+                <>
+                  <SavingForm action={startThread} silent>
+                    <input type="hidden" name="creative_id" value={profile.id} />
+                    <Button type="submit">Message</Button>
+                  </SavingForm>
+                  <Link
+                    href={`/creatives/${profile.id}/invite`}
+                    className="rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5"
+                  >
+                    Invite to job
+                  </Link>
+                  <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
+                </>
+              )}
+              <ShareButtons
+                url={absUrl(`/creatives/${profile.id}`)}
+                title={`${profile.full_name || "This creative"} on Ganyu Hub`}
+                text={`Check out ${profile.full_name || "this creative"}${primaryCat ? ` — ${primaryCat}` : ""} on Ganyu Hub`}
+              />
+            </div>
           </div>
 
           {(profile.categories || []).length > 0 && (
