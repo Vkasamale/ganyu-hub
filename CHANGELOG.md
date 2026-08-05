@@ -3,6 +3,20 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — MoneyInput on every money field + fee panel on all money pages
+
+- **Comma formatting everywhere.** Every MWK input now uses `MoneyInput`
+  (shows `50,000`, submits raw digits): proposal bid + top-up amount +
+  extra-revision rate (`jobs/[id]`), rate-card editor (`dashboard/services`),
+  new-for-client price + extra-revision rate, invite budget. (Onboarding prices
+  and job-post budget were already done.) Percentages, revision counts, and
+  delivery days stay plain number inputs.
+- **`PricingExplainer` as a safety net** on every money-decision surface:
+  job-post, proposal form, new-for-client, invite, and the payments dashboard
+  (audience-aware wording).
+
+Server parsing unchanged (hidden input carries the plain number). tsc clean, 42/42.
+
 ## 2026-08-05 — First-run guidance: welcome checklist, empty-state nudges, fee panel
 
 Make the platform guide new users instead of leaving them to scavenge.

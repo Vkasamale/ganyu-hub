@@ -4,6 +4,18 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — MoneyInput on all money fields + fee panel on all money pages
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.
+✅ Static: every MWK `<Input type="number">` swapped for `<MoneyInput>` (raw-digit
+hidden input → server `Number(...)` unchanged): `jobs/[id]` bid/top-up/extra-rate,
+`dashboard/services` price + max, `jobs/new-for-client` price + extra-rate,
+`creatives/[id]/invite` budget. `PricingExplainer` added to job-post, proposal,
+new-for-client, invite, payments (audience-aware).
+🕒 **Manual UI check (browser):** type `100000` in any bid/price/budget → shows
+`100,000`, and the proposal/job/service still saves the right number. Each money
+page shows the "How the money works" panel.
+
 ## 2026-08-05 — First-run guidance (checklist, empty-state reminders, fee panel)
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.

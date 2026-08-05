@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { upsertService, deleteService } from "@/app/actions";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/money-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -45,11 +46,11 @@ export default async function ServicesPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="price_mwk">From (MWK)</Label>
-                <Input id="price_mwk" name="price_mwk" type="number" min={0} required placeholder="50000" />
+                <MoneyInput id="price_mwk" name="price_mwk" required placeholder="50,000" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="price_mwk_max">Up to (MWK, optional)</Label>
-                <Input id="price_mwk_max" name="price_mwk_max" type="number" min={0} placeholder="150000" />
+                <MoneyInput id="price_mwk_max" name="price_mwk_max" placeholder="150,000" />
               </div>
             </div>
             <div className="space-y-1.5">

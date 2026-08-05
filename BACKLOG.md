@@ -16,7 +16,7 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 ## Onboarding / guidance
 
 - **Interactive step-by-step tour (popups pointing at real UI).** Approved 2026-08-05 as a follow-up to the dismissible welcome checklist (`components/welcome-checklist.tsx`, shipped) + empty-state reminders + `PricingExplainer` panel. Wants popups that point at actual buttons on first visit ("Post a job here →", "Browse jobs", "How fees work") with next/skip/finish. Needs a tour library (react-joyride or driver.js — one new dependency) and per-page step targets (data-tour attrs). Gate it on a per-user "seen tour" flag (localStorage first; a `profiles.toured_at` column if it needs to survive devices). Build as its own session.
-- **Roll comma/thousands formatting to the remaining money fields.** `components/money-input.tsx` is live on creative-onboarding service prices + job-post budget. Still plain `<input type=number>`: proposal bid (`app/jobs/[id]` proposal form), top-up amount, rate-card service editor (`app/dashboard/services`), invite-with-new-job price. Swap each `<Input type="number">` money field for `<MoneyInput>` (submits raw digits, so server parsing is unchanged).
+- ~~**Roll comma/thousands formatting to the remaining money fields.**~~ **Done 2026-08-05.** `MoneyInput` now on every MWK field: onboarding service prices, job-post budget, proposal bid, top-up amount, rate-card editor (`dashboard/services`), new-for-client price + extra-revision rate, invite budget, and the `jobs/[id]` extra-revision rate. Percentages / revision counts / days deliberately left as plain number inputs.
 
 ## Infrastructure
 

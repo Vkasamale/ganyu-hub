@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createJobForClient } from "@/app/actions";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/money-input";
+import { PricingExplainer } from "@/components/pricing-explainer";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
@@ -27,6 +29,9 @@ export default async function NewJobForClientPage() {
           </p>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <PricingExplainer audience="creative" />
+          </div>
           <SavingForm action={createJobForClient} successText="Job created." className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="title">Title</Label>
@@ -51,7 +56,7 @@ export default async function NewJobForClientPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="agreed_price_mwk">Agreed price (MWK)</Label>
-                <Input id="agreed_price_mwk" name="agreed_price_mwk" type="number" min={1} required placeholder="e.g. 150000" />
+                <MoneyInput id="agreed_price_mwk" name="agreed_price_mwk" required placeholder="e.g. 150,000" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="deadline">Deadline</Label>
@@ -63,7 +68,7 @@ export default async function NewJobForClientPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="extra_revision_rate">Extra revision rate (MWK)</Label>
-                <Input id="extra_revision_rate" name="extra_revision_rate" type="number" min={0} placeholder="Leave blank if none" />
+                <MoneyInput id="extra_revision_rate" name="extra_revision_rate" placeholder="Leave blank if none" />
               </div>
             </div>
             <SubmitButton pendingText="Creating…">Create job &amp; get client link</SubmitButton>

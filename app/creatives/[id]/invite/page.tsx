@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/money-input";
+import { PricingExplainer } from "@/components/pricing-explainer";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
@@ -85,6 +87,7 @@ export default async function InviteCreativePage({ params }: { params: Promise<{
           className="space-y-4 rounded-lg border border-ink/15 bg-white p-5"
         >
           <input type="hidden" name="creative_id" value={id} />
+          <PricingExplainer audience="client" />
           <div className="space-y-1.5">
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" required placeholder="e.g. Logo refresh for a small café" />
@@ -99,7 +102,7 @@ export default async function InviteCreativePage({ params }: { params: Promise<{
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="budget_mwk">Budget (MWK)</Label>
-              <Input id="budget_mwk" name="budget_mwk" type="number" min={1} step={1} required />
+              <MoneyInput id="budget_mwk" name="budget_mwk" required placeholder="e.g. 150,000" />
             </div>
           </div>
           <div className="space-y-1.5">

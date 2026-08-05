@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import { getReleasedSpend } from "@/lib/money";
 import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
+import { PricingExplainer } from "@/components/pricing-explainer";
 
 type Role = "client" | "creative" | "agency";
 
@@ -122,6 +123,8 @@ export default async function PaymentsPage() {
           {isClient ? "Track escrow and what's been released to creatives." : "Track what's held in escrow and what's been paid out."}
         </p>
       </header>
+
+      <PricingExplainer audience={isClient ? "client" : "creative"} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         {stats.map((s) => (

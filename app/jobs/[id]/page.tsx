@@ -33,6 +33,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/money-input";
+import { PricingExplainer } from "@/components/pricing-explainer";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -439,7 +441,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <input type="hidden" name="job_id" value={job.id} />
                 <div className="space-y-1.5">
                   <Label htmlFor="amount_mwk">Extra amount (MWK)</Label>
-                  <Input id="amount_mwk" name="amount_mwk" type="number" min={1} required />
+                  <MoneyInput id="amount_mwk" name="amount_mwk" required placeholder="e.g. 20,000" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="reason">Why the extra?</Label>
@@ -613,13 +615,14 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           <CardContent>
             <SavingForm action={submitProposal} successText="Proposal sent." className="space-y-4">
               <input type="hidden" name="job_id" value={job.id} />
+              <PricingExplainer audience="creative" />
               <div className="space-y-1.5">
                 <Label htmlFor="cover_letter">Cover letter</Label>
                 <Textarea id="cover_letter" name="cover_letter" required rows={5} placeholder="Why are you the right creative for this job?" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="bid_mwk">Your bid (MWK)</Label>
-                <Input id="bid_mwk" name="bid_mwk" type="number" min={0} required />
+                <MoneyInput id="bid_mwk" name="bid_mwk" required placeholder="e.g. 100,000" />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
@@ -628,7 +631,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="extra_revision_rate">Extra revision rate (MWK, optional)</Label>
-                  <Input id="extra_revision_rate" name="extra_revision_rate" type="number" min={0} placeholder="leave blank for hard limit" />
+                  <MoneyInput id="extra_revision_rate" name="extra_revision_rate" placeholder="leave blank for hard limit" />
                 </div>
               </div>
               <p className="text-xs text-ink/55">Leave the rate blank to make the included revisions a hard limit — clients won't be able to request more.</p>
