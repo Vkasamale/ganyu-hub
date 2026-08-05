@@ -2,6 +2,16 @@
 
 Things that work but could be better. Not urgent, not blocking. Pull from here when there's room.
 
+## Auth / Login (next-session task — scoped 2026-08-05)
+
+- **"Continue with Google" login.** Build end-to-end; plumbing already exists (`app/auth/callback/route.ts`, SSR clients in `lib/supabase/`).
+  - **User prerequisite (do first):** create a Google OAuth client — Google Cloud Console → APIs & Services → Credentials → OAuth client ID → Web application. Authorized redirect URI = `https://jbczoiiewuerssckkiuq.supabase.co/auth/v1/callback`. Paste Client ID + Secret into Supabase → Authentication → Auth Providers → **Google**, enable, save. (Provider is Disabled as of 2026-08-05.)
+  - **App build:** add a "Continue with Google" button on `app/login/page.tsx` + `app/signup/page.tsx` calling `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: <site>/auth/callback } })`. Verify `app/auth/callback/route.ts` completes the code exchange and lands the user correctly.
+  - **⚠️ The real work — role wrinkle:** email/password signup captures `role` (creative/client/agency) via `signUp` metadata (`app/actions.ts:39,54`); downstream logic keys off `profiles.role` + `onboarded_at`. **Google users skip the form → arrive with no role.** Must add a one-time "Are you a creative or a client?" step right after first Google sign-in (fold into the existing onboarding redirect — dashboard already routes un-onboarded users by role). Do NOT ship Google login without this; a null-role account breaks onboarding/job flows.
+  - Confirm-email doesn't apply to Google (Google already verified the address) — only the role step is needed for OAuth users.
+
+- **Passkey (WebAuthn) authentication — DEFERRED, do not build yet.** Supabase Passkeys is BETA; needs WebAuthn UI, device registration/management, and fallbacks. Email+password + Google covers every user at v0.8.0 — marginal benefit for real complexity. Revisit only if users ask. Requested 2026-08-05; deliberately held.
+
 ## Infrastructure
 
 - **Turn on Plausible analytics.** Script tag shipped 2026-07-16, gated by env var. To activate: (1) sign up free at plausible.io, (2) add site `ganyu-hub.vercel.app` (later `ganyuhub.com`), (3) set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyu-hub.vercel.app` in Vercel env, (4) redeploy. Pageviews only — custom events (`job_posted`, `job_completed`) added later if pageview data can't answer the question.
