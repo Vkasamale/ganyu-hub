@@ -4,6 +4,19 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Interactive first-run tour (driver.js)
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42. ✅ `npx next build` compiled
+successfully (validates the `driver.js/dist/driver.css` import — the one thing tsc
+can't check; pre-existing dynamic-`cookies` prerender notices are unrelated/non-fatal).
+✅ Static: `ProductTour` gated on `localStorage["gh_tour_done_v1"]`; anchors
+`[data-tour="nav|main|reminders"]` all live in `dashboard/layout.tsx` (always
+rendered, mobile + desktop). Missing-anchor guard marks seen instead of trapping.
+🕒 **Manual UI check (browser):** first dashboard visit → 3-step spotlight tour
+appears (menu → workspace → reminders); Next/Back/Got-it work; after finishing or
+closing, reload → tour does NOT reappear. To re-test: clear `gh_tour_done_v1` in
+localStorage (or use a fresh browser/incognito).
+
 ## 2026-08-05 — MoneyInput on all money fields + fee panel on all money pages
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.

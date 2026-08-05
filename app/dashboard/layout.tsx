@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardNav } from "@/components/dashboard-nav";
+import { ProductTour } from "@/components/product-tour";
 import { formatMwk } from "@/lib/utils";
 
 type Role = "client" | "creative" | "agency";
@@ -99,14 +100,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 md:grid-cols-[180px_minmax(0,1fr)_280px] md:gap-10 md:py-10">
-      <aside className="md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
+      <ProductTour role={role} />
+      <aside data-tour="nav" className="md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
         <p className="eyebrow hidden md:block">Workspace</p>
         <DashboardNav items={navItems} />
       </aside>
 
-      <main className="min-w-0">{children}</main>
+      <main data-tour="main" className="min-w-0">{children}</main>
 
-      <aside className="md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
+      <aside data-tour="reminders" className="md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
         <div className="flex items-center justify-between">
           <p className="eyebrow">Reminders</p>
           {reminders.length > 0 && (

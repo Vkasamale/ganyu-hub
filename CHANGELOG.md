@@ -3,6 +3,17 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Interactive first-run tour (driver.js)
+
+Added `components/product-tour.tsx` — a one-time guided tour that runs on the
+dashboard the first time a user lands (after onboarding). Spotlight popovers walk
+them through the **menu**, the **workspace**, and the **reminders** panel, with
+role-aware copy and Next/Back/Got-it controls. Anchored via `data-tour`
+attributes in `dashboard/layout.tsx`; gated on `localStorage["gh_tour_done_v1"]`
+so it shows once (skip/close also marks it seen). New dependency: `driver.js@1.8.0`
+(tiny, zero-dep). `next build` compiles clean. Completes the "Both" guidance plan
+(checklist + tour). Refinements (per-nav-item targets, a replay link) backlogged.
+
 ## 2026-08-05 — MoneyInput on every money field + fee panel on all money pages
 
 - **Comma formatting everywhere.** Every MWK input now uses `MoneyInput`
