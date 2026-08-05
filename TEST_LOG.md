@@ -4,6 +4,12 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — CAPTCHA on share-link claim form
+
+✅ Turnstile live in production (login confirmed rendering). Share-link claim form now also renders `<Turnstile />`; `acceptJobViaLink` verifies the token after rate-limit.
+✅ tsc --noEmit clean.
+🕒 Verify on prod: open a valid `/j/<token>` link → widget shows above "Accept & continue"; submit succeeds normally; tampering/removing the token → "Verification failed. Please try again."
+
 ## 2026-08-05 — Security audit round 3 (underpayment, rate limit, storage cap)
 
 ⬜ **ACTION REQUIRED: re-run `supabase/schema.sql` in Supabase Studio** — adds `rate_limits` table, `check_rate_limit()` RPC, and the `job-deliverables` 10MB `file_size_limit`. Until run: rate limiter fails open (no limiting) and direct-SDK oversized uploads still possible.

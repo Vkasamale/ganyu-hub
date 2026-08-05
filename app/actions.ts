@@ -2802,6 +2802,11 @@ export async function acceptJobViaLink(formData: FormData): Promise<{ error?: st
     return { error: "Too many attempts. Please try again in a few minutes." };
   }
 
+  const { verifyTurnstile } = await import("@/lib/turnstile");
+  if (!(await verifyTurnstile(String(formData.get("cf-turnstile-response") || "") || null))) {
+    return { error: "Verification failed. Please try again." };
+  }
+
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
   }

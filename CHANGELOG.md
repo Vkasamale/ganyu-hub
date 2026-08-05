@@ -3,6 +3,10 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — CAPTCHA extended to share-link claim form
+
+Wired Cloudflare Turnstile onto the `/j/[token]` public claim/sign-in form too. `acceptJobViaLink` now verifies the `cf-turnstile-response` token (after the rate-limit check, same fail-open behaviour as auth) and returns "Verification failed…" on a bad token; `app/j/[token]/page.tsx` renders `<Turnstile />` above the submit button. Turnstile live in production on `ganyu-hub.vercel.app` (keys added in Vercel, confirmed rendering on `/login`). All three CAPTCHA surfaces — login, signup, share-link claim — now covered.
+
 ## 2026-08-05 — CAPTCHA on auth + RLS regression test committed
 
 Cloudflare Turnstile wired into login + signup. `components/turnstile.tsx` renders the widget only when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set; `lib/turnstile.ts` verifies the token server-side against Cloudflare's siteverify and **fails open when `TURNSTILE_SECRET_KEY` is unset**, so the forms are unchanged until you add keys. `signIn`/`signUp` now verify the `cf-turnstile-response` token (after the rate-limit check) and bounce back with an error if it fails. Env keys documented in `.env.local.example` (incl. Cloudflare's always-pass dev test keys). Also moved the authenticated RLS exploit test into the repo at `scripts/security/rls-exploit-test.mjs` (+ README) — run it after any `proposals`/`jobs` RLS or trigger change; it seeds throwaway fixtures, runs the self-accept + column-tamper attacks as a real creative session, asserts they're blocked and legit writes still work, and cleans up. Confirmed all 3 assertions PASS against the live DB. `/j/[token]` claim form left without a widget for now (phone-only public flow; rate-limited already).

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { Logo } from "@/components/logo";
+import { Turnstile } from "@/components/turnstile";
 import { formatMwk } from "@/lib/utils";
 
 function admin() {
@@ -134,6 +135,7 @@ export default async function ClientLinkPage({ params }: { params: Promise<{ tok
                 <Input id="password" name="password" required type="password" minLength={8} autoComplete="new-password" placeholder="At least 8 characters" />
                 <p className="text-xs text-ink/50">If you already have an account with this phone, we&rsquo;ll sign you in.</p>
               </div>
+              <Turnstile />
               <SubmitButton pendingText="Setting up…">Accept &amp; continue to payment</SubmitButton>
             </SavingForm>
           </CardContent>
