@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { CharCountTextarea } from "@/components/char-count-textarea";
+import { PricingExplainer } from "@/components/pricing-explainer";
+import { MoneyInput } from "@/components/money-input";
 import { CATEGORIES } from "@/lib/types";
 
 export default async function NewJobPage() {
@@ -18,6 +20,9 @@ export default async function NewJobPage() {
       <Card>
         <CardHeader><CardTitle>Post a job</CardTitle></CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <PricingExplainer audience="client" />
+          </div>
           <SavingForm action={postJob} successText="Job posted." className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="title">Title</Label>
@@ -53,7 +58,7 @@ export default async function NewJobPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="budget_mwk">Budget (MWK)</Label>
-              <Input id="budget_mwk" name="budget_mwk" type="number" min={0} placeholder="e.g. 150000" />
+              <MoneyInput id="budget_mwk" name="budget_mwk" placeholder="e.g. 150,000" />
             </div>
             <SubmitButton pendingText="Posting…">Post job</SubmitButton>
             <p className="text-xs text-ink/55">

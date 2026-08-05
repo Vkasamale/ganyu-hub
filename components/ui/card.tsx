@@ -14,7 +14,9 @@ export function CardDescription({ className, ...props }: React.HTMLAttributes<HT
   return <p className={cn("text-sm text-neutral-500", className)} {...props} />;
 }
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-6 pt-0", className)} {...props} />;
+  // min-w-0 + break-words: keep long unbroken text (URLs, emails, names) wrapping
+  // inside the card instead of overflowing it, esp. inside flex/grid parents.
+  return <div className={cn("min-w-0 break-words p-6 pt-0", className)} {...props} />;
 }
 export function CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("flex items-center p-6 pt-0", className)} {...props} />;

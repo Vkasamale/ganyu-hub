@@ -13,6 +13,11 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Passkey (WebAuthn) authentication — DEFERRED, do not build yet.** Supabase Passkeys is BETA; needs WebAuthn UI, device registration/management, and fallbacks. Email+password + Google covers every user at v0.8.0 — marginal benefit for real complexity. Revisit only if users ask. Requested 2026-08-05; deliberately held.
 
+## Onboarding / guidance
+
+- **Interactive step-by-step tour (popups pointing at real UI).** Approved 2026-08-05 as a follow-up to the dismissible welcome checklist (`components/welcome-checklist.tsx`, shipped) + empty-state reminders + `PricingExplainer` panel. Wants popups that point at actual buttons on first visit ("Post a job here →", "Browse jobs", "How fees work") with next/skip/finish. Needs a tour library (react-joyride or driver.js — one new dependency) and per-page step targets (data-tour attrs). Gate it on a per-user "seen tour" flag (localStorage first; a `profiles.toured_at` column if it needs to survive devices). Build as its own session.
+- **Roll comma/thousands formatting to the remaining money fields.** `components/money-input.tsx` is live on creative-onboarding service prices + job-post budget. Still plain `<input type=number>`: proposal bid (`app/jobs/[id]` proposal form), top-up amount, rate-card service editor (`app/dashboard/services`), invite-with-new-job price. Swap each `<Input type="number">` money field for `<MoneyInput>` (submits raw digits, so server parsing is unchanged).
+
 ## Infrastructure
 
 - **Turn on Plausible analytics.** Script tag shipped 2026-07-16, gated by env var. To activate: (1) sign up free at plausible.io, (2) add site `ganyu-hub.vercel.app` (later `ganyuhub.com`), (3) set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyu-hub.vercel.app` in Vercel env, (4) redeploy. Pageviews only — custom events (`job_posted`, `job_completed`) added later if pageview data can't answer the question.

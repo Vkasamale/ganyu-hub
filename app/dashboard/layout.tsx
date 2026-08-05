@@ -71,6 +71,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     });
   }
 
+  // First-run guidance: when nothing is pending, point new users at the core
+  // action for their role instead of a dead-end "all caught up".
+  if (reminders.length === 0) {
+    if (isClient) {
+      reminders.push({ priority: "high", title: "Post your first job", subtitle: "Describe what you need — creatives come to you", href: "/jobs/new" });
+      reminders.push({ priority: "low", title: "Browse creatives", subtitle: "See who's available to hire", href: "/browse" });
+    } else {
+      reminders.push({ priority: "high", title: "Find work to bid on", subtitle: "Browse open jobs and send a proposal", href: "/jobs" });
+      reminders.push({ priority: "low", title: "Polish your public profile", subtitle: "Add work so clients pick you", href: `/creatives/${user.id}` });
+    }
+  }
+
   const navItems = [
     { href: "/dashboard", label: "Home" },
     { href: "/dashboard/jobs", label: "Jobs" },

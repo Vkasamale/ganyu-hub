@@ -3,6 +3,26 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — First-run guidance: welcome checklist, empty-state nudges, fee panel
+
+Make the platform guide new users instead of leaving them to scavenge.
+
+- **Dismissible welcome checklist** (`components/welcome-checklist.tsx`) at the top
+  of the dashboard. Role-based steps (complete profile / post-or-find a job / see
+  how the money works) that tick off as done; ✕ dismisses via localStorage.
+- **Empty-state reminders.** The dashboard Reminders panel now, when nothing is
+  pending, points the user at their core action ("Post your first job",
+  "Find work to bid on") instead of a dead-end "all caught up".
+- **Reusable pricing panel** (`components/pricing-explainer.tsx`) — a native
+  `<details>` "How the money works" explainer (escrow → fees → payout, numbers
+  from `lib/fees.ts`). Placed on the job-post page; drop-in for proposal/payments.
+- **Card overflow fix.** `CardContent` gained `min-w-0 break-words` so long text
+  (URLs, emails, names) wraps inside the card instead of spilling out on resize.
+- **Comma formatting** extended to the job-post budget field (`MoneyInput`).
+
+Follow-ups backlogged: interactive step-tour (popups on real UI), and rolling
+`MoneyInput` to the remaining money fields. tsc clean, unit suite 42/42.
+
 ## 2026-08-05 — Creative onboarding UX: tag chips, money commas, generic wording
 
 Made creative onboarding fit any creative, not just visual artists.

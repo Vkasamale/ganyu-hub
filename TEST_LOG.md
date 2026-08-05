@@ -4,6 +4,22 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — First-run guidance (checklist, empty-state reminders, fee panel)
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.
+✅ Static: `WelcomeChecklist` (client, localStorage dismiss) renders on dashboard
+with role-based steps (done flags from myJobs/proposalsSent counts). Dashboard
+Reminders panel appends role CTAs when `reminders.length === 0`. `PricingExplainer`
+(native `<details>`, numbers from lib/fees.ts) on job-post page. `CardContent` now
+`min-w-0 break-words`. Job-post budget uses `MoneyInput`.
+🕒 **Manual UI check (browser):** (1) new account → dashboard shows welcome
+checklist; completing a step ticks it; Dismiss hides it and it stays hidden on
+reload; (2) empty dashboard shows "Post your first job"/"Find work to bid on";
+(3) job-post shows "How the money works" panel, budget formats with commas;
+(4) resize a card with a long URL/name → text wraps, doesn't overflow.
+⚠️ Card overflow fix is defensive/global (`CardContent`). If a specific card still
+overflows, it's likely a non-Card container — needs the screenshot to pinpoint.
+
 ## 2026-08-05 — Creative onboarding UX (tag chips, money commas, generic wording)
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.
