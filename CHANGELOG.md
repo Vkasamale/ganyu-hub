@@ -3,6 +3,17 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Security: close creative→job privilege-escalation chain (RLS + trigger)
+
+Static security audit (2026-08-05) found a self-service privilege-escalation path reachable by any logged-in creative via raw PostgREST calls, no UI needed. Fixes in `supabase/schema.sql` — **must be run in Supabase Studio to take effect** (source-of-truth updated; DB not yet migrated):
+
+- **`proposals update`** had no `WITH CHECK`, so Postgres reused `USING` as the check — a creative could PATCH their own proposal to `status='accepted'` (self-accept). Now: client may accept/decline, creative may only withdraw.
+- **`proposals insert`** had no job-state restriction — could propose on any job. Now: only `status='open'` jobs.
+- **`jobs update by accepted creative`** grants a full-row UPDATE and RLS can't restrict columns, so a (self- or legitimately) accepted creative could PATCH `total_paid_mwk`/`escrow_status` directly — inflating their own release payout or faking completion. Added `guard_jobs_creative_update()` BEFORE UPDATE trigger that rejects a creative's change to protected money/ownership columns (escrow_status, total_paid_mwk, collection_amount_mwk, accepted_bid_mwk, budget_mwk, client_id, client_link_token, client_refund_status); skips service-role and the job's own client.
+- **`payment_topups update`** had no `WITH CHECK` — either party could flip `status` and poison the webhook's pending-guard (dropping a real payment). Now: only the client may set `declined`; `paid` comes solely from the verified webhook (service-role).
+
+Audit also **confirmed safe**: webhook HMAC uses `timingSafeEqual` with length check; escrow/topup side-effects are idempotent (pending-guarded); payment amounts are provider-attested via server-to-server verify; payout destinations are scoped to the creative's own `payout_methods`; no `dangerouslySetInnerHTML`; no user-controlled `redirect()`; no server-only secret reachable in the client bundle; `profiles insert self` correctly pins `auth.uid()=id`. Non-blocking follow-ups noted in TEST_LOG (topup-claim TOCTOU, cron secret `!==`, storage bucket size/MIME cap, no rate-limiting on auth).
+
 ## 2026-08-04 — GlassUploadButton: shared glassy-pill upload CTA
 
 New `components/glass-upload-button.tsx` — pure CSS approximation of the Dribbble shader-upload-button reference: glossy white pill with inner highlight + subtle depth shadow, cloud-up icon, hover raises the button with a conic chromatic-gradient halo blurred behind it, active state presses in. Three sizes (sm/md/lg). Swapped in as the trigger for `ImagePicker` (sm), `MultiImagePicker` (md), and `JobDeliverySubmit` (md — the native `<Input type="file">` was replaced with a hidden input + glass trigger + inline filename). `AttachmentPicker` deliberately skipped — that's a paperclip icon inside the message composer, wrong context for a large pill CTA. No new deps; no shader/webgl.

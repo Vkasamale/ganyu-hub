@@ -4,6 +4,16 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Security audit + RLS/trigger fixes
+
+⬜ **ACTION REQUIRED: run the updated policies + trigger in `supabase/schema.sql` in Supabase Studio.** The source-of-truth is fixed but the live DB is NOT patched until you run: the new `proposals update`, `proposals insert`, `topups update parties` policies and the `guard_jobs_creative_update()` function + `trg_guard_jobs_creative_update` trigger.
+🕒 Verify after running:
+  - As a creative, `PATCH /rest/v1/proposals?id=eq.<own>` with `{status:"accepted"}` → should now be rejected (was the self-accept hole).
+  - As an accepted creative, `PATCH /rest/v1/jobs?id=eq.<job>` with `{total_paid_mwk: 999999}` → should raise "not allowed to modify protected job columns".
+  - Legit flows still work: creative marks delivered (status transition), sets payout method; client accepts a proposal; webhook still flips escrow/topup to paid.
+✅ Confirmed-safe (no fix needed): webhook HMAC timingSafeEqual; escrow/topup idempotency; provider-attested amounts; payout dest scoped to own methods; no dangerouslySetInnerHTML; no open redirect; no secret in client bundle; profiles insert-self pinned.
+🕒 Non-blocking follow-ups (deferred): acceptJobViaLink claim TOCTOU (add `.is("client_id", null)` to the update); cron `!==` → timingSafeEqual; `job-deliverables` bucket `file_size_limit`/`allowed_mime_types`; rate-limiting/CAPTCHA on signUp/signIn.
+
 ## 2026-08-04 — GlassUploadButton
 
 🕒 Portfolio uploader (`/dashboard/portfolio/[id]`) shows the glass pill for "Upload images"/"Add more".

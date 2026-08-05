@@ -313,16 +313,75 @@ create policy "jobs update by accepted creative" on jobs for update
   using (auth.uid() in (select creative_id from proposals where proposals.job_id = jobs.id and proposals.status = 'accepted'))
   with check (auth.uid() in (select creative_id from proposals where proposals.job_id = jobs.id and proposals.status = 'accepted'));
 
+-- Security (2026-08-05 audit): the policy above grants the accepted creative a
+-- full-row UPDATE, and Postgres RLS can't restrict columns. Without this guard
+-- the creative could PATCH total_paid_mwk / escrow_status directly (inflating
+-- their own release payout or faking completion). The creative legitimately
+-- writes only status, payout_method_id and scope-confirm timestamps via server
+-- actions — everything financial/ownership is service-role-only. This trigger
+-- rejects a creative's change to any protected column. Skips service-role
+-- (auth.uid() IS NULL) and the job's own client.
+-- ponytail: deny-list of the known money/ownership columns, not an allow-list —
+-- a new creative-writable column keeps working; add to this list only if a new
+-- SENSITIVE column lands on jobs.
+create or replace function guard_jobs_creative_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or auth.uid() = old.client_id then
+    return new;
+  end if;
+
+  if new.escrow_status         is distinct from old.escrow_status
+     or new.total_paid_mwk        is distinct from old.total_paid_mwk
+     or new.collection_amount_mwk is distinct from old.collection_amount_mwk
+     or new.accepted_bid_mwk      is distinct from old.accepted_bid_mwk
+     or new.budget_mwk            is distinct from old.budget_mwk
+     or new.client_id             is distinct from old.client_id
+     or new.client_link_token     is distinct from old.client_link_token
+     or new.client_refund_status  is distinct from old.client_refund_status
+  then
+    raise exception 'not allowed to modify protected job columns';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_jobs_creative_update on jobs;
+create trigger trg_guard_jobs_creative_update
+  before update on jobs
+  for each row execute function guard_jobs_creative_update();
+
 drop policy if exists "proposals read" on proposals;
 create policy "proposals read" on proposals for select using (
   auth.uid() = creative_id or auth.uid() in (select client_id from jobs where jobs.id = proposals.job_id)
 );
 drop policy if exists "proposals insert" on proposals;
-create policy "proposals insert" on proposals for insert with check (auth.uid() = creative_id);
-drop policy if exists "proposals update" on proposals;
-create policy "proposals update" on proposals for update using (
-  auth.uid() = creative_id or auth.uid() in (select client_id from jobs where jobs.id = proposals.job_id)
+-- Security (2026-08-05 audit): only allow proposing on an OPEN job. Previously
+-- a creative could propose on any job in any state.
+create policy "proposals insert" on proposals for insert with check (
+  auth.uid() = creative_id
+  and (select status from jobs where jobs.id = proposals.job_id) = 'open'
 );
+drop policy if exists "proposals update" on proposals;
+-- Security (2026-08-05 audit): the old policy had no WITH CHECK, so a creative
+-- could self-accept their own proposal (status='accepted') via a direct
+-- PostgREST call — the entry point to a full job-row takeover. Now the client
+-- may accept/decline; the creative may only withdraw their own proposal.
+create policy "proposals update" on proposals for update
+  using (
+    auth.uid() = creative_id
+    or auth.uid() in (select client_id from jobs where jobs.id = proposals.job_id)
+  )
+  with check (
+    (auth.uid() = creative_id and status = 'withdrawn')
+    or (auth.uid() in (select client_id from jobs where jobs.id = proposals.job_id)
+        and status in ('accepted', 'declined'))
+  );
 
 drop policy if exists "threads read" on message_threads;
 create policy "threads read" on message_threads for select using (auth.uid() in (client_id, creative_id));
@@ -711,10 +770,20 @@ create policy "topups insert creative" on payment_topups for insert with check (
   )
 );
 drop policy if exists "topups update parties" on payment_topups;
-create policy "topups update parties" on payment_topups for update using (
-  auth.uid() = requested_by_creative_id
-  or auth.uid() in (select client_id from jobs where id = job_id)
-);
+-- Security (2026-08-05 audit): old policy had no WITH CHECK, so either party
+-- could flip status directly (e.g. self-mark 'paid') and poison the webhook's
+-- pending-guard, silently dropping the real payment. Only the client may
+-- decline a pending topup; 'paid' comes solely from the verified webhook
+-- (service-role, which bypasses RLS).
+create policy "topups update parties" on payment_topups for update
+  using (
+    auth.uid() = requested_by_creative_id
+    or auth.uid() in (select client_id from jobs where id = job_id)
+  )
+  with check (
+    auth.uid() in (select client_id from jobs where id = job_id)
+    and status = 'declined'
+  );
 
 -- Cumulative escrow (original + paid topups). Backfill from accepted_bid_mwk
 -- so pre-existing jobs are correct. Money math (release payout, cancellation
