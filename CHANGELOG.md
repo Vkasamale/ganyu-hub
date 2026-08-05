@@ -3,6 +3,29 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Creative onboarding UX: tag chips, money commas, generic wording
+
+Made creative onboarding fit any creative, not just visual artists.
+
+- **Skills → tag/chip input** (`components/tag-input.tsx`). Type a skill, press
+  Enter (or comma) → it locks in as a removable bubble; Backspace on an empty box
+  removes the last. Submits one hidden `name="skills"` per chip;
+  `completeCreativeOnboarding` reads them with `formData.getAll("skills")`.
+- **Thousands separators on money** (`components/money-input.tsx`). Price fields
+  show `50,000` as you type but submit raw digits (hidden input), so server
+  parsing is unchanged. Wired into the two service-price fields.
+- **Generic "example of your work" wording.** Card 2 retitled + placeholders now
+  cover DJs / performers / service providers (sets, gigs, events), not just
+  "projects". Service-title example includes "DJ set"; project-URL relabelled
+  "Link (optional)".
+- **Delivery time optional.** Live acts (DJs) have no fixed turnaround.
+  `services.delivery_days` made **nullable** (was `not null default 7`); blank →
+  null; rate-card + public-profile render sites guard the null. **⚠️ Re-run
+  `schema.sql` in Supabase** (adds `alter column delivery_days drop not null`).
+
+Note: comma formatting so far is onboarding prices only — job/proposal/top-up
+money fields are a follow-up. tsc clean, unit suite 42/42.
+
 ## 2026-08-05 — Google login: robust first-run routing + identity prefill
 
 Follow-up on the OAuth login. Two fixes:

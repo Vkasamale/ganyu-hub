@@ -86,6 +86,8 @@ create table if not exists services (
 );
 alter table services add column if not exists price_mwk_max integer;
 alter table services alter column price_mwk drop not null;
+-- delivery_days optional: live acts (DJs, performers) have no fixed turnaround.
+alter table services alter column delivery_days drop not null;
 
 do $$ begin
   create type job_status as enum ('open', 'in_progress', 'completed', 'cancelled');

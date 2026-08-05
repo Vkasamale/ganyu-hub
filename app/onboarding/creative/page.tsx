@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { CategoryPicker } from "@/components/category-picker";
 import { ImagePicker } from "@/components/image-picker";
+import { TagInput } from "@/components/tag-input";
+import { MoneyInput } from "@/components/money-input";
 
 export default async function CreativeOnboardingPage() {
   const supabase = createClient();
@@ -64,33 +66,33 @@ export default async function CreativeOnboardingPage() {
               <CategoryPicker selected={profile?.categories || []} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="skills">Skills (comma-separated)</Label>
-              <Input id="skills" name="skills" placeholder="Figma, Branding, Illustration" defaultValue={(profile?.skills || []).join(", ")} />
+              <Label htmlFor="skills">Skills</Label>
+              <TagInput name="skills" defaultValue={profile?.skills || []} placeholder="e.g. Afrobeats, Live mixing, Branding — Enter after each" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>2. Add one piece of work</CardTitle>
-            <p className="text-sm text-neutral-500">Even one piece beats a blank portfolio. Add more later.</p>
+            <CardTitle>2. Add one example of your work</CardTitle>
+            <p className="text-sm text-neutral-500">A project, a gig, an event, a set — whatever shows what you do. Even one beats a blank profile. Add more later.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="piece_title">Project title</Label>
-              <Input id="piece_title" name="piece_title" required placeholder="e.g. Coffee brand identity" />
+              <Label htmlFor="piece_title">Title</Label>
+              <Input id="piece_title" name="piece_title" required placeholder="e.g. New Year's set at Club X · Coffee brand identity · Wedding highlight reel" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="piece_description">Description</Label>
-              <Textarea id="piece_description" name="piece_description" rows={3} placeholder="What you delivered, the client, the result." />
+              <Textarea id="piece_description" name="piece_description" rows={3} placeholder="What it was, who it was for, how it went." />
             </div>
             <div className="space-y-1.5">
               <Label>Cover image</Label>
               <ImagePicker name="piece_cover_file" shape="wide" label="Upload cover" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="piece_project_url">Project URL</Label>
-              <Input id="piece_project_url" name="piece_project_url" type="url" placeholder="https://..." />
+              <Label htmlFor="piece_project_url">Link (optional)</Label>
+              <Input id="piece_project_url" name="piece_project_url" type="url" placeholder="Mixcloud, YouTube, Instagram, a portfolio page…" />
             </div>
           </CardContent>
         </Card>
@@ -103,21 +105,21 @@ export default async function CreativeOnboardingPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="service_title">Service title</Label>
-              <Input id="service_title" name="service_title" required placeholder="e.g. Logo design, Wedding video edit, A2 poster" />
+              <Input id="service_title" name="service_title" required placeholder="e.g. DJ set, Logo design, Wedding video edit, A2 poster" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="service_price_mwk">From (MWK)</Label>
-                <Input id="service_price_mwk" name="service_price_mwk" type="number" min={0} required placeholder="50000" />
+                <MoneyInput id="service_price_mwk" name="service_price_mwk" required placeholder="50,000" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="service_price_mwk_max">Up to (MWK, optional)</Label>
-                <Input id="service_price_mwk_max" name="service_price_mwk_max" type="number" min={0} placeholder="150000" />
+                <MoneyInput id="service_price_mwk_max" name="service_price_mwk_max" placeholder="150,000" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="service_delivery_days">Typical delivery (days)</Label>
-              <Input id="service_delivery_days" name="service_delivery_days" type="number" min={1} defaultValue={7} />
+              <Label htmlFor="service_delivery_days">Typical delivery time (days, optional)</Label>
+              <Input id="service_delivery_days" name="service_delivery_days" type="number" min={1} placeholder="Leave blank if it varies (e.g. a live gig)" />
             </div>
           </CardContent>
         </Card>

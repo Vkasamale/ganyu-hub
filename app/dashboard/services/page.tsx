@@ -81,7 +81,7 @@ export default async function ServicesPage() {
                     <p className="mt-2 text-sm">
                       <span className="font-medium">{formatMwk(s.price_mwk)}</span>
                       {s.price_mwk_max && <span> &ndash; {formatMwk(s.price_mwk_max)}</span>}
-                      <span className="text-neutral-500"> &middot; ~{s.delivery_days} day{s.delivery_days === 1 ? "" : "s"}</span>
+                      {s.delivery_days && <span className="text-neutral-500"> &middot; ~{s.delivery_days} day{s.delivery_days === 1 ? "" : "s"}</span>}
                     </p>
                   </div>
                   <SavingForm action={deleteService} silent>

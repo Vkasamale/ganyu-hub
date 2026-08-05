@@ -4,6 +4,21 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Creative onboarding UX (tag chips, money commas, generic wording)
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.
+✅ Static: skills TagInput submits repeated hidden `name="skills"`;
+`completeCreativeOnboarding` switched to `formData.getAll("skills")` (flatMaps any
+pasted commas). MoneyInput submits raw digits via hidden input → `Number(...)`
+parsing unchanged. `service_delivery_days` blank → null; column made nullable;
+both render sites (`creatives/[id]`, `dashboard/services`) guard null.
+🕒 **Manual UI check (needs a browser):** on `/onboarding/creative` — (1) type a
+skill + Enter → chip appears, ✕ removes it, Backspace-on-empty removes last;
+(2) type `50000` in a price → shows `50,000`, saves 50000; (3) leave delivery
+blank → finishes, and the service shows no "~Nd" on the public profile.
+⚠️ **Re-run `schema.sql` in Supabase** first (delivery_days → nullable), else a
+blank delivery errors on insert.
+
 ## 2026-08-05 — Google login: first-run routing + identity prefill
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42 (added `.upsert` to the mock chain).

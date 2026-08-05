@@ -291,7 +291,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                   <p className="mt-3 text-sm">
                     <span className="font-semibold text-ink">{formatMwk(s.price_mwk)}</span>
                     {s.price_mwk_max && <span className="text-ink/65"> – {formatMwk(s.price_mwk_max)}</span>}
-                    <span className="text-ink/55"> · ~{s.delivery_days}d</span>
+                    {s.delivery_days && <span className="text-ink/55"> · ~{s.delivery_days}d</span>}
                   </p>
                 </div>
               ))}

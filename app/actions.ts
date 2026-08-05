@@ -227,8 +227,12 @@ export async function completeCreativeOnboarding(formData: FormData) {
   const headline = String(formData.get("headline") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
   const categories = parseCategories(formData);
-  const skills = String(formData.get("skills") || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+  // TagInput submits one hidden name="skills" per chip → read them all (each may
+  // still contain a comma if pasted). getAll returns [] when the field is absent.
+  const skills = formData.getAll("skills")
+    .flatMap((s) => String(s).split(","))
+    .map((s) => s.trim())
+    .filter(Boolean);
   const piece_title = String(formData.get("piece_title") || "").trim();
   const piece_description = String(formData.get("piece_description") || "").trim();
   const piece_project_url = String(formData.get("piece_project_url") || "").trim() || null;
@@ -259,7 +263,8 @@ export async function completeCreativeOnboarding(formData: FormData) {
     service_price_mwk_max_raw && service_price_mwk && service_price_mwk_max_raw >= service_price_mwk
       ? service_price_mwk_max_raw
       : null;
-  const service_delivery_days = Number(formData.get("service_delivery_days")) || 7;
+  // Optional: DJs / live acts don't have a fixed turnaround. Blank → null.
+  const service_delivery_days = Number(formData.get("service_delivery_days")) || null;
 
   if (!phone) return { error: "Add a phone or WhatsApp number so clients can reach you." };
   if (!headline) return { error: "Add a headline so clients know what you do." };
