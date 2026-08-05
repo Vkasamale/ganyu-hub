@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Turnstile } from "@/components/turnstile";
 
 type Role = "creative" | "client" | "agency";
 const VALID_ROLES: Role[] = ["creative", "client", "agency"];
@@ -53,6 +54,7 @@ export default async function SignupPage({ searchParams: searchParamsP }: { sear
                 </label>
               </div>
             </div>
+            <Turnstile />
             <Button type="submit" className="w-full">Create account</Button>
             <p className="text-center text-xs text-neutral-500">
               By signing up you agree to our{" "}

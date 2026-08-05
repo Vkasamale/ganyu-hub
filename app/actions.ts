@@ -43,6 +43,11 @@ export async function signUp(formData: FormData) {
     redirect(`/signup?error=${encodeURIComponent("Too many attempts. Please try again later.")}`);
   }
 
+  const { verifyTurnstile } = await import("@/lib/turnstile");
+  if (!(await verifyTurnstile(String(formData.get("cf-turnstile-response") || "") || null))) {
+    redirect(`/signup?error=${encodeURIComponent("Please complete the human-verification check and try again.")}`);
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -60,6 +65,11 @@ export async function signIn(formData: FormData) {
   // stuffing / password guessing).
   if (!(await rateLimit(`signin:${await clientIp()}:${email}`, 10, 600))) {
     redirect(`/login?error=${encodeURIComponent("Too many attempts. Please try again in a few minutes.")}`);
+  }
+
+  const { verifyTurnstile } = await import("@/lib/turnstile");
+  if (!(await verifyTurnstile(String(formData.get("cf-turnstile-response") || "") || null))) {
+    redirect(`/login?error=${encodeURIComponent("Please complete the human-verification check and try again.")}`);
   }
 
   const { error } = await supabase.auth.signInWithPassword({
