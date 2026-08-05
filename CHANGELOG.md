@@ -3,6 +3,16 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-05 — Footer version badge + "What's new"
+
+Added a clickable `v0.8.0` badge in the footer next to "© Ganyu Hub". Clicking
+it opens a curated "What's new" panel listing recent user-facing features. Built
+as a native `<details>`/`<summary>` — works with zero JS (no hydration
+dependency). Source is `lib/whats-new.ts` (`RELEASES` + `VERSION`), which is a
+**deliberately curated, public-safe list — NOT CHANGELOG.md**: no security,
+RLS, or schema details ever go in it. `VERSION` derives from the top release
+entry, so bumping a release there updates the badge automatically.
+
 ## 2026-08-05 — Email verification (Supabase confirm-email) + v0.8.0
 
 Turned on the path for Supabase Auth's built-in "Confirm email" so fake/typo'd

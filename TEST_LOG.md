@@ -4,6 +4,12 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-05 — Footer version badge + "What's new"
+
+✅ tsc --noEmit clean.
+✅ Verified in dev preview (DOM): footer badge summary reads "v0.8.0", panel lists 2 releases / 7 notes, first note correct. Native `<details>` — content in DOM, works with zero JS.
+🕒 Prod: click the badge, confirm the panel opens and matches the curated list.
+
 ## 2026-08-05 — Email verification (Supabase confirm-email) + v0.8.0
 
 ✅ tsc --noEmit clean.
