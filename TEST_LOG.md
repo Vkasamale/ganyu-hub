@@ -4,6 +4,28 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — Extra-revision top-ups hidden from the accept panel
+
+✅ tsc clean. ✅ 62/62.
+
+⬜ **No automated test.** The change is a `.startsWith` predicate inside a server
+component, and the suite has no page-render harness — extracting it to a
+testable helper would be more machinery than the line it guards. Covered by the
+manual check below instead.
+
+🕒 **Manual check** (`/jobs/[id]`, escrow held, client side):
+- Request an extra revision and get as far as the PayChangu redirect, then
+  abandon it. Return to the job. The **Payment top-ups** panel must *not* show
+  a pending row with "Accept & pay" — that was the bug.
+- Complete an extra-revision payment. It should appear under **History** with
+  status `paid`, and the escrow total should rise.
+- Have the creative request a genuine top-up. That one **must** still show with
+  "Accept & pay" and its reason in quotes — this is the regression risk of the
+  filter.
+- While a client's extra revision is mid-flight, the creative sees the "Request
+  top-up" form. Submitting should return "You already have a pending top-up on
+  this job", not a raw constraint error.
+
 ## 2026-08-07 — Deadline history + client profile page
 
 ✅ tsc clean. ✅ 62/62 (was 58). New `tests/actions/deadline-extension.test.ts`

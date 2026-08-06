@@ -3,6 +3,33 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — Clients no longer asked to approve their own extra-revision charge
+
+The "Payment top-ups" panel on `/jobs/[id]` renders any pending row with
+**Accept & pay** / **Decline**. It was built for top-ups the *creative*
+requests. An extra revision is the **client's own** charge, paid through its own
+redirect — so the client was being asked to approve a request they made
+themselves.
+
+`requested_by_creative_id` can't distinguish the two: `requestRevision` stamps
+it with the accepted creative either way (it has to — RLS keys on it). The
+`EXTRA_REVISION|` marker in `reason` is the only discriminator, and it's already
+what the callback and webhook key on, so the panel now uses it too — filtered at
+the point `pendingTopup` is chosen rather than patched at each button.
+
+Paid extra revisions still appear under History, which has no buttons.
+
+That also made the marker-decoding block in the pending card dead — rows
+carrying the marker no longer reach it — so it's gone; `reason` there is now
+always the creative's own words.
+
+Known narrow edge: while a client's extra-revision payment is mid-flight, the
+creative sees the "Request top-up" form (no pending row is visible to them).
+Submitting hits the one-pending-per-job constraint and returns the existing
+friendly "You already have a pending top-up" error.
+
+tsc clean; 62/62.
+
 ## 2026-08-07 — Deadline history, and clients get their own profile page
 
 **⚠️ `supabase/schema.sql` changed — re-run it manually before this works in

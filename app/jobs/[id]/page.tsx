@@ -187,7 +187,15 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         .select("id, amount_mwk, reason, status, created_at, requested_by_creative_id")
         .eq("job_id", job.id).order("created_at", { ascending: false })
     : { data: null };
-  const pendingTopup = (topups || []).find((t: any) => t.status === "pending") || null;
+  // This panel exists for top-ups the CREATIVE requested, which the client
+  // accepts and pays. An extra revision is the client's own charge, paid
+  // through its own redirect — surfacing it here asks them to approve their
+  // own request. requested_by_creative_id can't tell them apart (it names the
+  // creative either way), so the EXTRA_REVISION marker in `reason` is the only
+  // discriminator — the same one the callback and webhook key on.
+  const pendingTopup = (topups || []).find(
+    (t: any) => t.status === "pending" && !String(t.reason || "").startsWith("EXTRA_REVISION|")
+  ) || null;
 
   const { data: pendingExtension } = canProposeExtension
     ? await supabase.from("deadline_extensions")
@@ -457,26 +465,13 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <p className="text-sm font-semibold text-amber-900">
                   Pending: {formatMwk(pendingTopup.amount_mwk)}
                 </p>
-                {(() => {
-                  // `reason` carries an internal marker for overage top-ups
-                  // ("EXTRA_REVISION|<note>"). Never show the raw token — read
-                  // it, then render human words.
-                  const raw = String(pendingTopup.reason || "");
-                  const isExtraRevision = raw.startsWith("EXTRA_REVISION|");
-                  const note = isExtraRevision ? raw.slice("EXTRA_REVISION|".length).trim() : raw.trim();
-                  return (
-                    <>
-                      {isExtraRevision && (
-                        <p className="mt-1 text-sm text-amber-900/80">Extra revision</p>
-                      )}
-                      {note && (
-                        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-amber-900/80">
-                          &ldquo;{note}&rdquo;
-                        </p>
-                      )}
-                    </>
-                  );
-                })()}
+                {/* Marker-carrying rows are filtered out above, so `reason`
+                    here is always the creative's own words. */}
+                {String(pendingTopup.reason || "").trim() && (
+                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-amber-900/80">
+                    &ldquo;{String(pendingTopup.reason).trim()}&rdquo;
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {isClient && (
                     <div className="flex flex-wrap items-end gap-2">
