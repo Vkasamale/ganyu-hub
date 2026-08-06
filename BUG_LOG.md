@@ -15,6 +15,8 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-009] — RESOLVED 2026-08-07. Verified in prod. Moved to Fixed (see below).**
+
 - **[BUG-009] Every top-up payment was silently orphaned — `payment_ref` never written, so paid money could never be matched back.** — found 2026-08-07 during the PayChangu sandbox test of BUG-007's webhook leg.
   - **Repro:** client pays a top-up (extra revision, or a creative-requested top-up) → PayChangu checkout completes successfully → but `payment_topups.status` stays `pending`, `payment_ref` is `NULL`, `jobs.revisions_used` never advances, and `total_paid_mwk` never increases. No error anywhere. Confirmed live on the sandbox: a completed MWK 5,000 extra-revision payment left `status=pending, payment_ref=null, revisions_used=1 of 1`.
   - **Cause:** the `topups update parties` policy (`supabase/schema.sql:792`, added by the 2026-08-05 security audit) has `with check (auth.uid() in (select client_id …) and status = 'declined')`. That `WITH CHECK` is evaluated against the **resulting row**, so *any* user-context update that leaves `status = 'pending'` is rejected — including the `payment_ref` write. Both `requestRevision` case C (`actions.ts:2301`) and `payTopUp` (`actions.ts:2723`) wrote `payment_ref` through the **user's** client and **discarded the result**, so RLS silently updated 0 rows. `payment_ref` is the only key the settlement paths use to find the row (`callback/route.ts:26` and the webhook both do `.eq("payment_ref", txRef)`), so with it `NULL` neither could ever settle the payment.
@@ -107,6 +109,18 @@ _(none currently open — see In Progress above)_
 ## Fixed
 
 Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-to-fix arc are included; pure feature ships aren't bugs.
+
+### 2026-08-07
+
+- **[BUG-011] A creative's review of a client linked the client to `/creatives/…`.** Found 2026-08-07 while building client profiles; fixed `a40cefe`.
+  - **Symptom:** creative completes a job and reviews the client. The client's notification links to `/creatives/<their-id>` — a page built for sellers, showing them an empty portfolio, empty services and an "Invite to job" button aimed at themselves.
+  - **Cause:** `leaveReview` has always set `reviewee_id` correctly by side (`isClient ? creativeId : job.client_id`), but hardcoded `/creatives/${reviewee_id}` for both the notification link and `revalidatePath`. Two-sided reviews shipped without a two-sided route.
+  - **Fix:** route by the reviewer's side — `isClient ? /creatives/… : /clients/…` — using the flag already in scope, no extra query. Notification wording differentiated too. New `/clients/[id]` is the destination.
+
+- **[BUG-010] Clients were asked to accept and pay a charge they had initiated themselves.** Found 2026-08-07 reviewing the pending items; fixed `0a16bfd`.
+  - **Symptom:** client requests an extra revision → redirected to PayChangu → returns to the job page and the "Payment top-ups" panel shows their own charge as pending with **Accept & pay** / **Decline**.
+  - **Cause:** the panel was built for top-ups the *creative* requests. It rendered any row with `status = 'pending'`. `requested_by_creative_id` can't distinguish them — `requestRevision` stamps it with the accepted creative either way, because RLS keys on it.
+  - **Fix:** exclude rows whose `reason` carries the `EXTRA_REVISION|` marker at the point `pendingTopup` is chosen — the same discriminator the callback and webhook already use — rather than patching each button. Paid extra revisions still appear under History, which has no actions. Narrowed further by BUG-009's fix, which stopped these rows lingering after payment.
 
 ### 2026-08-06
 

@@ -30,6 +30,8 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **ID + liveness verification badge for creatives.** Upgrades current KYC (ID captured before payout) to a certified badge: document scan + liveness check, verified creatives surfaced as more trustworthy / more likely to be hired. Handled by dedicated IDV vendors (e.g. Smile Identity, Youverify, Trulioo), not SMS gateways. Rough industry pricing ballpark ~$0.50–$2+ per verification depending on provider/coverage/liveness — meaningfully more expensive than OTP, unconfirmed for Malawi specifically, needs a real quote before committing. Not needed at beta scale (6 personally-recruited creatives you can call directly); revisit once supply is large enough that you can't personally vouch for everyone.
 
+- **Agency profiles have no page of their own (2026-08-07).** Client profiles shipped at `/clients/[id]`, and `/creatives/[id]` now redirects only when `role = 'client'` — so `agency` (and any un-onboarded `null` role) still renders the creative layout. That's deliberate: agency is frozen and inventing a third page would prejudge the model. Whoever unfreezes agency inherits this decision, and the route split is where it lands.
+
 - **Agency accounts.** Frozen per Roadmap v3 feature freeze (Phase 4, after 3 paid jobs). Raised again 2026-07-20 mid job-events build — deliberately not scoped further right now to protect focus on the in-flight timeline/revisions/file-delivery sessions. When revisited: needs a real definition of what "agency" means on the platform (a profile type that manages multiple creative sub-profiles? a client-side team account? billing consolidation?) before any schema work starts — don't let a Claude Code session invent the model.
 
 ## Payments
