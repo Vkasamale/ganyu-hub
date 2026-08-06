@@ -32,6 +32,31 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Agency accounts.** Frozen per Roadmap v3 feature freeze (Phase 4, after 3 paid jobs). Raised again 2026-07-20 mid job-events build — deliberately not scoped further right now to protect focus on the in-flight timeline/revisions/file-delivery sessions. When revisited: needs a real definition of what "agency" means on the platform (a profile type that manages multiple creative sub-profiles? a client-side team account? billing consolidation?) before any schema work starts — don't let a Claude Code session invent the model.
 
+## Payments
+
+- **Creative wallet with batched withdrawals — the only way to reach a genuinely flat payout percentage.** Raised 2026-08-06 while settling payout fees. Not urgent; needs real volume first.
+
+  **The problem it solves.** Bank payouts cost `1.5% + MWK 700`. A percentage scales with the amount; the flat 700 doesn't. So the percentage needed to always cover cost is:
+
+  ```
+  required % = 1.5% + (700 / smallest payout allowed)
+  ```
+
+  | Min payout | Flat % that always covers |
+  |---|---|
+  | 1,000 (today's `MIN_PAYOUT_MWK`) | **71.5%** |
+  | 10,000 | 8.5% |
+  | 50,000 | 2.9% |
+  | 140,000 | 2% |
+
+  So a flat rate is a *floor* problem, not a percentage problem — you can only have a low flat rate by refusing small payouts, which is hostile in the Malawi context. Hence the shipped compromise: `2% + MWK 700` on bank, `2%` on mobile (2026-08-06, `lib/fees.ts`, pinned by `tests/fees.test.ts`).
+
+  **Why a wallet fixes it.** Today payouts are per-job, so a creative doing five MWK 10,000 jobs pays the 700 five times. With a balance they withdraw on their own schedule, the 700 is paid **once per withdrawal, not once per job**. Average withdrawal size rises, and a flat ~3% covers it comfortably — a uniform percentage with no exception to explain, and *cheaper for creatives doing lots of small jobs*, who are exactly the people the flat fee hurts most today.
+
+  **Rough shape when built:** a balance ledger (credits on release, debits on withdrawal, immutable rows — never a mutable `balance` column), a withdrawal request flow with the existing `MIN_PAYOUT_MWK` floor applied per *withdrawal* rather than per job, reconciliation against PayChangu transfers, and a "pending vs available" split so escrow released today isn't withdrawable before it has settled. Touches `releasePayment`, the payout reconcile path, and the payments dashboard. Non-trivial — treat as its own session, and don't start it without deciding the ledger model first.
+
+  **Revisit when:** creatives are regularly doing multiple small jobs per month, or bank payout fees become a visible cost line. Not before.
+
 ## Theming
 
 - **Dark mode for public launch.** Site is heavy on white surfaces (`bg-paper`, `bg-white`, `card-soft`) and the reading experience gets tiring on long pages (Terms, dashboards, `/browse`). Ship a dark theme for the public-launch marketing push — not urgent for beta since the surface is still moving weekly and every color change would need re-QA in both themes. Approach: add a `dark:` variant sweep across the design tokens (`text-ink`, `text-ink/60`, `bg-paper`, `bg-wash`, `border-ink/10`, `card-soft`), toggle in the navbar with `next-themes`, respect `prefers-color-scheme` on first visit. Budget half a day to a day plus visual QA across every route. Do NOT ship piecemeal — half-themed pages look broken.
