@@ -3,6 +3,30 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-06 — Payout fee: 2% mobile, 2% + MWK 700 bank
+
+`PAYOUT_RATES` was `mobile {1.8%, 0}` / `bank {1.5%, 700}`; now a single exported
+`PAYOUT_RATE = 0.02` with bank **keeping** its flat MWK 700.
+
+Why the flat component stays: a percentage scales with the amount, the bank's 700
+doesn't. To cover the real `1.5% + 700`, a pure percentage breaks even only at
+**MWK 140,000 (at 2%)** or **MWK 70,000 (at 2.5%)** — and the shortfall approaches
+the full 700 as amounts shrink. Observed bids are MWK 1,000–50,000, so a flat-only
+rate would have lost money on effectively every bank payout. `2% + 700` always
+covers, with a small margin.
+
+- New `tests/fees.test.ts` (8 cases) pins this down: bank payout fee ≥ real cost
+  across MWK 1,000–500,000, collection rates uniform, net never negative, and an
+  explicit regression guard asserting `PAYOUT_RATES.bank.flat === 700` so the flat
+  fee can't be "simplified" away later.
+- Copy updated everywhere the old 1.5–1.8% appeared: `/how-money-works` fee table
+  (now notes mobile money is better value on small jobs, since the flat 700 doesn't
+  shrink) and `PricingExplainer`. Both read the constant, so they can't drift.
+- `CANCELLATION_PAYOUT_RESERVE_PCT` comment corrected — the 15% reserve now covers
+  bank down to ~MWK 5,400 (was ~4,700) since the rate moved 1.5% → 2%.
+
+Suite 42 → **50 passing**. tsc clean.
+
 ## 2026-08-06 — Flat 3% collection fee, styled Select, no more raw `EXTRA_REVISION|`
 
 - **All collection rails quote 3%.** `COLLECTION_RATES` was 3/3/2 (bank transfer

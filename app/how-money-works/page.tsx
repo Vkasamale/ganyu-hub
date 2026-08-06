@@ -2,7 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { MoneyCalculator } from "@/components/money-calculator";
-import { BETA_ZERO_COMMISSION, PLATFORM_COMMISSION, MIN_PAYOUT_MWK, COLLECTION_RATE } from "@/lib/fees";
+import {
+  BETA_ZERO_COMMISSION,
+  PLATFORM_COMMISSION,
+  MIN_PAYOUT_MWK,
+  COLLECTION_RATE,
+  PAYOUT_RATE,
+} from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -161,7 +167,11 @@ export default async function HowMoneyWorksPage() {
               <tr className="border-b border-ink/10">
                 <td className="py-3 pr-4 font-medium text-ink">Payout fee</td>
                 <td className="py-3 pr-4">The mobile-money or bank provider</td>
-                <td className="py-3">~1.5–1.8% on transfer out (bank adds a flat MWK 700)</td>
+                <td className="py-3">
+                  {Math.round(PAYOUT_RATE * 100)}% on transfer out. Bank transfers add a flat MWK
+                  700 — that&apos;s the bank&apos;s own charge, and it doesn&apos;t shrink on small
+                  amounts, so mobile money is usually better value on smaller jobs.
+                </td>
               </tr>
             </tbody>
           </table>

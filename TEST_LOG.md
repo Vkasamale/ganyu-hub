@@ -4,6 +4,28 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — Payout fee 2% / 2% + MWK 700 — DECIDED & covered by tests ✅
+
+✅ tsc clean. ✅ **50/50** (was 42) — new `tests/fees.test.ts`, 8 cases.
+
+Resolves the open decision logged below. Chosen: `PAYOUT_RATE = 0.02` for both
+rails, bank keeps `flat: 700`.
+
+The tests encode the reasoning so it can't be lost:
+- `bank always covers the real 1.5% + MWK 700 cost` — asserted at MWK 1,000 /
+  5,000 / 10,000 / 25,000 / 50,000 / 100,000 / 140,000 / 500,000.
+- `a flat percentage with no flat component would NOT cover it` — a deliberate
+  regression guard. Asserts `2% × 10,000 < real cost` **and**
+  `PAYOUT_RATES.bank.flat === 700`, so deleting the flat fee fails the suite
+  with an explanatory comment rather than silently losing money.
+- net never negative at any amount incl. 0 and 1; mobile nets more than bank at
+  MWK 10,000 (the flat 700 biting, as intended).
+- cancellation reserve still covers bank payout fee at ≥ ~MWK 5,400.
+
+🕒 **Manual check:** `/how-money-works` fee table + calculator and the
+`PricingExplainer` panel should all read 2% with the bank's flat MWK 700 called
+out. All three read the constant, so they move together.
+
 ## 2026-08-06 — Flat 3% collection, styled Select, EXTRA_REVISION label
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42 (no test asserted the old 2%

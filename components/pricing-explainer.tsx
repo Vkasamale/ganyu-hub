@@ -1,4 +1,4 @@
-import { BETA_ZERO_COMMISSION, PLATFORM_COMMISSION } from "@/lib/fees";
+import { BETA_ZERO_COMMISSION, PLATFORM_COMMISSION, PAYOUT_RATE } from "@/lib/fees";
 
 // Reusable "How the money works" panel. Native <details> so it's zero-JS and
 // works before hydration. Drop it on the job-post, proposal, and payments pages.
@@ -35,8 +35,9 @@ export function PricingExplainer({ audience = "both" }: { audience?: "client" | 
           </li>
           <li>
             <span className="font-medium text-ink">{audience !== "creative" ? "4" : "3"}. Payout.</span>{" "}
-            On approval, escrow is released to the creative. {commissionLine} A small payout fee (~1.5–1.8%)
-            is taken by the mobile-money/bank provider on the transfer out.
+            On approval, escrow is released to the creative. {commissionLine} A payout fee of{" "}
+            {Math.round(PAYOUT_RATE * 100)}% is taken by the mobile-money/bank provider on the
+            transfer out (bank transfers add a flat MWK 700).
           </li>
         </ol>
         <p className="text-xs text-ink/55">

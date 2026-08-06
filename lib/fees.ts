@@ -32,9 +32,16 @@ export const COLLECTION_RATES: Record<CollectionRail, number> = {
   bank_transfer: COLLECTION_RATE,
 };
 
+// One headline rate out — 2% — but bank KEEPS its flat MWK 700, because a
+// percentage can never cover a flat cost on small payouts. Bank really costs
+// ~1.5% + 700; break-even for a pure 2% is MWK 140,000 and for 2.5% is MWK
+// 70,000, while real payouts here are MWK 1,000–50,000. So a flat-only rate
+// would lose money on effectively every bank transfer. 2% + 700 always covers.
+export const PAYOUT_RATE = 0.02;
+
 export const PAYOUT_RATES: Record<PayoutRail, { pct: number; flat: number }> = {
-  mobile: { pct: 0.018, flat: 0 },
-  bank:   { pct: 0.015, flat: 700 },
+  mobile: { pct: PAYOUT_RATE, flat: 0 },
+  bank:   { pct: PAYOUT_RATE, flat: 700 },
 };
 
 export function collectionFee(bid: number, rail: CollectionRail): number {
@@ -60,8 +67,9 @@ export function creativeNet(bid: number, rail: PayoutRail): number {
 }
 
 // Flat reserve on each side's cancellation payout so PayChangu's transfer
-// fee doesn't eat the platform's 10%. 15% covers bank's MWK 700 flat down
-// to ~MWK 4,700 payouts; below that the admin queue shows a warning.
+// fee doesn't eat the platform's 10%. 15% covers bank's 2% + MWK 700 down to
+// ~MWK 5,400 payouts (0.15G ≥ 0.02G + 700); below that the admin queue shows a
+// warning. Threshold moved up from ~4,700 when the payout rate went 1.5% → 2%.
 // ponytail: flat %, not per-rail — simpler, slightly over-collects on
 // large payouts. Tune here if reality disagrees.
 export const CANCELLATION_PAYOUT_RESERVE_PCT = 0.15;
