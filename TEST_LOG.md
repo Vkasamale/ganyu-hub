@@ -4,6 +4,20 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — Job page share row moved to brief-card foot
+
+✅ tsc clean. ✅ 57/57. ✅ `npx next build` compiled successfully, 42/42 static
+pages generated.
+
+🕒 **Manual check** (`/jobs/[id]`):
+- Byline now reads `Posted by … · 2h ago` alone, no share icons beside it.
+- Share icons sit at the foot of the **Project brief** card, under the
+  budget/deadline/revisions/format list, behind a divider, labelled
+  "Share this job".
+- Desktop: icons right-aligned. Mobile: label and icons stack left, nothing
+  overflows the card.
+- Click Copy → "Link copied!" (regression check on BUG-008's fix).
+
 ## 2026-08-06 — BUG-008 VERIFIED FIXED in prod ✅ + profile card reorder
 
 ✅ **Confirmed in prod** on `ganyu-hub.vercel.app/creatives/698d7433-…`: the Copy

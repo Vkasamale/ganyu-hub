@@ -3,6 +3,20 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-06 — Job page: share row moved to the foot of the brief card
+
+Same treatment as the creative profile, for consistency. `ShareButtons` was
+sitting in the byline strip (`Posted by … · 2h ago`) directly under `JobHeader`,
+which mixed metadata with an action. It now sits at the **foot of the Project
+brief card**, under the budget/deadline/revisions/format list, behind a hairline
+divider and labelled "Share this job" — you share a job after reading it, not
+before. Right-aligned on desktop (`sm:ml-auto`), stacks left on mobile.
+
+The byline strip's `flex justify-between` was dead once it had a single child, so
+it collapsed to a plain `<p>`.
+
+`next build` compiled successfully; tsc clean; 57/57.
+
 ## 2026-08-06 — BUG-008 confirmed fixed + creative-profile actions moved to card foot
 
 **BUG-008 closed.** Copy/share now work in prod on `/creatives/[id]`; the pinned

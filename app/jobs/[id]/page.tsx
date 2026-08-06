@@ -230,16 +230,9 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             </>
           }
         />
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1">
-          <p className="text-sm text-neutral-500">
-            Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}
-          </p>
-          <ShareButtons
-            url={absUrl(`/jobs/${job.id}`)}
-            title={`${job.title} — job on Ganyu Hub`}
-            text={`${job.title} — a job on Ganyu Hub`}
-          />
-        </div>
+        <p className="mt-2 px-1 text-sm text-neutral-500">
+          Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}
+        </p>
       </div>
       <Card className="mt-4">
         <CardContent className="p-5 sm:p-6">
@@ -291,6 +284,19 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               </div>
             )}
           </dl>
+
+          {/* Share at the foot of the brief — you share a job after reading it,
+              not before. Mirrors the creative profile card. */}
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
+            <span className="text-xs uppercase tracking-wide text-ink/50">Share this job</span>
+            <div className="sm:ml-auto">
+              <ShareButtons
+                url={absUrl(`/jobs/${job.id}`)}
+                title={`${job.title} — job on Ganyu Hub`}
+                text={`${job.title} — a job on Ganyu Hub`}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
