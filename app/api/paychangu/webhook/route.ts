@@ -58,6 +58,11 @@ export async function POST(req: Request) {
           payout_amount_mwk: (verified as any).amount ?? null,
           payout_fee_mwk: (verified as any).fee ?? null,
         }).eq("id", pj.id);
+        // Only record of *when* the creative got paid — see JobEventType.
+        const { logJobEvent } = await import("@/lib/job-events");
+        await logJobEvent(pj.id, "payment_released", "Funds released to the creative.", {
+          metadata: { payout_ref: chargeIdForVerify, amount_mwk: (verified as any).amount ?? null, via: "webhook" },
+        });
       } else if (verified.status === "failed") {
         await supabase.from("jobs").update({
           payout_status: "failed",

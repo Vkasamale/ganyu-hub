@@ -17,7 +17,12 @@ export type JobEventType =
   | "dispute_filed"
   | "dispute_resolved"
   | "cancelled"
-  | "deadline_extended";
+  | "deadline_extended"
+  // The moment the creative actually gets paid. escrow_status records that
+  // release happened but never when, and payment_held_at only marks the start
+  // of the wait — so this event's created_at is the only record of how long a
+  // creative waited. Forward-only: nothing can reconstruct it retroactively.
+  | "payment_released";
 
 function serviceClient() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;

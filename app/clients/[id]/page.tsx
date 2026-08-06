@@ -143,10 +143,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         )}
       </section>
 
-      {/* ponytail: no escrow-release speed — jobs records payment_held_at but
-          never a release timestamp, so it isn't derivable. Add
-          jobs.payment_released_at when "how fast do they pay" matters more
-          than the four stats above; it only accrues from that day forward. */}
+      {/* ponytail: no escrow-release speed yet. The data now exists — a
+          payment_released job_event is logged at both release sites — but it
+          only accrues forward, so every client would read "—" today. Add the
+          stat once real releases have been recorded: pair that event's
+          created_at against the job's payment_held_at, average the delta. */}
     </div>
   );
 }

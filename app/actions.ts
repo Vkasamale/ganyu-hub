@@ -1840,6 +1840,10 @@ export async function reconcilePayout(input: string | FormData, opts?: { skipRev
       payout_amount_mwk: verified.amount ?? null,
       payout_fee_mwk: verified.fee ?? null,
     }).eq("id", job_id);
+    // Only record of *when* the creative got paid — see JobEventType.
+    await logJobEvent(job_id, "payment_released", "Funds released to the creative.", {
+      metadata: { payout_ref: job.payout_ref, amount_mwk: verified.amount ?? null, via: "reconcile" },
+    });
     revalidate(`/jobs/${job_id}`);
     return { ok: true, info: "Payout confirmed. Status updated to Released." };
   }

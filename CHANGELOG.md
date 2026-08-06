@@ -3,6 +3,39 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — Record *when* a creative gets paid
+
+`escrow_status = 'payment_released'` recorded that release happened but never
+when. `payment_held_at` marks the start of the wait; nothing marked the end. So
+"how long did this creative wait to be paid" — the one thing a creative most
+wants to know about a client before bidding — was not computable, even
+approximately.
+
+New `payment_released` event on the existing append-only `job_events` log,
+written at both release sites: the payout webhook
+([webhook/route.ts](app/api/paychangu/webhook/route.ts)) and the reconcile path
+in `updateEscrowStatus`'s sibling. `updateEscrowStatus` itself doesn't write the
+status — it initiates the payout and the HMAC-verified webhook flips it — so
+those two are the complete set.
+
+Chose the event log over a `jobs.payment_released_at` column: no schema change
+(so no manual `schema.sql` re-run), `created_at` gives the timestamp for free,
+append-only means it can't be quietly overwritten, and the release now shows on
+the job timeline as "Payment released to creative" — visible value beyond the
+statistic. Cost is one extra query whenever the average is computed.
+
+**This is forward-only.** Releases that already happened are unrecoverable —
+nothing ever stored the moment. Which is why it went in now rather than when the
+client page wants to display it.
+
+The stat is deliberately *not* on `/clients/[id]` yet: it would read "—" for
+every client until real releases accrue. Marked in place with how to compute it.
+
+`LABELS` in `job-timeline.tsx` is typed `Record<JobEventType, string>`, so the
+compiler refuses the new member without a label — no silent blank rows.
+
+tsc clean; 62/62.
+
 ## 2026-08-07 — Clients no longer asked to approve their own extra-revision charge
 
 The "Payment top-ups" panel on `/jobs/[id]` renders any pending row with

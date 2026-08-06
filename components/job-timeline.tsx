@@ -22,6 +22,7 @@ const LABELS: Record<JobEventType, string> = {
   dispute_resolved: "Dispute resolved",
   cancelled: "Job cancelled",
   deadline_extended: "Deadline extended",
+  payment_released: "Payment released to creative",
 };
 
 // Inline SVGs match the codebase pattern (image-picker.tsx, etc). Kept plain
@@ -43,6 +44,7 @@ function EventIcon({ type }: { type: string }) {
     case "revision_delivered":
       return <svg {...common}><polyline points="20 6 9 17 4 12" /></svg>;
     case "escrow_funded":
+    case "payment_released":
       return <svg {...common}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>;
     case "work_started":
       return <svg {...common}><polygon points="5 3 19 12 5 21 5 3" /></svg>;

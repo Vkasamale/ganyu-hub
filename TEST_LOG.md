@@ -4,6 +4,28 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — payment_released event
+
+✅ tsc clean. ✅ 62/62.
+
+⬜ **No automated test, deliberately.** The change adds no branch of its own —
+it hangs two `logJobEvent` calls off the existing `verified.status === "success"`
+arms. `tests/api/paychangu-webhook.test.ts` has no payout-path coverage at all,
+so a test would mean building a full payout-webhook fixture to assert one call
+fired. The compiler already enforces the part that can silently break: `LABELS`
+is `Record<JobEventType, string>`, so an unlabelled event type won't build.
+
+🕒 **Manual check** — needs a real sandbox release, same lesson as BUG-009:
+a reachable code path is not a completed payment.
+- Fund a job, wait out the T+1 hold, release. When the payout webhook lands,
+  the job timeline must show **"Payment released to creative"**.
+- Confirm the `job_events` row carries `metadata.via = "webhook"` (or
+  `"reconcile"` if it came through the reconcile path instead) and a non-null
+  `amount_mwk`.
+- `logJobEvent` swallows its errors by design so a log write can never block a
+  payout — so if the row is missing, check the function logs for
+  `[job-events] insert failed`, not the UI.
+
 ## 2026-08-07 — Extra-revision top-ups hidden from the accept panel
 
 ✅ tsc clean. ✅ 62/62.
