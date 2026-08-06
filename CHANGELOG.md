@@ -17,6 +17,38 @@ it collapsed to a plain `<p>`.
 
 `next build` compiled successfully; tsc clean; 57/57.
 
+## 2026-08-07 — BUG-009: top-up payments were silently orphaned (money path)
+
+Found by actually completing a sandbox payment. **Every top-up — extra revisions
+and creative-requested top-ups alike — took the client's money and recorded
+nothing.**
+
+`payment_ref` is the only key the callback and webhook use to find a top-up
+(`.eq("payment_ref", txRef)`). Both `requestRevision` and `payTopUp` wrote it
+through the **user's** Supabase client and discarded the result. The
+`topups update parties` policy's `WITH CHECK` requires the resulting row to have
+`status = 'declined'`, so a write that leaves it `pending` is rejected — 0 rows
+updated, silently. `payment_ref` stayed `NULL`, and neither settlement path
+could ever match the payment back.
+
+A **regression from the 2026-08-05 security audit**, which added that
+`WITH CHECK` to stop either party self-marking `paid`. The hole it closed was
+real; the collateral damage went unnoticed because the update's error was never
+checked.
+
+- Both writes now use a **service-role** client and `.select("id")` to prove a
+  row was affected.
+- On failure the action **returns an error instead of redirecting to checkout** —
+  refusing money we can't reconcile beats taking it and losing it. Logged to
+  `/admin/errors` with the tx ref.
+- The RLS policy is **unchanged** — users still can't set `status='paid'`.
+- New regression test: "refuses to reach checkout if the payment_ref write
+  affects 0 rows". Suite 57 → **58**.
+
+⚠️ **Check production** for top-ups paid between 2026-08-05 and this fix:
+`select … from payment_topups where payment_ref is null and status = 'pending';`
+See BUG_LOG for the full query and reconciliation note.
+
 ## 2026-08-06 — BUG-008 confirmed fixed + creative-profile actions moved to card foot
 
 **BUG-008 closed.** Copy/share now work in prod on `/creatives/[id]`; the pinned

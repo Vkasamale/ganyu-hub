@@ -2298,7 +2298,28 @@ export async function requestRevision(formData: FormData): Promise<{ ok?: boolea
       lastName: rest.join(" ") || "-",
       title: `Extra revision on "${job.title}"`.slice(0, 60),
     });
-    await supabase.from("payment_topups").update({ payment_ref: txRef }).eq("id", topupRow.id);
+    // BUG-009: must be service-role. The "topups update parties" policy's
+    // WITH CHECK forces status='declined' on any user-context update, so
+    // writing payment_ref as the client updates 0 rows. payment_ref is how the
+    // callback/webhook find this row — without it a real payment can never be
+    // settled. Fail BEFORE sending anyone to checkout rather than take money
+    // we can't reconcile.
+    const { data: refRow, error: refErr } = await adminTopup
+      .from("payment_topups")
+      .update({ payment_ref: txRef })
+      .eq("id", topupRow.id)
+      .select("id")
+      .maybeSingle();
+    if (refErr || !refRow) {
+      const { logAdminError, GENERIC_MONEY_ERROR } = await import("@/lib/admin-errors");
+      const ref = await logAdminError({
+        operation: "extra_revision_payment_ref",
+        jobId: job_id,
+        error: refErr || "payment_ref update affected 0 rows",
+        context: { topup_id: topupRow.id, txRef },
+      });
+      return { error: GENERIC_MONEY_ERROR(ref) };
+    }
     redirect(checkoutUrl);
   } catch (e: any) {
     if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
@@ -2719,9 +2740,34 @@ export async function payTopUp(formData: FormData): Promise<{ ok?: boolean; erro
       title: `Top-up on "${job.title}"`.slice(0, 60),
       mobile: prefillMobile || undefined,
     });
-    await supabase.from("payment_topups").update({
-      payment_ref: txRef,
-    }).eq("id", t.id);
+    // BUG-009: same as requestRevision — RLS forbids a user-context update
+    // that leaves status='pending', so this must go through service role or
+    // payment_ref stays NULL and the payment can never be matched back.
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
+    }
+    const { createServerClient: createServerClientRef } = await import("@supabase/ssr");
+    const adminRef = createServerClientRef(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { cookies: { getAll: () => [], setAll: () => {} } }
+    );
+    const { data: refRow, error: refErr } = await adminRef
+      .from("payment_topups")
+      .update({ payment_ref: txRef })
+      .eq("id", t.id)
+      .select("id")
+      .maybeSingle();
+    if (refErr || !refRow) {
+      const { logAdminError, GENERIC_MONEY_ERROR } = await import("@/lib/admin-errors");
+      const ref = await logAdminError({
+        operation: "topup_payment_ref",
+        jobId: t.job_id,
+        error: refErr || "payment_ref update affected 0 rows",
+        context: { topup_id: t.id, txRef },
+      });
+      return { error: GENERIC_MONEY_ERROR(ref) };
+    }
     redirect(checkoutUrl);
   } catch (e: any) {
     if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;

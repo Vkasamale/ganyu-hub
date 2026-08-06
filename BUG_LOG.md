@@ -15,6 +15,21 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-009] Every top-up payment was silently orphaned — `payment_ref` never written, so paid money could never be matched back.** — found 2026-08-07 during the PayChangu sandbox test of BUG-007's webhook leg.
+  - **Repro:** client pays a top-up (extra revision, or a creative-requested top-up) → PayChangu checkout completes successfully → but `payment_topups.status` stays `pending`, `payment_ref` is `NULL`, `jobs.revisions_used` never advances, and `total_paid_mwk` never increases. No error anywhere. Confirmed live on the sandbox: a completed MWK 5,000 extra-revision payment left `status=pending, payment_ref=null, revisions_used=1 of 1`.
+  - **Cause:** the `topups update parties` policy (`supabase/schema.sql:792`, added by the 2026-08-05 security audit) has `with check (auth.uid() in (select client_id …) and status = 'declined')`. That `WITH CHECK` is evaluated against the **resulting row**, so *any* user-context update that leaves `status = 'pending'` is rejected — including the `payment_ref` write. Both `requestRevision` case C (`actions.ts:2301`) and `payTopUp` (`actions.ts:2723`) wrote `payment_ref` through the **user's** client and **discarded the result**, so RLS silently updated 0 rows. `payment_ref` is the only key the settlement paths use to find the row (`callback/route.ts:26` and the webhook both do `.eq("payment_ref", txRef)`), so with it `NULL` neither could ever settle the payment.
+  - **A regression, not an original defect.** Before the 2026-08-05 audit the policy had no `WITH CHECK` and these writes succeeded. Tightening the policy silently broke the money path — the audit fixed a real hole (either party could self-mark `paid`) but nothing caught the collateral damage, because the update's error was never checked.
+  - **Fix (2026-08-07):** both writes now go through a **service-role** client (same pattern as BUG-007's insert), and both `.select("id")` to prove a row was actually affected. If the write fails or affects 0 rows, the action **returns an error instead of redirecting to checkout** — refusing to take money we can't reconcile is strictly better than taking it and losing it. Failures are logged to `/admin/errors` with the tx ref. **The RLS policy is deliberately unchanged**, so users still cannot set `status='paid'`; only the server can write `payment_ref`.
+  - **Regression test:** `tests/actions/topups.test.ts` — "refuses to reach checkout if the payment_ref write affects 0 rows". Suite 57 → 58.
+  - ⚠️ **Check production for orphaned top-ups.** Any top-up paid between 2026-08-05 (audit) and this fix would have taken the client's money with nothing recorded:
+    ```sql
+    select id, job_id, amount_mwk, status, created_at
+    from payment_topups where payment_ref is null and status = 'pending';
+    ```
+    Cross-check each against PayChangu's transaction list. Beta volume is low, so this may well be empty — but it must be checked, not assumed.
+  - **Status:** fix shipped, awaiting a re-run of the sandbox test.
+
+
 - **[BUG-008] — RESOLVED 2026-08-06. Moved to Fixed (see below).**
 
 <!-- Superseded by the Fixed entry dated 2026-08-06. Kept out of In Progress.

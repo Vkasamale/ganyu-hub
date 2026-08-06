@@ -18,6 +18,39 @@ pages generated.
   overflows the card.
 - Click Copy → "Link copied!" (regression check on BUG-008's fix).
 
+## 2026-08-07 — Sandbox test found BUG-009 (top-up payments orphaned)
+
+The PayChangu sandbox test of BUG-007's webhook leg **did not pass — and that's
+the point.** It surfaced a worse bug that unit tests could never have caught,
+because it lived in the RLS policy, not the code.
+
+**Observed** after completing a real MWK 5,000 test payment:
+
+| Field | Expected | Actual |
+|---|---|---|
+| `payment_topups.status` | `paid` | `pending` |
+| `payment_topups.payment_ref` | `ghtop_…` | **`null`** |
+| `jobs.revisions_used` | 2 | 1 |
+
+`payment_ref` null was the tell — it's the only key the callback/webhook use to
+find the row, so settlement was impossible. See BUG-009 for the full chain.
+
+✅ tsc clean. ✅ **58/58** (was 57) — new regression test "refuses to reach
+checkout if the payment_ref write affects 0 rows", which fails if anyone routes
+that write back through the user's client.
+
+⬜ **Re-run the sandbox test** on a preview rebuilt with the fix. Same steps;
+this time expect `status=paid`, `payment_ref` populated, `revisions_used=2`.
+
+⚠️ **Production check outstanding** — top-ups paid between the 2026-08-05 audit
+and this fix took money with nothing recorded. Query in BUG-009.
+
+**Worth noting for future sessions:** BUG-007's fix was verified without
+completing a payment (reaching checkout proved the insert cleared RLS). That was
+sound for what it tested, but everything *after* the redirect stayed unexercised
+— which is exactly where BUG-009 was hiding. Money paths need a completed
+payment, not just a reachable checkout.
+
 ## 2026-08-06 — BUG-008 VERIFIED FIXED in prod ✅ + profile card reorder
 
 ✅ **Confirmed in prod** on `ganyu-hub.vercel.app/creatives/698d7433-…`: the Copy

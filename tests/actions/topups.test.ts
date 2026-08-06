@@ -7,6 +7,12 @@ vi.mock("@/lib/payments", () => ({
   initiatePayment: vi.fn(async () => ({ checkoutUrl: "https://pay.example/checkout", txRef: "ghtop_abc" })),
 }));
 vi.mock("@/lib/fees", () => ({ clientCharge: (amount: number) => amount }));
+// BUG-009: payment_ref is written with a service-role client (RLS forbids a
+// user-context update that leaves status='pending'). Point it at the same mock
+// so the queues stay in one place.
+vi.mock("@supabase/ssr", () => ({ createServerClient: () => supabaseHolder.client }));
+process.env.SUPABASE_SERVICE_ROLE_KEY = "srk";
+process.env.NEXT_PUBLIC_SUPABASE_URL = "https://x.supabase.co";
 
 import { requestTopUp, payTopUp, declineTopUp } from "@/app/actions";
 
@@ -103,13 +109,34 @@ describe("payTopUp", () => {
       tables: {
         payment_topups: [
           { data: { id: "t1", job_id: "job-1", amount_mwk: 5000, status: "pending", job: { client_id: "client-1", title: "T", status: "in_progress", escrow_status: "payment_held" } } },
-          { error: null }, // update payment_ref
+          { data: { id: "t1" } }, // service-role update payment_ref → .select("id")
         ],
         profiles: [{ data: { full_name: "Client Name" } }],
         payout_methods: [{ data: null }],
       },
     });
     await expect(payTopUp(fd({ topup_id: "t1" }))).rejects.toThrow("NEXT_REDIRECT");
+  });
+
+  // BUG-009 regression: payment_ref is how the callback/webhook find this row.
+  // If that write doesn't land we must NOT send the user to checkout — taking
+  // money we can't reconcile is worse than failing the request.
+  it("refuses to reach checkout if the payment_ref write affects 0 rows", async () => {
+    supabaseHolder.client = makeSupabase({
+      user: CLIENT,
+      tables: {
+        payment_topups: [
+          { data: { id: "t1", job_id: "job-1", amount_mwk: 5000, status: "pending", job: { client_id: "client-1", title: "T", status: "in_progress", escrow_status: "payment_held" } } },
+          { data: null }, // RLS silently rejected the update — 0 rows
+        ],
+        profiles: [{ data: { full_name: "Client Name" } }],
+        payout_methods: [{ data: null }],
+        admin_errors: [{ data: { id: "e1" } }],
+      },
+    });
+    const res = await payTopUp(fd({ topup_id: "t1" }));
+    expect(res.error).toBeTruthy();
+    expect(res.error).not.toMatch(/NEXT_REDIRECT/);
   });
 });
 
