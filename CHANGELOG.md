@@ -3,6 +3,42 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-06 — "How the money works" page + first-run guidance is once-per-USER
+
+⚠️ **Re-run `supabase/schema.sql` before deploying** — adds three nullable
+`timestamptz` columns to `profiles` (`welcome_dismissed_at`, `money_guide_seen_at`,
+`toured_at`). The code selects `toured_at`, so deploying ahead of the migration
+breaks the dashboard.
+
+- **New page `/how-money-works`** (`app/how-money-works/page.tsx`) — plain-language
+  explainer: the 4 escrow steps, a "who charges what" table naming the payment
+  provider vs. us, and 4 FAQs (when the client is charged, undelivered work,
+  paid extra revisions, whether we take a cut of provider fees). Public route,
+  so it doubles as a trust page for signed-out visitors.
+- **Live calculator** (`components/money-calculator.tsx`) — enter a price, pick a
+  collection rail and a payout rail, and both sides update instantly: what the
+  client is charged vs. what lands in the creative's account. Every figure runs
+  through `lib/fees.ts` (`collectionFee`/`clientCharge`/`creativeGross`/
+  `payoutFee`/`creativeNet`), so the page can't quote a number the platform
+  won't honour. Two-sided by design — `proposal-payout-preview.tsx` already
+  covers the creative's take-home alone.
+- **Fixed: the checklist step went to the wrong place.** "See how the money works"
+  pointed at `/jobs/new` (and the creative variant at `/dashboard/payments`).
+  Both now point at `/how-money-works`.
+- **Fixed: the step never ticked.** It had no `done` flag at all. Viewing the page
+  now stamps `profiles.money_guide_seen_at`, so the checklist shows ✓ on the next
+  dashboard visit. (No `revalidatePath` during render — that's FIX-2026-07-13b.)
+- **Fixed: guidance replayed on every new browser.** The welcome checklist and the
+  tour were gated on `localStorage` (`gh_welcome_dismissed_v1` / `gh_tour_done_v1`),
+  which is per-BROWSER — so signing in on another device (or after clearing site
+  data) replayed both. Both flags now live on the profile via one new server action,
+  `markMilestone(key)`, writing `welcome_dismissed_at` / `toured_at` under the
+  existing `profiles update self` RLS policy. Existing users have `NULL`, so they
+  still get the guidance exactly once.
+- `PricingExplainer` now links through to the full breakdown.
+
+tsc clean, 42/42, `next build` clean (`/how-money-works` registered).
+
 ## 2026-08-05 — Interactive first-run tour (driver.js)
 
 Added `components/product-tour.tsx` — a one-time guided tour that runs on the

@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("role, onboarded_at, is_admin").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("role, onboarded_at, is_admin, toured_at").eq("id", user.id).single();
   // No profile row yet, or an OAuth user who hasn't picked a role → send them to
   // pick one. A missing row must NOT fall through to a default-creative dashboard.
   if (!profile || !profile.role) redirect("/onboarding/role");
@@ -100,7 +100,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 md:grid-cols-[180px_minmax(0,1fr)_280px] md:gap-10 md:py-10">
-      <ProductTour role={role} />
+      <ProductTour role={role} seen={!!profile?.toured_at} />
       <aside data-tour="nav" className="md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
         <p className="eyebrow hidden md:block">Workspace</p>
         <DashboardNav items={navItems} />

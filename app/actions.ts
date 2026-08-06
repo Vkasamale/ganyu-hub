@@ -2309,6 +2309,29 @@ export async function requestRevision(formData: FormData): Promise<{ ok?: boolea
 }
 
 // ============================================================================
+// First-run guidance state
+// ============================================================================
+
+// One-shot flags for the welcome checklist / money guide / tour. Stored on the
+// profile, not localStorage, so "show it once" means once per USER — not once
+// per browser. Existing users have NULL and still get it once.
+const MILESTONE_COLUMNS = {
+  welcome: "welcome_dismissed_at",
+  money_guide: "money_guide_seen_at",
+  tour: "toured_at",
+} as const;
+
+export async function markMilestone(key: keyof typeof MILESTONE_COLUMNS): Promise<{ ok: boolean }> {
+  const column = MILESTONE_COLUMNS[key];
+  if (!column) return { ok: false };
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+  await supabase.from("profiles").update({ [column]: new Date().toISOString() }).eq("id", user.id);
+  return { ok: true };
+}
+
+// ============================================================================
 // Session 3: File delivery
 // ============================================================================
 

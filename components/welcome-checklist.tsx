@@ -1,36 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { markMilestone } from "@/app/actions";
 
 export type ChecklistStep = { label: string; sub?: string; href: string; done?: boolean };
 
 // Dismissible "Get started" card for the dashboard. Steps tick off as the user
-// completes them (done computed server-side); a check hides the whole card once
-// everything's done, and an explicit ✕ dismisses it for good (localStorage).
+// completes them (done computed server-side); an explicit ✕ dismisses it for
+// good.
+//
+// Dismissal lives on the PROFILE, not localStorage: "show it once" has to mean
+// once per user, not once per browser, or it reappears every time they sign in
+// on a new device.
 export function WelcomeChecklist({
   steps,
-  storageKey = "gh_welcome_dismissed_v1",
+  dismissed,
 }: {
   steps: ChecklistStep[];
-  storageKey?: string;
+  dismissed: boolean;
 }) {
-  const [ready, setReady] = useState(false);
-  const [dismissed, setDismissed] = useState(true);
+  const [hidden, setHidden] = useState(dismissed);
+  const [, startTransition] = useTransition();
 
-  useEffect(() => {
-    setDismissed(localStorage.getItem(storageKey) === "1");
-    setReady(true);
-  }, [storageKey]);
-
-  // Don't render until we've read localStorage (avoids a flash for dismissers).
-  if (!ready || dismissed) return null;
+  if (hidden) return null;
 
   const doneCount = steps.filter((s) => s.done).length;
 
   function dismiss() {
-    localStorage.setItem(storageKey, "1");
-    setDismissed(true);
+    setHidden(true); // optimistic — the write is fire-and-forget
+    startTransition(() => {
+      void markMilestone("welcome");
+    });
   }
 
   return (

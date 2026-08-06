@@ -4,6 +4,31 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — "How the money works" page + once-per-user guidance
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42. ✅ `npx next build` compiled
+successfully with `/how-money-works` registered as a dynamic route.
+✅ Static: calculator reads only `lib/fees.ts` exports, so displayed figures
+can't drift from checkout/payout math. Page write is guarded (`if (p &&
+!p.money_guide_seen_at)`) and calls no `revalidatePath` during render.
+
+⚠️ **Blocked on migration:** `supabase/schema.sql` must be re-run BEFORE this
+deploys. `dashboard/layout.tsx` now selects `toured_at`; without the column
+PostgREST errors, `profile` comes back null, and every dashboard visit bounces
+to `/onboarding/role`. Run the SQL first, then push.
+
+🕒 **Manual UI check (browser), after the migration:**
+1. Dashboard → click "See how the money works" → lands on `/how-money-works`
+   (previously went to `/jobs/new`).
+2. Type a price, switch collection + payout rails → both columns recompute live;
+   figures carry thousands separators.
+3. Back to `/dashboard` → the third checklist item is now ticked ✓.
+4. Click Dismiss on the welcome card → reload → stays gone.
+5. **The real regression test:** sign in to the same account in a different
+   browser (or incognito) → welcome card and tour must NOT reappear. This is
+   what the localStorage version got wrong.
+6. Sign in as a brand-new user → both DO appear, once.
+
 ## 2026-08-05 — Interactive first-run tour (driver.js)
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42. ✅ `npx next build` compiled

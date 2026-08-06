@@ -2,18 +2,30 @@
 
 import { useEffect } from "react";
 import { driver } from "driver.js";
+import { markMilestone } from "@/app/actions";
 import "driver.js/dist/driver.css";
 
 // One-time guided tour on the dashboard: spotlight popovers pointing at the real
-// nav / workspace / reminders. Runs once per browser (localStorage flag), on the
-// first dashboard visit after onboarding. Skip/close also marks it seen.
-export function ProductTour({ role }: { role: "client" | "creative" | "agency" }) {
+// nav / workspace / reminders. Runs once per USER — the seen flag lives on the
+// profile (profiles.toured_at), not localStorage, so signing in on another
+// browser or device doesn't replay it. Skip/close also marks it seen.
+export function ProductTour({
+  role,
+  seen,
+}: {
+  role: "client" | "creative" | "agency";
+  seen: boolean;
+}) {
   useEffect(() => {
-    const KEY = "gh_tour_done_v1";
-    if (localStorage.getItem(KEY) === "1") return;
+    if (seen) return;
 
     const isClient = role === "client";
-    const markSeen = () => localStorage.setItem(KEY, "1");
+    let marked = false;
+    const markSeen = () => {
+      if (marked) return; // onDestroyed can fire more than once
+      marked = true;
+      void markMilestone("tour");
+    };
 
     // Let the layout paint (and the nav mount) before measuring targets.
     const timer = setTimeout(() => {
@@ -62,7 +74,7 @@ export function ProductTour({ role }: { role: "client" | "creative" | "agency" }
     }, 700);
 
     return () => clearTimeout(timer);
-  }, [role]);
+  }, [role, seen]);
 
   return null;
 }

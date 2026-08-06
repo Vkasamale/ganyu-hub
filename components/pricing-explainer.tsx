@@ -43,6 +43,9 @@ export function PricingExplainer({ audience = "both" }: { audience?: "client" | 
           Every figure you see on the platform (what the client pays, what the creative receives) already
           includes these fees, so there are no surprises at checkout.
         </p>
+        <a href="/how-money-works" className="inline-block text-xs font-medium text-stamp-dark underline">
+          Full breakdown &amp; live calculator →
+        </a>
       </div>
     </details>
   );

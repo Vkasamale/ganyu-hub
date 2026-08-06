@@ -23,6 +23,11 @@ create table if not exists profiles (
 alter table profiles add column if not exists phone text;
 alter table profiles add column if not exists onboarded_at timestamptz;
 alter table profiles add column if not exists is_admin boolean not null default false;
+-- First-run guidance state. Per-USER, not per-browser: the welcome checklist and
+-- the tour must show once ever, not on every sign-in from a new device.
+alter table profiles add column if not exists welcome_dismissed_at timestamptz;
+alter table profiles add column if not exists money_guide_seen_at timestamptz;
+alter table profiles add column if not exists toured_at timestamptz;
 -- Google/OAuth users never pick a role (no signup form), so `role` must be
 -- allowed to be null = "hasn't chosen yet". App routes null-role users through
 -- /onboarding/role. Email signups always carry a role in metadata → non-null.

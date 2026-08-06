@@ -142,17 +142,17 @@ export default async function DashboardPage() {
     ? [
         { label: "Complete your profile", sub: "So creatives know who they're working with", href: "/dashboard/profile", done: !!profile?.onboarded_at },
         { label: "Post your first job", sub: "Describe what you need — creatives come to you", href: "/jobs/new", done: myJobs.length > 0 },
-        { label: "See how the money works", sub: "Escrow, fees and payouts explained", href: "/jobs/new" },
+        { label: "See how the money works", sub: "Escrow, fees and payouts explained", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
       ]
     : [
         { label: "Complete your profile", sub: "Add work so clients pick you", href: "/dashboard/profile", done: !!profile?.onboarded_at },
         { label: "Send your first proposal", sub: "Browse open jobs and bid", href: "/jobs", done: proposalsSent.length > 0 },
-        { label: "See how payouts work", sub: "What you keep after fees", href: "/dashboard/payments" },
+        { label: "See how payouts work", sub: "What you keep after fees", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
       ];
 
   return (
     <div className="space-y-6">
-      <WelcomeChecklist steps={checklistSteps} />
+      <WelcomeChecklist steps={checklistSteps} dismissed={!!profile?.welcome_dismissed_at} />
       <header>
         <p className="eyebrow">{role} workspace</p>
         <h1 className="mt-2 font-display text-3xl md:text-4xl">
