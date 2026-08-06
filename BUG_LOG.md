@@ -27,7 +27,10 @@ Format per entry:
     from payment_topups where payment_ref is null and status = 'pending';
     ```
     Cross-check each against PayChangu's transaction list. Beta volume is low, so this may well be empty — but it must be checked, not assumed.
-  - **Status:** fix shipped, awaiting a re-run of the sandbox test.
+  - **VERIFIED FIXED 2026-08-07 (sandbox).** Re-ran the full flow on a preview built from the fix: `payment_topups.status = paid`, `payment_ref = ghtop_ba505992-…`, `jobs.revisions_used = 2`. Both settlement legs work.
+  - **Production check: CLEAN.** The orphan query returned exactly one row — job `b926bfca-…`, our own sandbox job. No real customer payment was affected; beta volume meant nobody hit the bug in the two days it was live.
+  - ⚠️ **Gotcha that cost a test cycle:** the first re-test ran against a Vercel *per-deployment* URL (`ganyu-<hash>.vercel.app`), which is an immutable snapshot and therefore still contained the bug. Always test previews on the **branch** URL (`ganyu-hub-git-<branch>-<scope>.vercel.app`), which follows the latest build.
+  - **Status:** fixed and verified. Move to Fixed at next tidy-up.
 
 
 - **[BUG-008] — RESOLVED 2026-08-06. Moved to Fixed (see below).**
