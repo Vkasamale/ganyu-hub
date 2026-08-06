@@ -3,6 +3,40 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-06 — Pin locale + timezone in all formatters (BUG-008 lead)
+
+Every helper in `lib/utils.ts` formatted with the **runtime default** locale and
+timezone. Vercel renders in UTC; every user is in Malawi (UTC+2) — so the server
+and the browser produced different strings for the same value.
+
+Two bugs in one. Users saw the wrong day for the two hours before local midnight,
+and React saw a server/client mismatch, which makes it discard hydration for the
+whole subtree — killing every button inside it, not just the one that looked
+broken. That is the leading explanation for BUG-008, and the route split lines up
+exactly: `/jobs/[id]` and `/creatives/[id]` use these helpers, `/login` uses none
+(grep count 0) and was the page that hydrated fine.
+
+- `formatMwk` used `toLocaleString("en-MW")` — not present in every ICU build, so
+  Node and the browser could fall back to different grouping. Now `en-GB`.
+- `timeAgo`'s >30-day fallback used bare `toLocaleDateString()` — no locale, no
+  timezone. Now routes through the new pinned `formatDate`.
+- `daysUntil` compared against the *runtime's* local midnight. Now computes
+  "today" in `Africa/Blantyre` explicitly, so deadline counts agree everywhere.
+- `creatives/[id]` formatted "member since" with `toLocaleDateString(undefined, …)`
+  — the browser's language on the client, Node's default on the server. Now uses
+  the new `formatMonthYear`.
+- `formatDeadline` was already deterministic; left alone.
+
+New `tests/utils-format.test.ts` runs every formatter under four hostile runtime
+timezones (UTC, Africa/Blantyre, Pacific/Kiritimati, America/Los_Angeles) and
+asserts identical output, so an unpinned formatter can't creep back in.
+
+⚠️ **Not yet confirmed as the whole cause** — the original BUG-008 report noted no
+console error, and React usually logs hydration mismatches loudly. Needs a prod
+click-test on the share buttons. Correct regardless of that outcome.
+
+Suite 50 → **57**. tsc clean.
+
 ## 2026-08-06 — Payout fee: 2% mobile, 2% + MWK 700 bank
 
 `PAYOUT_RATES` was `mobile {1.8%, 0}` / `bank {1.5%, 700}`; now a single exported

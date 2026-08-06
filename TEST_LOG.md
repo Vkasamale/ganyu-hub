@@ -4,6 +4,38 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — BUG-008: root-cause lead found, formatters pinned
+
+✅ tsc clean. ✅ **57/57** (was 50) — new `tests/utils-format.test.ts`, 7 cases.
+
+**The evidence that pointed here** (static, not guesswork):
+
+| Route | Uses `lib/utils` money/date helpers? | Hydrated? |
+|---|---|---|
+| `/jobs/[id]` | `formatMwk` `timeAgo` `formatDeadline` `daysUntil` | ❌ dead |
+| `/creatives/[id]` | `formatMwk` `timeAgo` | ❌ dead |
+| `/login` | none — grep count **0** | ✅ fine |
+
+Server renders UTC, users are UTC+2, formatters used runtime defaults ⇒ different
+server/client strings ⇒ React discards hydration for the subtree ⇒ every button
+in it goes dead. Matches the "whole route content, not just the share row"
+symptom.
+
+Tests assert every formatter returns identical output under four runtime
+timezones (UTC, Africa/Blantyre, Pacific/Kiritimati, America/Los_Angeles),
+including the nasty boundaries — 22:30 UTC (next day in Malawi) and 31 Aug
+23:00 UTC (already September in Malawi).
+
+⬜ **NOT YET CONFIRMED IN PROD.** Counter-evidence: the original report says no
+console error appeared, and React normally logs hydration mismatches loudly. So
+treat this as a strong lead, not a closed bug.
+
+🕒 **Prod check:** open a live `/creatives/[id]`, click **Copy** on the share row
+→ expect a "Link copied!" flash. Also open DevTools console on first load and
+look for a hydration warning. If Copy works, BUG-008 closes. If not, the
+formatters were a real but separate bug and the hydration hunt continues (next
+suspects: a `"use client"` boundary or an async render in the page tree).
+
 ## 2026-08-06 — Payout fee 2% / 2% + MWK 700 — DECIDED & covered by tests ✅
 
 ✅ tsc clean. ✅ **50/50** (was 42) — new `tests/fees.test.ts`, 8 cases.

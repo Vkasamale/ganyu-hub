@@ -48,7 +48,7 @@ import { SaveButton } from "@/components/save-button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { startThread, recordView, requestCustomService, inviteCreative } from "@/app/actions";
 import { Stars } from "@/components/stars";
-import { formatMwk, timeAgo } from "@/lib/utils";
+import { formatMwk, timeAgo, formatMonthYear } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
 import { ShareButtons } from "@/components/share-buttons";
 import { absUrl } from "@/lib/site-url";
@@ -118,7 +118,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
     .toUpperCase();
 
   const memberSince = profile.created_at
-    ? new Date(profile.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    ? formatMonthYear(profile.created_at)
     : null;
 
   return (
