@@ -4,6 +4,34 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — BUG-007 paid revision overage: VERIFIED FIXED in prod ✅
+
+✅ **Verified live** on `ganyu-hub.vercel.app`, job `a84be0b1-cbdb-4ef9-bd2b-c66fbce814e4`.
+
+Setup (no payment made): accepted a proposal as the client, abandoned at
+checkout, then stamped the post-payment state directly in Studio —
+`status=in_progress`, `escrow_status=payment_held`, `revisions_included=1`,
+`revisions_used=1`, `extra_revision_rate=5000`, pinned proposal flipped to
+`accepted`. Confirmed via select before testing.
+
+Test: as the client → "Request changes" showed *1 of 1 used* + **Request extra
+revision** → amber confirm → **Pay MWK 5,000 & continue** → **PayChangu checkout
+loaded.** ✅
+
+Why that's sufficient: the `payment_topups` insert happens *before*
+`initiatePayment`, so reaching checkout at all proves the insert cleared RLS —
+which is exactly what BUG-007 blocked. Zero MWK spent. Previously this produced
+either a raw RLS toast or silence.
+
+⬜ **Still untested:** `jobs.revisions_used` advancing 1 → 2 on a cleared
+payment (webhook leg). Separate code path from the fix, previously working;
+needs test keys + the Preview env to exercise.
+
+🔎 Reusable technique: there is no "accepted but unpaid" state (acceptance is
+payment-first — `promotePendingAcceptance()` only runs from the verified
+callback/webhook), so stamping the post-payment columns in Studio is the way to
+reach any downstream state without spending money. SQL kept in the session notes.
+
 ## 2026-08-06 — Preview-deploy callback host
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.

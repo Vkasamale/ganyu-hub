@@ -21,12 +21,17 @@ Format per entry:
   - **Mitigation shipped (2026-08-05):** the 3 primary share links (WhatsApp/X/Facebook) were made plain `<a>` anchors with server-computed absolute URLs via `lib/site-url.ts`, so they render into the SSR HTML and work with **zero JS** regardless of hydration. Only the copy/native/IG buttons remain dependent on hydration.
   - **Next step:** re-check on the deployed **prod build** — click Copy on a live profile; if it flashes "Link copied!", prod hydration is fine and this is dev-only. If still dead in prod, investigate the route-hydration mismatch on `/creatives/[id]` + `/jobs/[id]` as its own task (suspect a server/client boundary or async-render issue in the page tree). See TEST_LOG 2026-08-05.
 
+- **[BUG-007] — RESOLVED 2026-08-06. Moved to Fixed (see below).**
+
+<!-- Superseded by the Fixed entry dated 2026-08-06. Kept out of In Progress.
 - **[BUG-007] Paid revision overage (session 4) is completely broken — RLS blocks the top-up insert.** — found 2026-08-04 during full E2E walk (Job C).
   - **Repro:** client uses all included revisions, then clicks "Request extra revision" → confirms "Pay MWK X & continue" on a job with `extra_revision_rate` set. No error is visible in the UI (toast fails silently in some paths / user just sees nothing happen); no PayChangu checkout appears; `payment_topups` gets zero new rows; `jobs.revisions_used` never advances past the included count.
   - **Cause:** `requestRevision`'s paid-overage branch (`app/actions.ts`, case C) is invoked by the **client** and inserts into `payment_topups` with `requested_by_creative_id: accepted.creative_id` — but the insert runs through the client's own authenticated Supabase client. The RLS policy `"topups insert creative"` in `supabase/schema.sql` requires `auth.uid() = requested_by_creative_id`. Since `auth.uid()` here is the *client's* id, not the creative's, every insert is rejected by RLS and `tErr` is set; the function returns `{ error: tErr.message }` (a raw Postgres RLS string) and nothing is ever created. This is the same "upsert/insert checked against the wrong policy" shape as BUG-002, just on a different table.
   - **Fix (not yet shipped):** either (a) run this insert with the service-role client (matches the pattern already used by `submitDelivery`'s service-role upload), or (b) add an additional RLS branch on `payment_topups` insert allowing `auth.uid() = (select client_id from jobs where id = job_id)` when the row's `reason` carries the `EXTRA_REVISION|` marker. Route (a) is the smaller diff and keeps the RLS policy's intent ("creative requests, client just pays") intact from an audit standpoint — flag for next session, don't apply mid-audit.
   - **Verified broken live:** `supabase/schema.sql:698-705` policy vs. `app/actions.ts` `requestRevision` case C, confirmed via full E2E walk 2026-08-04 (Job C1: `revisions_used` stuck at 1/1, `payment_topups` empty after both attempts).
   - **Fix shipped (2026-08-04):** `requestRevision` case C now inserts into `payment_topups` via a service-role client (same pattern as `releasePayment`'s profile lookup). RLS policy left unchanged — creative-initiated inserts still constrained by `auth.uid() = requested_by_creative_id`; client-initiated overage top-ups bypass RLS through the server-only key. Requires `SUPABASE_SERVICE_ROLE_KEY` (already required elsewhere).
+-->
+
 
 - **[BUG-006] Auth callback silently redirected to /dashboard on failed code exchange.** — reported 2026-08-04 during security audit.
   - **Repro:** expired/invalid/replayed magic-link `?code=` still redirected to `/dashboard`, where page-level guards then bounced the user with no context.
@@ -76,6 +81,15 @@ _(none currently open — see In Progress above)_
 ## Fixed
 
 Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-to-fix arc are included; pure feature ships aren't bugs.
+
+### 2026-08-06
+
+- **[BUG-007] Paid revision overage was completely broken — RLS blocked the top-up insert.** Reported 2026-08-04 during the full E2E walk (Job C); fixed `e88d527`; **verified in prod 2026-08-06.**
+  - **Symptom:** client exhausts included revisions, clicks "Request extra revision" → confirms "Pay MWK X & continue" on a job with `extra_revision_rate` set. Nothing happened — no PayChangu checkout, zero new `payment_topups` rows, `jobs.revisions_used` stuck at the included count.
+  - **Cause:** the paid-overage branch (`requestRevision` case C) is invoked by the **client**, but inserted into `payment_topups` with `requested_by_creative_id: accepted.creative_id` through the *client's own* authenticated Supabase client. Policy `"topups insert creative"` requires `auth.uid() = requested_by_creative_id`; `auth.uid()` here is the client, so every insert was rejected. Same "checked against the wrong policy" shape as BUG-002, different table.
+  - **Fix (`e88d527`):** the insert now runs through a service-role client — the pattern already used elsewhere in the file for privileged server-only writes. The RLS policy is deliberately **left unchanged**, so creative-initiated inserts stay constrained by `auth.uid() = requested_by_creative_id` and only this client-pays branch bypasses it. Requires `SUPABASE_SERVICE_ROLE_KEY` (already required elsewhere). Every failure path returns a visible error — missing key, duplicate top-up (`23505` → friendly message), and payment-init throw (→ `logAdminError` + `GENERIC_MONEY_ERROR(ref)`); `request-revision-panel.tsx` renders all of them via `toast.error`.
+  - **Verification (2026-08-06, prod):** job `a84be0b1…` stamped to `in_progress` / `payment_held` / `revisions_used 1 of 1` / `extra_revision_rate 5000`, then requested an extra revision as the client → **PayChangu checkout loaded**. Since the `payment_topups` insert precedes `initiatePayment`, reaching checkout at all proves the insert succeeded — no payment needed to confirm the fix.
+  - **Not covered by this verification:** `jobs.revisions_used` advancing 1 → 2, which only fires from the webhook on a cleared payment. Separate code path, unchanged by this fix, previously working.
 
 ### 2026-07-22
 
