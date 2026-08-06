@@ -6,6 +6,14 @@ import crypto from "crypto";
 const API_BASE = "https://api.paychangu.com";
 
 function siteUrl() {
+  // Preview deploys must settle against THEMSELVES. NEXT_PUBLIC_SITE_URL is set
+  // for every Vercel environment, so without this a preview would send
+  // PayChangu's callback to production — the test payment would then settle the
+  // live deployment instead of the one under test. Same shape as the APP_URL
+  // bug that broke Google login (2026-08-05).
+  if (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
   return process.env.NEXT_PUBLIC_SITE_URL || "https://ganyu-hub.vercel.app";
 }
 

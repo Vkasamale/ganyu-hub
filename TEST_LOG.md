@@ -4,6 +4,26 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — Preview-deploy callback host
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42.
+✅ Static: production path unchanged (`VERCEL_ENV` is `"production"` there, so the
+new branch can't fire); only preview deploys take the new host.
+🕒 **Confirm when first used:** push a branch → open the preview URL → start any
+payment → the PayChangu checkout's callback/return URLs should carry the
+`*-git-*.vercel.app` preview host, not `ganyu-hub.vercel.app`.
+
+### Note: there is no "accepted but unpaid" state to test from
+
+Acceptance is payment-first by design. `decideProposal` only pins the winner
+(`jobs.pending_accept_proposal_id`, `escrow_status: payment_pending`); the
+proposal is not flipped to `accepted` until `promotePendingAcceptance()` runs
+from the verified callback/webhook. So a job cannot reach `in_progress` — and
+therefore cannot reach the revision flow — without a cleared payment. To reach
+downstream states for testing, either settle a real (small) payment, use the
+`TEST_MODE_SKIP_PAYCHANGU_VERIFY` local bypass (CHANGELOG 2026-08-04), or stamp
+the post-payment columns directly in Supabase Studio.
+
 ## 2026-08-06 — "How the money works" page + once-per-user guidance
 
 ✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42. ✅ `npx next build` compiled

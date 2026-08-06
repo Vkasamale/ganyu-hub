@@ -3,6 +3,18 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-06 — Preview deploys settle against themselves (PayChangu callback host)
+
+`lib/payments.ts` `siteUrl()` now returns `https://$VERCEL_URL` when
+`VERCEL_ENV === "preview"`, falling back to `NEXT_PUBLIC_SITE_URL` otherwise.
+`NEXT_PUBLIC_SITE_URL` is set for every Vercel environment, so previously a
+preview deploy sent PayChangu's `callback_url`/`return_url` to **production** —
+a test payment would have settled the live deployment instead of the one under
+test. Same shape as the `APP_URL` bug that broke Google login. Unblocks using a
+Vercel Preview environment with PayChangu test keys (test keys scoped to
+Preview + Development, live keys to Production only, so there is no manual key
+swapping to forget). Production behaviour unchanged. tsc clean, 42/42.
+
 ## 2026-08-06 — "How the money works" page + first-run guidance is once-per-USER
 
 ⚠️ **Re-run `supabase/schema.sql` before deploying** — adds three nullable
