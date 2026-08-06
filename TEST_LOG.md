@@ -4,6 +4,41 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — Deadline history + client profile page
+
+✅ tsc clean. ✅ 62/62 (was 58). New `tests/actions/deadline-extension.test.ts`
+covers the four branches of the `original_deadline` stamp: first approval takes
+the pre-extension date; a second approval keeps the *first* original rather than
+the previous one; a job with no deadline stays null; a declined extension leaves
+`jobs` untouched.
+
+⚠️ **The stamp cannot work in production until `supabase/schema.sql` is re-run**
+(`alter table jobs add column if not exists original_deadline date;`). Until
+then Supabase will reject the update's unknown column. Check this first if the
+strikethrough never appears.
+
+🕒 **Manual check — deadline history** (`/jobs/[id]`, job with an accepted
+proposal):
+- Propose an extension from one side, approve from the other. Current deadline
+  updates; `~~1 Sep 2026~~ originally` appears beside the days-left pill.
+- Approve a *second* extension. The struck date must still be the **first**
+  one, not the date it just replaced. This is the case worth actually clicking.
+- A job whose deadline never moved shows no strikethrough at all.
+
+🕒 **Manual check — client profiles**:
+- Visit a client's `/creatives/[id]` → redirects to `/clients/[id]`. No empty
+  portfolio/services sections, no "Invite to job".
+- Signed in as a creative: stats render (jobs posted, hire rate, completed,
+  member since). Hire rate should read `—`, not `0%` or `NaN`, for a client who
+  has posted nothing.
+- Signed in as a *client* viewing another client: gets the "Client profiles are
+  for creatives" card, not the record.
+- Signed out: redirected to login with `?next=/clients/[id]`.
+- A profile with `role = null` (OAuth user who hasn't onboarded) must still
+  render at `/creatives/[id]` — the redirect is deliberately narrow.
+- Complete a job as the creative, leave a review, then open the client's
+  notification: it must link to `/clients/…`, not `/creatives/…`.
+
 ## 2026-08-06 — Job page share row moved to brief-card foot
 
 ✅ tsc clean. ✅ 57/57. ✅ `npx next build` compiled successfully, 42/42 static

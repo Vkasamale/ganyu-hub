@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -58,6 +58,11 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
   const supabase = createClient();
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", id).single();
   if (!profile) notFound();
+  // This page is a shop window — portfolio, services, "Invite to job". None of
+  // it describes a buyer. Only redirect on an explicit client role: role is
+  // nullable until onboarding picks one, and those profiles already have
+  // shared links pointing here.
+  if (profile.role === "client") redirect(`/clients/${id}`);
   const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", id).order("created_at", { ascending: false });
   const { data: services } = await supabase.from("services").select("*").eq("profile_id", id).order("price_mwk", { ascending: true });
   const { data: { user } } = await supabase.auth.getUser();

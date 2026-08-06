@@ -666,6 +666,13 @@ alter table jobs add column if not exists client_refund_status text;
 alter table jobs add column if not exists creative_cut_ref text;
 alter table jobs add column if not exists creative_cut_status text;
 
+-- First deadline ever agreed, stamped once on the first approved extension.
+-- Deliberately NOT backfilled: jobs extended before this column existed have
+-- genuinely lost their original, and `set original_deadline = deadline` would
+-- stamp the *extended* date and render it as "originally" — a confident lie.
+-- Null means "never moved", which is exactly what the UI should show.
+alter table jobs add column if not exists original_deadline date;
+
 -- Mutual deadline extension: either party proposes, the other approves.
 create table if not exists deadline_extensions (
   id uuid primary key default gen_random_uuid(),

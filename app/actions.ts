@@ -763,19 +763,26 @@ export async function submitReview(formData: FormData) {
     return { error: error.message };
   }
 
+  // Reviews run both ways, so the reviewee's profile lives on a different
+  // route depending on which side they're on. The reviewer's side tells us
+  // which without another query.
+  const revieweePath = isClient ? `/creatives/${reviewee_id}` : `/clients/${reviewee_id}`;
+
   await supabase.from("notifications").insert({
     user_id: reviewee_id,
     kind: "message_received",
     title: `You got a ${rating}★ review`,
-    body: `Someone reviewed your work on "${job.title}".`,
-    link: `/creatives/${reviewee_id}`,
+    body: isClient
+      ? `Someone reviewed your work on "${job.title}".`
+      : `The creative you hired reviewed working with you on "${job.title}".`,
+    link: revieweePath,
     actor_id: user.id,
     target_type: "creative",
     target_id: reviewee_id,
   });
 
   revalidatePath(`/jobs/${job_id}`);
-  revalidatePath(`/creatives/${reviewee_id}`);
+  revalidatePath(revieweePath);
   return { ok: true, info: "Review submitted. Thanks!" };
 }
 
@@ -2142,7 +2149,8 @@ export async function respondToDeadlineExtension(formData: FormData): Promise<{ 
   if (ext.status !== "pending") return { error: "This extension is no longer pending." };
   if (user.id === ext.proposed_by) return { error: "The other party approves, not the proposer." };
 
-  const { data: job } = await supabase.from("jobs").select("client_id").eq("id", ext.job_id).maybeSingle();
+  const { data: job } = await supabase.from("jobs")
+    .select("client_id, deadline, original_deadline").eq("id", ext.job_id).maybeSingle();
   const { data: accepted } = await supabase.from("proposals")
     .select("creative_id").eq("job_id", ext.job_id).eq("status", "accepted").maybeSingle();
   const otherPartyIds = new Set([job?.client_id, accepted?.creative_id].filter(Boolean));
@@ -2150,7 +2158,12 @@ export async function respondToDeadlineExtension(formData: FormData): Promise<{ 
 
   if (approve) {
     await supabase.from("deadline_extensions").update({ status: "approved", responded_at: new Date().toISOString() }).eq("id", extension_id);
-    await supabase.from("jobs").update({ deadline: ext.proposed_deadline }).eq("id", ext.job_id);
+    // Stamp the original once, on the first move. Later extensions keep the
+    // first value, so the strikethrough always shows what was actually agreed.
+    await supabase.from("jobs").update({
+      deadline: ext.proposed_deadline,
+      original_deadline: job?.original_deadline ?? job?.deadline ?? null,
+    }).eq("id", ext.job_id);
     await logJobEvent(ext.job_id, "deadline_extended", `New deadline: ${ext.proposed_deadline}.`, {
       actorId: user.id,
       metadata: { extension_id, new_deadline: ext.proposed_deadline, proposed_by: ext.proposed_by },

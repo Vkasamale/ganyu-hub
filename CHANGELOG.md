@@ -3,6 +3,59 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — Deadline history, and clients get their own profile page
+
+**⚠️ `supabase/schema.sql` changed — re-run it manually before this works in
+production:** `alter table jobs add column if not exists original_deadline date;`
+
+**Deadline history.** `jobs.deadline` was mutated in place by
+`respondToDeadlineExtension`, so the first agreed date vanished the moment an
+extension was approved. Deriving the original from `deadline_extensions` is
+impossible, not merely awkward — that table stores `proposed_deadline`, the
+*new* value, and the `deadline_extended` event logs `{ new_deadline }`. Nothing
+ever recorded the value being replaced.
+
+So: a new nullable `jobs.original_deadline`, stamped once via
+`coalesce(original_deadline, deadline)` on the first approved extension. Later
+extensions keep the first value. `/jobs/[id]` renders it struck through beside
+the current date, matching what budget (`accepted_bid_mwk` vs `total_paid_mwk`)
+and revisions already do.
+
+**No backfill, deliberately.** `set original_deadline = deadline where
+original_deadline is null` would stamp already-extended jobs with their
+*extended* date and label it "originally" — a confident lie. Those jobs have
+genuinely lost their original; null renders nothing, same as an unchanged
+budget.
+
+**Client vs creative.** `/creatives/[id]` rendered any profile, so a client's
+page showed empty portfolio and services sections and an "Invite to job" button
+aimed at someone who doesn't sell. The distinction now has a shape: a creative
+is a seller and their page is a public shop window; a client is a buyer and
+their page is a hiring record, read by one creative at one moment — deciding
+whether to bid.
+
+- New `/clients/[id]`: identity, jobs posted, hire rate, completed count, member
+  since, and reviews from creatives. `noindex`, and gated to signed-in creatives
+  (plus the owner); anyone else gets a short explanation, not a broken page.
+- `/creatives/[id]` redirects to it when `role === 'client'`. Only on the
+  explicit role — `role` is nullable until onboarding, and those profiles have
+  shared links pointing at the creative route already.
+- Reviews needed **no** schema change: `leaveReview` has always set
+  `reviewee_id = isClient ? creativeId : job.client_id`. What was wrong was the
+  route it generated — a creative's review of a client linked the client to
+  `/creatives/…`. Now routed by side, with wording to match.
+
+Escrow-release speed was left out of the client page: `jobs` records
+`payment_held_at` but no release timestamp, so it isn't derivable. Marked in
+place with the upgrade path.
+
+Also fixed a stale vocabulary in `tests/helpers/mockSupabase.ts` —
+`deadline_extensions.status` was listed as `accepted` when the code writes
+`approved` and `superseded`, which would have thrown a misleading error at the
+first test to filter on it.
+
+tsc clean; 62/62 (was 58 — four new tests on the stamp).
+
 ## 2026-08-06 — Job page: share row moved to the foot of the brief card
 
 Same treatment as the creative profile, for consistency. `ShareButtons` was

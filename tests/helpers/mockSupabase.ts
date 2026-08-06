@@ -24,7 +24,7 @@ const ENUM_VOCAB: Record<string, ReadonlyArray<string>> = {
   "proposals.status": ["pending", "accepted", "declined", "withdrawn"],
   "job_invites.status": ["pending", "accepted", "declined"],
   "payment_topups.status": ["pending", "paid", "declined", "cancelled"],
-  "deadline_extensions.status": ["pending", "accepted", "declined"],
+  "deadline_extensions.status": ["pending", "approved", "declined", "superseded"],
 };
 
 // Holder so `vi.mock("@/lib/supabase/server", ...)` factories (hoisted) can

@@ -49,6 +49,7 @@ MVP is running in production. Full payment loop (collect → hold → release �
 - **Stack:** Next.js 14 (App Router), TypeScript, Tailwind, Supabase (Postgres, Auth, Storage), PayChangu (payments), Resend (email)
 - **What works:** auth, profiles, portfolios, public + private job posting, proposals (3-attempt cap + invite-bypass), messaging (with job-link attachments), search, filters, save/bookmark, For You feed, Trending feed, PayChangu escrow collect/release/top-up/cancel with fee-reserve + payout floor, admin dashboard (sidebar nav with Users / Jobs / Disputes / Cancellations / Errors).
 - **6-step manual test plan:** ✅ 6/6 cleared 2026-07-13. Merged `sandbox-test → main` (cbc0c33).
+- **Recently shipped (2026-08-07):** deadline history (`jobs.original_deadline`, stamped on first extension, struck through on `/jobs/[id]`) and client profiles at `/clients/[id]` — a hiring record (jobs posted, hire rate, completed, reviews from creatives), `noindex` and gated to signed-in creatives, with `/creatives/[id]` redirecting when `role = 'client'`. **`supabase/schema.sql` needs a manual re-run** for the new column.
 - **What is missing:** Resend domain verification (still blocks emails to non-owner addresses); the ⬜ list in TEST_LOG.md (search boxes, saved items round-trip, recordView populating interactions, empty states, image uploads for portfolio/avatars).
 
 ---

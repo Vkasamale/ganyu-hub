@@ -297,6 +297,11 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                   const tone = d < 0 ? "bg-red-100 text-red-800 border-red-200" : d <= 3 ? "bg-amber-100 text-amber-900 border-amber-200" : "bg-emerald-100 text-emerald-900 border-emerald-200";
                   return <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span>;
                 })()}
+                {job.original_deadline && job.original_deadline !== job.deadline && (
+                  <span className="text-xs text-ink/50">
+                    <s>{formatDeadline(job.original_deadline)}</s> originally
+                  </span>
+                )}
               </div>
             )}
             {job.revisions_included != null && (() => {
