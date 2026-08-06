@@ -57,6 +57,7 @@ import { DisputePanel, DisputeBanner } from "@/components/dispute-panel";
 import { JobTimeline, type JobEventRow } from "@/components/job-timeline";
 import { JobDeliverySubmit } from "@/components/job-delivery-submit";
 import { RequestRevisionPanel } from "@/components/request-revision-panel";
+import { Select } from "@/components/ui/select";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout, requestTopUp, declineTopUp, payTopUp } from "@/app/actions";
 import { collectionFee } from "@/lib/fees";
 import { StarRatingInput } from "@/components/star-rating-input";
@@ -402,9 +403,26 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <p className="text-sm font-semibold text-amber-900">
                   Pending: {formatMwk(pendingTopup.amount_mwk)}
                 </p>
-                {pendingTopup.reason && (
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-amber-900/80">"{pendingTopup.reason}"</p>
-                )}
+                {(() => {
+                  // `reason` carries an internal marker for overage top-ups
+                  // ("EXTRA_REVISION|<note>"). Never show the raw token — read
+                  // it, then render human words.
+                  const raw = String(pendingTopup.reason || "");
+                  const isExtraRevision = raw.startsWith("EXTRA_REVISION|");
+                  const note = isExtraRevision ? raw.slice("EXTRA_REVISION|".length).trim() : raw.trim();
+                  return (
+                    <>
+                      {isExtraRevision && (
+                        <p className="mt-1 text-sm text-amber-900/80">Extra revision</p>
+                      )}
+                      {note && (
+                        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-amber-900/80">
+                          &ldquo;{note}&rdquo;
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {isClient && (
                     <div className="flex flex-wrap items-end gap-2">
@@ -412,11 +430,14 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                         <input type="hidden" name="topup_id" value={pendingTopup.id} />
                         <div className="space-y-1">
                           <Label htmlFor={`rail-${pendingTopup.id}`} className="text-xs">Pay with</Label>
-                          <select id={`rail-${pendingTopup.id}`} name="rail" className="rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm">
-                            <option value="mobile_money">Mobile money (+{formatMwk(collectionFee(pendingTopup.amount_mwk, "mobile_money"))} fee)</option>
-                            <option value="card">Card (+{formatMwk(collectionFee(pendingTopup.amount_mwk, "card"))} fee)</option>
-                            <option value="bank_transfer">Bank transfer (+{formatMwk(collectionFee(pendingTopup.amount_mwk, "bank_transfer"))} fee)</option>
-                          </select>
+                          <Select id={`rail-${pendingTopup.id}`} name="rail" className="min-w-[11rem]">
+                            <option value="mobile_money">Mobile money</option>
+                            <option value="card">Card</option>
+                            <option value="bank_transfer">Bank transfer</option>
+                          </Select>
+                          <p className="text-[11px] text-amber-900/70">
+                            +{formatMwk(collectionFee(pendingTopup.amount_mwk, "mobile_money"))} processing fee (3%)
+                          </p>
                         </div>
                         <SubmitButton pendingText="Redirecting…">Accept &amp; pay</SubmitButton>
                       </SavingForm>

@@ -3,16 +3,17 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { formatMwk } from "@/lib/utils";
 import {
   BETA_ZERO_COMMISSION,
+  COLLECTION_RATE,
   effectiveCommission,
   collectionFee,
   clientCharge,
   creativeGross,
   payoutFee,
   creativeNet,
-  type CollectionRail,
   type PayoutRail,
 } from "@/lib/fees";
 
@@ -20,12 +21,6 @@ import {
 // the real checkout and payout use — so this page can never quote a figure the
 // platform won't honour. Two-sided on purpose: proposal-payout-preview.tsx
 // already covers the creative's take-home alone; this shows both ends.
-
-const COLLECTION_OPTIONS: { value: CollectionRail; label: string }[] = [
-  { value: "mobile_money", label: "Mobile Money (Airtel / TNM)" },
-  { value: "card", label: "Card" },
-  { value: "bank_transfer", label: "Bank transfer" },
-];
 
 const PAYOUT_OPTIONS: { value: PayoutRail; label: string }[] = [
   { value: "mobile", label: "Mobile Money" },
@@ -70,14 +65,15 @@ function Row({
 
 export function MoneyCalculator({ defaultAmount = 50000 }: { defaultAmount?: number }) {
   const [raw, setRaw] = useState(String(defaultAmount));
-  const [collection, setCollection] = useState<CollectionRail>("mobile_money");
   const [payout, setPayout] = useState<PayoutRail>("mobile");
 
   const bid = Number(raw) || 0;
   const display = raw === "" ? "" : Number(raw).toLocaleString("en-US");
 
-  const colFee = collectionFee(bid, collection);
-  const clientPays = clientCharge(bid, collection);
+  // One collection rate for every rail, so there's nothing to pick here — the
+  // client chooses their actual method on PayChangu's page, after we've quoted.
+  const colFee = collectionFee(bid, "mobile_money");
+  const clientPays = clientCharge(bid, "mobile_money");
   const gross = creativeGross(bid);
   const commission = bid - gross;
   const outFee = payoutFee(gross, payout);
@@ -90,7 +86,7 @@ export function MoneyCalculator({ defaultAmount = 50000 }: { defaultAmount?: num
         Change the price or the payment method — everything below updates instantly.
       </p>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div className="min-w-0 space-y-1.5">
           <Label htmlFor="calc_amount">Agreed price (MWK)</Label>
           <Input
@@ -103,34 +99,18 @@ export function MoneyCalculator({ defaultAmount = 50000 }: { defaultAmount?: num
           />
         </div>
         <div className="min-w-0 space-y-1.5">
-          <Label htmlFor="calc_collection">Client pays by</Label>
-          <select
-            id="calc_collection"
-            value={collection}
-            onChange={(e) => setCollection(e.target.value as CollectionRail)}
-            className="h-10 w-full rounded-md border border-ink/20 bg-white px-3 text-sm text-ink"
-          >
-            {COLLECTION_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="min-w-0 space-y-1.5">
           <Label htmlFor="calc_payout">Creative paid out to</Label>
-          <select
+          <Select
             id="calc_payout"
             value={payout}
             onChange={(e) => setPayout(e.target.value as PayoutRail)}
-            className="h-10 w-full rounded-md border border-ink/20 bg-white px-3 text-sm text-ink"
           >
             {PAYOUT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -140,8 +120,8 @@ export function MoneyCalculator({ defaultAmount = 50000 }: { defaultAmount?: num
           <div className="mt-2">
             <Row label="Agreed price" value={formatMwk(bid)} />
             <Row
-              label="Processing fee"
-              sub="Charged by the payment provider, not by us"
+              label={`Processing fee (${Math.round(COLLECTION_RATE * 100)}%)`}
+              sub="Charged by the payment provider, not by us — same on mobile money, card and bank"
               value={`+ ${formatMwk(colFee)}`}
               tone="muted"
             />

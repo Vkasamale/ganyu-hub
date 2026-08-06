@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { MoneyCalculator } from "@/components/money-calculator";
-import { BETA_ZERO_COMMISSION, PLATFORM_COMMISSION, MIN_PAYOUT_MWK } from "@/lib/fees";
+import { BETA_ZERO_COMMISSION, PLATFORM_COMMISSION, MIN_PAYOUT_MWK, COLLECTION_RATE } from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -140,7 +140,10 @@ export default async function HowMoneyWorksPage() {
               <tr className="border-b border-ink/10">
                 <td className="py-3 pr-4 font-medium text-ink">Processing fee</td>
                 <td className="py-3 pr-4">The payment provider (PayChangu)</td>
-                <td className="py-3">~2–3% of the price, added at checkout</td>
+                <td className="py-3">
+                  {Math.round(COLLECTION_RATE * 100)}% of the price, added at checkout — the same
+                  whether you pay by mobile money, card or bank transfer
+                </td>
               </tr>
               <tr className="border-b border-ink/10">
                 <td className="py-3 pr-4 font-medium text-ink">Ganyu Hub commission</td>

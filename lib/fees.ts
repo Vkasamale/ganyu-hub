@@ -17,10 +17,19 @@ export function effectiveCommission(): number {
 export type CollectionRail = "mobile_money" | "card" | "bank_transfer";
 export type PayoutRail = "mobile" | "bank";
 
+// One rate for every way money comes IN. Bank transfer used to be quoted at 2%,
+// which made the fee look like it depended on a rail the client hasn't actually
+// chosen yet (they pick on PayChangu's hosted page, after we've quoted). A single
+// 3% is one story to explain and never under-quotes.
+// ponytail: these are DISPLAY estimates — we send the raw amount to PayChangu and
+// it adds its own fee (FIX-2026-07-22b). The real fee lands in collection_fee_mwk
+// on verify. Retune here if PayChangu's published rates move.
+export const COLLECTION_RATE = 0.03;
+
 export const COLLECTION_RATES: Record<CollectionRail, number> = {
-  mobile_money: 0.03,
-  card: 0.03,
-  bank_transfer: 0.02,
+  mobile_money: COLLECTION_RATE,
+  card: COLLECTION_RATE,
+  bank_transfer: COLLECTION_RATE,
 };
 
 export const PAYOUT_RATES: Record<PayoutRail, { pct: number; flat: number }> = {

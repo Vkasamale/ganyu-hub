@@ -3,6 +3,36 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-06 — Flat 3% collection fee, styled Select, no more raw `EXTRA_REVISION|`
+
+- **All collection rails quote 3%.** `COLLECTION_RATES` was 3/3/2 (bank transfer
+  cheaper); now a single exported `COLLECTION_RATE = 0.03` feeds all three.
+  Rationale: the quote is produced *before* the client picks a method (they choose
+  on PayChangu's hosted page), so a per-rail number implied a choice that hadn't
+  happened. One rate is one story and never under-quotes. **No money changes** —
+  `collectionFee`/`clientCharge` are display estimates only; the raw amount goes to
+  PayChangu and the real fee lands in `collection_fee_mwk` on verify.
+- **`components/ui/select.tsx`** — styled native `<select>` matching `Input`'s
+  height, border, radius and focus ring, with `appearance-none` + an inline SVG
+  chevron. Native on purpose (zero JS, works pre-hydration, free mobile pickers).
+  Wired into the top-up "Pay with" field and the money calculator.
+- **Fixed: `"EXTRA_REVISION|"` rendered raw** in the top-up panel on `/jobs/[id]`.
+  `payment_topups.reason` is a protocol string (`EXTRA_REVISION|<note>`) and was
+  printed verbatim, so users saw an internal token with an underscore and a pipe.
+  Now renders "Extra revision", with the note quoted underneath only when present
+  (an empty note previously produced a bare `""`). The DB value is untouched — the
+  callback/webhook still parse the marker.
+- **Top-up rail options no longer repeat the fee.** With one rate all three read
+  identically, so the fee moved to a single line under the field: "+MWK X
+  processing fee (3%)".
+- **Calculator lost its collection-rail selector** — with a uniform rate it changed
+  nothing. Payout rail stays; that one is a real choice (bank carries a flat MWK 700).
+
+⚠️ Payout rates deliberately **unchanged** pending a decision — a flat percentage
+can never cover bank's flat MWK 700 on small payouts. See TEST_LOG.
+
+tsc clean, 42/42.
+
 ## 2026-08-06 — Preview deploys settle against themselves (PayChangu callback host)
 
 `lib/payments.ts` `siteUrl()` now returns `https://$VERCEL_URL` when

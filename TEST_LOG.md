@@ -4,6 +4,35 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — Flat 3% collection, styled Select, EXTRA_REVISION label
+
+✅ tsc --noEmit clean. ✅ `npx vitest run` 42/42 (no test asserted the old 2%
+bank rate, so nothing needed realigning).
+🕒 **Manual check:** on `/jobs/[id]` with a pending extra-revision top-up —
+panel reads "Extra revision" not `"EXTRA_REVISION|"`; the "Pay with" dropdown
+matches the site's inputs (same height/border/radius, brand focus ring, custom
+chevron); fee shows once below the field as "+MWK X processing fee (3%)".
+🕒 `/how-money-works` — calculator has 2 fields not 3; fee table says 3% flat.
+
+### ⚠️ OPEN DECISION: payout fee cannot be a flat percentage
+
+Bank payouts really cost `1.5% + MWK 700`. For a flat rate `p` to cover that you
+need `p·G ≥ 0.015G + 700`, so break-even is **MWK 140,000 at 2%** and **MWK
+70,000 at 2.5%** — and as G shrinks the shortfall approaches the full 700 for
+*any* percentage. Observed bids are MWK 1,000–50,000, so a flat 2% or 2.5%
+loses money on effectively every real bank payout.
+
+| Bank payout | Real cost | 2% | 2.5% |
+|---|---|---|---|
+| 10,000 | 850 | 200 ❌ | 250 ❌ |
+| 50,000 | 1,450 | 1,000 ❌ | 1,250 ❌ |
+| 100,000 | 2,200 | 2,000 ❌ | 2,500 ✅ |
+| 140,000 | 2,800 | 2,800 ✅ | 3,500 ✅ |
+
+Recommended: **2% on mobile, 2% + MWK 700 on bank** — always covers, keeps a "2%"
+headline, states the bank surcharge honestly. `PAYOUT_RATES` left at
+`mobile {1.8%, 0}` / `bank {1.5%, 700}` until this is decided.
+
 ## 2026-08-06 — BUG-007 paid revision overage: VERIFIED FIXED in prod ✅
 
 ✅ **Verified live** on `ganyu-hub.vercel.app`, job `a84be0b1-cbdb-4ef9-bd2b-c66fbce814e4`.
