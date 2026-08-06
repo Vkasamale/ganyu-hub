@@ -15,6 +15,9 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-008] — RESOLVED 2026-08-06. Moved to Fixed (see below).**
+
+<!-- Superseded by the Fixed entry dated 2026-08-06. Kept out of In Progress.
 - **[BUG-008] Data-backed route content does not hydrate in dev preview — interactive share buttons dead.** — found 2026-08-05 while wiring social share buttons.
   - **Repro / Symptom:** on `/creatives/[id]` and `/jobs/[id]` in the dev preview, the entire route *content* doesn't hydrate — clicking the share row's Copy / native-Share / Instagram-copy buttons does nothing (no "Link copied!" flash). The layout shell hydrates and `/login` hydrates fully, so it's scoped to the data-backed page content, not the whole app. No console error, no Next dev overlay error; deterministic across reloads and a clean server restart.
   - **Cause:** unknown. Confirmed NOT the share components themselves (whole route content is affected, and removing `sonner` from the share row didn't fix it). Appears to be a route-level server/client hydration mismatch on these dynamic pages.
@@ -23,6 +26,8 @@ Format per entry:
   - **Fix (2026-08-06):** pinned `LOCALE = "en-GB"` and `TZ = "Africa/Blantyre"` across all of `lib/utils.ts`; added `formatDate` + `formatMonthYear` helpers so no call site formats dates ad hoc. New `tests/utils-format.test.ts` runs every formatter under four hostile runtime timezones (UTC, Africa/Blantyre, Pacific/Kiritimati, America/Los_Angeles) and asserts identical output, so an unpinned formatter can't be reintroduced. Suite 50 → 57.
   - ⚠️ **Caveat — not yet confirmed as THE cause.** The original report says "no console error, no Next dev overlay error", and React normally logs a hydration mismatch loudly. So this may be a contributing bug rather than the whole story. It is worth fixing regardless: unpinned formatters were showing the wrong day to every user in the two hours before midnight.
   - **Next step:** re-check on the deployed **prod build** — click Copy on a live profile; if it flashes "Link copied!", prod hydration is fine and this is dev-only. If still dead in prod, investigate the route-hydration mismatch on `/creatives/[id]` + `/jobs/[id]` as its own task (suspect a server/client boundary or async-render issue in the page tree). See TEST_LOG 2026-08-05.
+-->
+
 
 - **[BUG-007] — RESOLVED 2026-08-06. Moved to Fixed (see below).**
 
@@ -86,6 +91,14 @@ _(none currently open — see In Progress above)_
 Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-to-fix arc are included; pure feature ships aren't bugs.
 
 ### 2026-08-06
+
+- **[BUG-008] Data-backed route content never hydrated — every interactive control on `/creatives/[id]` and `/jobs/[id]` was dead.** Reported 2026-08-05; fixed `5ab8a30`; **confirmed working in prod 2026-08-06.**
+  - **Symptom:** on the two data-backed routes, the whole route *content* failed to hydrate — the share row's Copy / native-Share / Instagram buttons did nothing. The layout shell hydrated, and `/login` hydrated fully, so it looked scoped to "dynamic pages". Deterministic across reloads. Misleadingly, no console error was noticed at report time, which is why it was originally filed as an unknown-cause hydration mismatch.
+  - **Cause:** every formatter in `lib/utils.ts` rendered with the **runtime default** locale/timezone. Vercel renders in UTC; every user is in Malawi (UTC+2). Server and browser therefore produced different text for the same value, React detected the mismatch and discarded hydration for that whole subtree — taking every button in it down, not just the share row. Offenders: `formatMwk` → `toLocaleString("en-MW")` (absent from some ICU builds ⇒ different fallback grouping on Node vs browser); `timeAgo`'s >30-day fallback → bare `toLocaleDateString()` (no locale, no timezone); `daysUntil` → compared against the *runtime's* local midnight; `creatives/[id]` "member since" → `toLocaleDateString(undefined, …)`, which resolves to the browser's language on the client and Node's default on the server.
+  - **The tell:** `/jobs/[id]` uses all four helpers, `/creatives/[id]` uses two, and **`/login` uses none (grep count 0)** — which is exactly the working/broken split that was reported.
+  - **Fix (`5ab8a30`):** pinned `LOCALE = "en-GB"` + `TZ = "Africa/Blantyre"` throughout `lib/utils.ts`; added `formatDate` and `formatMonthYear` so no call site formats dates ad hoc; `daysUntil` now computes "today" in Malawi. New `tests/utils-format.test.ts` runs every formatter under four hostile runtime timezones (UTC, Africa/Blantyre, Pacific/Kiritimati, America/Los_Angeles) and asserts identical output, so an unpinned formatter fails CI rather than silently breaking a page. Suite 50 → 57.
+  - **Verified 2026-08-06, prod:** Copy on a live creative profile flashes "Link copied!". Reporter confirmed "everything seems to work".
+  - **Second bug fixed in passing:** the unpinned formatters were also showing the wrong calendar day to every user during the two hours before local midnight.
 
 - **[BUG-007] Paid revision overage was completely broken — RLS blocked the top-up insert.** Reported 2026-08-04 during the full E2E walk (Job C); fixed `e88d527`; **verified in prod 2026-08-06.**
   - **Symptom:** client exhausts included revisions, clicks "Request extra revision" → confirms "Pay MWK X & continue" on a job with `extra_revision_rate` set. Nothing happened — no PayChangu checkout, zero new `payment_topups` rows, `jobs.revisions_used` stuck at the included count.

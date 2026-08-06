@@ -4,6 +4,28 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-06 — BUG-008 VERIFIED FIXED in prod ✅ + profile card reorder
+
+✅ **Confirmed in prod** on `ganyu-hub.vercel.app/creatives/698d7433-…`: the Copy
+button flashes "Link copied!" and the page is fully interactive. Reporter:
+"The copy button works. Everything seems to work."
+
+So the hydration hypothesis below was correct — unpinned locale/timezone
+formatters were the cause. The earlier "no console error" note was the one piece
+of counter-evidence and it turned out to be a red herring (React's hydration
+warning is easy to miss in a busy console). BUG-008 moved to Fixed.
+
+✅ tsc clean. ✅ 57/57. ✅ `npx next build` compiled successfully (the
+dynamic-`cookies` prerender notices are pre-existing and unrelated).
+
+🕒 **Manual check on the reordered hero card** (`/creatives/[id]`):
+- Message / Invite to job / ♡ / share now sit at the **foot** of the card, under
+  the category chips, behind a divider — not top-right next to the name.
+- Desktop: share icons right-aligned, CTAs left. Mobile: everything stacks left,
+  nothing overflows the card.
+- Signed-out and own-profile views: only the share row renders (no Message/Invite)
+  — confirm it still looks deliberate rather than stranded.
+
 ## 2026-08-06 — BUG-008: root-cause lead found, formatters pinned
 
 ✅ tsc clean. ✅ **57/57** (was 50) — new `tests/utils-format.test.ts`, 7 cases.

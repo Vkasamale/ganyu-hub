@@ -3,6 +3,22 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-06 — BUG-008 confirmed fixed + creative-profile actions moved to card foot
+
+**BUG-008 closed.** Copy/share now work in prod on `/creatives/[id]`; the pinned
+formatters below were the cause. Moved to Fixed in `BUG_LOG.md`.
+
+**Profile hero card reordered.** Message / Invite to job / save / share used to sit
+in the top-right of the hero, competing with the name and headline for attention.
+They now sit at the **foot of the card**, below the category chips, behind their own
+hairline divider — identity reads first, then what you can do about it. Share is
+pushed right of the primary CTAs (`sm:ml-auto`) so "Message" stays the obvious
+action, and stacks left on mobile. The old wrapper's `md:flex-row md:justify-between`
+became dead once it had a single child, so it collapsed to a plain `relative z-10`
+(kept — the avatar overlaps the banner).
+
+`next build` compiled successfully; tsc clean; 57/57.
+
 ## 2026-08-06 — Pin locale + timezone in all formatters (BUG-008 lead)
 
 Every helper in `lib/utils.ts` formatted with the **runtime default** locale and

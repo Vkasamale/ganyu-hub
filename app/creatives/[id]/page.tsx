@@ -192,7 +192,8 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
         </div>
 
         <div className="px-6 pb-6 pt-8 md:pt-10">
-          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          {/* z-10 keeps the avatar above the banner it overlaps. */}
+          <div className="relative z-10">
             <div className="flex items-end gap-4">
               <div className="-mt-16 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-lg ring-4 ring-white md:-mt-20 md:h-36 md:w-36 md:text-4xl">
                 {profile.avatar_url ? (
@@ -214,28 +215,6 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                 <p className="mt-0.5 text-xs text-ink/55">{profile.location || "Malawi"}</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {user && !isOwner && (
-                <>
-                  <SavingForm action={startThread} silent>
-                    <input type="hidden" name="creative_id" value={profile.id} />
-                    <Button type="submit">Message</Button>
-                  </SavingForm>
-                  <Link
-                    href={`/creatives/${profile.id}/invite`}
-                    className="rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5"
-                  >
-                    Invite to job
-                  </Link>
-                  <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
-                </>
-              )}
-              <ShareButtons
-                url={absUrl(`/creatives/${profile.id}`)}
-                title={`${profile.full_name || "This creative"} on Ganyu Hub`}
-                text={`Check out ${profile.full_name || "this creative"}${primaryCat ? ` — ${primaryCat}` : ""} on Ganyu Hub`}
-              />
-            </div>
           </div>
 
           {(profile.categories || []).length > 0 && (
@@ -255,6 +234,34 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
               )}
             </div>
           )}
+
+          {/* Actions live at the foot of the card: identity reads first, then
+              what you can do about it. Share sits apart from the primary CTAs
+              so "Message" stays the obvious action. */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
+            {user && !isOwner && (
+              <>
+                <SavingForm action={startThread} silent>
+                  <input type="hidden" name="creative_id" value={profile.id} />
+                  <Button type="submit">Message</Button>
+                </SavingForm>
+                <Link
+                  href={`/creatives/${profile.id}/invite`}
+                  className="rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-ink/5"
+                >
+                  Invite to job
+                </Link>
+                <SaveButton targetType="creative" targetId={profile.id} saved={isSaved} />
+              </>
+            )}
+            <div className="sm:ml-auto">
+              <ShareButtons
+                url={absUrl(`/creatives/${profile.id}`)}
+                title={`${profile.full_name || "This creative"} on Ganyu Hub`}
+                text={`Check out ${profile.full_name || "this creative"}${primaryCat ? ` — ${primaryCat}` : ""} on Ganyu Hub`}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
