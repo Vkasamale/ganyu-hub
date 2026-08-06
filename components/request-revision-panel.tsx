@@ -35,6 +35,9 @@ export function RequestRevisionPanel({
   const included = revisionsIncluded ?? 0;
   const remaining = Math.max(0, included - revisionsUsed);
   const willBeOverage = revisionsUsed >= included;
+  // Extras are purchased beyond the included allowance. Counting them into the
+  // "x of y" reads as broken ("2 of 1"), so they're stated separately.
+  const extra = Math.max(0, revisionsUsed - included);
 
   function submit(confirmPaid: boolean) {
     startTransition(async () => {
@@ -64,9 +67,19 @@ export function RequestRevisionPanel({
       <CardContent className="p-5">
         <p className="text-sm font-medium text-ink">Request changes</p>
         <p className="mt-1 text-xs text-ink/60">
-          {included > 0
-            ? `${revisionsUsed} of ${included} used${remaining > 0 ? ` — ${remaining} still included.` : ""}`
-            : "No revisions were included in the accepted proposal."}
+          {included > 0 ? (
+            <>
+              {Math.min(revisionsUsed, included)} of {included} included used
+              {remaining > 0 ? ` — ${remaining} still included.` : "."}
+              {extra > 0 && (
+                <span className="ml-1 font-medium text-stamp-dark">
+                  +{extra} extra revision{extra === 1 ? "" : "s"} purchased.
+                </span>
+              )}
+            </>
+          ) : (
+            "No revisions were included in the accepted proposal."
+          )}
         </p>
 
         {pendingRate == null ? (

@@ -231,7 +231,18 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           }
         />
         <p className="mt-2 px-1 text-sm text-neutral-500">
-          Posted by {client?.full_name || "a client"} &middot; {timeAgo(job.created_at)}
+          Posted by{" "}
+          {job.client_id ? (
+            <Link
+              href={`/creatives/${job.client_id}`}
+              className="font-medium text-stamp-dark underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp"
+            >
+              {client?.full_name || "a client"}
+            </Link>
+          ) : (
+            client?.full_name || "a client"
+          )}{" "}
+          &middot; {timeAgo(job.created_at)}
         </p>
       </div>
       <Card className="mt-4">
@@ -255,10 +266,27 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           )}
 
           <dl className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ink/10 pt-4 text-sm">
-            <div className="flex items-baseline gap-2">
-              <dt className="text-xs uppercase tracking-wide text-ink/50">Budget</dt>
-              <dd className="font-display text-base font-medium tabular-nums text-ink">{formatMwk(job.budget_mwk)}</dd>
-            </div>
+            {(() => {
+              // Terms drift during a job (paid top-ups, extra revisions). Show
+              // the CURRENT figure as the headline with the original struck
+              // beside it, so nobody has to remember what was agreed.
+              const agreed = job.accepted_bid_mwk ?? null;
+              const paid = job.total_paid_mwk ?? null;
+              const changed = agreed != null && paid != null && paid !== agreed;
+              return (
+                <div className="flex items-baseline gap-2">
+                  <dt className="text-xs uppercase tracking-wide text-ink/50">Budget</dt>
+                  <dd className="font-display text-base font-medium tabular-nums text-ink">
+                    {formatMwk(changed ? paid : agreed ?? job.budget_mwk)}
+                  </dd>
+                  {changed && (
+                    <span className="text-xs text-ink/50">
+                      <s className="tabular-nums">{formatMwk(agreed)}</s> originally
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             {job.deadline && (
               <div className="flex items-center gap-2">
                 <dt className="text-xs uppercase tracking-wide text-ink/50">Deadline</dt>
@@ -271,12 +299,27 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 })()}
               </div>
             )}
-            {job.revisions_included != null && (
-              <div className="flex items-baseline gap-2">
-                <dt className="text-xs uppercase tracking-wide text-ink/50">Revisions</dt>
-                <dd className="font-medium text-ink">{job.revisions_included}</dd>
-              </div>
-            )}
+            {job.revisions_included != null && (() => {
+              // Never render "2 of 1" — a used count can exceed the included
+              // count once extras are paid for, which reads as a mistake.
+              // Show the included allowance plus purchased extras separately.
+              const included = Number(job.revisions_included ?? 0);
+              const used = Number(job.revisions_used ?? 0);
+              const extra = Math.max(0, used - included);
+              return (
+                <div className="flex items-baseline gap-2">
+                  <dt className="text-xs uppercase tracking-wide text-ink/50">Revisions</dt>
+                  <dd className="font-medium text-ink">
+                    {Math.min(used, included)} of {included}
+                  </dd>
+                  {extra > 0 && (
+                    <span className="rounded-full border border-stamp/30 bg-stamp/10 px-2 py-0.5 text-xs font-medium text-stamp-dark">
+                      +{extra} extra purchased
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             {job.format_spec && (
               <div className="flex items-baseline gap-2">
                 <dt className="text-xs uppercase tracking-wide text-ink/50">Format</dt>
