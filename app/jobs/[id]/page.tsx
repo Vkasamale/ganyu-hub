@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible } from "@/components/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/money-input";
@@ -254,25 +255,58 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           &middot; {timeAgo(job.created_at)}
         </p>
       </div>
+
+      {/* Payment sits directly under the header. It's the most important thing
+          on the page and it used to be a long scroll down. */}
+      {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
+      )}
+      {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
+        <Card className="mt-6 border-amber-200 bg-amber-50">
+          <CardContent className="p-5 text-sm text-amber-900">
+            <p className="font-medium">Payment pending — this creative isn't locked in yet.</p>
+            <p className="mt-1">Complete the checkout to finalise acceptance. Until then this job stays open and other proposals can still come in. Use "Cancel pending payment" above to release the hold.</p>
+          </CardContent>
+        </Card>
+      )}
+      {user && !isClient && myProposal && job.pending_accept_proposal_id === myProposal.id && job.escrow_status === "payment_pending" && (
+        <Card className="mt-6 border-amber-200 bg-amber-50">
+          <CardContent className="p-5 text-sm text-amber-900">
+            <p className="font-medium">The client started payment for your proposal.</p>
+            <p className="mt-1">Nothing is locked in until the payment confirms. You'll be notified when it clears.</p>
+          </CardContent>
+        </Card>
+      )}
+      {user && !isClient && myProposal?.status === "accepted" && (
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
+      )}
+      {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
+        <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
+      )}
+
       <Card className="mt-4">
         <CardContent className="p-5 sm:p-6">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
-            Project brief
-          </div>
-          <p className="mt-2 whitespace-pre-wrap break-words font-serif text-lg leading-relaxed text-ink/85 sm:text-xl">
-            {job.brief}
-          </p>
+          {/* Brief collapses to a teaser; the terms below stay visible, since
+              budget and deadline are what people come back to check. */}
+          <Collapsible
+            title="Project brief"
+            summary={String(job.brief || "").slice(0, 110) + (String(job.brief || "").length > 110 ? "…" : "")}
+          >
+            <p className="whitespace-pre-wrap break-words font-serif text-lg leading-relaxed text-ink/85 sm:text-xl">
+              {job.brief}
+            </p>
 
-          {job.deliverables && (
-            <div className="mt-6 border-t border-ink/10 pt-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
-                Deliverables
+            {job.deliverables && (
+              <div className="mt-6 border-t border-ink/10 pt-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
+                  Deliverables
+                </div>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/80">
+                  {job.deliverables}
+                </p>
               </div>
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/80">
-                {job.deliverables}
-              </p>
-            </div>
-          )}
+            )}
+          </Collapsible>
 
           <dl className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ink/10 pt-4 text-sm">
             {(() => {
@@ -408,47 +442,20 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       {job.status === "disputed" && (
         <DisputeBanner reason={job.dispute_reason} />
       )}
-      {user && isClient && (
-        <DisputePanel jobId={job.id} status={job.status || "open"} />
-      )}
-      {user && !isClient && myProposal?.status === "accepted" && (
-        <DisputePanel jobId={job.id} status={job.status || "open"} />
-      )}
-
-      {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
-      )}
-      {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
-        <Card className="mt-6 border-amber-200 bg-amber-50">
-          <CardContent className="p-5 text-sm text-amber-900">
-            <p className="font-medium">Payment pending — this creative isn't locked in yet.</p>
-            <p className="mt-1">Complete the checkout to finalise acceptance. Until then this job stays open and other proposals can still come in. Use "Cancel pending payment" below to release the hold.</p>
-          </CardContent>
-        </Card>
-      )}
-      {user && !isClient && myProposal && job.pending_accept_proposal_id === myProposal.id && job.escrow_status === "payment_pending" && (
-        <Card className="mt-6 border-amber-200 bg-amber-50">
-          <CardContent className="p-5 text-sm text-amber-900">
-            <p className="font-medium">The client started payment for your proposal.</p>
-            <p className="mt-1">Nothing is locked in until the payment confirms. You'll be notified when it clears.</p>
-          </CardContent>
-        </Card>
-      )}
-      {user && !isClient && myProposal?.status === "accepted" && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
-      )}
-      {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
-        <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
-      )}
-
-      {user && canProposeExtension && (
-        <div className="mt-4">
-          <DeadlineExtensionPanel
-            jobId={job.id}
-            currentDeadline={job.deadline || null}
-            pending={pendingExtension || null}
-            currentUserId={user.id}
-          />
+      {/* One action row: rare, deliberate things that need a click to open,
+          not three standing cards competing with the money. */}
+      {user && isParty && (canProposeExtension || canRequestCancel || job.status === "scope_pending") && (
+        <div className="mt-4 flex flex-wrap items-start gap-2">
+          {canProposeExtension && (
+            <DeadlineExtensionPanel
+              jobId={job.id}
+              currentDeadline={job.deadline || null}
+              pending={pendingExtension || null}
+              currentUserId={user.id}
+            />
+          )}
+          {isParty && <DisputePanel jobId={job.id} status={job.status || "open"} />}
+          {canRequestCancel && <CancelJobPanel jobId={job.id} />}
         </div>
       )}
 
@@ -539,12 +546,6 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             )}
           </CardContent>
         </Card>
-      )}
-
-      {user && canRequestCancel && (
-        <div className="mt-4">
-          <CancelJobPanel jobId={job.id} />
-        </div>
       )}
 
       {job.status === "cancellation_requested" && (

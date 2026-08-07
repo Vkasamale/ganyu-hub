@@ -29,14 +29,17 @@ export function JobHeader({
   const escrow = job.total_paid_mwk ?? job.collection_amount_mwk ?? job.accepted_bid_mwk ?? 0;
   // The label used to be hardcoded "Money in escrow", so a released job still
   // claimed the client's money was being held (BUG-014). Derive it instead.
-  const AMOUNT_LABEL: Record<string, string> = {
-    none: "Job value",
-    payment_pending: "Payment pending",
-    payment_held: "Money in escrow",
-    payment_released: "Released to creative",
-    payment_disputed: "In dispute",
+  // Held / released / disputed are three distinct financial states, so they get
+  // three distinct colours — as grey text they read as no change at all.
+  // ponytail: add a key here when partial deposits land ("x deposited").
+  const MONEY_STATE: Record<string, { label: string; tone: string }> = {
+    none: { label: "Not funded yet", tone: "border-ink/25 bg-paper text-ink/60" },
+    payment_pending: { label: "Payment pending", tone: "border-amber-400 bg-amber-50 text-amber-900" },
+    payment_held: { label: "Held in escrow", tone: "border-sky-400 bg-sky-50 text-sky-900" },
+    payment_released: { label: "Released to creative", tone: "border-emerald-500 bg-emerald-50 text-emerald-900" },
+    payment_disputed: { label: "In dispute", tone: "border-red-400 bg-red-50 text-red-900" },
   };
-  const amountLabel = AMOUNT_LABEL[job.escrow_status || "none"] ?? "Job value";
+  const money = MONEY_STATE[job.escrow_status || "none"] ?? MONEY_STATE.none;
   const released = job.escrow_status === "payment_released";
   const gross = creativeGross(escrow);
   // Both rails, not the worst of the two. A single pessimistic figure meant a
@@ -56,8 +59,12 @@ export function JobHeader({
       </div>
 
       <div className="mt-4">
-        <div className="text-xs uppercase tracking-wide text-ink/55">{amountLabel}</div>
-        <div className="mt-1 font-display text-3xl tabular-nums text-ink sm:text-4xl">
+        <div
+          className={`inline-block -rotate-1 rounded border-2 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.12em] ${money.tone}`}
+        >
+          {money.label}
+        </div>
+        <div className="mt-2 font-display text-3xl tabular-nums text-ink sm:text-4xl">
           {formatMwk(escrow)}
         </div>
         <div className="mt-2 text-sm text-ink/70">

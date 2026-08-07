@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { submitDelivery } from "@/app/actions";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { Card, CardContent } from "@/components/ui/card";
+import { Collapsible } from "@/components/collapsible";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -45,8 +46,8 @@ export function JobDeliverySubmit({ jobId }: { jobId: string }) {
   return (
     <Card className="mt-6">
       <CardContent className="p-5">
-        <p className="text-sm font-medium text-ink">Send delivery</p>
-        <p className="mt-1 text-xs text-ink/60">
+        <Collapsible title="Send delivery" summary="A file up to 10MB, or a link">
+        <p className="text-xs text-ink/60">
           Attach a file (up to 10MB) or paste a link for anything larger. The client is notified either way.
         </p>
 
@@ -117,6 +118,7 @@ export function JobDeliverySubmit({ jobId }: { jobId: string }) {
             </p>
           )}
         </SavingForm>
+        </Collapsible>
       </CardContent>
     </Card>
   );

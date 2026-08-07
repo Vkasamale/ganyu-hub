@@ -4,6 +4,29 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — Job page redesign: built, nothing verified
+
+Typecheck clean, 69/69 unit tests green. That is the entire evidence base — the
+change is presentational and the suite covers none of it.
+
+⬜ **Money-state stamp badge** — needs eyes on all five states: not funded,
+pending, held, released, disputed. Released vs held is the pair that matters,
+since indistinguishable grey text is what prompted the work.
+
+⬜ **Payment card under the header** — check both roles. The client's
+pending-payment notice now says "use Cancel pending payment *above*"; that
+wording followed the move and needs confirming against the actual layout.
+
+⬜ **Collapsible brief / activity / delivery** — confirm the teaser truncates
+sensibly on a long brief, the activity one-liner names the right current stage,
+and the terms row stays visible while the brief is collapsed.
+
+⬜ **Dispute as a button** — confirm it sits in the action row with extension
+and cancel, and still submits. `raiseDispute` itself is untouched.
+
+⬜ **Creative-side view** — every check above has a creative counterpart; the
+delivery card only exists on that side.
+
 ## 2026-08-07 — Check 3 closed: the release works, the event never landed
 
 First complete escrow release run end to end in the sandbox, both accounts

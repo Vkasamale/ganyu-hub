@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Collapsible } from "@/components/collapsible";
 import { timeAgo } from "@/lib/utils";
 import type { JobEventType } from "@/lib/job-events";
 
@@ -131,19 +132,26 @@ export function JobTimeline({
   // Sorted oldest→newest for a natural reading order.
   const ordered = [...events].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const hasRevisions = revisionsIncluded != null && revisionsIncluded > 0;
+  // Collapsed, the timeline is one line: where the job is right now. The full
+  // history is a click away rather than a scroll.
+  const latest = ordered[ordered.length - 1];
+  const currentStage = `${LABELS[latest.event_type as JobEventType] ?? latest.event_type} · ${timeAgo(latest.created_at)}`;
 
   return (
     <Card className="mt-6">
       <CardContent className="p-5">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-sm font-medium text-ink">Activity</p>
-          {hasRevisions && (
-            <p className="text-xs text-ink/60">
-              Revisions: <strong>{revisionsUsed ?? 0}</strong> of {revisionsIncluded} used
-            </p>
-          )}
-        </div>
-        <ol className="mt-4 space-y-4">
+        <Collapsible
+          title="Activity"
+          summary={currentStage}
+          right={
+            hasRevisions ? (
+              <span className="shrink-0 text-xs text-ink/60">
+                Revisions: <strong>{revisionsUsed ?? 0}</strong> of {revisionsIncluded} used
+              </span>
+            ) : undefined
+          }
+        >
+        <ol className="space-y-4">
           {ordered.map((e, i) => {
             const label = LABELS[e.event_type as JobEventType] ?? e.event_type;
             const isLast = i === ordered.length - 1;
@@ -165,6 +173,7 @@ export function JobTimeline({
             );
           })}
         </ol>
+        </Collapsible>
       </CardContent>
     </Card>
   );

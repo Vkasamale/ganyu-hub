@@ -3,6 +3,37 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — Job page: money state you can actually see
+
+Released the funds on a live sandbox job and didn't notice anything had changed.
+"Released to creative" was grey text in the same slot that had said "Money in
+escrow" a moment earlier — three distinct financial states rendered as three
+phrasings of one grey line. Held, released and disputed now each get a coloured
+stamp badge in the title card: sky for held, emerald for released, red for
+dispute, amber for pending, grey for not funded. It's a keyed map, so the
+partial-deposit state ("x deposited") is one added key when that lands.
+
+**Payment moved directly under the header.** It was the most important thing on
+the page and a long scroll down.
+
+**The big cards collapse.** Project brief shows a 110-character teaser with a
+"see more" — the budget, deadline and revision terms below it stay visible,
+since those are what people come back to check. Activity collapses to a single
+line naming the current stage, expandable to the full history. Send delivery
+collapses to its title. Built on native `<details>`: no state, no client JS,
+works with JavaScript off.
+
+**"Something gone wrong?" is a button now,** sitting in one action row beside
+"Propose deadline extension" and "Cancel job", expanding into a card only when a
+dispute actually needs explaining. A standing red card for a thing that usually
+never happens was shouting.
+
+Note for anyone re-reading the BUG-014 verification below: the header labels
+changed with this work. "JOB VALUE" is now "Not funded yet" and "MONEY IN
+ESCROW" is now "Held in escrow".
+
+⚠️ Not yet looked at in a browser in any state.
+
 ## 2026-08-07 — A real release, and the bug it exposed
 
 Ran the first complete escrow release end to end in the sandbox: EQ Admin posted

@@ -13,18 +13,23 @@ export function DisputePanel({ jobId, status }: { jobId: string; status: string 
   const [open, setOpen] = useState(false);
   if (!DISPUTABLE.has(status)) return null;
 
+  // Sits in the same action row as "Propose deadline extension" and "Cancel
+  // job". A standing card for a thing that usually never happens was shouting.
+  if (!open) {
+    return (
+      <Button size="sm" variant="outline" type="button" onClick={() => setOpen(true)}>
+        Something gone wrong?
+      </Button>
+    );
+  }
+
   return (
-    <Card className="mt-6 border-red-200 bg-red-50/40">
-      <CardContent className="p-5">
+    <div className="w-full rounded-lg border border-red-200 bg-red-50/40 p-4">
+      <div>
         <p className="text-sm font-semibold text-red-900">Something gone wrong?</p>
         <p className="mt-1 text-sm text-neutral-600">
           Flag a dispute and an admin will step in. Both sides and the admin team are notified.
         </p>
-        {!open && (
-          <div className="mt-3">
-            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Flag a dispute</Button>
-          </div>
-        )}
         <Reveal open={open}>
           <SavingForm action={raiseDispute} successText="Dispute raised. An admin will review." className="mt-4">
             <input type="hidden" name="job_id" value={jobId} />
@@ -43,8 +48,8 @@ export function DisputePanel({ jobId, status }: { jobId: string; status: string 
             </div>
           </SavingForm>
         </Reveal>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
