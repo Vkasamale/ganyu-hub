@@ -101,6 +101,10 @@ export function ThreadList({
 }) {
   const [filter, setFilter] = useState<string>("all");
   const [q, setQ] = useState("");
+  // Groups start collapsed — eighteen jobs under one person is a scroll, not a
+  // list. Expanded is controlled rather than a native <details> so search and
+  // the open thread can force a group open without fighting the DOM attribute.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const counts = useMemo(
     () => ({
@@ -199,22 +203,56 @@ export function ThreadList({
 
         {grouped.map(([personId, group]) => {
           const o = otherOf(group[0], userId);
+          // Searching means you want to see the hits, and the thread you're
+          // reading should never be hidden inside a collapsed group.
+          const open =
+            expanded.has(personId) ||
+            !!q.trim() ||
+            group.some((t) => t.id === activeId);
           return (
             <div key={personId}>
-              <div className="flex items-center gap-2 px-4 pb-1 pt-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setExpanded((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(personId)) next.delete(personId);
+                    else next.add(personId);
+                    return next;
+                  })
+                }
+                aria-expanded={open}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-wash/40"
+              >
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink/85 text-[10px] font-medium text-paper">
                   {initialsOf(o?.full_name)}
                 </div>
-                <p className="truncate text-sm font-medium text-ink">{o?.full_name || "Unknown"}</p>
-                <span className="ml-auto shrink-0 text-[11px] text-ink/45">
+                <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+                  {o?.full_name || "Unknown"}
+                </p>
+                <span className="shrink-0 text-[11px] text-ink/45">
                   {group.length} {group.length === 1 ? "job" : "jobs"}
                 </span>
-              </div>
-              <ul>
-                {group.map((t) => (
-                  <Row key={t.id} t={t} userId={userId} activeId={activeId} hideAvatar />
-                ))}
-              </ul>
+                <svg
+                  aria-hidden
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`h-4 w-4 shrink-0 text-ink/40 transition-transform duration-200 ${open ? "-rotate-180" : ""}`}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {open && (
+                <ul>
+                  {group.map((t) => (
+                    <Row key={t.id} t={t} userId={userId} activeId={activeId} hideAvatar />
+                  ))}
+                </ul>
+              )}
             </div>
           );
         })}
