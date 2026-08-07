@@ -1050,9 +1050,15 @@ type JobStatus =
   | "disputed"
   | "cancelled";
 
+// Closing the job is the creative's call, and only once they've been paid.
+// Releasing is the client's decision and can happen before the work is done
+// ("pay my friend now, sort it out later"), so payment can't imply completion.
+// Gated on payment_released below — closing an unpaid job would just be a
+// cancellation wearing a different label.
 const CREATIVE_TRANSITIONS: Record<string, JobStatus[]> = {
-  in_progress: ["submitted"],
-  revision_requested: ["submitted"],
+  in_progress: ["submitted", "completed"],
+  submitted: ["completed"],
+  revision_requested: ["submitted", "completed"],
 };
 const CLIENT_TRANSITIONS: Record<string, JobStatus[]> = {
   submitted: ["completed", "revision_requested"],
@@ -1070,7 +1076,7 @@ export async function updateJobStatus(formData: FormData) {
   const job_id = String(formData.get("job_id"));
   const next = String(formData.get("status")) as JobStatus;
 
-  const { data: job } = await supabase.from("jobs").select("id, client_id, status, title").eq("id", job_id).single();
+  const { data: job } = await supabase.from("jobs").select("id, client_id, status, title, escrow_status").eq("id", job_id).single();
   if (!job) return { error: "Job not found" };
 
   const { data: acceptedProposal } = await supabase
@@ -1091,6 +1097,9 @@ export async function updateJobStatus(formData: FormData) {
     ...(EITHER_TRANSITIONS[job.status] || []),
   ]);
   if (!allowed.has(next)) return { error: `Cannot move job from ${job.status} to ${next}` };
+  if (isCreative && !isClient && next === "completed" && job.escrow_status !== "payment_released") {
+    return { error: "You can close this job once the client has released payment." };
+  }
 
   const { error } = await supabase.from("jobs").update({ status: next }).eq("id", job_id);
   if (error) return { error: error.message };

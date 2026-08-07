@@ -4,6 +4,41 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 (later) — BUG-018 and BUG-012 both verified
+
+Third live run of the day, both accounts driven (EQ Admin in Chrome, Adam
+Creative in the preview pane). Job `849eb4c9-26af-4bee-8fef-ad952fdef1ce`,
+MWK 20,000, on the `sandbox-test` preview. Full path exercised: post → propose →
+accept → fund → deliver → dispute → release from disputed.
+
+✅ **BUG-018 closed.** Exactly one `payment_released` row, `via = reconcile`.
+The webhook lost the compare-and-swap and correctly wrote nothing. This is the
+check that could only ever be done live.
+
+✅ **BUG-012 closed.** Released from `payment_disputed` and money actually
+moved: `payout_ref = gh_po_849eb4c9…`, `payout_status` null (cleared on success,
+by design), `payout_error` null, `escrow_status = payment_released`. The old
+path marked the job released and moved nothing.
+
+✅ **Money-state badge, all 5 states now seen live.** Red "IN DISPUTE" was the
+last one outstanding. The "Creative receives" line correctly switches to past
+tense once released.
+
+✅ **Previously-unverified §3 items, all confirmed.** Chevron collapsibles
+(brief, Activity, Send delivery) point down collapsed and flip up open; sandbox
+settlement copy no longer promises "the next business day"; share links from the
+preview deploy now emit preview URLs, so the Vercel system-env-var switch is on.
+
+⚠️ **Delivery does not advance job status.** Sending a delivery logs
+`files_delivered` and notifies the client, but leaves `status` at `in_progress`
+— the stepper stays on step 3 and "Delivered" never ticks. "Mark as submitted"
+is a separate button the creative has to find. Left as-is by decision; the
+tracker is misleading until they press it.
+
+🕒 **Close job (new) — awaiting live check.** Creative-side "Close job", gated on
+`payment_released`. Covered by `tests/actions/close-job.test.ts` (4 cases); not
+yet exercised in the app.
+
 ## 2026-08-07 — BUG-017 verified, BUG-016 verified, BUG-018 found
 
 Second live run of the day, both accounts driven (EQ Admin in Chrome, Adam

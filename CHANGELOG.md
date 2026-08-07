@@ -3,6 +3,36 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 (later) — BUG-018 and BUG-012 both verified, and who closes a job
+
+**BUG-018 is fixed, confirmed on a real release.** A fresh throwaway job
+(`849eb4c9…`) run end to end produced exactly **one** `payment_released` row,
+`via = reconcile`. The webhook arrived second, its filtered UPDATE matched
+nothing, and it correctly logged nothing — the PostgREST behaviour the fix rests
+on and that `mockSupabase` could never demonstrate.
+
+**BUG-012 is fixed, also verified live.** The release was taken from
+`payment_disputed`, and this time money actually moved: `payout_ref` written,
+`payout_error` null, `escrow_status` `payment_released`. The old silent
+fall-through that emailed the creative and moved nothing is gone. It produced a
+single release event too, so BUG-018 is confirmed on the disputed path as well.
+
+Also cleared live, all previously unverified: chevron collapsibles, the sandbox
+settlement copy, and preview-deploy share links now emitting preview URLs. All
+five money-state badges have now been seen on screen.
+
+**Releasing payment no longer implies the job is done — because it isn't.** A
+client may release early ("it's my friend, pay him now, sort it out later"), so
+completion can't be inferred from payment. Instead: the escrow panel now
+recommends releasing once satisfied, while making clear it's the client's call
+and that funds can't be pulled back; and **closing the job is the creative's
+action**, available only after `payment_released`. Closing an unpaid job would
+just be a cancellation wearing a different label, so the server refuses it.
+
+Left alone deliberately: sending a delivery still doesn't advance `status` —
+"Mark as submitted" stays an explicit creative action. Known gap: a client who
+releases early and goes quiet leaves the job open until the creative closes it.
+
 ## 2026-08-07 — BUG-017 closed, and the duplicate it revealed
 
 A fresh end-to-end run in the sandbox — post, propose, accept, fund, release —

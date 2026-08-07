@@ -99,6 +99,12 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
             </SavingForm>
           </div>
         )}
+        {role === "client" && (escrowStatus === "payment_held" || escrowStatus === "payment_disputed") && (
+          <p className="mt-3 text-xs text-neutral-500">
+            We recommend releasing once you're satisfied with the work. Releasing is your call and
+            you can do it at any time — but the funds can't be pulled back afterwards.
+          </p>
+        )}
         {holdActive && paymentHeldAt && (
           <p className="mt-3 text-xs text-neutral-500">
             Funds settle the next business day after payment. <HoldCountdown paymentHeldAt={paymentHeldAt} holdMs={HOLD_MS} />

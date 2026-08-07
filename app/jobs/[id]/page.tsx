@@ -414,7 +414,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <JobStatusPanel jobId={job.id} status={job.status || "open"} role="client" />
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
-        <JobStatusPanel jobId={job.id} status={job.status || "open"} role="creative" />
+        <JobStatusPanel jobId={job.id} status={job.status || "open"} role="creative" escrowStatus={job.escrow_status} />
       )}
 
       {isPartyForEvents && jobEvents && jobEvents.length > 0 && (

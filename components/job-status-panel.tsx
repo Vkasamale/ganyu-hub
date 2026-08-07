@@ -15,11 +15,15 @@ const LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-function actionsFor(status: string, role: Role): { next: string; label: string; variant?: "outline" }[] {
+function actionsFor(status: string, role: Role, escrowStatus?: string | null): { next: string; label: string; variant?: "outline" }[] {
   if (role === "creative") {
-    if (status === "in_progress") return [{ next: "submitted", label: "Mark as submitted" }];
-    if (status === "revision_requested") return [{ next: "submitted", label: "Re-submit work" }];
-    return [];
+    // Closing is the creative's call, and only after the client has released —
+    // CREATIVE_TRANSITIONS in app/actions.ts enforces the same gate server-side.
+    const canClose = escrowStatus === "payment_released" && status !== "completed";
+    const close = canClose ? [{ next: "completed", label: "Close job", variant: "outline" as const }] : [];
+    if (status === "in_progress") return [{ next: "submitted", label: "Mark as submitted" }, ...close];
+    if (status === "revision_requested") return [{ next: "submitted", label: "Re-submit work" }, ...close];
+    return close;
   }
   if (status === "open") return [{ next: "cancelled", label: "Cancel job", variant: "outline" }];
   if (status === "scope_pending") return [{ next: "cancelled", label: "Cancel job", variant: "outline" }];
@@ -30,8 +34,8 @@ function actionsFor(status: string, role: Role): { next: string; label: string; 
   return [];
 }
 
-export function JobStatusPanel({ jobId, status, role }: { jobId: string; status: string; role: Role }) {
-  const actions = actionsFor(status, role);
+export function JobStatusPanel({ jobId, status, role, escrowStatus }: { jobId: string; status: string; role: Role; escrowStatus?: string | null }) {
+  const actions = actionsFor(status, role, escrowStatus);
   if (actions.length === 0) return null;
 
   return (
