@@ -106,6 +106,32 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
   two labels for one fact, a few inches apart. Probably drop the Payment card's
   own badge and let the stamp carry it. Noticed in the same review; not urgent.
 
+## Messages (raised 2026-08-07)
+
+- **A proper tab split between direct messages and job conversations.** Requested
+  for next session. ⚠️ **Read this first: a version already ships.**
+  `components/thread-list.tsx` renders `All / Jobs / Direct` filter **chips** with
+  live counts, and the list below is one scroll. That was a deliberate call taken
+  from the founder's WhatsApp Web reference, which filters with chips rather than
+  splitting into sections — it replaced an earlier build that *did* use stacked
+  "Jobs" / "Direct messages" headings.
+  So the open question is not "does the split exist" but **whether chips are the
+  right weight for it**. Options if they aren't: promote them to real tabs with an
+  underline and a persisted selection; or go back to two visually separate
+  sections, which is what was there before and was moved away from. Look at the
+  live page before building — the founder had not seen the chips when this was
+  raised, and rebuilding what already exists is the likely failure mode.
+- **Unread state.** No unread bolding and no per-thread unread count; the WhatsApp
+  reference has both. Pairs with the tab question — an unread count per tab is
+  what makes tabs earn their space.
+- **Message-body search.** Search currently covers job titles, names and preview
+  text, all client-side over loaded threads. Searching message *history* needs a
+  server query against `messages.body` plus a Postgres text index. Deliberately
+  deferred until thread volume justifies the index.
+- **Empty-thread preview reads oddly** — a job thread with no messages and no
+  events falls back to the other person's name, which is already the group
+  header directly above it. Should read "No activity yet". One-line fix.
+
 ## Accessibility
 
 - ~~**Finish the WCAG contrast sweep.**~~ **Shipped 2026-07-17.** Full `text-stamp` → `text-stamp-dark` swap across 12 files; decorative italic display headings kept as bright `text-stamp` (large text, AA-passing at 3:1). See CHANGELOG 2026-07-17.

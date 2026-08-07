@@ -73,6 +73,18 @@ card's badge.
   events falls back to the other person's name, which is already the group
   header. Should read "No activity yet".
 
+## 3b. Tab split for direct vs job conversations — founder request
+
+Raised at the end of 2026-08-07, logged in `BACKLOG.md` → Messages. **Check the
+live page before writing anything:** `All / Jobs / Direct` filter chips already
+ship in `components/thread-list.tsx`, taken from the founder's WhatsApp Web
+reference, and they replaced an earlier build that used stacked section headings.
+The founder had not seen the chips when the request was made.
+
+So the real question is whether chips are the right weight, or whether this wants
+true tabs (underline, persisted selection) — not whether the split exists.
+Ask before building; do not rebuild what is there.
+
 ## 4. Deposits — design settled, two decisions open
 
 Creatives needing materials money upfront. Settled: an *early partial release*,
