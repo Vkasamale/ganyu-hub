@@ -57,8 +57,13 @@ this first.
 
 PayChangu publishes **no** test bank account numbers. Two bank-rail payout
 attempts on 2026-08-07 (ERR-00012, ERR-00013) were rejected by
-`direct-charge/payouts/initialize`, which is consistent with bank payouts simply
-not being exercisable in sandbox — see the note at `lib/payments.ts:226`.
+`direct-charge/payouts/initialize` — see the note at `lib/payments.ts:226`.
+
+**Confirmed 2026-08-07:** that creative's default payout method was a *real*
+bank account. A test key cannot reach the real banking rail and there is no
+dummy account to stand in for one, so the rejection was correct behaviour, not a
+bug. The lesson is that the creative's default method decides whether a sandbox
+release is possible at all — check it before blaming the code.
 
 **So: use a mobile payout method when testing releases.** A creative whose
 default is bank cannot complete a sandbox payout.
