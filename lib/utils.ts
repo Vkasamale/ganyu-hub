@@ -67,6 +67,30 @@ export function formatMonthYear(iso: string) {
   });
 }
 
+// Conversation-list timestamps, the way every chat app does them: clock time
+// today, weekday within the last week, date beyond that. timeAgo is wrong here —
+// it produced "25d ago" sitting directly above "26/06/2026" in the same list.
+// Pinned to LOCALE/TZ like every other formatter (see BUG-008): an unpinned
+// timezone can put a message on the wrong day for users near midnight.
+export function formatChatTime(iso: string) {
+  const then = new Date(iso);
+  const dayIn = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: TZ }); // YYYY-MM-DD
+  const today = dayIn(new Date());
+  const thatDay = dayIn(then);
+
+  if (thatDay === today) {
+    return then.toLocaleTimeString(LOCALE, { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+  }
+  const daysApart = Math.round(
+    (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${thatDay}T00:00:00Z`)) / 86400000
+  );
+  if (daysApart === 1) return "Yesterday";
+  if (daysApart > 1 && daysApart < 7) {
+    return then.toLocaleDateString(LOCALE, { timeZone: TZ, weekday: "long" });
+  }
+  return formatDate(iso);
+}
+
 export function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);

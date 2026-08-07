@@ -1680,7 +1680,13 @@ export async function sendMessage(formData: FormData) {
   }
 
   const thread_id = String(formData.get("thread_id"));
-  const body = String(formData.get("body") || "").trim();
+  const typed = String(formData.get("body") || "").trim();
+  // The job picker keeps its selection out of the visible input — the composer
+  // shows a titled chip, not a UUID — so the marker is appended here instead.
+  const attachedJobId = String(formData.get("attached_job_id") || "").trim();
+  const body = attachedJobId
+    ? `${typed ? `${typed} ` : ""}[[job:${attachedJobId}]]`
+    : typed;
 
   const file = formData.get("attachment");
   let attachment_url: string | null = null;

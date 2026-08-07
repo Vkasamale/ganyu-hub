@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ThreadList } from "@/components/thread-list";
+import { withPreviews, byRecentActivity } from "@/lib/thread-previews";
 
 export default async function MessagesPage() {
   const supabase = createClient();
@@ -13,6 +14,8 @@ export default async function MessagesPage() {
     .select("id, created_at, client_id, creative_id, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name), job:jobs(id, title)")
     .or(`client_id.eq.${user.id},creative_id.eq.${user.id}`)
     .order("created_at", { ascending: false });
+
+  const rows = byRecentActivity(await withPreviews(supabase, (threads || []) as any));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
@@ -31,11 +34,8 @@ export default async function MessagesPage() {
               </Link>
               <p className="eyebrow">Messages</p>
             </div>
-            <p className="mt-1 text-xs text-ink/55">{threads?.length || 0} conversations</p>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <ThreadList threads={(threads || []) as any} userId={user.id} />
-          </div>
+          <ThreadList threads={rows as any} userId={user.id} />
         </aside>
 
         <section className="card-soft flex flex-col items-center justify-center overflow-hidden p-8 text-center">

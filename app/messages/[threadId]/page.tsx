@@ -11,6 +11,7 @@ import { MessageJobPicker } from "@/components/message-job-picker";
 import { extractJobIds } from "@/lib/message-markers";
 import { JOB_EVENT_LABELS } from "@/components/job-timeline";
 import { ThreadList } from "@/components/thread-list";
+import { withPreviews, byRecentActivity } from "@/lib/thread-previews";
 import type { JobEventType } from "@/lib/job-events";
 import { timeAgo } from "@/lib/utils";
 
@@ -109,6 +110,8 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     ...jobEvents.map((e: any) => ({ kind: "event" as const, at: e.created_at, data: e })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
+  const sidebarRows = byRecentActivity(await withPreviews(supabase, (threads || []) as any));
+
   // Long threads bury the thing you came back for. The newest event is the
   // usual anchor — "what happened last" — so it gets a jump link in the header.
   const latestEvent = jobEvents.length ? jobEvents[jobEvents.length - 1] : null;
@@ -138,11 +141,8 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
               </Link>
               <p className="eyebrow">Messages</p>
             </div>
-            <p className="mt-1 text-xs text-ink/55">{threads?.length || 0} conversations</p>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <ThreadList threads={(threads || []) as any} userId={user.id} activeId={thread.id} />
-          </div>
+          <ThreadList threads={sidebarRows as any} userId={user.id} activeId={thread.id} />
         </aside>
 
         <section className="card-soft flex flex-col overflow-hidden">
