@@ -846,7 +846,13 @@ create table if not exists job_events (
     'dispute_filed',
     'dispute_resolved',
     'cancelled',
-    'deadline_extended'
+    'deadline_extended',
+    -- Added 2026-08-07. Was missing here while lib/job-events.ts already emitted
+    -- it, so every release-event insert failed this constraint. logJobEvent
+    -- swallows its own errors so that logging can never block a payout — which
+    -- meant the money moved and the only record of WHEN the creative was paid
+    -- was dropped in silence. Keep this list in sync with JobEventType.
+    'payment_released'
   ))
 );
 create index if not exists job_events_job_id_created_at_idx on job_events(job_id, created_at);
