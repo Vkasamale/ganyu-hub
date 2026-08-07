@@ -4,6 +4,36 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 (evening) — Messages / job conversations
+
+Verified live in Chrome as EQ Admin Client on the `sandbox-test` preview, after
+running `supabase/backfill-job-threads.sql` (42 threads created, 0 missing).
+
+✅ **Conversation list.** Chips read All 25 / Jobs 23 / Direct 2, counts correct.
+Job threads group under the person; previews show the job's actual last event
+("Job completed", "Payment released to creative", "Work started", "Deadline
+extended"). Sorted by activity — today's throwaway top, then yesterday, then
+July. Timestamps render "22:00" / "20:11" for today and "22/07/2026" for older.
+
+✅ **Search.** Typing "released" narrowed 25 conversations to the one whose last
+event was "Payment released to creative", and the group header updated to
+"1 job" — so search reaches preview text, not just titles and names.
+
+✅ **Collapsible groups.** 25 conversations render as 5 rows: Adam Creative
+(18 jobs), Hashtag CRE (1), Faith Kimu (4), then 2 direct messages. No scroll.
+
+⬜ **Thread view itself not opened in a browser.** The merged event/message
+stream, the event anchors, the "Latest event" jump link and the job-picker chip
+are all typechecked and pushed but unverified on screen. Next session: open one
+of the backfilled threads and look.
+
+⬜ **Notification tabs split — still unverified live**, and this is the item the
+founder actually reported. Open the bell: job events should now sit under Jobs,
+real chat under Messages.
+
+⬜ **Merged send-work-for-review → status advance** still needs a *funded* job to
+verify; the delivery panel only renders while a job is active.
+
 ## 2026-08-07 (later) — BUG-018 and BUG-012 both verified
 
 Third live run of the day, both accounts driven (EQ Admin in Chrome, Adam

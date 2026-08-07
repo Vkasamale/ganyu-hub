@@ -3,6 +3,58 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 (evening) — Messages becomes the record of the work
+
+**The Jobs tab in notifications never worked, and not for the reason it looked
+like.** `notification_kind` is a four-value enum written before jobs existed
+(`proposal_received`/`accepted`/`declined` + `message_received`), so all twenty-odd
+job notifications — deliveries, disputes, escrow moves, deadline changes — are
+written as `message_received` because there is no other value to use. The tabs
+matched `kind` against `/job|dispute|escrow/`, which hits none of them, so Jobs
+was permanently empty and Messages swallowed everything. The tabs now read
+`target_type`, which was already correct on every row (`job` / `thread` /
+`creative`). No enum migration, no touching the call sites. Covered by
+`tests/lib/notification-tabs.test.ts`.
+
+**Every accepted job is now a conversation.** The schema already allowed it —
+`message_threads.job_id` is nullable with `unique (client_id, creative_id,
+job_id)` — and nothing used it. Acceptance creates the thread, so Messages holds
+the history of every job whether or not either party types. The thread view
+merges that job's events into the message stream by time, rendered as centred
+system notes between the bubbles using the same labels as the job page, so a
+question can sit directly under the delivery it is about. Events carry anchors
+and the header offers a jump link to the most recent one — coming back after a
+long stretch of talking lands on what happened, not the bottom of a scroll.
+
+**The list reads like a chat app.** Search over job titles, names and preview
+text; `All / Jobs / Direct` chips with live counts replacing stacked section
+headings; a preview on every row showing the last thing that happened, message or
+event ("Payment released to creative" needs no special casing); sorting by that
+activity instead of creation date. Timestamps became clock-time / Yesterday /
+weekday / date — the list previously showed "25d ago" directly above
+"26/06/2026". Pinned to Malawi time with the near-midnight cases tested, since
+that is precisely how BUG-008 happened.
+
+**Job threads group under the person, collapsed by default.** Eighteen jobs under
+one name is a scroll, not a list. Groups expand on click; search and the
+currently-open thread force their group open, which is why expansion is React
+state rather than a native `<details>`. 25 conversations now render as 5 rows.
+
+**The job picker stops showing a UUID.** It pasted `[[job:<uuid>]]` into the
+message box — a marker the user was never meant to edit and could half-delete and
+send broken. The marker still goes out in the body; it now rides in a hidden
+field while the composer shows a removable chip with the job's title.
+
+**Backfill required and run**: `supabase/backfill-job-threads.sql` creates threads
+for jobs accepted before this shipped, stamped with the job's real payment date so
+they sort by history rather than bunching at the top. 42 threads created, 0
+missing. Idempotent.
+
+Noted while backfilling, not chased: four jobs sit at status `open` while
+carrying an accepted proposal (`testign2`, `email testing`, `poster`, `logo`).
+Almost certainly legacy seed data from before payment-first acceptance, but
+anything reasoning "accepted ⇒ in progress" is wrong about those four.
+
 ## 2026-08-07 (later) — BUG-018 and BUG-012 both verified, and who closes a job
 
 **BUG-018 is fixed, confirmed on a real release.** A fresh throwaway job
