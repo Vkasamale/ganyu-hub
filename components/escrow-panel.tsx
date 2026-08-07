@@ -26,6 +26,14 @@ const HINTS: Record<Escrow, string> = {
   payment_disputed: "Payment is in dispute. Resolve by releasing or by re-holding while you sort it out.",
 };
 
+// Sandbox settles instantly (isTestMode), so promising "the next business day"
+// is simply false there and made every test run look broken. Only the two
+// statuses whose copy mentions settlement need an override.
+const TEST_HINTS: Partial<Record<Escrow, string>> = {
+  none: "Pay the agreed amount into escrow to secure the work. You'll be redirected to our secure checkout. Sandbox mode — funds settle instantly and are releasable straight away.",
+  payment_held: "Funds are held. Sandbox mode — the next-business-day settlement wait is skipped, so you can release now, or flag a dispute if there's a problem.",
+};
+
 function clientActions(status: Escrow): { next: Escrow; label: string; variant?: "outline" }[] {
   if (status === "none") return [{ next: "payment_held", label: "Pay into escrow" }];
   if (status === "payment_pending") return [{ next: "none", label: "Cancel pending payment", variant: "outline" }];
@@ -70,7 +78,7 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
         <p className="mt-2 text-sm text-neutral-600">
           {payoutPending
             ? "Payout to the creative is processing. This page will update as soon as it's confirmed."
-            : HINTS[escrowStatus]}
+            : (testMode && TEST_HINTS[escrowStatus]) || HINTS[escrowStatus]}
         </p>
         {actions.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">

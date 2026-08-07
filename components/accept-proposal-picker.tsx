@@ -8,7 +8,7 @@ import { formatMwk } from "@/lib/utils";
 
 const RAILS: CollectionRail[] = ["mobile_money", "bank_transfer", "card"];
 
-export function AcceptProposalPicker({ proposalId, bidMwk }: { proposalId: string; bidMwk: number }) {
+export function AcceptProposalPicker({ proposalId, bidMwk, testMode = false }: { proposalId: string; bidMwk: number; testMode?: boolean }) {
   const [open, setOpen] = useState(false);
   const [rail, setRail] = useState<CollectionRail>("mobile_money");
 
@@ -32,7 +32,10 @@ export function AcceptProposalPicker({ proposalId, bidMwk }: { proposalId: strin
     <div className="w-full rounded-lg border border-ink/15 bg-paper p-4 space-y-3">
       <p className="text-sm font-medium">Choose how you'll pay</p>
       <p className="text-xs text-ink/70">
-        A processing fee is added on top of the bid at checkout. The full bid still lands in escrow. Funds settle and become releasable the next business day.
+        A processing fee is added on top of the bid at checkout. The full bid still lands in escrow.{" "}
+        {testMode
+          ? "Sandbox mode — funds settle instantly and are releasable straight away."
+          : "Funds settle and become releasable the next business day."}
         {BETA_ZERO_COMMISSION && " No platform fee during beta — the creative keeps 100% of the bid."}
       </p>
       <div className="flex flex-wrap gap-2">

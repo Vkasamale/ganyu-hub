@@ -22,10 +22,22 @@ export function Collapsible({
           )}
         </div>
         {right}
-        <span className="shrink-0 text-xs text-ink/55 underline underline-offset-2">
-          <span className="group-open:hidden">See more</span>
-          <span className="hidden group-open:inline">Hide</span>
-        </span>
+        {/* Chevron points down when collapsed and flips up when open. Text is
+            sr-only so the control still announces itself to screen readers. */}
+        <span className="sr-only group-open:hidden">Expand</span>
+        <span className="sr-only hidden group-open:inline">Collapse</span>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0 self-center text-ink/55 transition-transform duration-200 group-open:-rotate-180"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
       </summary>
       <div className="mt-4">{children}</div>
     </details>

@@ -51,18 +51,23 @@ export async function POST(req: Request) {
         ? await verifyPayout(chargeIdForVerify, method)
         : { status: po.status, providerId: po.providerId };
       if (verified.status === "success") {
-        await supabase.from("jobs").update({
+        // Compare-and-swap — see the matching comment in reconcilePayout
+        // (app/actions.ts). This handler and that one race on every release,
+        // and both used to log, producing two payment_released rows (BUG-018).
+        const { data: claimed } = await supabase.from("jobs").update({
           escrow_status: "payment_released",
           payout_status: null,
           payout_provider_id: verified.providerId || po.providerId || null,
           payout_amount_mwk: (verified as any).amount ?? null,
           payout_fee_mwk: (verified as any).fee ?? null,
-        }).eq("id", pj.id);
-        // Only record of *when* the creative got paid — see JobEventType.
-        const { logJobEvent } = await import("@/lib/job-events");
-        await logJobEvent(pj.id, "payment_released", "Funds released to the creative.", {
-          metadata: { payout_ref: chargeIdForVerify, amount_mwk: (verified as any).amount ?? null, via: "webhook" },
-        });
+        }).eq("id", pj.id).eq("escrow_status", "payment_held").select("id");
+        if (claimed && claimed.length > 0) {
+          // Only record of *when* the creative got paid — see JobEventType.
+          const { logJobEvent } = await import("@/lib/job-events");
+          await logJobEvent(pj.id, "payment_released", "Funds released to the creative.", {
+            metadata: { payout_ref: chargeIdForVerify, amount_mwk: (verified as any).amount ?? null, via: "webhook" },
+          });
+        }
       } else if (verified.status === "failed") {
         await supabase.from("jobs").update({
           payout_status: "failed",

@@ -3,6 +3,46 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — BUG-017 closed, and the duplicate it revealed
+
+A fresh end-to-end run in the sandbox — post, propose, accept, fund, release —
+and `payment_released` landed with a real timestamp. **BUG-017 is verified
+fixed.** The escrow-release-speed figure on `/clients/[id]` finally has
+something to read.
+
+The same query showed the event written **twice**, 620ms apart. Two writers race
+on every release: `reconcilePayout`, which the job page calls at render time
+whenever a payout is pending, and the PayChangu webhook. Both run
+read-guard → `verifyPayout` → update → log, and `verifyPayout` is a network call
+sitting between the guard and the write, so both pass the guard before either
+writes. Fixed by making the UPDATE its own lock — each writer filters on the
+pre-state and logs only if a row actually came back. Logged as BUG-018.
+
+**The list that caused BUG-017 is no longer duplicated.** `JobEventType` is now
+derived from a runtime `JOB_EVENT_TYPES` array, and a new test parses the CHECK
+constraint straight out of `schema.sql` and fails if the two diverge. Two
+hand-maintained copies became one list plus a guard.
+
+**BUG-016 verified in passing** — a short brief is rejected and Title, Category,
+Brief, Deliverables, Deadline and Budget all survive the error.
+
+**Sandbox copy no longer lies.** The escrow panel and the accept picker both
+promised funds settle "the next business day" even in sandbox, where settlement
+is instant — which made every test run look broken. Both now say so when test
+keys are in use.
+
+**Share links from a preview deploy pointed at production.** `APP_URL` is
+production everywhere, so sharing a sandbox job handed people a production URL
+for a job that only exists in sandbox. `SITE_URL` now prefers Vercel's own host
+on non-production deploys. Only `NEXT_PUBLIC_*` vars are read there — a
+server-only var would be undefined in the browser bundle and reintroduce the
+hydration mismatch that module exists to prevent. ⚠️ Requires "Automatically
+expose System Environment Variables" in Vercel; without it, nothing changes.
+
+**Collapsibles use a chevron now** instead of a "See more" text link — points
+down when collapsed, flips up when open, with the label kept as screen-reader
+text.
+
 ## 2026-08-07 — Job page: money state you can actually see
 
 Released the funds on a live sandbox job and didn't notice anything had changed.

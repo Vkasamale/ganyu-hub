@@ -745,7 +745,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                   <p className="mt-2 text-sm font-medium">Bid: {formatMwk(p.bid_mwk)}</p>
                   {p.status === "pending" && (
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <AcceptProposalPicker proposalId={p.id} bidMwk={p.bid_mwk} />
+                      <AcceptProposalPicker proposalId={p.id} bidMwk={p.bid_mwk} testMode={isTestMode()} />
                     </div>
                   )}
                 </CardContent>

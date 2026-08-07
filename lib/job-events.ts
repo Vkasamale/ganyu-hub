@@ -6,23 +6,33 @@ import { createServerClient } from "@supabase/ssr";
 // concept caller is `promotePendingAcceptance` (proposal_accepted). Later
 // sessions will fan more callers into this same helper.
 
-export type JobEventType =
-  | "proposal_accepted"
-  | "escrow_funded"
-  | "work_started"
-  | "files_delivered"
-  | "revision_requested"
-  | "revision_delivered"
-  | "job_completed"
-  | "dispute_filed"
-  | "dispute_resolved"
-  | "cancelled"
-  | "deadline_extended"
+// A runtime array, not a bare union, so a test can compare it against the SQL
+// CHECK constraint in supabase/schema.sql. These were two hand-maintained
+// copies of one list and they drifted: 'payment_released' was added here and
+// never added there, so every insert violated the constraint — and logJobEvent
+// swallows errors by design, so logging can never block a payout, which hid it
+// in production. Keep this list and the constraint in step;
+// tests/lib/job-event-types.test.ts fails loudly if they diverge again.
+export const JOB_EVENT_TYPES = [
+  "proposal_accepted",
+  "escrow_funded",
+  "work_started",
+  "files_delivered",
+  "revision_requested",
+  "revision_delivered",
+  "job_completed",
+  "dispute_filed",
+  "dispute_resolved",
+  "cancelled",
+  "deadline_extended",
   // The moment the creative actually gets paid. escrow_status records that
   // release happened but never when, and payment_held_at only marks the start
   // of the wait — so this event's created_at is the only record of how long a
   // creative waited. Forward-only: nothing can reconstruct it retroactively.
-  | "payment_released";
+  "payment_released",
+] as const;
+
+export type JobEventType = (typeof JOB_EVENT_TYPES)[number];
 
 function serviceClient() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;

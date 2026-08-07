@@ -75,6 +75,37 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Display/heading font exploration.** Raised 2026-07/08 after seeing a wide-tracked, bold uppercase broadcast-credits style font (Bebas Neue / Oswald / Druk territory). Good candidate for hero headlines and short section labels (eyebrows, category pills) — NOT for body text or job descriptions, wide-tracked all-caps fonts fatigue fast at paragraph length. Ganyu Hub already has a locked teal token system + shipped editorial redesign, so this is a deliberate design pass touching every page, not a quick swap — bundle with the dark mode work above since both require full-route visual QA. Not a beta task.
 
+## Job page polish (raised 2026-08-07, after the money-state redesign shipped)
+
+- ~~**Chevron arrows instead of the "See more" text link.**~~ **Shipped
+  2026-08-07**, same day it was raised — inline SVG chevron with
+  `group-open:-rotate-180` and a 200ms transition, "Expand"/"Collapse" kept as
+  sr-only text. Not looked at in a browser yet. Original scope below.
+- **Chevron arrows instead of the "See more" text link.** The collapsibles
+  (`components/collapsible.tsx`, used by the project brief, Activity and Send
+  delivery) currently expand via a small "See more" / "Hide" text link. Founder
+  wants the standard directional chevron — a wide V pointing **down** when
+  collapsed, flipping to point **up** when expanded, animating between the two.
+  Cheap: one inline SVG chevron plus `group-open:rotate-180` and a
+  `transition-transform` on the existing `<details>` — no new dependency, and the
+  `group`/`group-open` wiring is already in place. Drop the text entirely, but
+  keep an `aria-label` so the control still announces itself.
+
+- **Real badge artwork for the "Released to creative" stamp.** Founder is
+  supplying a designed badge/logo asset for the released state. Today it's a
+  plain emerald outlined chip built from the `MONEY_STATE` map in
+  `components/job-header.tsx` — legible and clearly distinct, but it reads as a
+  tag rather than a stamp. Swap in the supplied artwork when it lands. Note the
+  other four states (not funded, pending, held, disputed) stay as coloured chips
+  unless artwork arrives for them too — one illustrated state among four plain
+  ones may look accidental, so check the set together. **Blocked on the founder
+  providing the asset.**
+
+- **Duplicate money-state wording.** The header stamp says "Released to
+  creative" and the Payment card immediately beneath says "Payment released" —
+  two labels for one fact, a few inches apart. Probably drop the Payment card's
+  own badge and let the stamp carry it. Noticed in the same review; not urgent.
+
 ## Accessibility
 
 - ~~**Finish the WCAG contrast sweep.**~~ **Shipped 2026-07-17.** Full `text-stamp` → `text-stamp-dark` swap across 12 files; decorative italic display headings kept as bright `text-stamp` (large text, AA-passing at 3:1). See CHANGELOG 2026-07-17.

@@ -1843,17 +1843,25 @@ export async function reconcilePayout(input: string | FormData, opts?: { skipRev
   const verified = await verifyPayout(job.payout_ref, method);
 
   if (verified.status === "success") {
-    await admin.from("jobs").update({
+    // Compare-and-swap, not a plain update: the webhook runs this same sequence
+    // concurrently, and `verifyPayout` above is a network call sitting between
+    // the guard and the write. Both readers passed the guard and both logged,
+    // so a released job carried two payment_released rows (BUG-018). Filtering
+    // on the pre-state makes the UPDATE itself the lock — whoever flips it gets
+    // rows back and logs; the loser gets none and stays quiet.
+    const { data: claimed } = await admin.from("jobs").update({
       escrow_status: "payment_released",
       payout_status: null,
       payout_provider_id: verified.providerId || null,
       payout_amount_mwk: verified.amount ?? null,
       payout_fee_mwk: verified.fee ?? null,
-    }).eq("id", job_id);
-    // Only record of *when* the creative got paid — see JobEventType.
-    await logJobEvent(job_id, "payment_released", "Funds released to the creative.", {
-      metadata: { payout_ref: job.payout_ref, amount_mwk: verified.amount ?? null, via: "reconcile" },
-    });
+    }).eq("id", job_id).neq("escrow_status", "payment_released").select("id");
+    if (claimed && claimed.length > 0) {
+      // Only record of *when* the creative got paid — see JobEventType.
+      await logJobEvent(job_id, "payment_released", "Funds released to the creative.", {
+        metadata: { payout_ref: job.payout_ref, amount_mwk: verified.amount ?? null, via: "reconcile" },
+      });
+    }
     revalidate(`/jobs/${job_id}`);
     return { ok: true, info: "Payout confirmed. Status updated to Released." };
   }

@@ -4,6 +4,40 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — BUG-017 verified, BUG-016 verified, BUG-018 found
+
+Second live run of the day, both accounts driven (EQ Admin in Chrome, Adam
+Creative in the preview pane). Job `d2a9aea7-bbf9-4059-98fe-bc0bda536c58`,
+MWK 2,000, on the `sandbox-test` preview.
+
+✅ **BUG-017 closed.** `payment_released` written with `created_at`
+`18:11:34+00`. This is the check that had been outstanding since the constraint
+was altered — the fix is now proven, not assumed.
+
+✅ **BUG-016 closed.** Submitted a brief under 200 characters; the error fired
+and Title, Category, Brief, Deliverables, Deadline and Budget all survived.
+
+❌ **BUG-018 found by the same query** — two `payment_released` rows, 620ms
+apart, `via: reconcile` and `via: webhook`. Fixed same session; **the fix is
+unverified.** It depends on PostgREST returning an empty array for a filtered
+update that matches nothing, which the mock suite cannot demonstrate. One more
+funded release, checking for exactly one row, is the outstanding test.
+
+✅ **Money-state badge, 3 of 5 states seen live.** Grey "NOT FUNDED YET" on the
+open job, sky "HELD IN ESCROW" once funded, emerald "RELEASED TO CREATIVE" after
+release. Held vs released are unmistakably different, which was the point.
+⬜ Amber `payment_pending` and red `payment_disputed` still unseen — the dispute
+one comes free with the BUG-012 test.
+
+✅ **T+1 sandbox bypass still working** — Release button live immediately, no
+countdown.
+
+✅ **Redesign confirmed on both sides** — payment card under the header,
+collapsed brief with terms still visible, one-line activity, single action row.
+
+⬜ **Not re-checked after the chevron / sandbox-copy / share-link changes** —
+those shipped after this run. Unit tests green (71), nothing looked at.
+
 ## 2026-08-07 — Job page redesign: built, nothing verified
 
 Typecheck clean, 69/69 unit tests green. That is the entire evidence base — the
