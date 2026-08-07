@@ -40,13 +40,18 @@ function clientActions(status: Escrow): { next: Escrow; label: string; variant?:
   return [];
 }
 
-export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, paymentHeldAt }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null; paymentHeldAt?: string | null }) {
+export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, paymentHeldAt, testMode = false }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null; paymentHeldAt?: string | null; testMode?: boolean }) {
   const payoutPending = payoutStatus === "pending";
   // Funds only settle to main balance the next business day. Server enforces
   // the 24h gate too; here we only surface it in the UI.
+  // testMode mirrors the server's sandbox exemption (actions.ts, isTestMode):
+  // sandbox settles instantly. Without it the button stays disabled and no
+  // release is testable in one sitting even though the server would allow it.
+  // Passed in rather than read here — the deciding value is the secret key,
+  // which must never reach the client bundle.
   const HOLD_MS = 24 * 60 * 60 * 1000;
   const heldMs = paymentHeldAt ? Date.now() - new Date(paymentHeldAt).getTime() : Infinity;
-  const holdActive = escrowStatus === "payment_held" && heldMs < HOLD_MS;
+  const holdActive = !testMode && escrowStatus === "payment_held" && heldMs < HOLD_MS;
   // Keep the Release button visible during the hold but disabled — clearer
   // than hiding it. The countdown text right below tells them why.
   const rawActions = role === "client" ? clientActions(escrowStatus) : [];

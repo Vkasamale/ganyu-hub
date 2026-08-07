@@ -43,6 +43,7 @@ import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel } from "@/components/escrow-panel";
+import { isTestMode } from "@/lib/payments";
 import { ClientLinkCopy } from "@/components/client-link-copy";
 import { JobHeader } from "@/components/job-header";
 import { ShareButtons } from "@/components/share-buttons";
@@ -415,7 +416,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
 
       {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} paymentHeldAt={job.payment_held_at} />
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
       )}
       {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
         <Card className="mt-6 border-amber-200 bg-amber-50">
@@ -434,7 +435,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} />
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
       )}
       {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
         <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
