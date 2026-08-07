@@ -1,5 +1,5 @@
 import { formatMwk } from "@/lib/utils";
-import { creativeGross, payoutFee } from "@/lib/fees";
+import { creativeGross, payoutFee, PAYOUT_RATE, PAYOUT_RATES } from "@/lib/fees";
 import { computeJobStage, type JobEventLite, type JobStageInput } from "@/lib/job-stages";
 import { JobProgressBar } from "@/components/job-progress-bar";
 
@@ -39,11 +39,14 @@ export function JobHeader({
   const amountLabel = AMOUNT_LABEL[job.escrow_status || "none"] ?? "Job value";
   const released = job.escrow_status === "payment_released";
   const gross = creativeGross(escrow);
-  // Show the pessimistic net so the number doesn't shrink at cash-out. Whichever
-  // rail costs more at this amount wins (bank's flat 700 dominates small payouts,
-  // mobile's higher % dominates large ones).
-  const worstFee = Math.max(payoutFee(gross, "bank"), payoutFee(gross, "mobile"));
-  const payout = Math.max(0, gross - worstFee);
+  // Both rails, not the worst of the two. A single pessimistic figure meant a
+  // MWK 2,000 job advertised 1,260 when the creative would actually receive
+  // 1,960 — at that size the flat bank fee IS the whole fee, so the estimate ran
+  // 35% low and invited "where did my money go?". Large jobs hide this; small
+  // ones are exactly where people check. Side by side, the flat fee explains
+  // itself, and the creative can see what choosing mobile money saves them.
+  const mobileNet = Math.max(0, gross - payoutFee(gross, "mobile"));
+  const bankNet = Math.max(0, gross - payoutFee(gross, "bank"));
 
   return (
     <div className="rounded-lg border border-ink/10 bg-white p-5 sm:p-6">
@@ -57,9 +60,21 @@ export function JobHeader({
         <div className="mt-1 font-display text-3xl tabular-nums text-ink sm:text-4xl">
           {formatMwk(escrow)}
         </div>
-        <div className="mt-1 text-sm text-ink/70">
-          {released ? "Creative received (after cash-out fee):" : "Creative receives (est., after cash-out fee):"}{" "}
-          <span className="font-medium tabular-nums">{formatMwk(payout)}</span>
+        <div className="mt-2 text-sm text-ink/70">
+          <div>{released ? "Creative received, after cash-out fee" : "Creative receives (est., after cash-out fee)"}</div>
+          <div className="mt-0.5 flex flex-wrap gap-x-5 gap-y-0.5">
+            <span>
+              <span className="font-medium tabular-nums text-ink">{formatMwk(mobileNet)}</span> to mobile money
+            </span>
+            <span>
+              <span className="font-medium tabular-nums text-ink">{formatMwk(bankNet)}</span> to bank
+            </span>
+          </div>
+          <div className="mt-1 text-xs text-ink/55">
+            Cash-out fees are charged by the payment provider, not Ganyu Hub — banks
+            add a flat MWK {PAYOUT_RATES.bank.flat.toLocaleString()} on top of the{" "}
+            {Math.round(PAYOUT_RATE * 100)}% both rails charge.
+          </div>
         </div>
       </div>
 
