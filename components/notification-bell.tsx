@@ -14,13 +14,27 @@ export type NotificationItem = {
   link: string | null;
   read_at: string | null;
   created_at: string;
+  target_type: string | null;
 };
 
-const TABS: { key: string; label: string; match: (k: string) => boolean }[] = [
+// Tabs match on target_type, not kind. `kind` is a four-value enum that predates
+// jobs entirely (proposal_received/accepted/declined + message_received), so
+// every job notification — deliveries, disputes, escrow, deadlines — is written
+// as message_received for want of anywhere else to put it. Matching kind against
+// /job|dispute|escrow/ therefore never hit anything: the Jobs tab was always
+// empty and Messages collected the lot. target_type is already correct on every
+// row ("job" / "thread" / "creative"), so read that instead.
+// ponytail: fixes the split without an enum migration or 20 call-site edits.
+// If kind ever gains real job values, prefer it and keep this as the fallback.
+export const NOTIFICATION_TABS: { key: string; label: string; match: (n: NotificationItem) => boolean }[] = [
   { key: "all", label: "View all", match: () => true },
-  { key: "jobs", label: "Jobs", match: (k) => /job|milestone|dispute|scope|escrow/i.test(k) },
-  { key: "proposals", label: "Proposals", match: (k) => /proposal|bid|offer/i.test(k) },
-  { key: "messages", label: "Messages", match: (k) => /message|reply|comment/i.test(k) },
+  {
+    key: "jobs",
+    label: "Jobs",
+    match: (n) => n.target_type === "job" && !/^proposal/i.test(n.kind),
+  },
+  { key: "proposals", label: "Proposals", match: (n) => /^proposal/i.test(n.kind) },
+  { key: "messages", label: "Messages", match: (n) => n.target_type === "thread" },
 ];
 
 function initials(name: string): string {
@@ -48,11 +62,11 @@ export function NotificationBell({
 
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const t of TABS) counts[t.key] = items.filter((n) => t.match(n.kind)).length;
+    for (const t of NOTIFICATION_TABS) counts[t.key] = items.filter((n) => t.match(n)).length;
     return counts;
   }, [items]);
 
-  const visible = items.filter((n) => TABS.find((t) => t.key === tab)?.match(n.kind));
+  const visible = items.filter((n) => NOTIFICATION_TABS.find((t) => t.key === tab)?.match(n));
 
   useEffect(() => {
     const supabase = createClient();
@@ -81,7 +95,7 @@ export function NotificationBell({
     async function refresh() {
       const { data } = await supabase
         .from("notifications")
-        .select("id, kind, title, body, link, read_at, created_at")
+        .select("id, kind, title, body, link, read_at, created_at, target_type")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(20);
@@ -166,7 +180,7 @@ export function NotificationBell({
             </div>
 
             <div className="flex items-center gap-1 px-4 pb-3">
-              {TABS.map((t) => {
+              {NOTIFICATION_TABS.map((t) => {
                 const active = tab === t.key;
                 const count = tabCounts[t.key];
                 return (

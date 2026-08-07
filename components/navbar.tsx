@@ -16,7 +16,7 @@ export async function Navbar() {
     const [{ data: nots }, { data: p }] = await Promise.all([
       supabase
         .from("notifications")
-        .select("id, kind, title, body, link, read_at, created_at")
+        .select("id, kind, title, body, link, read_at, created_at, target_type")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(20),
