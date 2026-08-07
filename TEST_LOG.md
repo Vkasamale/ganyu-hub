@@ -4,6 +4,37 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — Check 3 closed: the release works, the event never landed
+
+First complete escrow release run end to end in the sandbox, both accounts
+driven live (EQ Admin in Chrome, Adam Creative in the preview pane). Job
+`99e8569b-dd4a-4125-bba2-6e960413c64f`, MWK 2,000.
+
+✅ **Post → propose → accept → fund → release all work.** Client paid MWK 2,060
+(2,000 + 3% collection fee), escrow moved `none → payment_pending →
+payment_held → payment_released`, and the release completed with no 24h wait.
+
+✅ **T+1 sandbox bypass works, server and UI.** The server exemption alone left
+the Release button disabled behind a 23h countdown — the escrow panel mirrors
+the guard client-side and needed the same treatment.
+
+✅ **BUG-014 verified live.** Header read "JOB VALUE" before funding, "MONEY IN
+ESCROW" while held, "RELEASED TO CREATIVE" after release.
+
+✅ **BUG-015 verified live.** "30th of September 2026" everywhere on the page.
+
+✅ **Both-rails payout display verified live** — "MWK 1,960 to mobile money /
+MWK 1,260 to bank" plus the provider-attribution line.
+
+❌ **BUG-017 — the `payment_released` event was never written.** `select * from
+job_events` for the job returned only `escrow_funded`, `proposal_accepted`,
+`work_started`. Root cause was a CHECK constraint that never allowed the value.
+The `alter table` has been run on the live DB; **a fresh release still needs to
+be run to confirm the event now lands.**
+
+⬜ Still unverified from earlier today: BUG-012 (needs a disputed job) and
+BUG-016 (Post a job with a brief under 200 characters).
+
 ## 2026-08-07 — Bug-fix round: BUG-012, 014, 015, 016
 
 ✅ tsc clean. ✅ 66/66 (was 65). New case in

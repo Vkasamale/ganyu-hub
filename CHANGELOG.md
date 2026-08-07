@@ -3,6 +3,45 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — A real release, and the bug it exposed
+
+Ran the first complete escrow release end to end in the sandbox: EQ Admin posted
+a throwaway job, Adam Creative proposed, the client funded MWK 2,000 and
+released. The money moved. **No `payment_released` event was written.**
+
+`job_events_event_type_check` never listed `'payment_released'`, though
+`JobEventType` has emitted it since it was added, so every insert violated the
+constraint. `logJobEvent` console-logs and returns instead of throwing —
+deliberately, so logging can never block a payout — which made the failure
+invisible in production.
+
+That event's `created_at` is the only record of *when* a creative was paid;
+`escrow_status` records only that release happened. Forward-only, so every
+release before this has lost its timestamp for good. It also explains why the
+escrow-release-speed figure on `/clients/[id]` had nothing to show: it was
+waiting on events that could never have existed.
+
+Unit tests could not have caught it — `mockSupabase` doesn't enforce CHECK
+constraints, so both writers passed while neither worked. Only a real release
+could surface it. ⚠️ The `alter table` was run on the live DB the same day, but
+no release has been logged successfully yet — that check is still outstanding.
+
+**Two sandbox-only changes made the test possible at all.** PayChangu settles
+T+1, so releases are blocked for 24h after funding — correct for live, since the
+provider holds one pooled balance rather than per-job funds, but pure friction in
+sandbox where settlement is instant. `isTestMode()` keys off the `sec-test-`
+prefix rather than `VERCEL_ENV`, so live keys in a preview deploy still get the
+guard. The server exemption alone wasn't enough: the escrow panel disables the
+Release button during the hold, so that gate had to be lifted in the UI too.
+
+**Payout estimates now show both cash-out rails.** A single pessimistic figure
+advertised MWK 1,260 on a 2,000 job when the creative would actually receive
+1,960 — at that size the flat bank fee is the whole fee, so the estimate ran 35%
+low. Mobile and bank now sit side by side, with the fee attributed to the payment
+provider rather than left looking like ours.
+
+tsc clean; 69/69. BUG-017.
+
 ## 2026-08-07 — Four bug fixes: disputed releases, escrow label, date format, form data loss
 
 **A dispute resolved in the creative's favour now actually pays them.** Every
