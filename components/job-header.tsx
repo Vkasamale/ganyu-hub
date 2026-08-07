@@ -59,13 +59,25 @@ export function JobHeader({
       </div>
 
       <div className="mt-4">
-        <div
-          className={`inline-block -rotate-1 rounded border-2 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.12em] ${money.tone}`}
-        >
-          {money.label}
-        </div>
-        <div className="mt-2 font-display text-3xl tabular-nums text-ink sm:text-4xl">
-          {formatMwk(escrow)}
+        {/* Stamp sits on the money's baseline, pushed to the card's right margin
+            — it reads as something pressed onto the page rather than a chip
+            stacked above the figure. Double ring + flanking rules is what makes
+            it read as ink; the tilt keeps it from looking machine-placed. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="font-display text-3xl tabular-nums text-ink sm:text-4xl">
+            {formatMwk(escrow)}
+          </div>
+          <div
+            className={`shrink-0 -rotate-6 rounded-full border-[3px] px-4 py-1.5 ring-2 ring-inset ring-current/20 sm:px-5 sm:py-2 ${money.tone}`}
+          >
+            <span className="flex items-center gap-2">
+              <span aria-hidden className="h-px w-3 bg-current opacity-40 sm:w-4" />
+              <span className="text-xs font-bold uppercase tracking-[0.16em] sm:text-sm">
+                {money.label}
+              </span>
+              <span aria-hidden className="h-px w-3 bg-current opacity-40 sm:w-4" />
+            </span>
+          </div>
         </div>
         <div className="mt-2 text-sm text-ink/70">
           <div>{released ? "Creative received, after cash-out fee" : "Creative receives (est., after cash-out fee)"}</div>

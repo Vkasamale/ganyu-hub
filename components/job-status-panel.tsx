@@ -19,11 +19,11 @@ function actionsFor(status: string, role: Role, escrowStatus?: string | null): {
   if (role === "creative") {
     // Closing is the creative's call, and only after the client has released —
     // CREATIVE_TRANSITIONS in app/actions.ts enforces the same gate server-side.
+    // No "Mark as submitted" here: sending work through Send work for review is
+    // what submits it. Two buttons for one act just stranded the job on
+    // "in progress" when the creative used the obvious one.
     const canClose = escrowStatus === "payment_released" && status !== "completed";
-    const close = canClose ? [{ next: "completed", label: "Close job", variant: "outline" as const }] : [];
-    if (status === "in_progress") return [{ next: "submitted", label: "Mark as submitted" }, ...close];
-    if (status === "revision_requested") return [{ next: "submitted", label: "Re-submit work" }, ...close];
-    return close;
+    return canClose ? [{ next: "completed", label: "Close job", variant: "outline" as const }] : [];
   }
   if (status === "open") return [{ next: "cancelled", label: "Cancel job", variant: "outline" }];
   if (status === "scope_pending") return [{ next: "cancelled", label: "Cancel job", variant: "outline" }];

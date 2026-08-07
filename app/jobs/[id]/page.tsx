@@ -413,9 +413,6 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       {user && isClient && (
         <JobStatusPanel jobId={job.id} status={job.status || "open"} role="client" />
       )}
-      {user && !isClient && myProposal?.status === "accepted" && (
-        <JobStatusPanel jobId={job.id} status={job.status || "open"} role="creative" escrowStatus={job.escrow_status} />
-      )}
 
       {isPartyForEvents && jobEvents && jobEvents.length > 0 && (
         <JobTimeline
@@ -457,6 +454,13 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           {isParty && <DisputePanel jobId={job.id} status={job.status || "open"} />}
           {canRequestCancel && <CancelJobPanel jobId={job.id} />}
         </div>
+      )}
+
+      {/* Closing is the last thing anyone should reach for, so it sits below
+          every other action rather than above them. Creative-only, and only
+          once payment has been released. */}
+      {user && !isClient && myProposal?.status === "accepted" && (
+        <JobStatusPanel jobId={job.id} status={job.status || "open"} role="creative" escrowStatus={job.escrow_status} />
       )}
 
       {user && topupsVisible && (

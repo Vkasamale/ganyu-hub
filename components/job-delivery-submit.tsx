@@ -46,12 +46,13 @@ export function JobDeliverySubmit({ jobId }: { jobId: string }) {
   return (
     <Card className="mt-6">
       <CardContent className="p-5">
-        <Collapsible title="Send delivery" summary="A file up to 10MB, or a link">
+        <Collapsible title="Send work for review" summary="A file up to 10MB, or a link">
         <p className="text-xs text-ink/60">
-          Attach a file (up to 10MB) or paste a link for anything larger. The client is notified either way.
+          Attach a file (up to 10MB) or paste a link for anything larger. This marks the
+          work as submitted and notifies the client that it's ready to look at.
         </p>
 
-        <SavingForm action={submitDelivery} successText="Delivery sent." resetOnSuccess className="mt-4 space-y-4">
+        <SavingForm action={submitDelivery} successText="Work sent for review." resetOnSuccess className="mt-4 space-y-4">
           <input type="hidden" name="job_id" value={jobId} />
 
           <div className="space-y-2">
@@ -110,7 +111,7 @@ export function JobDeliverySubmit({ jobId }: { jobId: string }) {
           </div>
 
           <SubmitButton pendingText="Sending…" disabled={!canSubmit}>
-            Send delivery
+            Send work for review
           </SubmitButton>
           {!canSubmit && (
             <p className="text-xs text-ink/50">

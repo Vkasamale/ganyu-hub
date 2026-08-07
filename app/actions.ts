@@ -2483,6 +2483,13 @@ export async function submitDelivery(formData: FormData): Promise<{ ok?: boolean
 
   await logJobEvent(job_id, evt, note, { actorId: user.id, metadata });
 
+  // Sending work IS submitting it — they were two buttons for one act, so a
+  // real delivery left the job on "in progress" with Delivered un-ticked until
+  // the creative found a second button. Advance here instead.
+  if (job.status === "in_progress" || job.status === "revision_requested") {
+    await supabase.from("jobs").update({ status: "submitted" }).eq("id", job_id);
+  }
+
   // Notify the client that a delivery landed.
   await supabase.from("notifications").insert({
     user_id: job.client_id,
