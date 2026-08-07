@@ -1429,7 +1429,13 @@ export async function updateEscrowStatus(formData: FormData) {
     // PayChangu settles collections T+1: funds sit in collection until the
     // next business day. Reject a release attempt inside the 24h hold window.
     // ponytail: flat 24h; legacy jobs (null payment_held_at) skip the check.
-    if (job.payment_held_at) {
+    // Sandbox settles instantly, so the wait is pure friction there. It stays on
+    // for live keys regardless of environment: PayChangu holds one pooled
+    // balance, not per-job funds, so money collected today isn't withdrawable
+    // until tomorrow no matter when the release is requested — a dispute
+    // resolved hours after funding is still inside the same unsettled window.
+    const { isTestMode } = await import("@/lib/payments");
+    if (job.payment_held_at && !isTestMode()) {
       const heldMs = Date.now() - new Date(job.payment_held_at).getTime();
       const HOLD_MS = 24 * 60 * 60 * 1000;
       if (heldMs < HOLD_MS) {

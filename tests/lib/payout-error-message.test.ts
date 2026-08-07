@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { initiatePayout } from "@/lib/payments";
+import { initiatePayout, isTestMode } from "@/lib/payments";
 
 // Regression for ERR-00012/00013: PayChangu returns `message` as an object for
 // validation failures, and `new Error(obj)` coerced it to "[object Object]" —
@@ -45,5 +45,27 @@ describe("initiatePayout error messages", () => {
   it("falls back to the status line when there is no message", async () => {
     respondWith({});
     await expect(bankPayout()).rejects.toThrow(/PayChangu bank payout failed \(422\)/);
+  });
+});
+
+// isTestMode gates the T+1 release guard, so a wrong answer either blocks every
+// sandbox test or lets a live release skip the settlement wait. Only an explicit
+// sec-test- key counts as sandbox — anything else is treated as real money.
+describe("isTestMode", () => {
+  it("is true only for a sec-test- key", () => {
+    process.env.PAYCHANGU_SECRET_KEY = "sec-test-abc123";
+    expect(isTestMode()).toBe(true);
+  });
+
+  it("is false for a live key", () => {
+    process.env.PAYCHANGU_SECRET_KEY = "sec-live-abc123";
+    expect(isTestMode()).toBe(false);
+  });
+
+  it("is false when the key is missing or unrecognised", () => {
+    delete process.env.PAYCHANGU_SECRET_KEY;
+    expect(isTestMode()).toBe(false);
+    process.env.PAYCHANGU_SECRET_KEY = "test-key";
+    expect(isTestMode()).toBe(false);
   });
 });

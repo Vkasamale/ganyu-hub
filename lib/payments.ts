@@ -23,6 +23,15 @@ function secretKey() {
   return k;
 }
 
+// PayChangu keys are prefixed `sec-test-` / `sec-live-`, and the key alone
+// decides whether a call touches real money (there is no sandbox host — see
+// PAYCHANGU_TESTING.md). Deliberately keyed off the secret rather than
+// VERCEL_ENV: if live keys ever end up in a preview deploy, this still reports
+// live and every live-only guard stays on.
+export function isTestMode(): boolean {
+  return (process.env.PAYCHANGU_SECRET_KEY || "").startsWith("sec-test-");
+}
+
 export type InitiateArgs = {
   jobId: string;
   amountMwk: number;
