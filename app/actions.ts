@@ -7,6 +7,7 @@ import { CATEGORIES } from "@/lib/types";
 import { logJobEvent, type JobEventType } from "@/lib/job-events";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { absUrl } from "@/lib/site-url";
+import { formatDeadline } from "@/lib/utils";
 
 // Trust-boundary guard: keep only canonical categories. The CategoryPicker
 // submits repeated name="categories" checkboxes, so read them with getAll().
@@ -1421,7 +1422,10 @@ export async function updateEscrowStatus(formData: FormData) {
 
   // Client asked to release funds to the creative → initiate PayChangu payout.
   // The webhook (HMAC-verified) is what flips escrow_status to payment_released.
-  if (job.escrow_status === "payment_held" && next === "payment_released") {
+  // A dispute that resolves in the creative's favour is a release too. Gating on
+  // payment_held alone meant disputed → released skipped every line below: the
+  // job was marked released and no money ever moved (BUG-012).
+  if ((job.escrow_status === "payment_held" || job.escrow_status === "payment_disputed") && next === "payment_released") {
     // PayChangu settles collections T+1: funds sit in collection until the
     // next business day. Reject a release attempt inside the 24h hold window.
     // ponytail: flat 24h; legacy jobs (null payment_held_at) skip the check.
@@ -2127,7 +2131,7 @@ export async function proposeDeadlineExtension(formData: FormData): Promise<{ ok
       user_id: otherParty,
       kind: "message_received",
       title: "Deadline extension proposed",
-      body: `The other party proposed a new deadline: ${proposed_deadline}. Approve or decline on the job page.`,
+      body: `The other party proposed a new deadline: ${formatDeadline(proposed_deadline)}. Approve or decline on the job page.`,
       link: `/jobs/${job_id}`,
       actor_id: user.id,
       target_type: "job",
@@ -2168,7 +2172,9 @@ export async function respondToDeadlineExtension(formData: FormData): Promise<{ 
       deadline: ext.proposed_deadline,
       original_deadline: job?.original_deadline ?? job?.deadline ?? null,
     }).eq("id", ext.job_id);
-    await logJobEvent(ext.job_id, "deadline_extended", `New deadline: ${ext.proposed_deadline}.`, {
+    // Same wording as the Deadline field and the extension panel — the raw ISO
+    // date here was the only place a second format leaked out (BUG-015).
+    await logJobEvent(ext.job_id, "deadline_extended", `New deadline: ${formatDeadline(ext.proposed_deadline)}.`, {
       actorId: user.id,
       metadata: { extension_id, new_deadline: ext.proposed_deadline, proposed_by: ext.proposed_by },
     });

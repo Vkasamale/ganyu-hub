@@ -19,7 +19,7 @@ Format per entry:
   - Repro: job in `payment_disputed`; client/admin moves escrow to `payment_released`.
   - Cause: all payout logic lives inside the `escrow_status === "payment_held" && next === "payment_released"` branch at `actions.ts:1424`, which initiates the PayChangu payout and returns. A release *from disputed* is a legal transition (`ESCROW_TRANSITIONS`) but never enters that branch — it falls through to the generic patch at `:1599`, which only sets `escrow_status`. The creative is then notified and emailed "Payment released" (`:1616-1634`). No `payout_ref` is written, so the idempotency guards at `:1437-1442` never trip and nothing downstream flags it.
   - Also note the 24h T+1 guard at `:1428` is gated on `payment_held` specifically, so this path skips it too.
-  - Fix: not yet written.
+  - Fix: the branch condition now accepts `payment_held` **or** `payment_disputed` as the source state, so a dispute resolved in the creative's favour runs the same payout path — including the T+1 guard and the idempotency claim. One-line condition change; every line inside the branch was already correct. **Fixed 2026-08-07, unverified in the app** (needs a disputed job to release against).
 
 - **[BUG-013] Payout failures logged as `[object Object]`, hiding the cause on a money path.** — found 2026-08-07, payments/observability. **Fixed, pending verification.**
   - Repro: release payment on a held job where PayChangu rejects the payout. Admin log shows `[object Object]` (ERR-00012, ERR-00013); client sees only `GENERIC_MONEY_ERROR`.
@@ -29,12 +29,20 @@ Format per entry:
 - **[BUG-014] "Money in escrow" is shown on jobs whose escrow has already been released.** — found 2026-08-07, UI/trust.
   - Repro: any job with `escrow_status = 'payment_released'` — seen on `changu` and `AIRTEL TEST`. Header reads "MONEY IN ESCROW MWK 80,000" directly above a panel saying "Funds released to the creative. Done."
   - Cause: `components/job-header.tsx:29` derives the amount from `total_paid_mwk ?? collection_amount_mwk ?? accepted_bid_mwk` and never reads `escrow_status`; the label is hardcoded. Reachable in production, not just from hand-edited test state — `components/escrow-panel.tsx:32-35` offers "Release payment" whenever status is `payment_held`, with no requirement that the job be delivered.
-  - Fix: not yet written. The number is correct; only the label lies. Needs a label derived from `escrow_status` (wording is the founder's call).
+  - Fix: label now derived from `escrow_status` via a map in `job-header.tsx` — none → "Job value", payment_pending → "Payment pending", payment_held → "Money in escrow", payment_released → "Released to creative", payment_disputed → "In dispute". The "Creative receives (est.…)" line also switches to past tense once released. No prop change: `escrow_status` was already on `JobStageInput`. **Fixed 2026-08-07.** Wording is still the founder's to overrule.
 
 - **[BUG-015] Deadline dates render in two different formats on the same page.** — found 2026-08-07, UI polish.
   - Repro: `/jobs/[id]` on a job with an approved extension. The Deadline field shows "1st of September 2026"; the Activity entries and the extension panel show `2026-09-01`.
   - Cause: the extension panel and `logJobEvent` bodies interpolate the raw ISO date (`actions.ts:2171`) instead of passing it through the same formatter the deadline field uses.
-  - Fix: not yet written. Note event bodies are stored strings, so already-written rows keep the ISO form unless rendered from `metadata.new_deadline` instead.
+  - Fix: `formatDeadline` applied at all three raw-ISO sites — the event body (`actions.ts:2171`), the "proposed a new deadline" notification (`:2130`), and both dates in `deadline-extension-panel.tsx`. Covered by a new case in `tests/actions/deadline-extension.test.ts`. **Fixed 2026-08-07.**
+  - Known residue: event bodies are stored strings, so the rows written before this keep their ISO form. Not backfilled — they're test rows. If it ever matters for real history, render from `metadata.new_deadline` instead of the stored body.
+
+- **[BUG-016] A rejected form submit throws away everything typed into plain inputs.** — found 2026-08-07 while posting a test job, UX/data-loss.
+  - Repro: Post a job, fill it in, submit with the brief under 200 chars. The error appears — and Title and Deadline are now empty. Cost three retries to get one job posted.
+  - Cause: React blanks uncontrolled fields once a form action settles. `SavingForm` never called `reset()`; the loss is React's own post-action behaviour. Fields survived only where the component held its own state (`MoneyInput`, `CharCountTextarea`), which is why Brief and Budget looked fine and Title and Deadline didn't — it looked arbitrary from the outside.
+  - Fix: `SavingForm` snapshots the submitted `FormData` and, on the error branch only, refills fields that came back empty. Fixed in the shared wrapper rather than the job form, so every form in the app is covered. Only blank fields are written, so state-holding components are never stomped; files, passwords and hidden inputs are skipped. **Fixed 2026-08-07.**
+  - Not covered by a test — would need jsdom, which isn't installed, and adding a dependency for one assertion isn't worth it. Verify by hand: submit Post a job with a short brief and confirm Title and Deadline survive.
+  - Related, unfixed: the min-length counters read as maximums. "144/200" on a field that needs *at least* 200 chars misled me into shortening a valid brief. Wording fix still open.
 
 - **[BUG-009] — RESOLVED 2026-08-07. Verified in prod. Moved to Fixed (see below).**
 

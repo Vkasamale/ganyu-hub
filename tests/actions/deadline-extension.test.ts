@@ -6,6 +6,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: () => supabaseHolder.cli
 vi.mock("@/lib/job-events", () => ({ logJobEvent: vi.fn(async () => {}) }));
 
 import { respondToDeadlineExtension } from "@/app/actions";
+import { logJobEvent } from "@/lib/job-events";
 
 function fd(fields: Record<string, string>) {
   const f = new FormData();
@@ -71,6 +72,19 @@ describe("respondToDeadlineExtension — original_deadline", () => {
     const updates = setup({ deadline: null, original_deadline: null });
     await approve();
     expect(jobUpdate(updates).original_deadline).toBeNull();
+  });
+
+  // The activity feed showed a raw ISO date next to the Deadline field's
+  // "14th of September 2026" — two formats for the same date on one page.
+  it("logs the new deadline in the same format the page uses", async () => {
+    setup({ deadline: "2026-09-01", original_deadline: null });
+    await approve();
+    expect(logJobEvent).toHaveBeenCalledWith(
+      "job-1",
+      "deadline_extended",
+      "New deadline: 14th of September 2026.",
+      expect.anything(),
+    );
   });
 
   it("does not touch the job when the extension is declined", async () => {

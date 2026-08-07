@@ -3,6 +3,39 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — Four bug fixes: disputed releases, escrow label, date format, form data loss
+
+**A dispute resolved in the creative's favour now actually pays them.** Every
+line of payout logic sat inside a branch gated on `escrow_status ===
+"payment_held"`, so a release *from* `payment_disputed` — a legal transition —
+fell straight through to the generic patch that only sets `escrow_status`. The
+job was marked released, the creative was notified and emailed "Payment
+released", and no money moved. No `payout_ref` was written either, so nothing
+downstream flagged it. The branch now accepts `payment_held` **or**
+`payment_disputed`; everything inside it, including the T+1 guard and the
+idempotency claim, was already correct.
+
+**The header no longer claims money is in escrow after it's been released.** The
+label was hardcoded while the amount came from `total_paid_mwk ??
+collection_amount_mwk ?? accepted_bid_mwk`, so a released job showed "MONEY IN
+ESCROW MWK 80,000" directly above "Funds released to the creative. Done." It's
+now derived from `escrow_status`, and the "Creative receives (est.…)" line goes
+past tense once released.
+
+**One date format instead of two.** The Deadline field rendered "1st of
+September 2026" while the activity feed and extension panel showed `2026-09-01`.
+`formatDeadline` now applies at all three raw-ISO sites. Rows written before
+this keep their ISO body — they're test rows, not backfilled.
+
+**A rejected form submit no longer throws away what you typed.** React blanks
+uncontrolled fields once a form action settles, so failing validation on Post a
+job wiped Title and Deadline while Brief and Budget survived (those components
+hold their own state). `SavingForm` now snapshots the submission and refills
+only the fields that came back empty — fixed in the shared wrapper, so every
+form benefits. Files, passwords and hidden inputs are skipped.
+
+tsc clean; 66/66. BUG-012, BUG-014, BUG-015, BUG-016.
+
 ## 2026-08-07 — Payout failures now say what actually went wrong
 
 Two release attempts on a held job failed with admin-log entries reading

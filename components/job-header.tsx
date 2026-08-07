@@ -27,6 +27,17 @@ export function JobHeader({
 }) {
   const stage = computeJobStage(job, events);
   const escrow = job.total_paid_mwk ?? job.collection_amount_mwk ?? job.accepted_bid_mwk ?? 0;
+  // The label used to be hardcoded "Money in escrow", so a released job still
+  // claimed the client's money was being held (BUG-014). Derive it instead.
+  const AMOUNT_LABEL: Record<string, string> = {
+    none: "Job value",
+    payment_pending: "Payment pending",
+    payment_held: "Money in escrow",
+    payment_released: "Released to creative",
+    payment_disputed: "In dispute",
+  };
+  const amountLabel = AMOUNT_LABEL[job.escrow_status || "none"] ?? "Job value";
+  const released = job.escrow_status === "payment_released";
   const gross = creativeGross(escrow);
   // Show the pessimistic net so the number doesn't shrink at cash-out. Whichever
   // rail costs more at this amount wins (bank's flat 700 dominates small payouts,
@@ -42,12 +53,12 @@ export function JobHeader({
       </div>
 
       <div className="mt-4">
-        <div className="text-xs uppercase tracking-wide text-ink/55">Money in escrow</div>
+        <div className="text-xs uppercase tracking-wide text-ink/55">{amountLabel}</div>
         <div className="mt-1 font-display text-3xl tabular-nums text-ink sm:text-4xl">
           {formatMwk(escrow)}
         </div>
         <div className="mt-1 text-sm text-ink/70">
-          Creative receives (est., after cash-out fee):{" "}
+          {released ? "Creative received (after cash-out fee):" : "Creative receives (est., after cash-out fee):"}{" "}
           <span className="font-medium tabular-nums">{formatMwk(payout)}</span>
         </div>
       </div>

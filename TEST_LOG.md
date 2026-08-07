@@ -4,6 +4,30 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — Bug-fix round: BUG-012, 014, 015, 016
+
+✅ tsc clean. ✅ 66/66 (was 65). New case in
+`tests/actions/deadline-extension.test.ts` asserts the logged event body reads
+"New deadline: 14th of September 2026." rather than the raw ISO date.
+
+⬜ **BUG-012 (disputed → released now pays) — not verified in the app.** Needs a
+job driven into `payment_disputed` and released against. The unit suite doesn't
+cover `updateEscrowStatus` at all, so the only evidence so far is the branch
+condition itself. Worth doing before this is trusted with real money.
+
+⬜ **BUG-014 (header label) — not seen in a browser.** Pure render change off
+`escrow_status`; `changu` and `AIRTEL TEST` are both `payment_released` and
+should now read "RELEASED TO CREATIVE".
+
+⬜ **BUG-016 (form data loss) — not covered by a test.** jsdom isn't installed
+and one assertion doesn't justify the dependency. Check by hand: Post a job with
+a brief under 200 characters and confirm Title and Deadline survive the error.
+
+🕒 **Check 3 (`payment_released` job event) still open.** Blocked as before:
+Adam needs a mobile payout method with the leading zero, job
+`0ba49618-187c-4b8a-8468-2c55da31b527` needs funding, and the T+1 guard puts the
+release 24h out.
+
 ## 2026-08-07 — Session verification: deadline history, client profiles, payout errors
 
 ✅ tsc clean. ✅ 65/65 (was 62). New `tests/lib/payout-error-message.test.ts`

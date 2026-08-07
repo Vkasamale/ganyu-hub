@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { proposeDeadlineExtension, respondToDeadlineExtension } from "@/app/actions";
+import { formatDeadline } from "@/lib/utils";
 
 type Pending = {
   id: string;
@@ -32,8 +33,8 @@ export function DeadlineExtensionPanel({
       <div className="rounded-lg border border-ink/15 bg-paper p-4 space-y-2">
         <p className="text-sm font-medium">Deadline extension proposed</p>
         <p className="text-sm text-ink/80">
-          New deadline: <span className="font-medium">{pending.proposed_deadline}</span>
-          {currentDeadline && <span className="text-ink/60"> (was {currentDeadline})</span>}
+          New deadline: <span className="font-medium">{formatDeadline(pending.proposed_deadline)}</span>
+          {currentDeadline && <span className="text-ink/60"> (was {formatDeadline(currentDeadline)})</span>}
         </p>
         {pending.reason && <p className="text-xs text-ink/70">Reason: {pending.reason}</p>}
         {iProposed ? (

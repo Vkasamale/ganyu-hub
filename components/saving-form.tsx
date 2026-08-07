@@ -10,6 +10,25 @@ type Result = { ok?: boolean; error?: string; info?: string } | null | void;
 
 type ServerAction = (formData: FormData) => Promise<Result>;
 
+// Refill only fields React actually blanked. Writing to a field that still has a
+// value would stomp components holding their own state (MoneyInput, the
+// char-count textareas) and desync them. Files and passwords are never restored.
+function restoreFields(form: HTMLFormElement, fd: FormData) {
+  for (const el of Array.from(form.elements)) {
+    const f = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+    if (!f.name || !("value" in f)) continue;
+    if (f instanceof HTMLInputElement) {
+      if (f.type === "file" || f.type === "password" || f.type === "hidden") continue;
+      if (f.type === "checkbox" || f.type === "radio") {
+        f.checked = fd.getAll(f.name).includes(f.value);
+        continue;
+      }
+    }
+    const prev = fd.get(f.name);
+    if (typeof prev === "string" && !f.value) f.value = prev;
+  }
+}
+
 export function SavingForm({
   action,
   children,
@@ -25,7 +44,9 @@ export function SavingForm({
   className?: string;
   silent?: boolean;
 }) {
+  const lastSubmit = useRef<FormData | null>(null);
   const boundAction = async (_prev: Result, formData: FormData): Promise<Result> => {
+    lastSubmit.current = formData;
     return await action(formData);
   };
   const [state, formAction] = useActionState(boundAction, null);
@@ -40,6 +61,10 @@ export function SavingForm({
       if (resetOnSuccess && formRef.current) formRef.current.reset();
     } else if (s?.error) {
       if (!silent) toast.error(s.error);
+      // React blanks uncontrolled fields once a form action settles, so a
+      // rejected submit threw away whatever the user typed into plain inputs
+      // (Title and Deadline on Post a job). Put the submitted values back.
+      if (formRef.current && lastSubmit.current) restoreFields(formRef.current, lastSubmit.current);
     }
   }, [state, resetOnSuccess, successText, router, silent]);
 
