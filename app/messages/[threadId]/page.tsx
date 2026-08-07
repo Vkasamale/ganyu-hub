@@ -109,6 +109,10 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     ...jobEvents.map((e: any) => ({ kind: "event" as const, at: e.created_at, data: e })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
+  // Long threads bury the thing you came back for. The newest event is the
+  // usual anchor — "what happened last" — so it gets a jump link in the header.
+  const latestEvent = jobEvents.length ? jobEvents[jobEvents.length - 1] : null;
+
   const other: any = thread.client_id === user.id ? thread.creative : thread.client;
   const otherInitials = ((other?.full_name as string) || "?")
     .split(" ")
@@ -159,6 +163,15 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                 <p className="text-xs text-ink/55">Started {timeAgo(thread.created_at)}</p>
               )}
             </div>
+            {latestEvent && (
+              <a
+                href={`#event-${latestEvent.id}`}
+                className="ml-auto shrink-0 rounded-full border border-ink/15 px-3 py-1.5 text-xs text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
+              >
+                <span className="hidden sm:inline">Latest event: </span>
+                {JOB_EVENT_LABELS[latestEvent.event_type as JobEventType] ?? latestEvent.event_type}
+              </a>
+            )}
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto bg-paper/60 px-5 py-5">
@@ -166,7 +179,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
               if (row.kind === "event") {
                 const e = row.data;
                 return (
-                  <div key={`e-${e.id}`} className="flex justify-center">
+                  <div key={`e-${e.id}`} id={`event-${e.id}`} className="flex scroll-mt-4 justify-center">
                     <div className="max-w-[85%] rounded-full border border-ink/10 bg-wash/50 px-3.5 py-1.5 text-center">
                       <p className="text-xs font-medium text-ink/70">
                         {JOB_EVENT_LABELS[e.event_type as JobEventType] ?? e.event_type}
