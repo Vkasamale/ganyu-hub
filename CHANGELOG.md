@@ -3,6 +3,30 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-07 — Payout failures now say what actually went wrong
+
+Two release attempts on a held job failed with admin-log entries reading
+literally `[object Object]` (ERR-00012, ERR-00013). The reason was destroyed at
+the throw site: PayChangu returns `message` as a string for most errors but as
+an object (field → messages) for validation failures, and `new Error(obj)`
+coerces to `"[object Object]"`.
+
+That single coercion blinded every downstream consumer — `jobs.payout_error`
+(`actions.ts:1547`) and `logAdminError` (`admin-errors.ts:32`) both derive from
+`e.message`, so neither could ever recover the detail. On a money path where the
+client sees only `GENERIC_MONEY_ERROR`, the admin log is the *only* place the
+cause exists, and it was unreadable by construction.
+
+`apiMessage()` in `lib/payments.ts` now serialises non-string messages, applied
+at both throw sites (mobile `:201`, bank `:228`) since it's one root cause with
+two call sites. No behaviour change on success paths.
+
+Not yet diagnosed: *why* the bank payout is rejected. That needs one more
+release attempt with this deployed — the point of the fix is that the next
+failure will be legible.
+
+tsc clean; 65/65.
+
 ## 2026-08-07 — Record *when* a creative gets paid
 
 `escrow_status = 'payment_released'` recorded that release happened but never

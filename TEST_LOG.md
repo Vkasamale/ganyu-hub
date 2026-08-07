@@ -4,6 +4,40 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-07 — Session verification: deadline history, client profiles, payout errors
+
+✅ tsc clean. ✅ 65/65 (was 62). New `tests/lib/payout-error-message.test.ts`
+covers the three `apiMessage` branches: string kept as-is, object serialised
+rather than coerced to `[object Object]`, empty body falling back to the status
+line.
+
+✅ **Deadline history — verified in the real app** (preview, production DB).
+Three extensions on job `e988c85c…`, alternating proposer so each party could
+approve-then-propose in one sitting: E1 → 2026-09-01, E2 → 2026-09-15, E3 →
+2026-09-29. After E2 the strikethrough appeared showing 2026-09-01; after E3 it
+**still** showed 2026-09-01, not 2026-09-15. `original_deadline` stamps once and
+holds. This also confirms the column exists in production — a missing column
+would have made Supabase reject the whole update and the deadline would never
+have moved.
+
+Note: the job had no prior deadline, so E1 correctly stamped nothing (null start
+→ `coalesce` keeps null). That makes a *third* extension necessary to prove
+"keeps the first, not the previous" on such a job — two are only enough when the
+job was posted with a deadline.
+
+✅ **Client profile page — verified.** `/creatives/7efeadbd…` redirects to
+`/clients/7efeadbd…`; renders jobs posted, hire rate, completed, member since,
+and the empty-reviews state.
+
+⚠️ **`payment_released` event — NOT verified, blocked.** Needs a real completed
+release. Two attempts on `9f140436…` (TNM TEST) both failed at
+`direct-charge/payouts/initialize`; escrow stayed `payment_held`, no money moved.
+The creative's newly-added payout method didn't apply because `actions.ts:1470`
+prefers the method pinned to the job over the creative's default. Retest with a
+fresh job so the pinned method is the current one — and note releases are blocked
+for 24h after funding by the T+1 guard (`actions.ts:1428`), so funding and
+release cannot happen in the same session.
+
 ## 2026-08-07 — payment_released event
 
 ✅ tsc clean. ✅ 62/62.

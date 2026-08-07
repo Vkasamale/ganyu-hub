@@ -15,6 +15,27 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-012] Resolving a dispute in the creative's favour marks them paid but sends no money.** — found 2026-08-07, payments. **Open — highest severity outstanding.**
+  - Repro: job in `payment_disputed`; client/admin moves escrow to `payment_released`.
+  - Cause: all payout logic lives inside the `escrow_status === "payment_held" && next === "payment_released"` branch at `actions.ts:1424`, which initiates the PayChangu payout and returns. A release *from disputed* is a legal transition (`ESCROW_TRANSITIONS`) but never enters that branch — it falls through to the generic patch at `:1599`, which only sets `escrow_status`. The creative is then notified and emailed "Payment released" (`:1616-1634`). No `payout_ref` is written, so the idempotency guards at `:1437-1442` never trip and nothing downstream flags it.
+  - Also note the 24h T+1 guard at `:1428` is gated on `payment_held` specifically, so this path skips it too.
+  - Fix: not yet written.
+
+- **[BUG-013] Payout failures logged as `[object Object]`, hiding the cause on a money path.** — found 2026-08-07, payments/observability. **Fixed, pending verification.**
+  - Repro: release payment on a held job where PayChangu rejects the payout. Admin log shows `[object Object]` (ERR-00012, ERR-00013); client sees only `GENERIC_MONEY_ERROR`.
+  - Cause: PayChangu returns `message` as a string for most errors but as an object for validation failures. `new Error(obj)` coerces to `"[object Object]"`, destroying the reason at the throw site — and both `jobs.payout_error` (`actions.ts:1547`) and `logAdminError` (`admin-errors.ts:32`) derive from `e.message`, so neither could recover it.
+  - Fix: `apiMessage()` in `lib/payments.ts`, applied at both throw sites (mobile `:201`, bank `:228`). CHANGELOG 2026-08-07. Covered by `tests/lib/payout-error-message.test.ts`.
+
+- **[BUG-014] "Money in escrow" is shown on jobs whose escrow has already been released.** — found 2026-08-07, UI/trust.
+  - Repro: any job with `escrow_status = 'payment_released'` — seen on `changu` and `AIRTEL TEST`. Header reads "MONEY IN ESCROW MWK 80,000" directly above a panel saying "Funds released to the creative. Done."
+  - Cause: `components/job-header.tsx:29` derives the amount from `total_paid_mwk ?? collection_amount_mwk ?? accepted_bid_mwk` and never reads `escrow_status`; the label is hardcoded. Reachable in production, not just from hand-edited test state — `components/escrow-panel.tsx:32-35` offers "Release payment" whenever status is `payment_held`, with no requirement that the job be delivered.
+  - Fix: not yet written. The number is correct; only the label lies. Needs a label derived from `escrow_status` (wording is the founder's call).
+
+- **[BUG-015] Deadline dates render in two different formats on the same page.** — found 2026-08-07, UI polish.
+  - Repro: `/jobs/[id]` on a job with an approved extension. The Deadline field shows "1st of September 2026"; the Activity entries and the extension panel show `2026-09-01`.
+  - Cause: the extension panel and `logJobEvent` bodies interpolate the raw ISO date (`actions.ts:2171`) instead of passing it through the same formatter the deadline field uses.
+  - Fix: not yet written. Note event bodies are stored strings, so already-written rows keep the ISO form unless rendered from `metadata.new_deadline` instead.
+
 - **[BUG-009] — RESOLVED 2026-08-07. Verified in prod. Moved to Fixed (see below).**
 
 - **[BUG-009] Every top-up payment was silently orphaned — `payment_ref` never written, so paid money could never be matched back.** — found 2026-08-07 during the PayChangu sandbox test of BUG-007's webhook leg.

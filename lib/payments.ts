@@ -168,6 +168,18 @@ export type PayoutInitArgs = {
 
 export type PayoutInitResult = { chargeId: string; providerId?: string };
 
+// PayChangu returns `message` as a string for most errors but as an object
+// (field -> messages) for validation failures. `new Error(obj)` coerces to
+// "[object Object]" — exactly what reached ERR-00012/13, destroying the reason
+// at the throw site so both jobs.payout_error and the admin log were useless.
+// Stringify anything that isn't already a non-empty string.
+function apiMessage(json: any, fallback: string): string {
+  const m = json?.message;
+  if (typeof m === "string" && m) return m;
+  if (m) return JSON.stringify(m);
+  return fallback;
+}
+
 export async function initiatePayout(a: PayoutInitArgs): Promise<PayoutInitResult> {
   const chargeId = `gh_po_${a.jobId}_${crypto.randomUUID()}`;
 
@@ -198,7 +210,7 @@ export async function initiatePayout(a: PayoutInitArgs): Promise<PayoutInitResul
     });
     const json: any = await res.json().catch(() => ({}));
     if (!res.ok || (json.status && json.status !== "success")) {
-      throw new Error(json?.message || `PayChangu mobile payout failed (${res.status})`);
+      throw new Error(apiMessage(json, `PayChangu mobile payout failed (${res.status})`));
     }
     return { chargeId, providerId: json?.data?.reference || json?.data?.id };
   }
@@ -225,7 +237,7 @@ export async function initiatePayout(a: PayoutInitArgs): Promise<PayoutInitResul
   if (!res.ok || (json.status && json.status !== "success")) {
     // ponytail: bank endpoint may return a "feature not enabled" error even
     // on verified accounts — user will contact PayChangu support to activate.
-    throw new Error(json?.message || `PayChangu bank payout failed (${res.status})`);
+    throw new Error(apiMessage(json, `PayChangu bank payout failed (${res.status})`));
   }
   return { chargeId, providerId: json?.data?.reference || json?.data?.id };
 }
