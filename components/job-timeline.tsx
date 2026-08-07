@@ -11,7 +11,9 @@ export type JobEventRow = {
   metadata?: Record<string, unknown> | null;
 };
 
-const LABELS: Record<JobEventType, string> = {
+// Exported so the job conversation renders the same wording as the job page's
+// Activity card — two maps would drift the moment one gained an event type.
+export const JOB_EVENT_LABELS: Record<JobEventType, string> = {
   proposal_accepted: "Proposal accepted",
   escrow_funded: "Payment landed in escrow",
   work_started: "Work started",
@@ -135,7 +137,7 @@ export function JobTimeline({
   // Collapsed, the timeline is one line: where the job is right now. The full
   // history is a click away rather than a scroll.
   const latest = ordered[ordered.length - 1];
-  const currentStage = `${LABELS[latest.event_type as JobEventType] ?? latest.event_type} · ${timeAgo(latest.created_at)}`;
+  const currentStage = `${JOB_EVENT_LABELS[latest.event_type as JobEventType] ?? latest.event_type} · ${timeAgo(latest.created_at)}`;
 
   return (
     <Card className="mt-6">
@@ -153,7 +155,7 @@ export function JobTimeline({
         >
         <ol className="space-y-4">
           {ordered.map((e, i) => {
-            const label = LABELS[e.event_type as JobEventType] ?? e.event_type;
+            const label = JOB_EVENT_LABELS[e.event_type as JobEventType] ?? e.event_type;
             const isLast = i === ordered.length - 1;
             return (
               <li key={e.id} className="relative flex gap-3 pl-1">

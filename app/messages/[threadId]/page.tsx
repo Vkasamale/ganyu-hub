@@ -9,6 +9,9 @@ import { MessageAttachment } from "@/components/message-attachment";
 import { MessageBody, type EmbeddedJob } from "@/components/message-body";
 import { MessageJobPicker } from "@/components/message-job-picker";
 import { extractJobIds } from "@/lib/message-markers";
+import { JOB_EVENT_LABELS } from "@/components/job-timeline";
+import { ThreadList } from "@/components/thread-list";
+import type { JobEventType } from "@/lib/job-events";
 import { timeAgo } from "@/lib/utils";
 
 export default async function ThreadPage({ params: paramsP }: { params: Promise<{ threadId: string }> }) {
@@ -77,9 +80,34 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
 
   const { data: threads } = await supabase
     .from("message_threads")
-    .select("id, created_at, client_id, creative_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name)")
+    .select("id, created_at, client_id, creative_id, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name), job:jobs(id, title)")
     .or(`client_id.eq.${user.id},creative_id.eq.${user.id}`)
     .order("created_at", { ascending: false });
+
+  // A thread carrying a job_id is a job conversation: the job's own timeline is
+  // part of the back-and-forth, not a separate page. Events and typed messages
+  // merge into one stream so a question can sit directly under the delivery it
+  // is about. Threads without a job_id stay plain direct messages.
+  let jobEvents: any[] = [];
+  let threadJob: { id: string; title: string; status: string | null } | null = null;
+  if (thread.job_id) {
+    const [{ data: jrow }, { data: evs }] = await Promise.all([
+      supabase.from("jobs").select("id, title, status").eq("id", thread.job_id).maybeSingle(),
+      supabase.from("job_events")
+        .select("id, event_type, note, created_at")
+        .eq("job_id", thread.job_id)
+        .order("created_at", { ascending: true }),
+    ]);
+    threadJob = (jrow as any) || null;
+    jobEvents = evs || [];
+  }
+
+  // One stream, ordered by time. Messages and events are different shapes, so
+  // tag them rather than forcing a common row type.
+  const stream = [
+    ...(messages || []).map((m: any) => ({ kind: "message" as const, at: m.created_at, data: m })),
+    ...jobEvents.map((e: any) => ({ kind: "event" as const, at: e.created_at, data: e })),
+  ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
   const other: any = thread.client_id === user.id ? thread.creative : thread.client;
   const otherInitials = ((other?.full_name as string) || "?")
@@ -108,41 +136,9 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             </div>
             <p className="mt-1 text-xs text-ink/55">{threads?.length || 0} conversations</p>
           </div>
-          <ul className="flex-1 overflow-y-auto">
-            {(threads || []).map((t: any) => {
-              const o = t.client_id === user.id ? t.creative : t.client;
-              const active = t.id === thread.id;
-              const initials = ((o?.full_name as string) || "?")
-                .split(" ")
-                .map((n: string) => n[0])
-                .slice(0, 2)
-                .join("")
-                .toUpperCase();
-              return (
-                <li key={t.id}>
-                  <Link
-                    href={`/messages/${t.id}`}
-                    className={
-                      active
-                        ? "flex items-center gap-3 border-l-2 border-stamp bg-wash/50 px-4 py-3"
-                        : "flex items-center gap-3 border-l-2 border-transparent px-4 py-3 transition-colors hover:bg-wash/30"
-                    }
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
-                      {initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">{o?.full_name || "Unknown"}</p>
-                      <p className="truncate text-xs text-ink/55">{timeAgo(t.created_at)}</p>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-            {(!threads || threads.length === 0) && (
-              <li className="px-4 py-6 text-center text-xs text-ink/55">No conversations yet.</li>
-            )}
-          </ul>
+          <div className="flex-1 overflow-y-auto">
+            <ThreadList threads={(threads || []) as any} userId={user.id} activeId={thread.id} />
+          </div>
         </aside>
 
         <section className="card-soft flex flex-col overflow-hidden">
@@ -150,14 +146,40 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
               {otherInitials}
             </div>
-            <div>
-              <p className="font-medium text-ink">{other?.full_name || "Unknown"}</p>
-              <p className="text-xs text-ink/55">Started {timeAgo(thread.created_at)}</p>
+            <div className="min-w-0">
+              <p className="truncate font-medium text-ink">{other?.full_name || "Unknown"}</p>
+              {threadJob ? (
+                <Link
+                  href={`/jobs/${threadJob.id}`}
+                  className="truncate text-xs text-ink/60 underline-offset-2 hover:text-ink hover:underline"
+                >
+                  {threadJob.title}
+                </Link>
+              ) : (
+                <p className="text-xs text-ink/55">Started {timeAgo(thread.created_at)}</p>
+              )}
             </div>
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto bg-paper/60 px-5 py-5">
-            {(messages || []).map((m: any) => {
+            {stream.map((row) => {
+              if (row.kind === "event") {
+                const e = row.data;
+                return (
+                  <div key={`e-${e.id}`} className="flex justify-center">
+                    <div className="max-w-[85%] rounded-full border border-ink/10 bg-wash/50 px-3.5 py-1.5 text-center">
+                      <p className="text-xs font-medium text-ink/70">
+                        {JOB_EVENT_LABELS[e.event_type as JobEventType] ?? e.event_type}
+                        <span className="font-normal text-ink/45"> · {timeAgo(e.created_at)}</span>
+                      </p>
+                      {e.note && (
+                        <p className="mt-0.5 whitespace-pre-wrap break-words text-xs text-ink/60">{e.note}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              const m = row.data;
               const mine = m.sender_id === user.id;
               return (
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
@@ -187,7 +209,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                 </div>
               );
             })}
-            {(!messages || messages.length === 0) && (
+            {stream.length === 0 && (
               <p className="py-8 text-center text-sm text-ink/55">Say hello.</p>
             )}
           </div>

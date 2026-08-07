@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { timeAgo } from "@/lib/utils";
+import { ThreadList } from "@/components/thread-list";
 
 export default async function MessagesPage() {
   const supabase = createClient();
@@ -10,7 +10,7 @@ export default async function MessagesPage() {
 
   const { data: threads } = await supabase
     .from("message_threads")
-    .select("id, created_at, client_id, creative_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name)")
+    .select("id, created_at, client_id, creative_id, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name), job:jobs(id, title)")
     .or(`client_id.eq.${user.id},creative_id.eq.${user.id}`)
     .order("created_at", { ascending: false });
 
@@ -33,36 +33,9 @@ export default async function MessagesPage() {
             </div>
             <p className="mt-1 text-xs text-ink/55">{threads?.length || 0} conversations</p>
           </div>
-          <ul className="flex-1 overflow-y-auto">
-            {(threads || []).map((t: any) => {
-              const o = t.client_id === user.id ? t.creative : t.client;
-              const initials = ((o?.full_name as string) || "?")
-                .split(" ")
-                .map((n: string) => n[0])
-                .slice(0, 2)
-                .join("")
-                .toUpperCase();
-              return (
-                <li key={t.id}>
-                  <Link
-                    href={`/messages/${t.id}`}
-                    className="flex items-center gap-3 border-l-2 border-transparent px-4 py-3 transition-colors hover:bg-wash/30"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
-                      {initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">{o?.full_name || "Unknown"}</p>
-                      <p className="truncate text-xs text-ink/55">{timeAgo(t.created_at)}</p>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-            {(!threads || threads.length === 0) && (
-              <li className="px-4 py-6 text-center text-xs text-ink/55">No conversations yet.</li>
-            )}
-          </ul>
+          <div className="flex-1 overflow-y-auto">
+            <ThreadList threads={(threads || []) as any} userId={user.id} />
+          </div>
         </aside>
 
         <section className="card-soft flex flex-col items-center justify-center overflow-hidden p-8 text-center">

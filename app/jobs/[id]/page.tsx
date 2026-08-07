@@ -178,6 +178,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const DELIVERY_ACTIVE = new Set(["in_progress", "revision_requested", "submitted"]);
   const canSubmitDelivery = isAcceptedCreativeForEvents && DELIVERY_ACTIVE.has(job.status);
 
+  // The job's conversation, if one exists — created on acceptance. Only the two
+  // parties have one, and RLS already restricts the read to them.
+  const { data: jobThread } = user
+    ? await supabase.from("message_threads").select("id").eq("job_id", job.id).maybeSingle()
+    : { data: null };
+
   const CANCELLABLE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
   const canRequestCancel = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
   const canProposeExtension = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
@@ -412,6 +418,18 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
       {user && isClient && (
         <JobStatusPanel jobId={job.id} status={job.status || "open"} role="client" />
+      )}
+
+      {isPartyForEvents && jobThread && (
+        <Link
+          href={`/messages/${jobThread.id}`}
+          className="mt-4 inline-flex items-center gap-2 text-sm text-ink/70 underline-offset-2 hover:text-ink hover:underline"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          Open conversation
+        </Link>
       )}
 
       {isPartyForEvents && jobEvents && jobEvents.length > 0 && (

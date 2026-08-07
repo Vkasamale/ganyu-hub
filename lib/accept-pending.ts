@@ -22,7 +22,7 @@ export async function promotePendingAcceptance(admin: Admin, jobId: string) {
   // Session 4: pull revision limits off the winning proposal and stamp the
   // job with them so the rest of the flow reads from the job row.
   const { data: pinnedProposal } = await admin.from("proposals")
-    .select("revisions_offered, extra_revision_rate")
+    .select("revisions_offered, extra_revision_rate, creative_id")
     .eq("id", pinnedId).maybeSingle();
 
   // Payment confirmed = scope agreement. Skip the scope_pending step entirely.
@@ -48,5 +48,19 @@ export async function promotePendingAcceptance(admin: Admin, jobId: string) {
     await logJobEvent(jobId, "work_started", null, {
       actorId: job.client_id ?? null,
     });
+
+    // Every accepted job gets its conversation, so Messages carries the job
+    // history whether or not either party ever types. The table's
+    // unique (client_id, creative_id, job_id) makes this idempotent, which
+    // this function has to be — webhook and callback both call it.
+    if (job.client_id && pinnedProposal?.creative_id) {
+      const { error: threadErr } = await admin.from("message_threads").upsert(
+        { client_id: job.client_id, creative_id: pinnedProposal.creative_id, job_id: jobId },
+        { onConflict: "client_id,creative_id,job_id", ignoreDuplicates: true }
+      );
+      // Never let a missing conversation break the acceptance path — money has
+      // already moved by this point. Same soft-fail stance as logJobEvent.
+      if (threadErr) console.error("[promotePendingAcceptance] thread create failed:", threadErr.message, { jobId });
+    }
   }
 }
