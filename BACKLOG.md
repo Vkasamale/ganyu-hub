@@ -24,6 +24,8 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Buy `ganyuhub.com` and verify in Resend.** `ganyu.com` is NOT owned by us — it will never verify, remove that entry from Resend once the correct domain is live. Until then, emails route through Resend sandbox (`onboarding@resend.dev`) and only deliver to the Resend account owner (`vinnykasa@gmail.com`). Once `ganyuhub.com` is purchased and DNS records added: update `EMAIL_FROM` in `.env.local` to `Ganyu Hub <notifications@ganyuhub.com>` and redeploy. Part of Money Unlock Day.
 
+- **WhatsApp Cloud API notifications.** In progress 2026-07/08 — Meta Developer App "Ganyu Hub" created, WhatsApp use case attached, test number available via "Try it out" (Step 1). Chosen over Twilio to keep beta cost at zero (Twilio requires prepaid balance; Meta's own Cloud API is free through the test tier — up to 5 verified recipient numbers, no payment method required). Path: Step 1 (test number, 5 verified recipients, free) → Step 2 Production setup (real phone number, message templates, payment method — only needed once beta outgrows 5 recipients) → Step 3 Business verification (only needed for full production volume). Any *creative-initiated* message outside a 24h reply window needs a pre-approved message template — draft plain, transactional wording (new job match, file delivered, status update) since promotional-sounding templates get rejected. Do not wire into Claude Code / the app until a real test message has been sent and received through Step 1, and API key + Phone Number ID + WABA ID are in hand.
+
 ## Identity & Trust (Public Launch / Scale tier — not beta)
 
 - **Phone OTP verification for clients.** Lets guest-adjacent clients (e.g. a one-off "find a nail tech" hire) verify a real, reachable phone number without requiring an email, which most don't have reliably. Researched 2026-07-20: Twilio is too expensive for Malawi delivery (~$0.33/SMS, international routing tax). eSMS Africa advertises Malawi-local rates from ~30 MWK (~$0.017/SMS) with TNM/Airtel Malawi coverage, but support confirmed Malawi is NOT in their standard published pricing table and needs custom route provisioning via their engineering team (WhatsApp +254 114 494 147) — treat their advertised rate as unconfirmed until it's in writing. Africa's Talking is a credible backup, also lists Malawi, no public per-country rate, needs a direct quote. Also confirm whether Supabase Auth's phone-provider integration supports a custom/generic SMS webhook or only has built-in Twilio/MessageBird/Vonage adapters — may need a standalone OTP table + verification flow outside Supabase Auth if not. Do not build until a route is confirmed live and priced by a real test OTP to a real Malawi number.
@@ -35,6 +37,14 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 - **Agency accounts.** Frozen per Roadmap v3 feature freeze (Phase 4, after 3 paid jobs). Raised again 2026-07-20 mid job-events build — deliberately not scoped further right now to protect focus on the in-flight timeline/revisions/file-delivery sessions. When revisited: needs a real definition of what "agency" means on the platform (a profile type that manages multiple creative sub-profiles? a client-side team account? billing consolidation?) before any schema work starts — don't let a Claude Code session invent the model.
 
 ## Payments
+
+- **Upfront deposit / milestone payments.** Raised 2026-08-07 by a creative directly: some jobs need money upfront to cover materials before work can start (e.g. "job is MWK 300,000, I need MWK 100,000 upfront to buy X"). **Design decision made with the founder: this must stay a Ganyu Hub-processed payment, never a direct client-to-creative transfer** — an off-platform deposit recreates the exact "guy who knows a guy" trust gap the platform exists to solve, and a creative disappearing with an off-platform deposit becomes a story about Ganyu Hub even though it happened around it.
+
+  **Shape:** two-tranche payment on the same job, both funded through PayChangu into escrow as normal, but releasing on different triggers — the **deposit releases to the creative immediately on funding** (before work starts, since covering upfront cost is the entire point), the **balance stays held exactly like today**, released only after delivery and approval.
+
+  **Required guardrail:** cap the deposit as a percentage of total job value (e.g. 50% max), set by the creative at proposal stage alongside bid/revisions — otherwise this reopens the exact bad-faith case escrow is meant to prevent (100% "deposit," then vanish).
+
+  **Non-trivial, touches a lot:** proposal form (deposit %, capped), job funding flow (two payment events on one job instead of one), payout logic (an early partial release before completion), and — this is the sharp edge — **cancellation/dispute math**, since the existing fee-reserve and split logic assumes a job is either fully funded-and-held or not; a job that's partially released before cancellation needs its own handling. Scope as its own multi-session build, same pattern as the revisions feature. Sequence after `ganyuhub.com` / notification email, which remains higher real-world impact.
 
 - **Creative wallet with batched withdrawals — the only way to reach a genuinely flat payout percentage.** Raised 2026-08-06 while settling payout fees. Not urgent; needs real volume first.
 
@@ -62,6 +72,8 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 ## Theming
 
 - **Dark mode for public launch.** Site is heavy on white surfaces (`bg-paper`, `bg-white`, `card-soft`) and the reading experience gets tiring on long pages (Terms, dashboards, `/browse`). Ship a dark theme for the public-launch marketing push — not urgent for beta since the surface is still moving weekly and every color change would need re-QA in both themes. Approach: add a `dark:` variant sweep across the design tokens (`text-ink`, `text-ink/60`, `bg-paper`, `bg-wash`, `border-ink/10`, `card-soft`), toggle in the navbar with `next-themes`, respect `prefers-color-scheme` on first visit. Budget half a day to a day plus visual QA across every route. Do NOT ship piecemeal — half-themed pages look broken.
+
+- **Display/heading font exploration.** Raised 2026-07/08 after seeing a wide-tracked, bold uppercase broadcast-credits style font (Bebas Neue / Oswald / Druk territory). Good candidate for hero headlines and short section labels (eyebrows, category pills) — NOT for body text or job descriptions, wide-tracked all-caps fonts fatigue fast at paragraph length. Ganyu Hub already has a locked teal token system + shipped editorial redesign, so this is a deliberate design pass touching every page, not a quick swap — bundle with the dark mode work above since both require full-route visual QA. Not a beta task.
 
 ## Accessibility
 
@@ -101,6 +113,14 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 ## Ideas — creative-facing (post-analytics)
 
 - **Git-as-portfolio for devs.** Let developer creatives link a GitHub repo per portfolio item; auto-pull the README (rendered) and, for web projects, an embedded live preview (via a headless render service or Vercel/Netlify deploy hook). Would remove the "paste screenshots of your work" friction for devs and match the platform's skill-first, portfolio-is-your-credential ethos. Would need: OAuth GitHub for the creative, a repo URL field on `portfolio_items`, a fetch/render worker.
+
+## AI features (Phase 3/4 — needs real data volume first)
+
+- **Job description writing assist for creatives.** A "improve this description" action that takes a creative's rough notes for a client-facing job (the creative-initiated job flow) and turns them into a clear, professional brief. Cheap to build (single off-the-shelf LLM API call, no fine-tuning, no new infra) and directly raises the quality of what clients see. Reasonable to pull forward earlier than the matching feature below since it doesn't depend on having a large creative pool — one creative's job post is enough to be useful.
+
+- **AI-assisted creative-to-job matching.** Suggests creatives who might fit a newly posted job (category + past job history + skills tags), and could power smarter WhatsApp "a job matching your skills was posted" notifications instead of a blunt category-only filter. Explicitly NOT useful yet — with a handful of live creatives, any matching engine just restates "here's the only person available." Revisit once there's enough creative volume and job history for suggestions to be non-trivial (Phase 3, alongside "ratings into ranking").
+
+- **AI-generated marketing/portfolio copy — do NOT build.** Considered and rejected 2026-07/08: the platform's core pitch is real, human, Malawian creatives — AI-written portfolio descriptions or marketing copy directly undermines that story. Leave this off the list permanently unless the positioning itself changes.
 
 ## Pre-launch decisions (deferred from 2026-07-02)
 
