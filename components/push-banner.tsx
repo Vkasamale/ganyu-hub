@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Download, X } from "lucide-react";
+import { Bell, Download, Share, X } from "lucide-react";
 import { toast } from "sonner";
 import { savePushSubscription } from "@/app/actions";
 
@@ -30,17 +30,36 @@ type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
 export function PushBanner() {
   const [show, setShow] = useState(false);
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [iosHint, setIosHint] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    // iOS Safari in a plain tab has no PushManager at all — it only appears
-    // once the app is on the home screen. So on iOS this banner stays silent
-    // until installed, which is the platform's behaviour, not a bug.
+    // iOS has no beforeinstallprompt — Safari doesn't implement it — and no
+    // PushManager until the app is on the home screen (16.4+). Gating the whole
+    // banner on PushManager therefore showed an iPhone user NOTHING: no banner,
+    // no install hint, no way to discover any of this exists. So iOS gets its
+    // own branch that only needs to know "is this an iPhone, not yet installed".
+    const ua = navigator.userAgent;
+    const isIOS = /iphone|ipad|ipod/i.test(ua);
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    if (isIOS && !standalone) {
+      if (!localStorage.getItem(DISMISS_KEY)) {
+        setIosHint(true);
+        setShow(true);
+      }
+      return;
+    }
+
     const canPush =
       typeof window !== "undefined" &&
       "serviceWorker" in navigator &&
       "PushManager" in window &&
       "Notification" in window;
+    // Installed on iOS but still no PushManager means iOS < 16.4. Nothing to
+    // offer and nothing the user can do about it, so stay silent.
     if (!canPush) return;
 
     const onInstallPrompt = (e: Event) => {
@@ -130,6 +149,30 @@ export function PushBanner() {
     typeof window !== "undefined" &&
     "Notification" in window &&
     Notification.permission === "default";
+
+  // iOS can't be prompted from a browser tab, so the only useful thing to show
+  // is the manual route. Once they've added it and reopened from the home
+  // screen, this branch stops matching and the normal Enable banner appears.
+  if (iosHint) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
+        <Share className="h-5 w-5 shrink-0 text-brand" aria-hidden />
+        <p className="min-w-0 flex-1 text-sm text-ink/80">
+          Add Ganyu Hub to your home screen to get notified when you&apos;re paid — tap{" "}
+          <span className="font-medium">Share</span> then{" "}
+          <span className="font-medium">Add to Home Screen</span>.
+        </p>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Dismiss"
+          className="rounded-full p-1 text-ink/40 hover:bg-ink/5 hover:text-ink"
+        >
+          <X className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
