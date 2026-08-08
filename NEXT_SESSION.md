@@ -2,6 +2,14 @@
 
 Paste this whole file into a new session as the opening message.
 
+> **Next session is the PWA.** That's the headline task — installable app,
+> manifest, service worker, caching/offline strategy, icons, install prompt.
+> Nothing below outranks it; the items here are context and follow-ups, not a
+> queue to clear first. Two genuinely interact with PWA work: the notification
+> split (§1) matters more once notifications can reach a phone, and the
+> WhatsApp-style Messages layout was built against a full-desktop reference and
+> has **not** been looked at at phone width.
+
 ---
 
 ## Setup
