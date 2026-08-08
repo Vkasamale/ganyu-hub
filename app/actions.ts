@@ -3062,3 +3062,46 @@ export async function acceptJobViaLink(formData: FormData): Promise<{ error?: st
 
   redirect(`/jobs/${job.id}`);
 }
+
+// ============================================================================
+// Web push subscriptions (PWA)
+// ============================================================================
+
+// Written with the user's own session, not the service role: RLS on
+// push_subscriptions is `auth.uid() = profile_id`, so the policy — not this
+// code — is what stops one account registering a device against another.
+export async function savePushSubscription(
+  sub: { endpoint: string; keys: { p256dh: string; auth: string } },
+  userAgent?: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  if (!sub?.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) {
+    return { error: "Incomplete subscription." };
+  }
+
+  // Upsert on endpoint: the browser hands back the same endpoint every time
+  // subscribe() runs, so a plain insert would 409 on the unique index on the
+  // user's second visit. onConflict also re-homes a device that changed hands.
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    {
+      profile_id: user.id,
+      endpoint: sub.endpoint,
+      p256dh: sub.keys.p256dh,
+      auth: sub.keys.auth,
+      user_agent: userAgent?.slice(0, 400) || null,
+    },
+    { onConflict: "endpoint" },
+  );
+  if (error) return { error: "Could not save the subscription." };
+  return { ok: true };
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<{ ok: boolean }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !endpoint) return { ok: false };
+  await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+  return { ok: true };
+}

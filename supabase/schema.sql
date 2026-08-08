@@ -880,6 +880,36 @@ on conflict (id) do update set file_size_limit = excluded.file_size_limit;
 -- private + served only via signed URLs, so stored files never execute in our
 -- origin; size is the real abuse vector.
 
+-- ============================================================================
+-- Web push subscriptions (PWA). Added 2026-08-08.
+-- ============================================================================
+-- One row per browser/device, not per user: the same person installing on a
+-- phone and a laptop is two endpoints and both should ring.
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references profiles(id) on delete cascade,
+  -- The push service URL. Unique because it IS the device identity: re-running
+  -- subscribe() on the same browser returns the same endpoint, and without this
+  -- every page visit would insert a duplicate and the creative would get four
+  -- copies of "Payment released".
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_push_subscriptions_profile on push_subscriptions(profile_id);
+
+alter table push_subscriptions enable row level security;
+
+-- Owner read/write only. No admin escape hatch: these keys can put a message on
+-- someone's lock screen, and nothing in the app needs to read another person's.
+-- The sender (lib/push.ts) uses the service role and bypasses RLS.
+drop policy if exists "push_subscriptions own" on push_subscriptions;
+create policy "push_subscriptions own" on push_subscriptions for all
+  using (auth.uid() = profile_id)
+  with check (auth.uid() = profile_id);
+
 -- Read: admin, the job's client, or the accepted creative.
 drop policy if exists "job-deliverables read parties" on storage.objects;
 create policy "job-deliverables read parties" on storage.objects for select

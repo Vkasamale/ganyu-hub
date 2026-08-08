@@ -6,6 +6,7 @@ import { CountUp } from "@/components/animated";
 import { formatMwk } from "@/lib/utils";
 import { getReleasedSpend } from "@/lib/money";
 import { WelcomeChecklist, type ChecklistStep } from "@/components/welcome-checklist";
+import { PushBanner } from "@/components/push-banner";
 
 type Role = "client" | "creative" | "agency";
 
@@ -153,6 +154,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <WelcomeChecklist steps={checklistSteps} dismissed={!!profile?.welcome_dismissed_at} />
+      <PushBanner />
       <header>
         <p className="eyebrow">{role} workspace</p>
         <h1 className="mt-2 font-display text-3xl md:text-4xl">

@@ -4,6 +4,49 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-08 — PWA + web push
+
+**Nothing here has been opened on a phone.** Automated checks only. The whole
+feature is device-shaped — install prompts, lock-screen notifications, iOS
+home-screen behaviour — so the automated green below proves the code compiles
+and the prune logic branches correctly, and proves nothing else.
+
+✅ **Automated.** `npx tsc --noEmit` clean. `npm test` 88/88 across 16 files
+(+3 new in `tests/lib/push-prune.test.ts`: 410 deletes the subscription, 500
+keeps it, success touches nothing). `npm run build` passes;
+`/manifest.webmanifest` prerenders static, `/offline` builds as a route.
+
+✅ **VAPID keys checked.** Public key decodes from base64url to 65 bytes
+starting `0x04` — a well-formed uncompressed P-256 point; private key is 32
+bytes. `NEXT_PUBLIC_VAPID_PUBLIC_KEY` added as a case-sensitive-identical alias.
+Not proven to be a *pair* — only a real send proves that.
+
+⬜ **Install on Android.** Add to Home Screen offered; installed app opens
+full-screen with the maskable icon uncropped.
+
+⬜ **Permission → subscription row.** Banner Enable → `select profile_id,
+endpoint from push_subscriptions` returns exactly one row.
+
+⬜ **End-to-end push.** Sandbox job funded and released; notification arrives
+with the app fully closed; tapping it opens `/jobs/[id]`.
+
+⬜ **Denied permission on a second account.** Banner disappears, one toast, no
+console errors, no re-prompt on reload.
+
+⬜ **iOS Safari.** Expected: silent no-op in a plain tab (no `PushManager`
+until installed), working only after Add to Home Screen. That is platform
+behaviour, not a bug — but it has not been seen.
+
+⬜ **Standalone-mode navigation.** No browser back button once installed; no
+job flow has been walked start-to-finish in that frame.
+
+⚠️ **Webhook secret was misnamed locally.** `.env.local` had
+`PAYCHANGU_WEBHOOK_SECRET_KEY`; `lib/payments.ts:126` reads
+`PAYCHANGU_WEBHOOK_SECRET`. Local webhook signature verification was returning
+false for every request. **Vercel had the correct name all along**, so Preview
+and Production were unaffected — this never touched a deployed environment.
+Renamed locally 2026-08-08.
+
 ## 2026-08-07 (evening) — Messages / job conversations
 
 Verified live in Chrome as EQ Admin Client on the `sandbox-test` preview, after

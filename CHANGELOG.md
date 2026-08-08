@@ -3,6 +3,57 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-08 — Installable app, and the first real push notification
+
+**Ganyu Hub is now a PWA — additive, nothing removed.** `app/manifest.ts` is
+Next's native manifest route (no `next-pwa`, no build plugin — that package
+exists to generate this file and a Workbox worker, both smaller written by
+hand). Icons are derived from the existing `public/logo-g.png`, including a
+separate maskable variant inset to the 80% safe zone, because Android crops
+`any` icons to a circle and would clip the G. `viewport.themeColor` and
+`appleWebApp` in the root layout give the installed app its chrome. The only
+change a web visitor sees is one dismissible banner on the dashboard.
+
+**The service worker deliberately caches almost nothing.** `public/sw.js` is
+~60 hand-written lines: navigations are network-first with `/offline` as the
+fallback, and everything else — server actions, Supabase, RSC payloads, auth
+cookies — goes straight to the network untouched. Every screen here is money,
+jobs, or messages behind auth: a cached dashboard showing a stale escrow state
+is worse than an honest offline page, and a cached response carrying one
+account's data would survive a sign-out. The installability requirement is a
+fetch handler, not a populated cache. Upgrade path noted in the file:
+stale-while-revalidate for public `/browse` and profiles only, if it ever earns
+its keep.
+
+**Push is wired at `logJobEvent`, not at the call sites.** The two release paths
+(`reconcilePayout` and the PayChangu webhook) race on every payout and are
+already serialised by the compare-and-swap added for BUG-018 — exactly one of
+them reaches the logger. Hooking the logger therefore means exactly one push,
+for free, and avoids the second hand-maintained list that let `JOB_EVENT_TYPES`
+drift from the SQL constraint. One event type only (`payment_released`) as
+proof the pipe works end to end; the rest are one case each afterwards.
+
+**Dead subscriptions prune themselves.** `lib/push.ts` deletes a row on 404/410
+(the endpoint is gone for good) but keeps it on 429/5xx/network, which are
+transient — deleting on any failure would silently unsubscribe a creative whose
+push service had a bad minute. `sendPushNotification` never throws: push is a
+courtesy on top of money that has already moved. Covered by
+`tests/lib/push-prune.test.ts`.
+
+**`push_subscriptions`** is keyed by `endpoint` **unique**, not by user — the
+endpoint is the device identity, and without the constraint every dashboard
+visit would insert a duplicate and a creative would get four copies of one
+notification. RLS is a single `auth.uid() = profile_id` policy with no admin
+read: these keys can put a message on someone's lock screen.
+
+**Config, while in there.** `PAYCHANGU_WEBHOOK_SECRET_KEY` in `.env.local` was
+a typo — `lib/payments.ts:126` reads `PAYCHANGU_WEBHOOK_SECRET`, so signature
+verification was taking the `!secret` branch and rejecting every webhook
+**locally**. Vercel had the correct name throughout, so no deployed environment
+was ever affected. Renamed. An audit of all 20 variables against `process.env.*`
+found three more dead entries (`PAYCHANGU_PUBLIC_KEY`, and the Google OAuth pair
+that belongs only in the Supabase dashboard).
+
 ## 2026-08-07 (evening) — Messages becomes the record of the work
 
 **The Jobs tab in notifications never worked, and not for the reason it looked

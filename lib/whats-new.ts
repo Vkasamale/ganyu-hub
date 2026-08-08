@@ -6,6 +6,16 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.0",
+    date: "2026-08-08",
+    notes: [
+      "Install Ganyu Hub on your phone — add it to your home screen and it opens like an app, full screen.",
+      "Get a notification the moment a client releases your payment, even when the app is closed.",
+      "Notifications are opt-in: turn them on from the banner on your dashboard, or ignore it and nothing changes.",
+      "A proper offline screen instead of the browser's error page when your connection drops.",
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-08-05",
     notes: [

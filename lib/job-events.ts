@@ -68,5 +68,25 @@ export async function logJobEvent(
   });
   if (error) {
     console.error("[job-events] insert failed:", error.message, { jobId, eventType });
+    return;
+  }
+
+  // Push fan-out. Hooked here, not at the call sites, because both release
+  // paths (reconcilePayout and the PayChangu webhook) race and are already
+  // serialised by a compare-and-swap that lets exactly one of them reach this
+  // function — so one event row means one push, for free.
+  //
+  // Deliberately one event type only, as proof the pipe works end to end.
+  // Adding 'files_delivered', 'revision_requested' etc. is one more case each,
+  // once this is confirmed on a real device.
+  if (eventType === "payment_released") {
+    try {
+      const { notifyPaymentReleased } = await import("./push");
+      await notifyPaymentReleased(jobId);
+    } catch (err) {
+      // Same rule as the insert above: logging and notifying must never block
+      // a payout. The money has already moved by the time we get here.
+      console.error("[job-events] push notify failed:", (err as Error)?.message, { jobId });
+    }
   }
 }

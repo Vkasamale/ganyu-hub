@@ -1,10 +1,11 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Inter, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import { Toaster } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
+import { ServiceWorkerRegistrar } from "@/components/pwa";
 import { RELEASES, VERSION } from "@/lib/whats-new";
 
 const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
@@ -34,7 +35,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Ganyu Hub — hire Malawian creatives",
   description: "The marketplace for hiring Malawian designers, developers, and creatives.",
+  // No `apple` entry here on purpose: app/apple-icon.png is a Next file
+  // convention and Next injects the <link rel="apple-touch-icon"> itself with
+  // the right hashed URL. Declaring it manually would point at a 404.
   icons: { icon: "/logo-g.png" },
+  appleWebApp: {
+    // iOS ignores the manifest's display mode; these are what give the
+    // home-screen app its full-screen chrome and title.
+    capable: true,
+    title: "Ganyu Hub",
+    statusBarStyle: "default",
+  },
   openGraph: {
     // images intentionally omitted — app/opengraph-image.tsx supplies the
     // branded 1200x630 card that Next injects automatically.
@@ -51,6 +62,12 @@ export const metadata: Metadata = {
   },
 };
 
+// Separate from `metadata` because Next moved themeColor here — leaving it in
+// metadata builds fine but logs a deprecation and emits nothing.
+export const viewport: Viewport = {
+  themeColor: "#069494",
+};
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // ponytail: strip nav/footer chrome on public share-link landing (/j/[token])
   // so the client sees only the job + signup — no browse/homepage escape hatch.
@@ -65,6 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
         )}
         <RecoveryCatcher />
+        <ServiceWorkerRegistrar />
         {!bareLayout && <Navbar />}
         <main>{children}</main>
         {!bareLayout && <footer className="mt-16 border-t border-ink/10 px-4 py-6 text-sm text-ink/60">
