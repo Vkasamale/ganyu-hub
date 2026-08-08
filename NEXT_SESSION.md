@@ -32,6 +32,23 @@ Update CHANGELOG, TEST_LOG, BUG_LOG and the roadmap on every push.
 
 ---
 
+## 0. Run the production backfill — do this first
+
+`main` shipped the job-conversation feature on 2026-08-07, but the backfill was
+only ever run against **sandbox** (42 threads there). Until it runs against the
+**production** Supabase project, Messages on production shows a `Jobs 0` chip and
+none of the real jobs appear as conversations — the feature looks broken when it
+isn't.
+
+File: `supabase/backfill-job-threads.sql`. Three steps: dry run (writes nothing),
+insert, verify (`missing` must come back `0`). Idempotent — safe to re-run.
+**Founder runs it**; Claude does not write to the database.
+
+Note before running: threads are created at acceptance, so this catches every job
+accepted before the code shipped. It stamps `created_at` with the job's real
+payment date, so backfilled threads sort by history instead of bunching at the
+top of the list.
+
 ## 1. Look at what shipped — none of it has been opened in a browser
 
 Everything below is typechecked and pushed, 85/85 green, but unverified on
@@ -135,8 +152,9 @@ merging delivery and submit already removed one standing control.
 
 ## Still outstanding
 
-- **Rotate the PayChangu test webhook secret and test public key** — exposed in a
-  screenshot. Oldest open item.
+- ~~Rotate the exposed PayChangu keys~~ — **closed 2026-08-07, no action needed.**
+  Founder's call, and correct: those are `sec-test-` sandbox keys, not live ones.
+  They cannot move real money. Do not re-raise this.
 - **Clean up throwaway rows** — jobs `849eb4c9…`, `99e8569b…`, `d2a9aea7…`,
   `0ba49618…`, and the three deadline extensions on `changu`. Note these now have
   conversations attached, so deleting jobs should cascade or the threads go stale.
