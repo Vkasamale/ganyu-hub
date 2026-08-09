@@ -15,3 +15,8 @@ playwright-report/
 .agents/
 .codex/
 skills-lock.json
+
+# Personal working docs - never commit
+/private/
+*.private.md
+PROJECT_FRAMEWORK.md
