@@ -22,9 +22,101 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 - **Turn on Plausible analytics.** Script tag shipped 2026-07-16, gated by env var. To activate: (1) sign up free at plausible.io, (2) add site `ganyu-hub.vercel.app` (later `ganyuhub.com`), (3) set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyu-hub.vercel.app` in Vercel env, (4) redeploy. Pageviews only — custom events (`job_posted`, `job_completed`) added later if pageview data can't answer the question.
 
-- **Buy `ganyuhub.com` and verify in Resend.** `ganyu.com` is NOT owned by us — it will never verify, remove that entry from Resend once the correct domain is live. Until then, emails route through Resend sandbox (`onboarding@resend.dev`) and only deliver to the Resend account owner (`vinnykasa@gmail.com`). Once `ganyuhub.com` is purchased and DNS records added: update `EMAIL_FROM` in `.env.local` to `Ganyu Hub <notifications@ganyuhub.com>` and redeploy. Part of Money Unlock Day.
+- ~~**Buy `ganyuhub.com` and verify in Resend.**~~ **Done 2026-08-09.** Bought at
+  Namecheap (auto-renew on, WhoisGuard on). DNS on Namecheap BasicDNS:
+  `A @ → 76.76.21.21`, `CNAME www → cname.vercel-dns.com.`; parking A record and
+  the `ganyuhub.com → www` redirect deleted. Vercel serves **www as canonical**,
+  apex 308s to it. Resend **verified** — DKIM (`resend._domainkey`), SPF on the
+  `send` subdomain (TXT + MX priority 10) and `_dmarc` all resolve publicly.
+  Mail Settings switched `Email Forwarding → Custom MX`, which removed
+  Namecheap's forwarding SPF (no longer needed — Resend scopes its SPF to
+  `send`, so there was never a conflict with the apex record). Vercel's "DNS
+  Change Recommended" badge is advisory only: it advertises a new IP range and
+  states the legacy records keep working. **Superseded by "Domain unlocked"
+  below.**
+
+- **[OLD SCOPE, kept for reference] Buy `ganyuhub.com` and verify in Resend.** `ganyu.com` is NOT owned by us — it will never verify, remove that entry from Resend once the correct domain is live. Until then, emails route through Resend sandbox (`onboarding@resend.dev`) and only deliver to the Resend account owner (`vinnykasa@gmail.com`). Once `ganyuhub.com` is purchased and DNS records added: update `EMAIL_FROM` in `.env.local` to `Ganyu Hub <notifications@ganyuhub.com>` and redeploy. Part of Money Unlock Day.
 
 - **WhatsApp Cloud API notifications.** In progress 2026-07/08 — Meta Developer App "Ganyu Hub" created, WhatsApp use case attached, test number available via "Try it out" (Step 1). Chosen over Twilio to keep beta cost at zero (Twilio requires prepaid balance; Meta's own Cloud API is free through the test tier — up to 5 verified recipient numbers, no payment method required). Path: Step 1 (test number, 5 verified recipients, free) → Step 2 Production setup (real phone number, message templates, payment method — only needed once beta outgrows 5 recipients) → Step 3 Business verification (only needed for full production volume). Any *creative-initiated* message outside a 24h reply window needs a pre-approved message template — draft plain, transactional wording (new job match, file delivered, status update) since promotional-sounding templates get rejected. Do not wire into Claude Code / the app until a real test message has been sent and received through Step 1, and API key + Phone Number ID + WABA ID are in hand.
+
+## Domain unlocked — NEXT SESSION TOPIC (added 2026-08-09)
+
+`ganyuhub.com` is live and Resend is verified. This section is the agenda for
+that discussion, not a queue to clear. Nothing here is started.
+
+**Config that must land first — blocks most of the rest.** Vercel Production:
+`APP_URL` and `NEXT_PUBLIC_SITE_URL` → `https://www.ganyuhub.com`, `EMAIL_FROM`
+→ `Ganyu Hub <noreply@ganyuhub.com>`, plus the three VAPID vars. Then redeploy
+(env changes need a build). Supabase → Auth → URL Configuration: Site URL and
+`https://www.ganyuhub.com/auth/callback`, or Google login breaks on the new
+domain. PayChangu webhook repointed. Production `push_subscriptions` table run.
+
+### 1. Email actually reaches people now — the big one
+
+Resend was sandbox-only and delivered **exclusively to the account owner**.
+Every notification email the app has ever "sent" to a beta creative went
+nowhere. That constraint is gone.
+
+- Audit what the app currently emails, and to whom. Volume goes 0 → real.
+- Decide which events deserve email vs in-app only. A creative who gets an
+  email per job event will mute us.
+- Send one real end-to-end job through and read what actually lands **before**
+  telling beta users about the domain.
+- Templates are unbranded; a verified sending domain makes branding worth doing.
+
+### 2. Branded reply address
+
+`EMAIL_REPLY_TO` stays `vinnykasa@gmail.com` deliberately — **nothing receives
+mail at `@ganyuhub.com`** (Resend receiving off; Namecheap forwarding removed
+with the Custom MX switch). Options when ready: ImprovMX free tier (2 records,
+apex MX slot is free since Resend only claimed `send`, forwards to Gmail) or
+Resend Inbound (a webhook, not a mailbox — right for routing `support@` into
+the admin panel later, wrong for reading replies). Zoho's free tier is gone.
+
+### 3. Share links stop looking disposable
+
+Share buttons and `absUrl()` now emit `ganyuhub.com` instead of a
+`*.vercel.app` URL. In a market where hiring happens over WhatsApp referrals,
+the link *is* the credibility. Worth re-checking OG cards render correctly on
+the real domain.
+
+### 4. SEO becomes worth doing at all
+
+Pointless on `vercel.app`; now the cheapest acquisition channel we have.
+
+- `sitemap.ts` and `robots.ts` (Next has native metadata routes for both)
+- **Category landing pages** with plain-language descriptions — see
+  `DESIGN_GAP_AUDIT.md` §O3; already recommended for UX, doubles as SEO
+- Task-phrased entry points (§L1) map onto search intent ("logo design
+  Blantyre") far better than our category taxonomy does
+- Per-page canonical URLs
+
+### 5. Installed PWA carries the real domain
+
+The home-screen app shows `ganyuhub.com`, not a Vercel subdomain. Worth
+redoing the iOS install test on the real domain — the install is per-origin,
+so anything installed from the preview URL is a different app.
+
+### 6. Plausible can finally be switched on
+
+Existing backlog item above: set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyuhub.com`
+(not the vercel.app value) and redeploy.
+
+### 7. Subdomains now available
+
+`admin.` / `status.` / `docs.` — none needed yet. Noted so the option is
+remembered, not to build.
+
+### 8. Email posture to tighten later
+
+DMARC is `p=none` (monitor only). Once real send volume exists and reports look
+clean, move to `quarantine`. Do not tighten before there is data.
+
+### 9. Domain ops
+
+Auto-renew on, WhoisGuard on. Renewal is a single point of failure for the
+whole product — email, auth redirects, share links, the installed PWA. Worth a
+calendar reminder independent of Namecheap's own.
 
 ## Identity & Trust (Public Launch / Scale tier — not beta)
 
