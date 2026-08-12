@@ -3,6 +3,40 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Announcement bar (v0.9.1.2)
+
+`IMPLEMENTATION_PLAN.md` L1c, audit §Q8: "one line, a CTA, full width — worth
+having as a component for beta announcements and the eventual launch." This is
+the last of the three above-the-nav pieces.
+
+`components/announcement-bar.tsx`. The message is a single `ANNOUNCEMENT`
+constant at the top of the file with the edit instructions in the docblock
+directly above it; **set it to `null` and the bar disappears entirely** — no
+empty strip, no placeholder, which is §Q7's rule applied to a component that
+has no data threshold to gate on.
+
+Shipped live rather than dark, because there is something true to say: Ganyu
+Hub is in beta and escrow and payouts are real.
+
+**Dismissal is keyed on the announcement's `id`**, not a single
+"announcement dismissed" flag. Someone who closed the beta notice must still
+see the launch notice; one shared flag would mean the second announcement is
+never seen by anyone who ever closed the first. The docblock says to bump the
+id whenever the message changes, because that is the one thing that will be
+forgotten.
+
+**The install banner now stands down while an announcement is live.** Found by
+screenshot: an announcement plus an install bar plus the sticky nav is ~110px
+of chrome before any content on a 375px screen, about a seventh of the
+viewport. The announcement is founder-set and time-limited so it wins; the
+install prompt returns on the next page load once the announcement is closed.
+`install-banner.tsx` imports `announcementShowing()` rather than duplicating
+the key.
+
+**Copy trimmed after looking at it.** The first draft wrapped to three lines on
+a phone with the CTA on the end. Shortened to one, with a comment on the
+constant saying why it has to stay short.
+
 ## 2026-08-12 — Install banner above the nav (v0.9.1.1)
 
 `IMPLEMENTATION_PLAN.md` L1b, audit §Q8. Fiverr pins an app-install row above

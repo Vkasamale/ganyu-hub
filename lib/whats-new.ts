@@ -6,6 +6,13 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.1.2",
+    date: "2026-08-12",
+    notes: [
+      "A notice bar at the top of the site for anything worth announcing — starting with an honest one: Ganyu Hub is in beta. Close it and it stays closed until there's genuinely something new to say.",
+    ],
+  },
+  {
     version: "0.9.1.1",
     date: "2026-08-12",
     notes: [

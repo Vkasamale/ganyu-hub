@@ -8,6 +8,7 @@ import { RecoveryCatcher } from "@/components/recovery-catcher";
 import { ServiceWorkerRegistrar } from "@/components/pwa";
 import { Footer } from "@/components/footer";
 import { InstallBanner } from "@/components/install-banner";
+import { AnnouncementBar } from "@/components/announcement-bar";
 
 const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
@@ -84,7 +85,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
         <RecoveryCatcher />
         <ServiceWorkerRegistrar />
-        {/* Above the nav, which is sticky — audit §Q8. */}
+        {/* Both sit above the nav, which is sticky — audit §Q8. Announcement
+            on top: it is founder-set and time-limited, so it outranks a
+            standing install prompt. They only ever stack when ANNOUNCEMENT is
+            non-null, which is a deliberate choice made in one place. */}
+        {!bareLayout && <AnnouncementBar />}
         {!bareLayout && <InstallBanner />}
         {!bareLayout && <Navbar />}
         <main>{children}</main>

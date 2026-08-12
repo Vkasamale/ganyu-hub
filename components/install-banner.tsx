@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { Share, X } from "lucide-react";
+import { announcementShowing } from "@/components/announcement-bar";
 
 /**
  * Install-the-app banner, pinned above the nav. IMPLEMENTATION_PLAN.md L1b,
@@ -36,6 +37,12 @@ export function InstallBanner() {
 
   useEffect(() => {
     if (localStorage.getItem(DISMISS_KEY)) return;
+
+    // Two persistent bars above a sticky nav is ~110px of chrome before any
+    // content on a 375px screen. The announcement is founder-set and
+    // time-limited, so it wins; this one comes back on the next page load
+    // after the announcement is closed.
+    if (announcementShowing()) return;
 
     // Already running from the home screen: there is nothing left to install.
     const standalone =

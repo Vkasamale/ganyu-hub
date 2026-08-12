@@ -4,6 +4,24 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Announcement bar (L1c)
+
+Browser-rendered at 375 and 1280. No device testing needed — unlike L1b there
+is no platform-specific branch.
+
+- ✅ `tsc --noEmit` clean, home page 200.
+- ✅ Renders above both the install banner and the nav; nav returns to
+  `top: 0` once dismissed.
+- ✅ Dismiss writes `ganyu-announcement-beta-2026-08` — namespaced by id, so a
+  new announcement is not pre-dismissed.
+- ✅ **Handoff with the install banner verified end to end:** announcement live
+  ⇒ install suppressed; announcement dismissed + reload ⇒ install appears.
+- ✅ Judged from a screenshot. Two defects found that way and fixed — the
+  three-line copy wrap, and the two-bar stack.
+- ⬜ Never opened on a physical phone.
+- ⬜ The `ANNOUNCEMENT = null` path is correct by inspection but has not been
+  exercised — worth a 10-second check the first time the bar is retired.
+
 ## 2026-08-12 — Install banner (L1b)
 
 Browser-rendered with a **synthetic** `beforeinstallprompt`. The real event
