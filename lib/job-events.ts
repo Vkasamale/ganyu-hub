@@ -80,6 +80,17 @@ export async function logJobEvent(
   // Adding 'files_delivered', 'revision_requested' etc. is one more case each,
   // once this is confirmed on a real device.
   if (eventType === "payment_released") {
+    // Item 35: the review prompt rides the same event, for the same reason the
+    // push does — both release paths race, and exactly one of them reaches this
+    // function, so each party is prompted exactly once. Release is also the
+    // right moment: the work is done and the money has moved, which is when
+    // someone actually has an opinion worth writing down.
+    try {
+      await promptForReviews(admin, jobId);
+    } catch (err) {
+      console.error("[job-events] review prompt failed:", (err as Error)?.message, { jobId });
+    }
+
     try {
       const { notifyPaymentReleased } = await import("./push");
       await notifyPaymentReleased(jobId);
@@ -89,4 +100,65 @@ export async function logJobEvent(
       console.error("[job-events] push notify failed:", (err as Error)?.message, { jobId });
     }
   }
+}
+
+/**
+ * Item 35 — prompt both parties to review, once, when payment is released.
+ *
+ * Notifications only. No email, no push: the release already sends a push, and
+ * two notifications about one event is how people learn to ignore both.
+ *
+ * Reviews run in both directions, so the two prompts point at different routes
+ * — the creative reviews a client, the client reviews a creative — and both
+ * land on the job, where the review form lives.
+ */
+async function promptForReviews(admin: any, jobId: string) {
+  const { data: job } = await admin
+    .from("jobs")
+    .select("id, title, client_id")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (!job?.client_id) return;
+
+  const { data: proposal } = await admin
+    .from("proposals")
+    .select("creative_id")
+    .eq("job_id", jobId)
+    .eq("status", "accepted")
+    .maybeSingle();
+  if (!proposal?.creative_id) return;
+
+  // Skip anyone who has already reviewed this job — a release can be logged
+  // after a review in the top-up case, and nagging for something already done
+  // is worse than staying quiet.
+  const { data: existing } = await admin
+    .from("reviews")
+    .select("reviewer_id")
+    .eq("job_id", jobId);
+  const reviewed = new Set((existing || []).map((r: any) => r.reviewer_id));
+
+  const rows = [
+    {
+      user_id: job.client_id,
+      title: "How did that go?",
+      body: `Rate the creative you hired for "${job.title}".`,
+    },
+    {
+      user_id: proposal.creative_id,
+      title: "How was that client?",
+      body: `Rate what it was like working on "${job.title}" — clear brief, paid on time, fair on revisions.`,
+    },
+  ].filter((r) => !reviewed.has(r.user_id));
+
+  if (!rows.length) return;
+
+  await admin.from("notifications").insert(
+    rows.map((r) => ({
+      ...r,
+      kind: "message_received",
+      link: `/jobs/${jobId}`,
+      target_type: "job",
+      target_id: jobId,
+    })),
+  );
 }

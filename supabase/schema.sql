@@ -1100,3 +1100,22 @@ create policy "testimonials delete own" on testimonials for delete using (auth.u
 -- role in a server action, which bypasses both.
 revoke update on testimonials from authenticated;
 grant update (status) on testimonials to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Phase 4 — reviews: extend and surface (items 29-30, §N1, §F1).
+-- Full statements in supabase/phase4-reviews.sql. `rating` stays the headline
+-- number, computed from the axes, so existing averages keep working.
+-- ---------------------------------------------------------------------------
+alter table reviews add column if not exists rating_communication integer check (rating_communication between 1 and 5);
+alter table reviews add column if not exists rating_quality integer check (rating_quality between 1 and 5);
+alter table reviews add column if not exists rating_deadline integer check (rating_deadline between 1 and 5);
+alter table reviews add column if not exists rating_brief_clarity integer check (rating_brief_clarity between 1 and 5);
+alter table reviews add column if not exists rating_paid_on_time integer check (rating_paid_on_time between 1 and 5);
+alter table reviews add column if not exists rating_fair_revisions integer check (rating_fair_revisions between 1 and 5);
+alter table reviews add column if not exists response text;
+alter table reviews add column if not exists responded_at timestamptz;
+drop policy if exists "reviews respond as reviewee" on reviews;
+create policy "reviews respond as reviewee" on reviews for update
+  using (auth.uid() = reviewee_id) with check (auth.uid() = reviewee_id);
+revoke update on reviews from authenticated;
+grant update (response, responded_at) on reviews to authenticated;

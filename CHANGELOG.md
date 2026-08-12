@@ -3,6 +3,50 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Phase 4, reviews extended and surfaced (v0.9.5)
+
+Items 29-36. The audit claimed we had no reviews; `reviews` shipped 2026-07-03
+with role-neutral `reviewer_id`/`reviewee_id`, so this phase extends rather
+than builds.
+
+**Item 29, multi-axis ratings.** Three axes per direction, and the two sets are
+deliberately NOT mirrors of each other. Clients rate quality, communication and
+deadline. Creatives rate the client on clear brief, **paid on time** and fair
+on revisions — §N1's argument is that a creative's real fear is not a bad
+rating but a client who vanishes after delivery or haggles the price down
+afterwards, and the axes should say so.
+
+**The overall star count is derived, not asked for twice.** `reviews.rating`
+stays the single number everything sorts and averages by, computed server-side
+as the mean of whichever axes were given. Every existing query — /browse cards,
+profile averages, `lib/feed.ts` ranking — keeps working untouched.
+
+**Item 30, the ratee's right of response.** A reply, once, threaded under the
+review. The reviewee may never edit the rating or the reviewer's words:
+enforced by column-level grants (`grant update (response, responded_at)`), not
+by the UI omitting the fields. A one-sided bad review with nothing beneath it
+is the commonest reason people stop trusting a marketplace's ratings.
+
+**Item 31** surfaces the client direction where the decision is actually made —
+the "About the client" block on job detail now leads with what creatives who
+worked for them said. Bidirectional reviews existed in the schema from the
+start and had never been shown at the point of bidding.
+
+**Item 33** puts the job title and the amount actually paid under each review,
+from one batched query. Nothing is denormalised onto the review row, so nothing
+can go stale.
+
+**Item 34** makes reviews a peeking carousel on mobile and a list on desktop —
+one element, two behaviours, pure CSS, no client component.
+
+**Item 35** hangs the review prompt off `payment_released` in
+`lib/job-events.ts`, beside the push. Both release paths race and exactly one
+reaches that function, so each party is prompted exactly once. Anyone who has
+already reviewed is skipped.
+
+**Item 36 was already done** — `getForYouCreatives` has folded rating into
+ranking with `avg * log(count+1)` since it was written.
+
 ## 2026-08-12 — Phase 3, testimonials (v0.9.4)
 
 `IMPLEMENTATION_PLAN.md` items 26-28, audit §M11, §M1. The cold-start fix, and

@@ -6,6 +6,17 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.5",
+    date: "2026-08-12",
+    notes: [
+      "Reviews now rate three things instead of one — clients rate quality, communication and deadlines; creatives rate whether the brief was clear, whether they were paid on time, and whether revisions were fair.",
+      "If someone reviews you, you can reply once, publicly, under what they wrote. Nobody can edit anyone else’s words.",
+      "Job pages show what creatives said about the client before you decide to bid.",
+      "Each review now shows which job it was for and what was paid.",
+      "Both sides get a nudge to leave a review the moment payment is released.",
+    ],
+  },
+  {
     version: "0.9.3",
     date: "2026-08-12",
     notes: [

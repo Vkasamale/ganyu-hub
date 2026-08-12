@@ -4,6 +4,30 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Phase 4 (v0.9.5)
+
+- ✅ `tsc --noEmit` clean throughout; `/creatives/[id]?tab=reviews` 200.
+- ✅ Item 36 confirmed already implemented in `lib/feed.ts` — read, not assumed.
+
+**⬜ NOT TESTED — everything requiring the migration or a form submit.** The
+Phase 4 migration (`supabase/phase4-reviews.sql`) was NOT applied at the time
+of writing, so none of the axis columns or the response column exist yet in the
+database. Nothing below has run against real data:
+
+- ⬜ multi-axis submission and the derived overall rating
+- ⬜ the axis breakdown rendering under a review
+- ⬜ the ratee's reply, and the DB-level block on editing a rating
+- ⬜ the client-rating row in "About the client"
+- ⬜ job title + amount under each review
+- ⬜ the mobile reviews carousel at 375px
+- ⬜ the review prompt firing on `payment_released`
+
+**Blocked, carried from Phase 3:** Claude cannot submit React server-action
+forms in this app. Retried after the session was confirmed healthy and signed
+in — fields filled, click registered, still no row written. Every form the
+founder clicks works first time. Verification of all form paths must be done by
+hand.
+
 ## 2026-08-12 — Phase 3 + BUG-020 (v0.9.4)
 
 - ✅ Migration applied; `testimonials` table reachable.

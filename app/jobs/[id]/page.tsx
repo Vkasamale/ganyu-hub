@@ -66,7 +66,7 @@ import { RequestRevisionPanel } from "@/components/request-revision-panel";
 import { Select } from "@/components/ui/select";
 import { submitProposal, decideProposal, recordView, addPortfolioItem, submitReview, reconcilePayout, requestTopUp, declineTopUp, payTopUp } from "@/app/actions";
 import { collectionFee } from "@/lib/fees";
-import { StarRatingInput } from "@/components/star-rating-input";
+import { ReviewAxes } from "@/components/review-axes";
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo, formatDeadline, daysUntil } from "@/lib/utils";
 
@@ -631,10 +631,11 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             ) : (
               <SavingForm action={submitReview} successText="Review submitted. Thanks!" className="space-y-4">
                 <input type="hidden" name="job_id" value={job.id} />
-                <div className="space-y-1.5">
-                  <Label>Rating</Label>
-                  <StarRatingInput name="rating" />
-                </div>
+                {/* Item 29 (§N1): three axes instead of one number. The
+                    overall star count is the mean of these, computed server
+                    side — asking for it separately would be asking the same
+                    question twice. */}
+                <ReviewAxes isClient={isClient} />
                 <div className="space-y-1.5">
                   <Label htmlFor="comment">Comment (optional)</Label>
                   <Textarea id="comment" name="comment" rows={3} placeholder="What was it like to work with them?" />

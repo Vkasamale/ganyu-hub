@@ -25,6 +25,18 @@ export function AboutClient({
 }) {
   const facts: { label: string; value: string; hint?: string }[] = [];
 
+  // Item 31 (§G3) leads, above the activity numbers: what creatives who
+  // actually worked for this client said. Reviews were always bidirectional in
+  // the schema; this is the first place the client direction appears where the
+  // decision to bid is made.
+  if (trust.rating != null && trust.reviewCount > 0) {
+    facts.push({
+      label: "Rated by creatives",
+      value: `${trust.rating.toFixed(1)} ★ · ${trust.reviewCount} review${trust.reviewCount === 1 ? "" : "s"}`,
+      hint: "Ratings left by creatives who completed work for this client.",
+    });
+  }
+
   if (trust.jobsPosted > 0) {
     facts.push({
       label: "Jobs posted",

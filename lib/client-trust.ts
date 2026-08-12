@@ -33,6 +33,13 @@ export type ClientTrust = {
   medianReplyMins: number | null;
   /** A number is on the profile. NOT verified — there is no OTP flow. */
   phoneOnFile: boolean;
+  /**
+   * Item 31 (§G3): what creatives who worked for this client said about them.
+   * The client direction of reviews already existed structurally — reviews are
+   * role-neutral — but was never shown where the decision gets made.
+   */
+  rating: number | null;
+  reviewCount: number;
 };
 
 // Below three jobs a percentage is noise: one job reads as either 0% or 100%
@@ -50,6 +57,17 @@ export async function getClientTrust(supabase: any, clientId: string): Promise<C
       .eq("client_id", clientId),
     supabase.from("message_threads").select("id").eq("client_id", clientId),
   ]);
+
+  // Item 31: reviews written ABOUT this client, by creatives who worked for
+  // them. Same table, other direction.
+  const { data: clientReviews } = await supabase
+    .from("reviews")
+    .select("rating")
+    .eq("reviewee_id", clientId);
+  const reviewCount = (clientReviews || []).length;
+  const rating = reviewCount
+    ? (clientReviews as { rating: number }[]).reduce((s2, r) => s2 + r.rating, 0) / reviewCount
+    : null;
 
   const jobRows = (jobs || []) as any[];
   const jobIds = jobRows.map((j) => j.id);
@@ -95,6 +113,8 @@ export async function getClientTrust(supabase: any, clientId: string): Promise<C
     isRepeatClient: Array.from(perCreative.values()).some((n) => n > 1),
     medianReplyMins,
     phoneOnFile: !!(profile?.phone && String(profile.phone).trim()),
+    rating,
+    reviewCount,
   };
 }
 

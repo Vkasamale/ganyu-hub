@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
 import { notFound, redirect } from "next/navigation";
 import { StickyActionBar } from "@/components/sticky-action-bar";
+import { ReviewAxisBreakdown } from "@/components/review-axes";
 import { CaseStudyFacts } from "@/components/case-study-fields";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -49,7 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SaveButton } from "@/components/save-button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
-import { startThread, recordView, requestCustomService, inviteCreative } from "@/app/actions";
+import { startThread, recordView, requestCustomService, inviteCreative, respondToReview } from "@/app/actions";
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo, formatMonthYear } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
@@ -121,7 +122,7 @@ export default async function CreativePage({
 
   const { data: reviews } = await supabase
     .from("reviews")
-    .select("id, rating, comment, created_at, reviewer:profiles!reviews_reviewer_id_fkey(full_name)")
+    .select("id, job_id, rating, comment, created_at, response, responded_at, rating_communication, rating_quality, rating_deadline, rating_brief_clarity, rating_paid_on_time, rating_fair_revisions, reviewer:profiles!reviews_reviewer_id_fkey(full_name)")
     .eq("reviewee_id", id)
     .order("created_at", { ascending: false });
   // Item 28: published testimonials only. RLS enforces the same filter, but
@@ -133,6 +134,21 @@ export default async function CreativePage({
     .eq("status", "published")
     .order("submitted_at", { ascending: false });
   const testimonials = testimonialRows || [];
+
+  // Item 33 (§F1): a review means more when you can see what it was for and
+  // what it cost. One batched query over the jobs those reviews belong to —
+  // nothing is denormalised onto the review row, so nothing can go stale.
+  const reviewJobIds = Array.from(new Set((reviews || []).map((r: any) => r.job_id).filter(Boolean)));
+  const jobById = new Map<string, { title: string; paid: number | null }>();
+  if (reviewJobIds.length) {
+    const { data: reviewJobs } = await supabase
+      .from("jobs")
+      .select("id, title, total_paid_mwk, accepted_bid_mwk")
+      .in("id", reviewJobIds);
+    (reviewJobs || []).forEach((j: any) =>
+      jobById.set(j.id, { title: j.title, paid: j.total_paid_mwk ?? j.accepted_bid_mwk ?? null }),
+    );
+  }
 
   const reviewCount = reviews?.length || 0;
   const avgRating = reviewCount
@@ -465,15 +481,58 @@ export default async function CreativePage({
                   <span className="text-ink/55">· {reviewCount}</span>
                 </span>
               </div>
-              <ul className="mt-4 space-y-4">
+              {/* Item 34 (§N5): a swipeable row on a phone, a plain list on
+                  desktop. Same peek rule as the landing carousel (§Q8) — the
+                  next card stays deliberately half-visible, which is the only
+                  affordance saying this swipes. Pure CSS: one element, two
+                  behaviours, no client component. */}
+              <ul className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pr-10 md:block md:snap-none md:space-y-4 md:overflow-visible md:pb-0 md:pr-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {(reviews || []).map((r: any) => (
-                  <li key={r.id} className="border-t border-ink/10 pt-4 first:border-0 first:pt-0">
+                  <li
+                    key={r.id}
+                    className="w-[85%] shrink-0 snap-start rounded-lg border border-ink/10 p-4 md:w-auto md:shrink md:rounded-none md:border-0 md:border-t md:p-0 md:pt-4 md:first:border-0 md:first:pt-0"
+                  >
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-ink">{r.reviewer?.full_name || "A client"}</p>
                       <Stars value={r.rating} className="h-3.5 w-3.5" />
                     </div>
+                    {/* Item 33: what the review was actually for. */}
+                    {jobById.get(r.job_id) && (
+                      <p className="mt-0.5 text-xs text-ink/50">
+                        {jobById.get(r.job_id)!.title}
+                        {jobById.get(r.job_id)!.paid ? ` · ${formatMwk(jobById.get(r.job_id)!.paid!)}` : ""}
+                      </p>
+                    )}
                     {r.comment && <p className="mt-1.5 whitespace-pre-wrap text-sm text-ink/75">{r.comment}</p>}
+                    {/* Item 29: the axes that produced the star count. */}
+                    <ReviewAxisBreakdown review={r} />
                     <p className="mt-1 text-xs text-ink/45">{timeAgo(r.created_at)}</p>
+
+                    {/* Item 30 (§F1): the reply, threaded under the review it
+                        answers. A one-sided bad review with nothing beneath it
+                        is the commonest reason people distrust ratings. */}
+                    {r.response && (
+                      <div className="mt-3 border-l-2 border-ink/15 pl-3">
+                        <p className="text-xs font-medium text-ink/70">
+                          {profile.full_name?.split(" ")[0] || "They"} replied
+                        </p>
+                        <p className="mt-0.5 whitespace-pre-wrap text-sm text-ink/70">{r.response}</p>
+                      </div>
+                    )}
+
+                    {/* Only the person reviewed can reply, and only once. */}
+                    {isOwner && !r.response && (
+                      <SavingForm action={respondToReview} successText="Reply posted." className="mt-3 space-y-2">
+                        <input type="hidden" name="review_id" value={r.id} />
+                        <Textarea
+                          name="response"
+                          rows={2}
+                          maxLength={1000}
+                          placeholder="Reply once — this sits under the review permanently."
+                        />
+                        <SubmitButton size="sm" variant="outline" pendingText="Posting…">Reply</SubmitButton>
+                      </SavingForm>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -555,11 +614,16 @@ export default async function CreativePage({
                 <dt className="text-ink/60">Rating</dt>
                 <dd className="text-ink">
                   {reviewCount > 0 ? (
-                    <span className="inline-flex items-center gap-1.5">
+                    // Item 32 (§F2): the count is the link — someone reading
+                    // "4.8 (153)" wants the 153, not a hunt for the tab.
+                    <Link
+                      href={`/creatives/${profile.id}?tab=reviews`}
+                      className="inline-flex items-center gap-1.5 hover:underline"
+                    >
                       <Stars value={avgRating} className="h-3.5 w-3.5" />
                       <span className="font-medium">{avgRating.toFixed(1)}</span>
                       <span className="text-ink/55">({reviewCount})</span>
-                    </span>
+                    </Link>
                   ) : (
                     <span className="text-ink/55">No reviews yet</span>
                   )}

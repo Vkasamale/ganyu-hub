@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { sendEmail } from "@/lib/email";
 import { CATEGORIES } from "@/lib/types";
 import { logJobEvent, type JobEventType } from "@/lib/job-events";
@@ -778,7 +779,12 @@ export async function submitReview(formData: FormData) {
   const rating = Number(formData.get("rating"));
   const comment = String(formData.get("comment") || "").trim();
   if (!job_id) return { error: "Missing job" };
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { error: "Pick a rating from 1 to 5 stars." };
+  // A legacy single-star form may still post `rating` alone; the multi-axis
+  // form posts the axes instead. Validate whichever arrives, below, once we
+  // know which side is rating which — but reject an out-of-range overall now.
+  if (formData.has("rating") && (!Number.isInteger(rating) || rating < 1 || rating > 5)) {
+    return { error: "Pick a rating from 1 to 5 stars." };
+  }
 
   const { data: job } = await supabase.from("jobs").select("id, client_id, status, title").eq("id", job_id).single();
   if (!job) return { error: "Job not found" };
@@ -799,12 +805,39 @@ export async function submitReview(formData: FormData) {
   const reviewee_id = isClient ? creativeId : job.client_id;
   if (!reviewee_id) return { error: "No counterparty to review yet." };
 
+  // Item 29 (§N1): three axes, chosen by which side is being rated. A bare 4.2
+  // reads as ominous; three axes make it legible AND tell the ratee what to
+  // fix. The client axes matter more here than the creative ones — a
+  // creative's real fear is not a bad rating, it is a client who vanishes
+  // after delivery or haggles the price down afterwards.
+  const axisNames = isClient
+    ? (["rating_communication", "rating_quality", "rating_deadline"] as const)
+    : (["rating_brief_clarity", "rating_paid_on_time", "rating_fair_revisions"] as const);
+
+  const axes: Record<string, number | null> = {};
+  const given: number[] = [];
+  for (const key of axisNames) {
+    const n = Number(formData.get(key));
+    const valid = Number.isInteger(n) && n >= 1 && n <= 5;
+    axes[key] = valid ? n : null;
+    if (valid) given.push(n);
+  }
+
+  // The headline `rating` stays the single number everything else sorts and
+  // averages by. When axes are given it is their mean, so nobody is asked the
+  // same judgement twice and no existing query has to change.
+  const overall = given.length ? Math.round(given.reduce((a, b) => a + b, 0) / given.length) : rating;
+  if (!Number.isInteger(overall) || overall < 1 || overall > 5) {
+    return { error: "Rate at least one of the three, from 1 to 5 stars." };
+  }
+
   const { error } = await supabase.from("reviews").insert({
     job_id,
     reviewer_id: user.id,
     reviewee_id,
-    rating,
+    rating: overall,
     comment: comment || null,
+    ...axes,
   });
   if (error) {
     if (error.code === "23505") return { error: "You already reviewed this job." };
@@ -3304,5 +3337,57 @@ export async function deleteTestimonial(formData: FormData) {
   if (error) return { error: error.message };
   revalidatePath("/dashboard/testimonials");
   revalidatePath(`/creatives/${user.id}`);
+  return { ok: true };
+}
+
+/**
+ * Item 30 (§F1) — the ratee's right of response, threaded under the review.
+ *
+ * The reviewee may reply once and may never touch the rating or the reviewer's
+ * words. That limit lives in the database (column-level grants, see
+ * supabase/phase4-reviews.sql); this action simply never offers the fields.
+ *
+ * Why it matters more than it looks: a one-sided bad review with no reply is
+ * the single most common reason people distrust a marketplace's ratings. A
+ * reply does not remove the rating — it lets a reader judge both parties.
+ */
+export async function respondToReview(formData: FormData) {
+  const supabase = createClient();
+  const user = await getSessionUser();
+  if (!user) return { error: "Not signed in" };
+
+  const id = String(formData.get("review_id") || "");
+  const response = String(formData.get("response") || "").trim();
+  if (!id) return { error: "Missing review" };
+  if (response.length < 10) return { error: "Write a sentence or two." };
+  if (response.length > 1000) return { error: "Please keep your reply under 1000 characters." };
+
+  // Reply once. Guarding on `response is null` in the WHERE clause rather than
+  // reading first means a double submit cannot overwrite the first reply.
+  const { data, error } = await supabase
+    .from("reviews")
+    .update({ response, responded_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("reviewee_id", user.id)
+    .is("response", null)
+    .select("id, reviewer_id")
+    .maybeSingle();
+
+  if (error) return { error: error.message };
+  if (!data) return { error: "You have already replied to this review." };
+
+  await supabase.from("notifications").insert({
+    user_id: data.reviewer_id,
+    kind: "message_received",
+    title: "Someone replied to your review",
+    body: response.length > 80 ? response.slice(0, 80) + "…" : response,
+    link: `/creatives/${user.id}?tab=reviews`,
+    actor_id: user.id,
+    target_type: "creative",
+    target_id: user.id,
+  });
+
+  revalidatePath(`/creatives/${user.id}`);
+  revalidatePath(`/clients/${user.id}`);
   return { ok: true };
 }
