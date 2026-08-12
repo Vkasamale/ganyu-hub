@@ -34,18 +34,42 @@ const TEST_HINTS: Partial<Record<Escrow, string>> = {
   payment_held: "Funds are held. Sandbox mode — the next-business-day settlement wait is skipped, so you can release now, or flag a dispute if there's a problem.",
 };
 
-function clientActions(status: Escrow): { next: Escrow; label: string; variant?: "outline" }[] {
-  if (status === "none") return [{ next: "payment_held", label: "Pay into escrow" }];
+/**
+ * Audit §N4: a money button names the amount. "Release payment" asks someone to
+ * agree to a number they have to go and look up; "Release MWK 20,000" is the
+ * decision itself. Only the buttons that actually move money carry the figure —
+ * putting it on "Flag dispute" would be noise.
+ *
+ * `amount` is null when the job has no agreed figure yet, and the labels fall
+ * back to the wording they had before.
+ */
+function clientActions(status: Escrow, amount: number | null): { next: Escrow; label: string; variant?: "outline" }[] {
+  const money = amount != null && amount > 0 ? formatMwk(amount) : null;
+  if (status === "none") return [{ next: "payment_held", label: money ? `Pay ${money} into escrow` : "Pay into escrow" }];
   if (status === "payment_pending") return [{ next: "none", label: "Cancel pending payment", variant: "outline" }];
   if (status === "payment_held") return [
-    { next: "payment_released", label: "Release payment" },
+    { next: "payment_released", label: money ? `Release ${money}` : "Release payment" },
     { next: "payment_disputed", label: "Flag dispute", variant: "outline" },
   ];
   if (status === "payment_disputed") return [
-    { next: "payment_released", label: "Release payment anyway" },
+    { next: "payment_released", label: money ? `Release ${money} anyway` : "Release payment anyway" },
     { next: "payment_held", label: "Re-hold while resolving", variant: "outline" },
   ];
   return [];
+}
+
+/**
+ * The one action a client is here to take, or null. Used by the mobile sticky
+ * bar (§G1) so its label always matches the button it scrolls to — the labels
+ * are built in one place, not written out twice.
+ *
+ * "Cancel pending payment" is deliberately excluded: it's a way out, not the
+ * thing you came to do.
+ */
+export function primaryClientAction(status: Escrow, amount: number | null): string | null {
+  const first = clientActions(status, amount)[0];
+  if (!first) return null;
+  return first.next === "payment_held" || first.next === "payment_released" ? first.label : null;
 }
 
 export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, paymentHeldAt, testMode = false }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null; paymentHeldAt?: string | null; testMode?: boolean }) {
@@ -62,7 +86,7 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
   const holdActive = !testMode && escrowStatus === "payment_held" && heldMs < HOLD_MS;
   // Keep the Release button visible during the hold but disabled — clearer
   // than hiding it. The countdown text right below tells them why.
-  const rawActions = role === "client" ? clientActions(escrowStatus) : [];
+  const rawActions = role === "client" ? clientActions(escrowStatus, heldMwk ?? null) : [];
   const actions = rawActions.map((a) => ({
     ...a,
     disabled: (payoutPending || holdActive) && a.next === "payment_released",

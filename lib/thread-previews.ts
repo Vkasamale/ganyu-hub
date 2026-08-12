@@ -12,6 +12,42 @@ import type { JobEventType } from "@/lib/job-events";
 
 export type ThreadPreview = { text: string; at: string };
 
+/**
+ * Per-thread unread counts (audit §H3), derived from `notifications` rather
+ * than from a new read-state column.
+ *
+ * ponytail: every message insert already writes a notification with
+ * target_type 'thread' and target_id = the thread — see sendMessage in
+ * app/actions.ts. Unread notifications for a thread ARE its unread messages,
+ * so the count needs no migration and no second source of truth to keep in
+ * sync. Opening the thread clears them.
+ *
+ * Ceiling: this counts notifications, so a message that failed to notify is
+ * invisible here. If unread ever has to be exact, the upgrade is a
+ * `last_read_at` per participant on message_threads — a real migration.
+ */
+export async function unreadByThread(
+  supabase: any,
+  userId: string,
+  threadIds: string[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (!threadIds.length) return counts;
+
+  const { data } = await supabase
+    .from("notifications")
+    .select("target_id")
+    .eq("user_id", userId)
+    .eq("target_type", "thread")
+    .is("read_at", null)
+    .in("target_id", threadIds);
+
+  for (const n of (data || []) as { target_id: string }[]) {
+    counts.set(n.target_id, (counts.get(n.target_id) || 0) + 1);
+  }
+  return counts;
+}
+
 type MinimalThread = { id: string; job_id: string | null; created_at: string };
 
 export async function withPreviews<T extends MinimalThread>(

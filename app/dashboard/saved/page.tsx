@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CreativeCard } from "@/components/creative-card";
 import { JobCard } from "@/components/job-card";
+import { EmptyState } from "@/components/empty-state";
 
 type Tab = "creatives" | "jobs";
 
@@ -69,14 +70,24 @@ export default async function SavedPage({ searchParams: searchParamsP }: { searc
         <div className="mt-5">
           {tab === "creatives" ? (
             creativesCount === 0 ? (
-              <p className="rounded-lg border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">No saved creatives yet.</p>
+              <EmptyState
+                title="No saved creatives yet"
+                body="Tap the bookmark on anyone's card and they land here — a shortlist you can come back to before you hire."
+                actionLabel="Browse creatives"
+                actionHref="/browse"
+              />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {(creatives || []).map((p: any) => <CreativeCard key={p.id} profile={p} saved showSave />)}
               </div>
             )
           ) : jobsCount === 0 ? (
-            <p className="rounded-lg border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">No saved jobs yet.</p>
+            <EmptyState
+              title="No saved jobs yet"
+              body="Save a job to come back to it later. Nobody is told you saved it."
+              actionLabel="Browse open jobs"
+              actionHref="/jobs"
+            />
           ) : (
             <div className="grid gap-4">
               {(jobs || []).map((j: any) => <JobCard key={j.id} job={j} saved showSave />)}

@@ -160,6 +160,21 @@ export async function updateProfile(formData: FormData) {
     update.hourly_rate_mwk = Number(formData.get("hourly_rate_mwk")) || null;
   }
 
+  // Phase 1 items 10-13. Gated on a marker field rather than on the values
+  // themselves: an unchecked checkbox is simply absent from FormData, so
+  // without the marker every other caller of updateProfile (onboarding, the
+  // account page) would silently switch both toggles off.
+  if (formData.has("profile_prefs")) {
+    update.tagline = String(formData.get("tagline") || "").trim() || null;
+    update.languages = String(formData.get("languages") || "")
+      .split(",").map((s) => s.trim()).filter(Boolean);
+    const hours = parseInt(String(formData.get("hours_per_week") || ""), 10);
+    update.hours_per_week = Number.isFinite(hours) && hours > 0 ? hours : null;
+    // Declared by the creative, never inferred from activity (§K2).
+    update.open_for_messages = formData.get("open_for_messages") === "on";
+    update.open_to_work = formData.get("open_to_work") === "on";
+  }
+
   const avatar = formData.get("avatar_file");
   if (avatar instanceof File && avatar.size > 0) {
     if (avatar.size > 5 * 1024 * 1024) return { error: "Avatar too large (max 5MB)." };
@@ -566,6 +581,36 @@ export async function updatePassword(formData: FormData) {
   return { ok: true };
 }
 
+/**
+ * Phase 1 item 9 (§M10): the case-study half of a portfolio item — what it
+ * cost, how long it took, when it shipped, what kind of work it was.
+ *
+ * Every field is optional and blank stores as null, never 0. A zero cost or a
+ * zero-day duration would render as a real claim; "not stated" renders as
+ * nothing at all, which is the §Q7 rule applied to one row instead of a page.
+ *
+ * Shared by add and update so the two can't drift.
+ */
+function caseStudyFields(formData: FormData) {
+  const num = (key: string) => {
+    const raw = String(formData.get(key) || "").replace(/[^\d]/g, "");
+    if (!raw) return null;
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const min = num("cost_min_mwk");
+  const max = num("cost_max_mwk");
+  return {
+    // A range typed backwards is a slip, not an intention — order it rather
+    // than rejecting the form over it.
+    cost_min_mwk: min != null && max != null ? Math.min(min, max) : min,
+    cost_max_mwk: min != null && max != null ? Math.max(min, max) : max,
+    duration_days: num("duration_days"),
+    completed_on: String(formData.get("completed_on") || "") || null,
+    category: String(formData.get("category") || "") || null,
+  };
+}
+
 export async function addPortfolioItem(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -597,6 +642,7 @@ export async function addPortfolioItem(formData: FormData) {
     cover_url,
     images,
     project_url: String(formData.get("project_url") || "") || null,
+    ...caseStudyFields(formData),
   });
   if (error) return { error: error.message };
   revalidatePath("/dashboard/portfolio");
@@ -617,6 +663,7 @@ export async function updatePortfolioItem(formData: FormData) {
       title: String(formData.get("title")),
       description: String(formData.get("description") || ""),
       project_url: String(formData.get("project_url") || "") || null,
+      ...caseStudyFields(formData),
     })
     .eq("id", id)
     .eq("profile_id", user.id);

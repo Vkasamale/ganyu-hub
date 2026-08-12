@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { MultiImagePicker } from "@/components/multi-image-picker";
+import { CaseStudyFields } from "@/components/case-study-fields";
+import { CATEGORIES } from "@/lib/types";
 
 export default async function EditPortfolioItemPage({
   params,
@@ -76,6 +78,7 @@ export default async function EditPortfolioItemPage({
                 defaultValue={item.project_url || ""}
               />
             </div>
+            <CaseStudyFields categories={CATEGORIES} item={item} />
             <SubmitButton pendingText="Saving…">Save changes</SubmitButton>
           </SavingForm>
         </CardContent>

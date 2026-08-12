@@ -4,6 +4,52 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Phase 0 and Phase 1 (v0.9.2)
+
+Verified against live data on `localhost:3000` (production Supabase), signed in
+as both EQ Admin Client and Adam Creative. Browser screenshots were unavailable
+this session — the preview pane stopped compositing — so checks were made
+against the rendered DOM instead.
+
+- ✅ `tsc --noEmit` clean after every step; dev server compiled with no errors.
+- ✅ L8 testimonials render live (2 cards, real reviews), L9 featured creatives
+  render 6 cards; L10/L11 show their "not yet" notes.
+- ✅ §N4 money label: job *proposal 2 TEST* shows `Release MWK 5,000`; a
+  released job correctly shows no money button at all.
+- ✅ Sticky bar at 674px: `href="#payment"`, label matches the in-page button,
+  `#payment` anchor present. `md:hidden` class present and the ≥768px rule is
+  in the compiled CSS.
+- ✅ Unread pill full cycle: pill `1` with `aria-label="1 unread message"`, row
+  bolded, both cleared after opening the thread, preview updated to the new
+  message.
+- ✅ Empty states: saved-jobs tab renders title, body and CTA. Empty thread
+  shows the quiet line with no button.
+- ✅ `+N` chip on `/browse` (`+1`, hidden skill in the tooltip).
+- ✅ Weighted checklist renders with the two new steps; all five tick for a
+  complete profile, which confirms the new portfolio/service head-counts.
+- ✅ Phase 1 migration confirmed applied — read-only column check found all 10
+  new columns on `portfolio_items` and `profiles`.
+- ✅ Case-study fields render on the add form with correct names; `cost_*` are
+  hidden inputs because `MoneyInput` submits a raw number behind a formatted
+  display field.
+- ✅ Profile fields 10-13 render; both toggles default to checked, matching the
+  column defaults.
+- ✅ Profile tabs: `?tab=reviews` shows only Reviews, default shows About and
+  Skills, sidebar unaffected in both.
+
+Not yet tested:
+
+- ⬜ Case-study chips on a public profile card — no portfolio item has cost or
+  duration filled in yet.
+- ⬜ Loud empty-inbox state — every test account has conversations.
+- ⬜ `+50%` / `+25%` checklist chips — they show only on incomplete steps and
+  both test creatives are complete.
+- ⬜ Desktop-width confirmation that the sticky bar hides; the preview pane
+  could not exceed 674px.
+- ⬜ Anything on a physical phone. Carried from the landing-page session: the
+  install banner's iOS branch and the footer accordion are still untested on a
+  real device.
+
 ## 2026-08-12 — Announcement bar (L1c)
 
 Browser-rendered at 375 and 1280. No device testing needed — unlike L1b there

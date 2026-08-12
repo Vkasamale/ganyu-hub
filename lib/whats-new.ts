@@ -6,6 +6,20 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.2",
+    date: "2026-08-12",
+    notes: [
+      "Every button that moves money now says the amount on it — “Release MWK 20,000”, not “Release payment”.",
+      "On a phone, the payment action follows you down the page instead of scrolling away.",
+      "Conversations show how many messages are waiting, and the count clears when you open the thread.",
+      "Portfolio pieces can carry what they cost, how long they took and when they shipped — so clients stop having to ask.",
+      "Profiles gained a tagline, the languages you work in, and how many hours a week you can take on.",
+      "You decide whether you are open to work and open for messages. We never guess it from when you were last online.",
+      "Creative profiles are now split into About, Services, Portfolio and Reviews.",
+      "Empty screens tell you what to do next instead of only saying there is nothing here.",
+    ],
+  },
+  {
     version: "0.9.1.2",
     date: "2026-08-12",
     notes: [

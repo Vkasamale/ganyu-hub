@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PeriodBarChart, TwoSeriesBarChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
+import { EmptyState } from "@/components/empty-state";
 
 type Tab = "sent" | "received";
 
@@ -177,7 +178,12 @@ export default async function ProposalsPage({ searchParams: searchParamsP }: { s
         <div className="mt-5 space-y-3">
           {tab === "sent" ? (
             sentCount === 0 ? (
-              <p className="rounded-lg border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">No proposals sent yet.</p>
+              <EmptyState
+                title="No proposals sent yet"
+                body="Bidding is free and the client sees your profile with every proposal. The jobs board is where work starts."
+                actionLabel="Browse open jobs"
+                actionHref="/jobs"
+              />
             ) : (
               (sent || []).map((p: any) => (
                 <Link
@@ -196,7 +202,12 @@ export default async function ProposalsPage({ searchParams: searchParamsP }: { s
               ))
             )
           ) : receivedCount === 0 ? (
-            <p className="rounded-lg border border-dashed border-ink/20 p-6 text-center text-sm text-ink/55">No proposals received yet.</p>
+            <EmptyState
+              title="No proposals received yet"
+              body="Creatives bid on jobs they can see. A clear brief with a budget gets more of them."
+              actionLabel="Post a job"
+              actionHref="/jobs/new"
+            />
           ) : (
             (received || []).map((p: any) => (
               <Link

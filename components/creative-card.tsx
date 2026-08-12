@@ -31,7 +31,11 @@ export function CreativeCard({
 }) {
   const initials = initialsOf(profile.full_name);
   const primaryCategory = profile.categories?.[0];
-  const topSkills = (profile.skills || []).slice(0, 3);
+  const allSkills = profile.skills || [];
+  const topSkills = allSkills.slice(0, 3);
+  // §M9: say how many were cut. Truncating silently makes a ten-skill creative
+  // look like a three-skill one.
+  const moreSkills = allSkills.length - topSkills.length;
   const priceLabel = fromPriceMwk != null ? `From ${formatMwk(fromPriceMwk)}` : "Custom pricing";
 
   return (
@@ -113,6 +117,14 @@ export function CreativeCard({
                 {s}
               </span>
             ))}
+            {moreSkills > 0 && (
+              <span
+                title={allSkills.slice(3).join(", ")}
+                className="rounded-full px-1.5 py-0.5 text-[10px] font-medium text-ink/45"
+              >
+                +{moreSkills}
+              </span>
+            )}
           </div>
         )}
 

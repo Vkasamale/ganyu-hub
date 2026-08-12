@@ -15,6 +15,11 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-019] Duplicate creative profiles show the same person twice on the landing page.** — found 2026-08-12, data. **Data issue, not a code bug.**
+  - Repro: load `/` while L9 is live. "Liness Manda" and "Chimwemwe Chinkhuntha" each appear twice in the featured row, with identical headline, price and rating.
+  - Cause: two distinct `profiles` rows per person — `4f38566f…`/`ad19c600…` and `5f3bf355…`/`116e17c6…`. Seed/test data, duplicated at creation. Both rows are complete, so both legitimately qualify for the featured row.
+  - Fix: delete the duplicate rows. **Deliberately not fixed in code** — de-duplicating by name would be wrong (two real people can share a name) and would hide the underlying data problem on every other surface. Founder action; check for attached jobs/threads before deleting.
+
 - **[BUG-018] Every escrow release wrote the `payment_released` event twice.** — found 2026-08-07, payments. **Fixed, unverified in the app.**
   - Repro: fund and release a job, then `select event_type, metadata->>'via', created_at from job_events where event_type = 'payment_released'`. Two rows, ~620ms apart. Seen live on job `d2a9aea7-bbf9-4059-98fe-bc0bda536c58`, the same run that closed BUG-017.
   - Cause: two writers race, each correct alone. `reconcilePayout` (`actions.ts:1845`, tagged `via: "reconcile"`) is called at render time by `app/jobs/[id]/page.tsx:78` whenever `payout_status` is pending; the PayChangu webhook (`api/paychangu/webhook/route.ts:53`, tagged `via: "webhook"`) does the same work on the same trigger. Both follow read-guard → `verifyPayout` → update → log, and `verifyPayout` is a network call sitting *between* the guard and the write. Both read "not released yet" before either writes, so both pass and both log. The 620ms gap is the difference in their PayChangu round-trips.

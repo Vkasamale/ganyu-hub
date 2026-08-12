@@ -4,7 +4,15 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { markMilestone } from "@/app/actions";
 
-export type ChecklistStep = { label: string; sub?: string; href: string; done?: boolean };
+export type ChecklistStep = {
+  label: string;
+  sub?: string;
+  href: string;
+  done?: boolean;
+  /** §L3: what this step is worth, e.g. "+25% listing". Omit where there is no
+   *  honest number to quote — an invented weight is worse than none. */
+  weight?: string;
+};
 
 // Dismissible "Get started" card for the dashboard. Steps tick off as the user
 // completes them (done computed server-side); an explicit ✕ dismisses it for
@@ -69,9 +77,14 @@ export function WelcomeChecklist({
               >
                 {s.done ? "✓" : ""}
               </span>
-              <span className="min-w-0">
-                <span className={`block text-sm font-medium ${s.done ? "text-ink/50 line-through" : "text-ink"}`}>
-                  {s.label}
+              <span className="min-w-0 flex-1">
+                <span className={`flex items-center gap-2 text-sm font-medium ${s.done ? "text-ink/50 line-through" : "text-ink"}`}>
+                  <span className="min-w-0 truncate">{s.label}</span>
+                  {s.weight && !s.done && (
+                    <span className="shrink-0 rounded-full bg-stamp/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stamp-dark">
+                      {s.weight}
+                    </span>
+                  )}
                 </span>
                 {s.sub && <span className="block text-xs text-ink/55">{s.sub}</span>}
               </span>

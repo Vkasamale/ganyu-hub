@@ -11,7 +11,7 @@ import { MessageJobPicker } from "@/components/message-job-picker";
 import { extractJobIds } from "@/lib/message-markers";
 import { JOB_EVENT_LABELS } from "@/components/job-timeline";
 import { ThreadList } from "@/components/thread-list";
-import { withPreviews, byRecentActivity } from "@/lib/thread-previews";
+import { withPreviews, byRecentActivity, unreadByThread } from "@/lib/thread-previews";
 import type { JobEventType } from "@/lib/job-events";
 import { timeAgo } from "@/lib/utils";
 
@@ -110,7 +110,22 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     ...jobEvents.map((e: any) => ({ kind: "event" as const, at: e.created_at, data: e })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
-  const sidebarRows = byRecentActivity(await withPreviews(supabase, (threads || []) as any));
+  // Reading the thread is what "read" means, so clear its notifications before
+  // the sidebar counts are fetched — otherwise the thread you are looking at
+  // still wears an unread pill. Scoped to this user's own rows by RLS.
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .eq("target_type", "thread")
+    .eq("target_id", params.threadId)
+    .is("read_at", null);
+
+  const sidebarWithPreview = await withPreviews(supabase, (threads || []) as any);
+  const sidebarUnread = await unreadByThread(supabase, user.id, sidebarWithPreview.map((t) => t.id));
+  const sidebarRows = byRecentActivity(
+    sidebarWithPreview.map((t) => ({ ...t, unread: sidebarUnread.get(t.id) || 0 })),
+  );
 
   // Long threads bury the thing you came back for. The newest event is the
   // usual anchor — "what happened last" — so it gets a jump link in the header.
@@ -175,6 +190,13 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto bg-paper/60 px-5 py-5">
+            {/* §H2, quiet weight: the compose box is directly below, so this
+                needs to say the room is empty and nothing more. */}
+            {stream.length === 0 && (
+              <p className="py-10 text-center text-sm text-ink/50">
+                No messages yet — say hello.
+              </p>
+            )}
             {stream.map((row) => {
               if (row.kind === "event") {
                 const e = row.data;

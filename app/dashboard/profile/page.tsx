@@ -145,6 +145,78 @@ export default async function EditProfilePage() {
               <Label htmlFor="skills">Skills (comma-separated)</Label>
               <Input id="skills" name="skills" defaultValue={(profile?.skills || []).join(", ")} placeholder="Figma, Branding, React" />
             </div>
+            {/* Phase 1 items 10-13. The marker tells updateProfile that this
+                form owns these fields, so an unchecked box means "off" here
+                and means nothing at all in the forms that omit them. */}
+            <input type="hidden" name="profile_prefs" value="1" />
+
+            <div className="space-y-1.5">
+              <Label htmlFor="tagline">Tagline</Label>
+              <Input
+                id="tagline"
+                name="tagline"
+                maxLength={80}
+                defaultValue={profile?.tagline || ""}
+                placeholder="Six words on what you do best"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="languages">Languages (comma-separated)</Label>
+              <Input
+                id="languages"
+                name="languages"
+                defaultValue={(profile?.languages || []).join(", ")}
+                placeholder="Chichewa, English, Tumbuka, Yao"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="hours_per_week">Hours a week you can take on</Label>
+              <Input
+                id="hours_per_week"
+                name="hours_per_week"
+                type="number"
+                min={1}
+                max={168}
+                inputMode="numeric"
+                placeholder="e.g. 20"
+                defaultValue={profile?.hours_per_week ?? undefined}
+              />
+            </div>
+
+            <fieldset className="space-y-2 rounded-lg border border-ink/10 bg-wash/30 p-4">
+              <legend className="px-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">
+                What clients see
+              </legend>
+              <label className="flex items-start gap-2.5 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  name="open_to_work"
+                  defaultChecked={profile?.open_to_work ?? true}
+                  className="mt-0.5 h-4 w-4 rounded border-ink/30"
+                />
+                <span>
+                  Open to work
+                  <span className="block text-xs text-ink/55">Untick while you are full. Your profile stays up.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2.5 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  name="open_for_messages"
+                  defaultChecked={profile?.open_for_messages ?? true}
+                  className="mt-0.5 h-4 w-4 rounded border-ink/30"
+                />
+                <span>
+                  Open for messages
+                  <span className="block text-xs text-ink/55">
+                    You set this yourself — we never guess it from when you were last online.
+                  </span>
+                </span>
+              </label>
+            </fieldset>
+
             <SubmitButton>Save</SubmitButton>
           </SavingForm>
         </CardContent>

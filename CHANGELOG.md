@@ -3,6 +3,81 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Phase 0 and Phase 1 (v0.9.2)
+
+`IMPLEMENTATION_PLAN.md` Phase 0 (all 8 items) and Phase 1 (items 9-17). The
+landing page's dark sections L8-L11 shipped in the same pass.
+
+**Landing L8-L11.** `components/home-proof.tsx`. L8 testimonials and L9
+featured creatives are query-backed and render nothing below their threshold
+(3 testimonials, 6 profiles with a portfolio item) — §Q7's rule, the same one
+`showProof` already followed. L8 reads `reviews` rather than a new
+testimonials table: it already carries rating, free-text comment and a
+role-neutral reviewee, and Phase 3 collects offline-client testimonials
+through that same flow, so a second table would be a second store for the same
+sentence. Carousel peeks per §Q8 (`pr-16 md:pr-24`), CSS scroll-snap, no
+library, no client component.
+
+L10 and L11 are constants, not queries — a story write-up is copy someone has
+to write and "the client agreed to be named" is a permission no column
+records. **Both show a stated "not yet" rather than hiding** (founder's call,
+overriding the dark-by-default rule): the line explains that publication waits
+on someone's permission, which is a fact worth saying out loud.
+
+**Phase 0.** Money buttons name the amount (§N4) — `Release MWK 20,000`, built
+in one place in `escrow-panel.tsx` and reused by the mobile bar so the two
+cannot drift; the client-side panel was never passed `heldMwk` at all.
+`components/sticky-action-bar.tsx` is mobile-only and **links to the real
+button rather than duplicating the form** — two live submit buttons for one
+payment is how double-charges happen. `EmptyState` gained a `tone`, because
+§H2 wants two weights: a button for an empty inbox, a quiet line for an empty
+thread where the compose box is already on screen.
+
+**Unread counts (§H3) needed no migration.** Phase 0 claims "no schema", but
+there is no message read-state in the database. Every `sendMessage` already
+writes a notification with `target_type='thread'`, so unread notifications for
+a thread ARE its unread messages — `unreadByThread` in `lib/thread-previews.ts`
+counts those, and opening a thread clears them. Ceiling is documented in the
+code: a message that failed to notify is invisible to the count, and exactness
+would need a per-participant `last_read_at`.
+
+**The weighted checklist quotes no invented statistic.** The plan asked for
+"4.5x more likely to get hired"; we have never measured that. The weights that
+shipped are arithmetic we can defend — `/browse` hides any creative missing a
+headline, bio, portfolio item or priced service, so each is a quarter of being
+listed, hence `+50% listing` / `+25% listing` and lines like "Without one you
+don't appear in Browse at all", which is literally true.
+
+**Phase 1.** Ten new columns, all nullable and additive (`supabase/schema.sql`,
+applied 2026-08-12). Portfolio items became case studies (§M10): cost as a
+RANGE rather than a single figure, which would read as a quote; blank stores as
+null and never 0, so a half-filled case study shows only the halves that exist.
+A backwards range is sorted rather than rejected — that is a typo, not an
+intention. Profiles gained tagline, languages (`text[]`, not an enum — Malawi
+has more languages than a hand-maintained dropdown), hours per week, open to
+work, and open for messages.
+
+**`open_for_messages` is user-declared and never inferred** (§K2). A green dot
+derived from last-seen is a surveillance signal nobody consented to. It shows
+"Closed for now" on the profile but deliberately does NOT hide the Message
+button — silently removing someone's only route of contact is a bigger change
+than the plan asked for.
+
+The 10-13 block in `updateProfile` is gated on a hidden `profile_prefs` marker.
+An unchecked checkbox is simply absent from `FormData`, so without the marker
+every other caller of that action (onboarding, the account page) would silently
+switch both toggles off.
+
+Profile tabs (§F4) put the tab in the URL and hide panes with a class, so the
+page stays a server component, `?tab=reviews` is shareable, and every section
+stays in the HTML for search engines.
+
+**Three plan corrections, all meaning less work than assumed:** item 9's stated
+blocker is already resolved (`addPortfolioItem` has uploaded to a storage
+bucket for some time; `cover_url` is not a pasted URL), and items 16 and 17
+already existed — "View public profile" is in the dashboard sidebar, and the
+portfolio edit page already had per-item update, delete and per-image removal.
+
 ## 2026-08-12 — Announcement bar (v0.9.1.2)
 
 `IMPLEMENTATION_PLAN.md` L1c, audit §Q8: "one line, a CTA, full width — worth

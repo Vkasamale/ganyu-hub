@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { MultiImagePicker } from "@/components/multi-image-picker";
+import { EmptyState } from "@/components/empty-state";
+import { CaseStudyFields } from "@/components/case-study-fields";
+import { CATEGORIES } from "@/lib/types";
 
 export default async function PortfolioPage() {
   const supabase = createClient();
@@ -38,6 +41,13 @@ export default async function PortfolioPage() {
               <Label htmlFor="project_url">Project URL</Label>
               <Input id="project_url" name="project_url" type="url" placeholder="https://..." />
             </div>
+
+            {/* §M10: cost and duration are the two questions every client asks
+                before they message. Answering them here saves both sides a
+                round trip. All optional — a blank field shows nothing rather
+                than a zero. */}
+            <CaseStudyFields categories={CATEGORIES} />
+
             <SubmitButton pendingText="Adding…">Add</SubmitButton>
             <p className="text-xs text-ink/55">
               By posting, you agree to our <a href="/content-policy" className="underline hover:text-ink">content policy</a>.
@@ -73,7 +83,15 @@ export default async function PortfolioPage() {
               </Link>
             );
           })}
-          {(!items || items.length === 0) && <p className="text-neutral-500">No items yet.</p>}
+          {/* Quiet weight (§H2): the add form is directly above, so this only
+              has to explain why it matters. */}
+          {(!items || items.length === 0) && (
+            <EmptyState
+              tone="quiet"
+              title="No portfolio items yet"
+              body="Creatives without a single piece of work are hidden from Browse — this is the one that gets you listed."
+            />
+          )}
         </div>
       </section>
     </div>

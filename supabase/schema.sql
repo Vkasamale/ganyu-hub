@@ -1001,3 +1001,38 @@ begin
   return v_count <= p_max;
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Phase 1 — profile depth (IMPLEMENTATION_PLAN.md items 9-13, audit §M10, §M9,
+-- §M2, §K2, §M4). All nullable, all additive: existing rows stay valid and
+-- every surface treats absent as "not stated" rather than zero.
+-- ---------------------------------------------------------------------------
+
+-- Item 9: a portfolio item becomes a case study. Cost is a RANGE, not a single
+-- number — creatives price per project and a single figure reads as a quote.
+-- Both ends nullable so "from MWK 50,000" and "MWK 50,000-90,000" are both
+-- expressible, and neither is required.
+alter table portfolio_items add column if not exists cost_min_mwk integer;
+alter table portfolio_items add column if not exists cost_max_mwk integer;
+alter table portfolio_items add column if not exists duration_days integer;
+-- A date, not a timestamp: nobody remembers the hour they finished a logo.
+alter table portfolio_items add column if not exists completed_on date;
+alter table portfolio_items add column if not exists category text;
+
+-- Item 10
+alter table profiles add column if not exists tagline text;
+
+-- Item 11: Chichewa / English / Tumbuka / Yao and anything else typed. Free
+-- text array rather than an enum — Malawi has more languages than a dropdown
+-- someone maintains by hand.
+alter table profiles add column if not exists languages text[] default '{}';
+
+-- Item 12: USER-DECLARED, never inferred from last-seen. §K2 is explicit that
+-- a green dot derived from activity is a surveillance signal the creative never
+-- agreed to. Defaults true because the honest default for a marketplace profile
+-- is "you may message me".
+alter table profiles add column if not exists open_for_messages boolean not null default true;
+
+-- Item 13
+alter table profiles add column if not exists hours_per_week integer;
+alter table profiles add column if not exists open_to_work boolean not null default true;

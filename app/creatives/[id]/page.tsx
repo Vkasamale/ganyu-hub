@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
+import { StickyActionBar } from "@/components/sticky-action-bar";
+import { CaseStudyFacts } from "@/components/case-study-fields";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -53,8 +55,33 @@ import { checkProfileComplete } from "@/lib/profile-complete";
 import { ShareButtons } from "@/components/share-buttons";
 import { absUrl } from "@/lib/site-url";
 
-export default async function CreativePage({ params }: { params: Promise<{ id: string }> }) {
+/**
+ * Item 15 (§F4): About · Services · Portfolio · Reviews.
+ *
+ * ponytail: the tab lives in the URL and the panes are shown/hidden with a
+ * class, so this stays a server component — no client state, no hydration, and
+ * /creatives/x?tab=reviews is a link someone can send. Hiding rather than
+ * unmounting also keeps every section in the HTML for search engines, which a
+ * client-side tab widget would have thrown away.
+ */
+const TABS = [
+  { key: "about", label: "About" },
+  { key: "services", label: "Services" },
+  { key: "portfolio", label: "Portfolio" },
+  { key: "reviews", label: "Reviews" },
+] as const;
+
+export default async function CreativePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ tab?: string }>;
+}) {
   const { id } = await params;
+  const sp = (await searchParams) || {};
+  const tab = TABS.some((t) => t.key === sp.tab) ? (sp.tab as string) : "about";
+  const pane = (key: string) => (tab === key ? "" : " hidden");
   const supabase = createClient();
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", id).single();
   if (!profile) notFound();
@@ -217,6 +244,11 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                     No headline yet — Add one
                   </Link>
                 ) : null}
+                {/* Item 10: the tagline sits under the headline, not instead of
+                    it — headline is the job, tagline is the angle. */}
+                {profile.tagline && (
+                  <p className="mt-1.5 font-serif text-base italic text-ink/60">{profile.tagline}</p>
+                )}
                 <p className="mt-0.5 text-xs text-ink/55">{profile.location || "Malawi"}</p>
               </div>
             </div>
@@ -243,7 +275,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           {/* Actions live at the foot of the card: identity reads first, then
               what you can do about it. Share sits apart from the primary CTAs
               so "Message" stays the obvious action. */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
+          <div id="actions" className="mt-4 flex scroll-mt-24 flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
             {user && !isOwner && (
               <>
                 <SavingForm action={startThread} silent>
@@ -270,18 +302,49 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
         </div>
       </section>
 
+      {/* Plain links, so a tab is shareable and the back button works. */}
+      <nav aria-label="Profile sections" className="mt-6 flex gap-1 overflow-x-auto border-b border-ink/10">
+        {TABS.map((t) => {
+          const on = tab === t.key;
+          const count =
+            t.key === "portfolio" ? portfolioCount : t.key === "services" ? serviceCount : t.key === "reviews" ? reviewCount : 0;
+          return (
+            <Link
+              key={t.key}
+              href={`/creatives/${profile.id}?tab=${t.key}`}
+              scroll={false}
+              aria-current={on ? "page" : undefined}
+              className={
+                (on ? "border-brand text-ink" : "border-transparent text-ink/55 hover:text-ink") +
+                " -mb-px shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors"
+              }
+            >
+              {t.label}
+              {/* A count only when there is one — never "Reviews 0". */}
+              {count > 0 && <span className="ml-1.5 text-xs text-ink/45">{count}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
       <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-6">
           {profile.bio && (
-            <section className="card-soft p-6">
+            <section className={"card-soft p-6" + pane("about")}>
               <p className="eyebrow">About</p>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{profile.bio}</p>
             </section>
           )}
 
           {(profile.skills || []).length > 0 && (
-            <section className="card-soft p-6">
-              <p className="eyebrow">Skills</p>
+            <section className={"card-soft p-6" + pane("about")}>
+              {/* §M3: skills are typed by the creative and verified by nobody.
+                  Saying so costs one line and stops the list reading like a
+                  credential the platform stands behind. */}
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="eyebrow">Skills</p>
+                <span className="text-[11px] text-ink/45">Self-reported</span>
+              </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {profile.skills!.map((s: string) => (
                   <span key={s} className="rounded-full bg-ink/5 px-3 py-1 text-xs text-ink/80">{s}</span>
@@ -290,7 +353,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
             </section>
           )}
 
-          <section className="card-soft p-6">
+          <section className={"card-soft p-6" + pane("services")}>
             <div className="flex items-baseline justify-between">
               <p className="eyebrow">Rate card</p>
               <span className="text-xs text-ink/55">Starting prices</span>
@@ -314,7 +377,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           </section>
 
           {(portfolioCount > 0 || isOwner) && (
-            <section className="card-soft p-6">
+            <section className={"card-soft p-6" + pane("portfolio")}>
               <p className="eyebrow">Portfolio</p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(portfolio || []).map((p) => {
@@ -338,6 +401,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                       <div className="p-4">
                         <p className="font-medium text-ink group-hover:underline">{p.title}</p>
                         {p.description && <p className="mt-1 line-clamp-3 text-xs text-ink/65">{p.description}</p>}
+                        <CaseStudyFacts item={p} />
                       </div>
                     </Link>
                   );
@@ -352,7 +416,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           )}
 
           {reviewCount > 0 && (
-            <section className="card-soft p-6">
+            <section className={"card-soft p-6" + pane("reviews")}>
               <div className="flex items-center justify-between">
                 <p className="eyebrow">Reviews</p>
                 <span className="inline-flex items-center gap-1.5 text-sm">
@@ -377,7 +441,7 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           )}
 
           {user && !isOwner && (
-            <section className="card-soft p-6">
+            <section className={"card-soft p-6" + pane("services")}>
               <p className="eyebrow">Custom quote</p>
               <p className="mt-1 text-sm text-ink/65">
                 Don&apos;t see what you need? Describe it and {profile.full_name?.split(" ")[0] || "this creative"} will reply with a price.
@@ -394,7 +458,10 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           )}
         </div>
 
-        <aside className="space-y-6">
+        {/* §M8: the money card follows you down the page on desktop. `self-start`
+            is what makes sticky work inside a grid track — without it the aside
+            stretches to full row height and never has room to stick. */}
+        <aside className="space-y-6 md:sticky md:top-24 md:self-start">
           <section className="card-soft p-5">
             <p className="eyebrow">At a glance</p>
             <dl className="mt-3 space-y-2 text-sm">
@@ -406,6 +473,32 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
                 <dt className="text-ink/60">Services</dt>
                 <dd className="text-ink">{serviceCount}</dd>
               </div>
+              {/* Phase 1 items 11-13. Each row appears only if stated — a
+                  "Languages: —" row is worse than no row. */}
+              {(profile.languages || []).length > 0 && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink/60">Languages</dt>
+                  <dd className="text-right text-ink">{profile.languages.join(", ")}</dd>
+                </div>
+              )}
+              {profile.hours_per_week != null && (
+                <div className="flex justify-between">
+                  <dt className="text-ink/60">Availability</dt>
+                  <dd className="text-ink">{profile.hours_per_week} hrs/week</dd>
+                </div>
+              )}
+              {profile.open_to_work === false && (
+                <div className="flex justify-between">
+                  <dt className="text-ink/60">Status</dt>
+                  <dd className="text-ink/70">Not taking new work</dd>
+                </div>
+              )}
+              {profile.open_for_messages === false && (
+                <div className="flex justify-between">
+                  <dt className="text-ink/60">Messages</dt>
+                  <dd className="text-ink/70">Closed for now</dd>
+                </div>
+              )}
               {(portfolioCount > 0 || isOwner) && (
                 <div className="flex justify-between">
                   <dt className="text-ink/60">Portfolio</dt>
@@ -462,6 +555,15 @@ export default async function CreativePage({ params }: { params: Promise<{ id: s
           )}
         </aside>
       </div>
+
+      {/* Owners get no bar — there is nothing to hire yourself for. */}
+      {user && !isOwner && (
+        <StickyActionBar
+          href="#actions"
+          label="Message"
+          hint={services?.length ? `Services from ${formatMwk(services[0].price_mwk)}` : profile.full_name || undefined}
+        />
+      )}
     </div>
   );
 }

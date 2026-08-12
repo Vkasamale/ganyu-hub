@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { ImagePicker } from "@/components/image-picker";
 import { formatMwk } from "@/lib/utils";
+import { EmptyState } from "@/components/empty-state";
 
 export default async function ServicesPage() {
   const supabase = createClient();
@@ -93,8 +94,13 @@ export default async function ServicesPage() {
               </CardContent>
             </Card>
           ))}
+          {/* Quiet weight (§H2): the form above is the action. */}
           {(!services || services.length === 0) && (
-            <p className="text-neutral-500">No services yet. Add at least one above so clients know what you charge for.</p>
+            <EmptyState
+              tone="quiet"
+              title="No services yet"
+              body="Clients filter Browse by price. Without a priced service you never appear in those results — add one above."
+            />
           )}
         </div>
       </section>

@@ -23,6 +23,8 @@ export default async function DashboardPage() {
   let acceptedJobs: any[] = [];
   let proposalsSent: any[] = [];
   let proposalsOnMyJobs: any[] = [];
+  let portfolioCount = 0;
+  let serviceCount = 0;
 
   if (isClient) {
     const { data: jobs } = await supabase
@@ -47,6 +49,15 @@ export default async function DashboardPage() {
       .eq("creative_id", user.id)
       .order("created_at", { ascending: false });
     proposalsSent = props || [];
+    // Two head-counts, no rows fetched. These decide whether the creative is
+    // listed on /browse at all (lib/profile-complete.ts), which is exactly what
+    // the checklist weights below are measuring.
+    const [{ count: pc }, { count: sc }] = await Promise.all([
+      supabase.from("portfolio_items").select("*", { count: "exact", head: true }).eq("profile_id", user.id),
+      supabase.from("services").select("*", { count: "exact", head: true }).eq("profile_id", user.id),
+    ]);
+    portfolioCount = pc || 0;
+    serviceCount = sc || 0;
     acceptedJobs = proposalsSent
       .filter((p) => p.status === "accepted" && p.jobs)
       .map((p) => ({ ...p.jobs, accepted_bid_mwk: p.bid_mwk, proposal_id: p.id }));
@@ -146,7 +157,14 @@ export default async function DashboardPage() {
         { label: "See how the money works", sub: "Escrow, fees and payouts explained", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
       ]
     : [
-        { label: "Complete your profile", sub: "Add work so clients pick you", href: "/dashboard/profile", done: !!profile?.onboarded_at },
+        // §L3: each step carries what it is worth. The percentages are not a
+        // guess — /browse hides any creative missing headline, bio, a portfolio
+        // item or a priced service (lib/profile-complete.ts), so each of the
+        // four is a quarter of "listed at all". The payoff line states that
+        // rule rather than an invented conversion statistic.
+        { label: "Complete your profile", sub: "Headline and bio — clients read these first", href: "/dashboard/profile", done: !!profile?.onboarded_at, weight: "+50% listing" },
+        { label: "Add a portfolio item", sub: "Without one you don't appear in Browse at all", href: "/dashboard/portfolio", done: portfolioCount > 0, weight: "+25% listing" },
+        { label: "List a service and price", sub: "Clients filter by price — no price, no results", href: "/dashboard/services", done: serviceCount > 0, weight: "+25% listing" },
         { label: "Send your first proposal", sub: "Browse open jobs and bid", href: "/jobs", done: proposalsSent.length > 0 },
         { label: "See how payouts work", sub: "What you keep after fees", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
       ];

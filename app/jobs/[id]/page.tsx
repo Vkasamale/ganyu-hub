@@ -43,7 +43,8 @@ import { SaveButton } from "@/components/save-button";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
-import { EscrowPanel } from "@/components/escrow-panel";
+import { EscrowPanel, primaryClientAction } from "@/components/escrow-panel";
+import { StickyActionBar } from "@/components/sticky-action-bar";
 import { isTestMode } from "@/lib/payments";
 import { ClientLinkCopy } from "@/components/client-link-copy";
 import { JobHeader } from "@/components/job-header";
@@ -223,6 +224,15 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
   const showClientLink = !job.client_id && !!job.client_link_token && isAcceptedCreative;
 
+  // Mobile sticky bar: only when the payment card is actually on the page and
+  // the client has a money action waiting. Same label source as the button it
+  // scrolls to, so the two can never drift apart.
+  const paymentCardShown =
+    !!user && isClient && (job.status !== "open" || job.escrow_status !== "none" || !!job.pending_accept_proposal_id);
+  const stickyLabel = paymentCardShown
+    ? primaryClientAction(job.escrow_status || "none", job.total_paid_mwk ?? job.accepted_bid_mwk ?? null)
+    : null;
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       {user && <JobRealtime jobId={job.id} />}
@@ -263,9 +273,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       </div>
 
       {/* Payment sits directly under the header. It's the most important thing
-          on the page and it used to be a long scroll down. */}
+          on the page and it used to be a long scroll down. heldMwk feeds the
+          §N4 amount-in-the-button labels, not just the creative's payout note. */}
       {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
+        <div id="payment" className="scroll-mt-24">
+        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
+        </div>
       )}
       {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
         <Card className="mt-6 border-amber-200 bg-amber-50">
@@ -518,7 +531,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                             +{formatMwk(collectionFee(pendingTopup.amount_mwk, "mobile_money"))} processing fee (3%)
                           </p>
                         </div>
-                        <SubmitButton pendingText="Redirecting…">Accept &amp; pay</SubmitButton>
+                        {/* §N4: name the amount. The rail's processing fee is
+                            shown on its own line above, so the button carries
+                            the top-up figure itself. */}
+                        <SubmitButton pendingText="Redirecting…">Accept &amp; pay {formatMwk(pendingTopup.amount_mwk)}</SubmitButton>
                       </SavingForm>
                       <SavingForm action={declineTopUp} silent>
                         <input type="hidden" name="topup_id" value={pendingTopup.id} />
@@ -777,6 +793,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           </div>
         </section>
       )}
+
+      {/* §G1: on a phone the payment card scrolls away immediately. The bar
+          names the amount and jumps back to the real button. */}
+      {stickyLabel && <StickyActionBar href="#payment" label={stickyLabel} hint={job.title} />}
     </div>
   );
 }

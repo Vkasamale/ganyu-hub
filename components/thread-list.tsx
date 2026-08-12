@@ -14,6 +14,7 @@ export type ThreadRow = {
   creative?: { id: string; full_name: string | null } | null;
   job?: { id: string; title: string } | null;
   preview?: { text: string; at: string } | null;
+  unread?: number;
 };
 
 function initialsOf(name: string | null | undefined): string {
@@ -50,7 +51,10 @@ function Row({
   // Job rows lead with the job — that's what the conversation is about. Direct
   // rows lead with the person. The preview line carries what actually happened.
   const primary = job?.title || o?.full_name || "Unknown";
-  const preview = t.preview?.text || (job ? o?.full_name || "" : "No messages yet");
+  // A job thread with no messages and no events used to fall back to the other
+  // person's name — which the row already shows above. Say what is true instead.
+  const preview = t.preview?.text || (job ? "No activity yet" : "No messages yet");
+  const unread = t.unread || 0;
 
   return (
     <li>
@@ -72,12 +76,28 @@ function Row({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{primary}</p>
-            <span className="shrink-0 text-[11px] text-ink/45">
+            <p className={`min-w-0 flex-1 truncate text-sm text-ink ${unread ? "font-semibold" : "font-medium"}`}>
+              {primary}
+            </p>
+            <span className={`shrink-0 text-[11px] ${unread ? "font-medium text-ink/70" : "text-ink/45"}`}>
               {formatChatTime(t.preview?.at || t.created_at)}
             </span>
           </div>
-          <p className="truncate text-xs text-ink/55">{preview}</p>
+          <div className="flex items-center gap-2">
+            <p className={`min-w-0 flex-1 truncate text-xs ${unread ? "text-ink/80" : "text-ink/55"}`}>
+              {preview}
+            </p>
+            {unread > 0 && (
+              // §H3: the count, not just a dot — "3 waiting" is a different
+              // decision from "1 waiting". Caps at 9+ so the pill stays round.
+              <span
+                aria-label={`${unread} unread message${unread === 1 ? "" : "s"}`}
+                className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-brand px-1.5 text-[10px] font-semibold text-white"
+              >
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </div>
         </div>
       </Link>
     </li>
@@ -195,16 +215,35 @@ export function ThreadList({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto pb-2">
-        {shown.length === 0 && (
-          <p className="px-4 py-6 text-center text-xs text-ink/55">
-            {q.trim() ? `No conversations matching “${q.trim()}”.` : "No conversations yet."}
-          </p>
-        )}
+        {shown.length === 0 &&
+          (q.trim() ? (
+            // A search that found nothing is not an empty inbox — the way out
+            // is to change the search, and the box is right above.
+            <p className="px-4 py-6 text-center text-xs text-ink/55">
+              No conversations matching “{q.trim()}”.
+            </p>
+          ) : (
+            // §H2: an empty inbox gets the loud treatment. Nothing on this
+            // screen is actionable, so the action has to come from here.
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm font-medium text-ink">No conversations yet</p>
+              <p className="mt-1 text-xs text-ink/55">
+                Messages start when you contact a creative or someone replies to your job.
+              </p>
+              <Link
+                href="/browse"
+                className="mt-4 inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-brand-dark"
+              >
+                Find a creative
+              </Link>
+            </div>
+          ))}
 
         {grouped.map(([personId, group]) => {
           const o = otherOf(group[0], userId);
           // Searching means you want to see the hits, and the thread you're
           // reading should never be hidden inside a collapsed group.
+          const groupUnread = group.reduce((n, t) => n + (t.unread || 0), 0);
           const open =
             expanded.has(personId) ||
             !!q.trim() ||
@@ -230,6 +269,16 @@ export function ThreadList({
                 <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
                   {o?.full_name || "Unknown"}
                 </p>
+                {/* A collapsed group would otherwise hide its unread rows
+                    entirely, so the header carries the group's total. */}
+                {groupUnread > 0 && (
+                  <span
+                    aria-label={`${groupUnread} unread message${groupUnread === 1 ? "" : "s"}`}
+                    className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-brand px-1.5 text-[10px] font-semibold text-white"
+                  >
+                    {groupUnread > 9 ? "9+" : groupUnread}
+                  </span>
+                )}
                 <span className="shrink-0 text-[11px] text-ink/45">
                   {group.length} {group.length === 1 ? "job" : "jobs"}
                 </span>
