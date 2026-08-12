@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { HomeHero } from "@/components/home-hero";
+import {
+  CategoryGrid,
+  ClosingCta,
+  HowItWorks,
+  ValueProps,
+} from "@/components/home-sections";
+
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -33,6 +40,10 @@ export default async function HomePage() {
     <>
       <HomeHero />
       {showProof && <ProofRow gmv={gmv} jobsCompleted={jobsCompleted} creativesLive={creativesLive || 0} />}
+      <ValueProps />
+      <CategoryGrid />
+      <HowItWorks />
+      <ClosingCta />
     </>
   );
 }

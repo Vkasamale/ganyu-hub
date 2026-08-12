@@ -265,9 +265,31 @@ contact, ≤120 KB mobile budget, and "no visible location beats the wrong
 location"). Preferred provenance is **commissioning a beta photographer through
 the platform** — a completed job, real GMV, a case study and hero art in one.
 
-**Blocked on the founder choosing photography.** The build is identical whether
-it is a commissioned shoot or the objects-not-people interim, so do not block
-the section work on it — ship with a placeholder crop and swap.
+### Hero photography — WAITING ON ASSETS (2026-08-12)
+
+**Beta creatives are sending photographs.** Not yet received. The landing page
+ships **without any hero image** in the meantime, and that is a real shipping
+state, not a stub:
+
+- **Mobile needs no image at all** — `DESIGN.md` §10 and audit §Q8. Fiverr
+  ships none either. So the mobile hero is *finished*, not waiting.
+- **Desktop ships the flat band too** until photographs land. It reads as a
+  deliberate editorial choice on warm paper, not as a hole.
+
+**When the photographs arrive:**
+
+1. Check each against `DESIGN.md` §10 — no eye contact, real space,
+   mid-action, already dark, dead space on the left for the headline, and no
+   visible location that isn't Malawi
+2. Drop each behind the scrim and **screenshot it at 1280px** before judging.
+   A photograph plus scrim plus white type cannot be judged from markup (§10)
+3. AVIF + WebP fallback, responsive `srcset`, LQIP, `priority`, **≤160 KB**
+4. Desktop only — do not introduce a mobile hero image
+5. Credit the photographer, and log the shoot as a real job on the platform if
+   it was commissioned through it
+
+The hero component takes an optional image from day one, so this is a swap,
+not a rebuild.
 
 ## Landing-page imagery
 
