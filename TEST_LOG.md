@@ -4,6 +4,18 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Role gating + auto-posting reviews (v0.9.7)
+
+- ✅ `tsc --noEmit` clean; `/dashboard/portfolio`, `/dashboard/services`,
+  `/dashboard/testimonials`, `/browse`, `/` all 200.
+- ✅ **Admin bypass confirmed**: signed in as EQ Admin Client (an admin), all
+  three creative tools returned 200 rather than redirecting.
+- ⬜ **The block itself is untested** — it needs a NON-admin client account.
+  Every client account to hand is an admin, so the redirect path has never run.
+- ⬜ Auto-posting reviews: never exercised (Claude cannot submit forms; needs a
+  completed job and a human click on the third star).
+- ⬜ That a partially-rated review does NOT post.
+
 ## 2026-08-12 — Phase 5 (v0.9.6)
 
 - ✅ `tsc --noEmit` clean.

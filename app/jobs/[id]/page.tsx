@@ -632,16 +632,18 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             ) : (
               <SavingForm action={submitReview} successText="Review submitted. Thanks!" className="space-y-4">
                 <input type="hidden" name="job_id" value={job.id} />
-                {/* Item 29 (§N1): three axes instead of one number. The
-                    overall star count is the mean of these, computed server
-                    side — asking for it separately would be asking the same
-                    question twice. */}
-                <ReviewAxes isClient={isClient} />
+                {/* Comment FIRST, stars second: the review posts itself the
+                    moment the third star is set, so anything typed afterwards
+                    would be lost. */}
                 <div className="space-y-1.5">
                   <Label htmlFor="comment">Comment (optional)</Label>
                   <Textarea id="comment" name="comment" rows={3} placeholder="What was it like to work with them?" />
+                  <p className="text-xs text-ink/55">Write this before you rate — the stars post the review.</p>
                 </div>
-                <SubmitButton pendingText="Submitting…">Submit review</SubmitButton>
+                {/* Item 29 (§N1): three axes instead of one number. The overall
+                    star count is their mean, computed server side. No submit
+                    button — see components/review-axes.tsx. */}
+                <ReviewAxes isClient={isClient} />
               </SavingForm>
             )}
           </CardContent>

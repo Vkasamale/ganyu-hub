@@ -3,6 +3,39 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Role gating, and reviews that post themselves (v0.9.7)
+
+**Role restrictions on creative tools.** The dashboard nav already hid
+Portfolio, Rate card and Testimonials from clients — but the ROUTES were open,
+and so were the actions behind them. A client who typed `/dashboard/portfolio`
+could add portfolio items, and RLS allowed it, because those policies key on
+`auth.uid() = profile_id` — which a client satisfies about their own row.
+**Hiding a link is not access control.**
+
+`lib/require-role.ts`: `requireSellerPage()` on four pages,
+`requireSellerAction()` on ten actions. The action half is the half that
+matters; a page redirect is cosmetic if the action still runs.
+
+**Scope deliberately narrow** (founder's call): clients are blocked from
+creative tools and nothing else. Creatives are NOT blocked from posting jobs —
+a creative who wants to hire someone should not need a second account. Agencies
+count as creative-side. **Admins bypass every gate**, since they run the
+dispute queue and cannot resolve what they cannot open.
+
+**Reviews now post themselves.** No submit button: rating all three axes posts
+the review.
+
+The problem is real — people assume clicking a star saved it, and on a
+marketplace whose trust model depends on reviews existing, that assumption
+silently costs reviews. But posting on the FIRST click was rejected: a review
+is public, permanent, attached to a named person, and has no edit path, so one
+stray tap would publish a one-star verdict and score the overall on a single
+axis. Three deliberate taps is an intention; one is not.
+
+Consequence handled: the comment box moved ABOVE the stars and says "write this
+before you rate — the stars post the review", because by the third star the
+review is already gone.
+
 ## 2026-08-12 — Phase 5, structured deliverables (v0.9.6)
 
 Items 37-42. **This is dispute prevention, not decoration.** We already have

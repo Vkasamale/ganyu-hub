@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
+import { requireSellerPage } from "@/lib/require-role";
 import { upsertService, deleteService } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/money-input";
@@ -17,6 +18,8 @@ export default async function ServicesPage() {
   const supabase = createClient();
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  // Clients have no business here; the nav hid it, the route did not.
+  await requireSellerPage();
 
   const { data: services } = await supabase
     .from("services")

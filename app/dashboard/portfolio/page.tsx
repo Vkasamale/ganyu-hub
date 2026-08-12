@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
+import { requireSellerPage } from "@/lib/require-role";
 import { addPortfolioItem } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,8 @@ export default async function PortfolioPage() {
   const supabase = createClient();
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  // Clients have no business here; the nav hid it, the route did not.
+  await requireSellerPage();
   const { data: items } = await supabase.from("portfolio_items").select("*").eq("profile_id", user.id).order("created_at", { ascending: false });
 
   return (

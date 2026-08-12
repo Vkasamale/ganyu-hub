@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
+import { requireSellerPage } from "@/lib/require-role";
 import { updatePortfolioItem, deletePortfolioItem, addPortfolioImages, removePortfolioImage } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +23,8 @@ export default async function EditPortfolioItemPage({
   const supabase = createClient();
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  // Clients have no business here; the nav hid it, the route did not.
+  await requireSellerPage();
 
   const { data: item } = await supabase
     .from("portfolio_items")

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
+import { requireSellerAction } from "@/lib/require-role";
 import { sendEmail } from "@/lib/email";
 import { CATEGORIES } from "@/lib/types";
 import { logJobEvent, type JobEventType } from "@/lib/job-events";
@@ -358,6 +359,9 @@ export async function upsertService(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
 
   const id = String(formData.get("id") || "") || null;
   const title = String(formData.get("title") || "").trim();
@@ -425,6 +429,9 @@ export async function deleteService(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
   const id = String(formData.get("id") || "");
   if (!id) return { error: "Missing service id." };
   const { error } = await supabase.from("services").delete().eq("id", id).eq("profile_id", user.id);
@@ -635,6 +642,9 @@ export async function addPortfolioItem(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
 
   const files = formData.getAll("cover_files").filter(
     (f): f is File => f instanceof File && f.size > 0,
@@ -674,6 +684,9 @@ export async function updatePortfolioItem(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
   const id = String(formData.get("id") || "");
   if (!id) return { error: "Missing id" };
 
@@ -697,6 +710,9 @@ export async function addPortfolioImages(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
   const id = String(formData.get("id") || "");
   if (!id) return { error: "Missing id" };
 
@@ -739,6 +755,9 @@ export async function removePortfolioImage(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
   const id = String(formData.get("id") || "");
   const url = String(formData.get("url") || "");
   if (!id || !url) return { error: "Missing id or url." };
@@ -793,6 +812,9 @@ export async function submitReview(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
 
   const job_id = String(formData.get("job_id") || "");
   const rating = Number(formData.get("rating"));
@@ -3253,6 +3275,9 @@ export async function createTestimonialRequest(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
 
   // A profile with fifty pending testimonial links is a profile farming them.
   const { count } = await supabase
@@ -3350,6 +3375,9 @@ export async function setTestimonialStatus(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
 
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");
@@ -3375,6 +3403,9 @@ export async function deleteTestimonial(formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
+  // Creative tools: clients are blocked here, not merely in the nav.
+  const denied = await requireSellerAction();
+  if (denied) return denied;
   const id = String(formData.get("id") || "");
   if (!id) return { error: "Missing id" };
 

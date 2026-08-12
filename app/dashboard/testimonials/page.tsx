@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
+import { requireSellerPage } from "@/lib/require-role";
 import { createTestimonialRequest, setTestimonialStatus, deleteTestimonial } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,8 @@ export default async function TestimonialsPage() {
   const supabase = createClient();
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  // Clients have no business here; the nav hid it, the route did not.
+  await requireSellerPage();
 
   const { data: rows } = await supabase
     .from("testimonials")

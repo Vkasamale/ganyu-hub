@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 
-export function StarRatingInput({ name, defaultValue = 0 }: { name: string; defaultValue?: number }) {
+export function StarRatingInput({
+  name,
+  defaultValue = 0,
+  onChange,
+}: {
+  name: string;
+  defaultValue?: number;
+  /** Optional: lets a parent react to a rating — e.g. auto-posting once every
+   *  axis is set. Omitted elsewhere, so existing uses are unchanged. */
+  onChange?: (value: number) => void;
+}) {
   const [value, setValue] = useState(defaultValue);
   const [hover, setHover] = useState(0);
   const active = hover || value;
@@ -15,7 +25,10 @@ export function StarRatingInput({ name, defaultValue = 0 }: { name: string; defa
           key={n}
           type="button"
           aria-label={`${n} star${n === 1 ? "" : "s"}`}
-          onClick={() => setValue(n)}
+          onClick={() => {
+            setValue(n);
+            onChange?.(n);
+          }}
           onMouseEnter={() => setHover(n)}
           className="p-0.5 transition-transform hover:scale-110"
         >

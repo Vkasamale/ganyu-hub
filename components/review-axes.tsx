@@ -1,3 +1,6 @@
+"use client";
+
+import { useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { StarRatingInput } from "@/components/star-rating-input";
 
@@ -30,21 +33,60 @@ const AXES = {
   ],
 } as const;
 
+/**
+ * The review posts ITSELF once all three axes are rated — no Submit button.
+ *
+ * Why: people assume clicking a star saved it. That assumption is reasonable
+ * and near-universal, and the cost of it being wrong is a review that never
+ * gets written, on a marketplace whose whole trust model depends on reviews
+ * existing.
+ *
+ * Why all three rather than the first click: a review is public, permanent and
+ * attached to a named person, and there is no edit path. Posting on the first
+ * tap would let one stray touch publish a one-star verdict, and would score the
+ * overall on a single axis instead of three. Three deliberate taps is a clear
+ * intention; one is not.
+ *
+ * The comment box therefore sits ABOVE the stars and says so — by the time the
+ * third star is tapped, the review is gone.
+ */
 export function ReviewAxes({ isClient }: { isClient: boolean }) {
   const axes = isClient ? AXES.creative : AXES.client;
+  const [rated, setRated] = useState<Record<string, number>>({});
+  const [posting, setPosting] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const count = Object.keys(rated).length;
+
+  function handleRate(name: string, value: number) {
+    const next = { ...rated, [name]: value };
+    setRated(next);
+    if (Object.keys(next).length < axes.length || posting) return;
+    // All three in. Post it. requestSubmit() runs the form's normal validation
+    // and the same server action the old button called.
+    setPosting(true);
+    wrapRef.current?.closest("form")?.requestSubmit();
+  }
 
   return (
-    <div className="space-y-4 rounded-lg border border-ink/10 bg-wash/30 p-4">
+    <div ref={wrapRef} className="space-y-4 rounded-lg border border-ink/10 bg-wash/30 p-4">
       {axes.map((a) => (
         <div key={a.name} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
           <div className="min-w-0">
             <Label>{a.label}</Label>
             <p className="text-xs text-ink/55">{a.hint}</p>
           </div>
-          <StarRatingInput name={a.name} />
+          <StarRatingInput name={a.name} onChange={(v) => handleRate(a.name, v)} />
         </div>
       ))}
-      <p className="text-xs text-ink/45">Your overall star rating is the average of these three.</p>
+
+      <p className={"text-xs " + (posting ? "font-medium text-brand-dark" : "text-ink/55")}>
+        {posting
+          ? "Posting your review…"
+          : count === 0
+            ? `Rate all ${axes.length} and your review posts automatically. Write your comment first.`
+            : `${count} of ${axes.length} rated — your review posts as soon as the last one is set.`}
+      </p>
     </div>
   );
 }
