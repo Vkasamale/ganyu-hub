@@ -3,6 +3,44 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Install banner above the nav (v0.9.1.1)
+
+`IMPLEMENTATION_PLAN.md` L1b, audit §Q8. Fiverr pins an app-install row above
+everything on the signed-out page; ours is the same idea minus the parts we
+cannot honestly copy.
+
+`components/install-banner.tsx` is new. It renders in `app/layout.tsx`
+**before** `<Navbar />` rather than inside the landing page, because the nav is
+`sticky top-0` and anything rendered inside `<main>` is below it by
+definition.
+
+**This closes a real hole, not a cosmetic one.** `components/push-banner.tsx`
+already carried the iOS Add-to-Home-Screen instructions — the only way an
+iPhone user can install a PWA, since Safari implements no
+`beforeinstallprompt` — but it renders on the dashboard, behind sign-in. A
+visitor deciding whether Ganyu Hub is worth an account never saw it. §Q8:
+"behind sign-in, which is exactly the wrong side of the door for install".
+
+It renders **only when there is something to offer**: either the browser handed
+us a `beforeinstallprompt` to fire, or this is an iPhone not yet running from
+the home screen. That one condition also keeps it off desktop Firefox and
+Safari, and off anyone already running standalone — no width check, no UA
+sniffing beyond the iOS branch that has to exist. It hides itself on
+`/dashboard`, where `push-banner.tsx` already offers install; two rows asking
+for the same thing on one screen is a bug.
+
+`dismissed` initialises to `true` and is only cleared once `localStorage` has
+been read, so a returning visitor never sees the bar flash in and shove the
+page down.
+
+**Not copied:** Fiverr's ★ 4.9 (670k) store rating. We have no store listing
+and never will — we are a PWA — and a manufactured equivalent is the exact
+hollow trust signal §M3 argues against.
+
+**Found by screenshot:** at 375px the two-sentence copy wrapped to three lines,
+making a permanent top bar far too tall against Fiverr's one line. The second
+sentence is now `hidden sm:inline`; the headline carries it alone on a phone.
+
 ## 2026-08-12 — The footer becomes a footer (v0.9.1)
 
 `IMPLEMENTATION_PLAN.md` L5. What sat at the bottom of every page was a legal

@@ -4,6 +4,29 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Install banner (L1b)
+
+Browser-rendered with a **synthetic** `beforeinstallprompt`. The real event
+cannot be fired on demand, so the trigger is simulated; everything downstream
+of it is real.
+
+- ✅ `tsc --noEmit` clean, home page 200.
+- ✅ Renders above `<header>` in document order; nav sits at `top: 65.5` with
+  the bar present and `top: 0` once dismissed.
+- ✅ Dismiss removes it, writes `ganyu-install-dismissed=1`, and a second
+  `beforeinstallprompt` after dismissal is correctly ignored.
+- ✅ Judged from a screenshot at 375 and 1280 per `DESIGN.md` §4. One defect
+  found and fixed — three-line wrap on mobile.
+- ⬜ **The iOS branch has never run.** It is the whole reason this component
+  exists and it cannot be exercised from a desktop browser. Needs a real
+  iPhone: the bar should show "Tap Share then Add to Home Screen" with no
+  Install button.
+- ⬜ A real `beforeinstallprompt` on Android Chrome, and whether
+  `prompt()` actually opens the install sheet.
+- ⬜ Suppression on `/dashboard` — needs a signed-in session, and the founder
+  performs all logins.
+- ⬜ Standalone detection (banner must not appear once installed).
+
 ## 2026-08-12 — Landing page footer (L5)
 
 Automated + browser-rendered. **Not opened on a real phone.**

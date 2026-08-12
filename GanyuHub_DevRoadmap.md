@@ -28,7 +28,7 @@ sits **before Phase 0**. Phases 0–9 (79 items) are unstarted.
 |---|---|---|
 | ✅ | L1 hero, mobile | Flat brand band — finished, not a placeholder (audit §Q8) |
 | ⏳ | L1 hero, desktop photo | Waiting on beta creatives' photographs — see `BACKLOG.md` |
-| ❌ | L1b install-the-app banner | Not started. Owns the footer's "install the app" item too (§J3 #5) |
+| ✅ | L1b install-the-app banner | Shipped — `components/install-banner.tsx`. Covers the footer's "install the app" item (§J3 #5). **iOS branch never run on a device.** |
 | ❌ | L1c announcement bar | Not started |
 | ✅ | L2 value props | Shipped |
 | ✅ | L3 category grid | Shipped |

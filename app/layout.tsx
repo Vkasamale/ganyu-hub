@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
 import { ServiceWorkerRegistrar } from "@/components/pwa";
 import { Footer } from "@/components/footer";
+import { InstallBanner } from "@/components/install-banner";
 
 const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
@@ -83,6 +84,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
         <RecoveryCatcher />
         <ServiceWorkerRegistrar />
+        {/* Above the nav, which is sticky — audit §Q8. */}
+        {!bareLayout && <InstallBanner />}
         {!bareLayout && <Navbar />}
         <main>{children}</main>
         {!bareLayout && <Footer />}
