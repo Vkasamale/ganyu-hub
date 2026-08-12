@@ -82,9 +82,14 @@ export function ValueProps() {
 
 /* ---------------------------------------------------------------- L3 ----- */
 
-// 24 categories is far too many to dump on a phone. Show two rows, let the
-// rest open on demand — audit §Q8, "View 3 more" rather than endless scroll.
-const CATEGORIES_COLLAPSED = 6;
+// 24 categories is far too many to dump on a phone. Show a couple of rows and
+// let the rest open on demand — audit §Q8, "View 3 more" rather than endless
+// scroll.
+//
+// 8, not 6: the grid is 4-across at `lg:`, so 6 leaves a half-empty second row
+// with a ragged right edge. 8 divides cleanly at every breakpoint the grid
+// uses — 4 rows at 2-across, 2 rows at 4-across.
+const CATEGORIES_COLLAPSED = 8;
 
 export function CategoryGrid() {
   const [expanded, setExpanded] = useState(false);
@@ -260,7 +265,8 @@ export function ClosingCta() {
   return (
     <section className="py-14 md:py-20">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="rounded-2xl bg-ink px-6 py-12 text-center md:px-12 md:py-16">
+        {/* 14px, matching .card-soft — DESIGN.md §7: no rounded-everything. */}
+        <div className="rounded-[14px] bg-ink px-6 py-12 text-center md:px-12 md:py-16">
           <Handshake className="mx-auto h-8 w-8 text-brand" strokeWidth={1.5} aria-hidden />
           <h2 className="mx-auto mt-5 max-w-2xl text-2xl font-semibold tracking-tight text-paper md:text-4xl">
             Malawi has the talent. It just needed somewhere to be found.

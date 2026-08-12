@@ -216,7 +216,14 @@ export function HomeHero() {
           </AnimatePresence>
         </div>
 
-        <div className="md:pt-6">
+        {/*
+          Desktop right rail only. On mobile this column drops below the hero
+          and becomes seven category rows sitting directly above the category
+          grid in `home-sections.tsx` — two lists of the same thing, back to
+          back. The grid is the better mobile answer (it collapses), so this
+          one stands down below `md:`.
+        */}
+        <div className="hidden md:block md:pt-6">
           <p
             className="text-xs font-medium uppercase tracking-[0.22em]"
             style={{ color: t.textMuted, transition: "color 250ms ease-out" }}
