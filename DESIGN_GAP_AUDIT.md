@@ -764,3 +764,159 @@ video consultations".
 Remaining: `IMG_2963`, `2965`–`2977` (13 mobile), and all 26 desktop
 screenshots — job detail on scroll, creative profile, settings, messaging
 thread, footer.
+
+## Q. Landing pages — `Fiverr landing page (1)–(8)`,
+## `upwork landing (1)–(8)`. Reviewed 2026-08-12.
+
+Second reference set, 16 screenshots, signed-**out** marketing pages. The
+earlier categories were all signed-in product surfaces, so nothing above
+covers this.
+
+### Q1. The imagery gap — the single biggest difference
+
+Both heroes are the same construction:
+
+- **Full-bleed photograph**, darkened hard with a scrim (Fiverr's is nearly
+  black)
+- White display type over it, very large
+- **Search field sitting ON the image**, not below it
+- Outlined white category pills under the search
+- Nav bar transparent over the photo, no background of its own
+
+Fiverr: a close-up of hands working — abstract, no faces, no eye contact.
+Upwork: a real room, people mid-meeting, faces turned away, shot from behind a
+shoulder.
+
+Neither is a posed studio photo. **Neither has anyone smiling at the camera.**
+It reads as documentary, not stock, and that is the whole trick.
+
+**Ours is flat `#EFE6CE` with no imagery at all.** Everything else in our hero
+— mode toggle, search, rotating category list — is already comparable to
+theirs. The photograph is the gap.
+
+`components/hero-art.tsx` and `/public/hero-photographer.webp` are still in the
+repo from the imagery pulled 2026-06-29 (see `BACKLOG.md`, Landing-page
+imagery). Sourcing rules now live in `DESIGN.md` §10.
+
+### Q2. Upwork independently validates our mode toggle
+
+Their hero carries `I want to hire` / `I want to work` as a segmented control
+in the same position ours occupies (`components/home-hero.tsx`). We arrived at
+it separately. Keep it — and reuse the same control on the How-it-works
+section, which is what Upwork does (`For hiring` / `For finding work`).
+
+### Q3. Section inventory
+
+**Fiverr — 8 sections**
+
+1. Hero: photo, headline, search, 5 category pills
+2. On scroll, **the search moves up into the nav** and a category bar appears
+   beneath it
+3. Value props — 4 line icons, one sentence each ("Only pay when you're happy")
+4. Fiverr Pro promo band — dark green, photo, CTA
+5. **Success story** — named customer, one line, large photo/video
+6. **Guides carousel** — editorial cards, "See more guides", arrow control
+7. Maroon CTA band — one line, one button
+8. 5-column footer + social + language/currency
+
+**Upwork — 9 sections**
+
+1. Hero: photo, headline, hire/work toggle, search, 4 category pills
+2. **Trusted by** — client logo row
+3. **Category grid** — 10 icon cards, 5 across
+4. **How it works** — hiring/finding toggle, 3 video cards, **pause button on
+   the autoplaying one**
+5. Cost-estimate tool — describe the work, get a price range
+6. Pricing plans — Basic / Business Plus
+7. **Testimonials** — 6 cards: quote, name, role, company, avatar
+8. Award badges row
+9. Green CTA band → 4-column dark footer
+
+**Ours: 2.** Hero, plus a proof row hidden until 3 jobs complete.
+
+### Q4. Signup modal (`Fiverr landing page (8)`)
+
+Two-panel: left is a photo with **three ticked value props** over it, right is
+the OAuth buttons. "Success starts here" as the panel headline, and
+`Additional verification may be required at a later stage` set below the
+buttons — expectation-setting before it becomes friction. Worth taking; we have
+KYC before payout and currently disclose it nowhere at signup.
+
+### Q5. Footers — confirms §J
+
+Both are the audience-split, multi-column footer already specced in §J3. Upwork
+adds **Release notes**, **Accessibility** and a **Sitemap** link; Fiverr lists
+12 categories as links. Nothing new, but it settles the question — every
+reference does the audience split.
+
+### Q6. Not copying
+
+- **Award badges** (`upwork landing (4)`) — G2 Winter 2026 medals. We have
+  none, and manufacturing an equivalent would be the exact hollow trust signal
+  §M3 argues against
+- **Pricing plan cards** — commission-only at launch
+- **Cost-estimate tool** — needs aggregate price data we do not have. Revisit
+  once there is real bid history; it is a genuinely good idea, just premature
+- **Client logo wall** — build the section, leave it dark until ≥4 real clients
+  give permission
+- Enterprise anything
+
+### Q7. The rule this set produced
+
+**Build the section, gate it on a real threshold, render nothing below it.**
+`app/page.tsx:30` already does this for the proof row. Generalise it — never a
+zero, never a placeholder, never `★ — (0 reviews)`. An empty testimonial
+carousel says "nobody uses this"; a hidden one says nothing, which is
+accurate.
+
+Full breakdown in `IMPLEMENTATION_PLAN.md` (Landing page, L1–L11).
+
+### Q8. Mobile, signed out — `IMG_3081` (Upwork), `IMG_3083` (Fiverr)
+
+Full-page mobile captures of the same two pages. Several findings contradict
+what the desktop set implied.
+
+**Fiverr drops the hero photograph entirely on mobile.** It becomes a flat
+brand-green band with the headline and search — no image at all. Upwork keeps
+one but darkens it so far it reads as a dark ground with type on it.
+
+⚠️ **This corrects Q1 and `DESIGN.md` §10.** The hero photograph is a
+**desktop concern**. On mobile the honest options are a flat brand band or a
+near-black ground. Given Malawian data costs this is not a compromise, it is
+the better answer: **the mobile hero can ship zero image bytes.** Do not
+art-direct a mobile crop of the desktop hero — replace it.
+
+**The footer collapses to accordions.** Both references turn every column into
+a `˅` disclosure row — Categories · For Clients · For Freelancers · Company.
+This is what makes §J3's five-column footer survivable on a phone. Without it
+the audience-split footer is a very long scroll. Build the footer once, with
+columns on `md:` and accordions below.
+
+**App-install banner pinned above the nav** (Fiverr): app icon · `Fiverr for
+iOS` · ★4.9 (670k) · **Open in App** · dismissible ✕. Persistent, above
+everything, on the signed-out page.
+
+This is the discovery path our iOS users do not have. `components/push-banner.tsx`
+already carries an iOS branch that explains Add to Home Screen, but it only
+renders on the dashboard — **behind sign-in**, which is exactly the wrong side
+of the door for install. The landing page is where it belongs.
+
+**Announcement bar above the nav** (Upwork): one line, a CTA, full width.
+Worth having as a component for beta announcements and the eventual launch.
+
+**Category grid: 3 across, then `View 3 more ˅`.** An expand, not an endless
+scroll. Our `CATEGORIES` list is long enough that this matters.
+
+**Carousels peek.** The next card is deliberately half-visible at the right
+edge — the only affordance telling a user the row swipes. A row that ends
+flush at the viewport edge reads as a static grid. Applies to every carousel
+in §B, §G4 and Phase 6.
+
+**Value props stack** icon-left / text-right, one per row, rather than the
+desktop four-across.
+
+**Also on mobile:** hamburger left, logo centred, `Join` right — the signed-out
+counterpart to the §A tab bar, which only exists after sign-in.
+
+**Not copying:** the app-store rating in the install banner (we have no store
+listing and never will — we are a PWA), and Fiverr's "AI Director" card.

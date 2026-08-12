@@ -278,5 +278,106 @@ money  MWK, en-GB, Africa/Blantyre, tabular Plex Mono
 - `font-display` resolves to Inter in Tailwind, Instrument Serif in CSS (§3).
 - The stamp's texture is unresolved; position is settled (§4).
 - No dark mode exists. Do not add one uninvited.
-- No ratings, reviews, testimonials, or verification badges exist yet — see
-  `DESIGN_GAP_AUDIT.md` §P before designing anything that implies them.
+- Ratings and reviews **do** exist (`reviews` table, shipped 2026-07-03) but
+  are single-axis with no response mechanism. Testimonials and verification
+  badges do not exist at all. See `DESIGN_GAP_AUDIT.md` §P and
+  `IMPLEMENTATION_PLAN.md` Phase 4 before designing anything that implies them.
+
+---
+
+## 10. Imagery
+
+Added 2026-08-12 from `DESIGN_GAP_AUDIT.md` §Q. Until now this document had no
+photography rules at all, which is why the landing page has no photography.
+
+### The hero photograph is a desktop concern
+
+Fiverr ships **no hero image at all on mobile** — a flat brand-coloured band
+with the headline and search. Upwork keeps one but darkens it until it reads
+as a dark ground. See `DESIGN_GAP_AUDIT.md` §Q8.
+
+So: **photo on `md:` and up, flat band below.** Do not art-direct a mobile
+crop — replace the element. Given Malawian data costs this is the better
+answer anyway, not a compromise: **the mobile hero ships zero image bytes.**
+
+### The construction
+
+A hero photograph is **a dark ground, not a picture**. Type sits on it and must
+win.
+
+- Full-bleed, edge to edge, no rounded corners at the hero
+- **Scrim is mandatory**: a linear gradient from ~`rgba(26,22,17,0.75)` at the
+  type side to ~`0.35` at the far edge. Ink, never pure black — the same warm
+  near-black as `ink`
+- Body copy over image must still clear **4.5:1**. Measure it, do not eyeball
+  it
+- Left third stays quiet — the headline lives there
+- The search field sits **on** the image, not below it
+
+### Choosing a photograph
+
+The references work because of what they refuse, not what they show.
+
+**Required**
+
+1. **No eye contact.** Nobody looking at the camera
+2. **Face partial or absent.** Over the shoulder, side-on, from behind, or
+   hands only
+3. **A real space** — visible clutter, real walls, natural light
+4. **Mid-action.** Hands on a keyboard, adjusting a light, holding a camera
+5. **Already dark.** A bright photo fights the scrim; a moody one absorbs it
+6. **Wide, with dead space** where the headline goes
+
+**Forbidden**
+
+- Posed studio shots, smiling-at-camera, "diverse team high-fiving"
+- Stock photos of hands receiving things, or any donor/NGO visual grammar —
+  see §1 anti-references. Malawian identity is carried by the product and the
+  people on it
+- Chitenje pattern or landmark photography as an identity crutch. Spice, not
+  structure
+- **A location that is not Malawi.** Foreign signage, wrong architecture, a
+  Lagos or Nairobi skyline. Users will clock it instantly and it undoes the
+  entire "Malawian by default" claim
+
+**When in doubt, go tighter and more abstract.** Hands, a desk, a camera body,
+a screen. No visible location cannot be the wrong location.
+
+### Provenance, in preference order
+
+1. **Commission a beta photographer through the platform.** The only option
+   that cannot be told from the real thing, because it is. It is a completed
+   job, real GMV, a case study, and hero art at once — and "every photograph
+   here was taken by someone we hired on this platform" is a line neither
+   reference can say
+2. Portraits and work from creatives already onboarded, with permission
+3. Objects, not people — a printed poster, a lit studio setup, tools on a
+   desk. The safe interim: no model release needed, no location to get wrong
+4. Licensed stock, last resort. Commercial use, no attribution in-page, model
+   release for any identifiable face
+
+### Weight — a hard constraint, not a preference
+
+Many users are on mid-range Android over paid mobile data. Fiverr ships a
+1.4 MB hero. **We do not.**
+
+- AVIF with a WebP fallback
+- Responsive `srcset`, real breakpoints, art-directed crop on mobile
+- LQIP blur placeholder
+- `priority` on the hero image **only** — everything below the fold lazy-loads
+- Budget: **≤160 KB** for the desktop hero. **0 KB on mobile** — there is no
+  mobile hero image (see above)
+
+### Treatment elsewhere
+
+- Every image keeps the `img` outline from §4 — 1px ink at 10%. Images are
+  *mounted*, never floating
+- Portfolio and case-study images are the creative's work, shown honestly: no
+  crop that changes the composition, no filter, no duotone
+- Decorative imagery is optional by design — the layout must not collapse when
+  it fails to load
+
+### Judge from a screenshot
+
+Same rule as the stamp (§4). A photograph plus a scrim plus white type cannot
+be evaluated from markup. Render it and look.

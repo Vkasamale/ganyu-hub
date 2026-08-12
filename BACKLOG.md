@@ -247,6 +247,28 @@ calendar reminder independent of Namecheap's own.
 - **Image upload for portfolio (and avatars).** Right now portfolio items take a `cover_url` text field, so creatives have to host images elsewhere and paste a URL. Wire up Supabase Storage: create a `portfolio` bucket with public read + owner-only write, swap the URL input for a file upload that stores to `portfolio/<profile_id>/<uuid>.ext` and saves the public URL. Same for profile avatars.
 - **Inline avatar upload from own public profile.** When the signed-in user is viewing their own `/creatives/[id]` page, clicking the avatar circle should open the file picker directly and upload a new avatar in place — no round-trip to `/dashboard/profile`. Keep the existing Edit-profile flow untouched; this is purely a shortcut for the most common tweak. Owner-only — for non-owners the avatar stays a static image.
 
+## Landing page — SCHEDULED, see `IMPLEMENTATION_PLAN.md` (added 2026-08-12)
+
+**No longer a backlog item.** The landing page rebuild is scheduled ahead of
+Phase 0 in `IMPLEMENTATION_PLAN.md`, items L1–L11. The two entries below are
+kept because they record *why* the current page is bare — read them before
+rebuilding, they are the reason the hero is flat.
+
+Reviewed 16 Fiverr/Upwork landing-page screenshots 2026-08-12 →
+`DESIGN_GAP_AUDIT.md` §Q. Both references are a **full-bleed darkened
+photograph** with white display type and the search field sitting *on* the
+image. Ours is flat `#EFE6CE`. Everything else in our hero already matches
+theirs — the photograph is the entire gap.
+
+Photography rules now exist in `DESIGN.md` §10 (scrim treatment, no eye
+contact, ≤120 KB mobile budget, and "no visible location beats the wrong
+location"). Preferred provenance is **commissioning a beta photographer through
+the platform** — a completed job, real GMV, a case study and hero art in one.
+
+**Blocked on the founder choosing photography.** The build is identical whether
+it is a commissioned shoot or the objects-not-people interim, so do not block
+the section work on it — ship with a placeholder crop and swap.
+
 ## Landing-page imagery
 
 - **Hero right-side imagery.** Removed 2026-06-29 — the layered photo + chitenje block + clay arc + spinning "Find creatives" badge on the right column was pulled to keep the launch landing page clean while the imagery story is figured out. The `<HeroArt />` component (`components/hero-art.tsx`) and `/public/hero-photographer.webp` are still in the repo as a starting point. To bring it back: re-add the right column in `app/page.tsx` (revert the `grid-cols-[1.15fr_1fr]` block) and pick the imagery direction — single portrait of a real Malawian creative we've onboarded, a portfolio collage from real shipped work, or stay graphic-only with the chitenje composition. Best after we have 3–5 seeded creatives whose portraits/work we can actually feature.

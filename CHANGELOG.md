@@ -3,6 +3,65 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — The reference audit becomes a build order
+
+**Documentation only. No code changed, no schema touched.**
+
+`IMPLEMENTATION_PLAN.md` is new: the 79 findings in `DESIGN_GAP_AUDIT.md`
+converted from observations into phased work, plus the landing page ahead of
+Phase 0. The split rule is that we build anything needing a table, column,
+query, route or form field, and Claude Design polishes spacing, type, colour,
+motion and the stamp. Design can only design what exists, so structure ships
+first and finish ships last. The Claude Design run in flight was terminated
+deliberately — it was designing against a product about to change on nearly
+every surface.
+
+**Correction carried into the plan.** The audit claims in §C, §F and §G2 that
+we have no reviews. That was written from screenshots without reading the
+schema. `reviews` has shipped since 2026-07-03 (`supabase/schema.sql:211`)
+with role-neutral `reviewer_id`/`reviewee_id` columns, so the bidirectional
+requirement in §G3 is already satisfied structurally, and star averages
+already render on `/creatives/[id]` and `/browse`. Phase 4 is therefore
+"extend and surface" — multi-axis scores, a ratee's right of response, and the
+client direction made visible — not "build reviews".
+
+**`DESIGN_GAP_AUDIT.md` §Q** covers a second reference set of 16 signed-out
+landing pages. Both Fiverr and Upwork build the hero the same way: a
+full-bleed photograph darkened hard, white display type, and the search field
+sitting on the image rather than below it. Neither uses a posed shot and
+neither has anyone looking at the camera. Ours is flat `#EFE6CE` — everything
+else in our hero already matches theirs, including a hire/work toggle Upwork
+arrived at independently, so the photograph is the entire gap.
+
+**`DESIGN.md` §10** is the imagery section the document never had, which is
+why the landing page has no imagery. Scrim treatment and contrast floor, the
+no-eye-contact rule, a ≤120 KB mobile budget against Fiverr's 1.4 MB hero, and
+the constraint that a photograph showing the wrong country undoes the
+"Malawian by default" claim — so when in doubt, shoot tighter, because no
+visible location cannot be the wrong location. Preferred provenance is
+commissioning a beta photographer through the platform: one completed job that
+is simultaneously real GMV, a case study, and the hero art.
+
+**§Q8, from mobile captures of the same two pages, corrects the imagery rule
+the same day it was written.** Fiverr ships **no hero image at all on mobile**
+— a flat brand band with headline and search; Upwork keeps one but darkens it
+until it is effectively a dark ground. The hero photograph is a desktop
+concern. Given Malawian data costs that is the better answer rather than a
+compromise: the mobile hero ships zero image bytes, and the element is
+replaced rather than art-directed. Also from that set: footers collapse to
+accordions on mobile (which is what makes §J3's five columns survivable on a
+phone), carousels deliberately let the next card peek at the right edge
+because that is the only affordance signalling a swipe, and an
+**install-the-app banner sits pinned above the nav while signed out** — the
+iOS discovery path we do not have, since `components/push-banner.tsx` renders
+its Add-to-Home-Screen branch only on the dashboard, behind sign-in, which is
+the wrong side of the door for an install prompt.
+
+**Standing rule recorded across all three:** build sections for data we do not
+have yet, gate them on a real threshold, and render nothing below it.
+`app/page.tsx:30` already does this for the proof row. Never a zero, never a
+placeholder, never `★ — (0 reviews)`.
+
 ## 2026-08-08 — Installable app, and the first real push notification
 
 **Ganyu Hub is now a PWA — additive, nothing removed.** `app/manifest.ts` is
