@@ -4,6 +4,25 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Phase 6 spine (v0.9.8)
+
+- ✅ `tsc --noEmit` clean.
+- ✅ Rendered live in the preview browser as a client: both action cards, the
+  "Creatives you might work with" carousel with See all, and "Your numbers"
+  retained below.
+- ✅ Carousel scrolls: 8 cards, scrollWidth 2464 vs clientWidth 708 — the peek
+  is real, not theoretical.
+- ✅ ♡ save renders on feed cards (item 48).
+- ✅ Creative side: action card + "Jobs worth a look" carousel with 8 real jobs;
+  progress card correctly ABSENT for a complete profile.
+
+**Note for whoever reads the console next:** a `getSessionUser is not defined`
+error is in the Chrome console history from 17:40, BEFORE that import was
+added. It is stale. A separate Chrome tab showed an empty `<main>` while the
+server returned the full 160KB of HTML and the preview browser rendered it
+correctly — a browser-session problem, not a server one. A hard reload is the
+first thing to try.
+
 ## 2026-08-12 — Role gating + auto-posting reviews (v0.9.7)
 
 - ✅ `tsc --noEmit` clean; `/dashboard/portfolio`, `/dashboard/services`,

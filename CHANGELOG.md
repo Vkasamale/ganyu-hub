@@ -3,6 +3,37 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Phase 6 begins: the signed-in home is a feed (v0.9.8)
+
+Items 44-46, plus 48 falling out for free.
+
+**§B, "our biggest structural gap":** the signed-in home was a stats
+dashboard, which is "right for a returning user with active jobs and wrong for
+a browsing client". It now leads with a feed. **The numbers are not deleted** —
+they move below a "Your numbers" heading, where a returning user still finds
+them. Replacing a founder's daily working surface outright would have been the
+easy call and the wrong one.
+
+**Item 45, two eyebrow action cards** (§O1): one thing to DO, one thing to FIX.
+A client gets "post a brief" plus, when there are any, "N proposals to
+review". A creative gets "find work" plus profile progress. **The progress card
+counts the same four requirements /browse uses to decide whether a creative is
+listed at all** — not an invented "profile strength" score — and it disappears
+when nothing is missing, because a permanent 100% card is decoration.
+
+**Item 46, a reusable carousel with See all.** CSS scroll-snap, server
+component, no library, no arrows — arrows solve a problem desktop does not
+have. The peek is mandatory (§Q8): the next card stays half-visible or nobody
+swipes. Renders nothing at all when the row is empty.
+
+**Item 48 came for free** — `CreativeCard` and `JobCard` already supported
+`showSave`, and `getSavedIds` already existed. The ♡ was built; it had simply
+never been passed on this surface.
+
+Every row uses helpers that already existed in `lib/feed.ts`
+(`getForYouCreatives`, `getForYouJobs`, `getSavedIds`). No new query was
+invented for this.
+
 ## 2026-08-12 — Role gating, and reviews that post themselves (v0.9.7)
 
 **Role restrictions on creative tools.** The dashboard nav already hid

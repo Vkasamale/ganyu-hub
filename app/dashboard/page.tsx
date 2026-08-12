@@ -8,6 +8,12 @@ import { formatMwk } from "@/lib/utils";
 import { getReleasedSpend } from "@/lib/money";
 import { WelcomeChecklist, type ChecklistStep } from "@/components/welcome-checklist";
 import { PushBanner } from "@/components/push-banner";
+import { HomeActionCards } from "@/components/home-action-cards";
+import { FeedCarousel, FeedCard } from "@/components/feed-carousel";
+import { CreativeCard } from "@/components/creative-card";
+import { JobCard } from "@/components/job-card";
+import { getForYouCreatives, getForYouJobs, getSavedIds } from "@/lib/feed";
+import { checkProfileComplete } from "@/lib/profile-complete";
 
 type Role = "client" | "creative" | "agency";
 
@@ -171,6 +177,34 @@ export default async function DashboardPage() {
         { label: "See how payouts work", sub: "What you keep after fees", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
       ];
 
+  // Phase 6 items 44-46 (§B, §O1): the signed-in home leads with a feed, not
+  // statistics. §B is blunt that a stats dashboard is "right for a returning
+  // user with active jobs and wrong for a browsing client" — so the feed goes
+  // first and the numbers stay below, where a returning user still finds them.
+  //
+  // Every row uses the helpers that already existed in lib/feed.ts. Nothing new
+  // is invented, and each row renders nothing at all when empty (§Q7).
+  const feedCreatives = isClient ? await getForYouCreatives(supabase as any, user.id, 8) : [];
+  const feedJobs = !isClient ? await getForYouJobs(supabase as any, user.id, 8) : [];
+  const savedCreativeIds = isClient ? await getSavedIds(supabase as any, user.id, "creative") : new Set<string>();
+  const savedJobIds = !isClient ? await getSavedIds(supabase as any, user.id, "job") : new Set<string>();
+
+  // Item 45's progress card counts the same four things /browse uses to decide
+  // whether a creative is listed at all. Null once nothing is missing.
+  const completeness = isClient ? null : checkProfileComplete(profile || {}, portfolioCount, serviceCount);
+  const progress = completeness && !completeness.complete
+    ? {
+        done: 4 - completeness.missing.length,
+        total: 4,
+        nextLabel: completeness.missing[0].label,
+        nextHref: completeness.missing[0].href,
+      }
+    : null;
+
+  const proposalsWaiting = isClient
+    ? proposalsOnMyJobs.filter((p: any) => p.status === "pending").length
+    : 0;
+
   return (
     <div className="space-y-6">
       <WelcomeChecklist steps={checklistSteps} dismissed={!!profile?.welcome_dismissed_at} />
@@ -184,6 +218,36 @@ export default async function DashboardPage() {
           </em>
         </h1>
       </header>
+
+      <HomeActionCards
+        isClient={isClient}
+        firstName={profile?.full_name?.split(" ")[0] || "there"}
+        progress={progress}
+        proposalsWaiting={proposalsWaiting}
+      />
+
+      <FeedCarousel
+        eyebrow={isClient ? "Based on what you have posted" : "Matched to your categories"}
+        title={isClient ? "Creatives you might work with" : "Jobs worth a look"}
+        seeAllHref={isClient ? "/browse" : "/jobs"}
+        count={isClient ? feedCreatives.length : feedJobs.length}
+      >
+        {isClient
+          ? feedCreatives.map((c: any) => (
+              <FeedCard key={c.id}>
+                <CreativeCard profile={c} saved={savedCreativeIds.has(c.id)} showSave />
+              </FeedCard>
+            ))
+          : feedJobs.map((j: any) => (
+              <FeedCard key={j.id}>
+                <JobCard job={j} saved={savedJobIds.has(j.id)} showSave />
+              </FeedCard>
+            ))}
+      </FeedCarousel>
+
+      <section>
+        <p className="eyebrow text-ink/55">Your numbers</p>
+      </section>
 
       <section className="grid grid-cols-2 gap-5 md:grid-cols-4">
         {stats.map((s) => {
