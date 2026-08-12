@@ -6,6 +6,15 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.3",
+    date: "2026-08-12",
+    notes: [
+      "Job pages now tell you about the client before you bid — how many jobs they have posted, how often they actually hire, what they have paid through escrow, and whether they have funded a job before.",
+      "Clients new to Ganyu Hub are labelled as new rather than left blank, so you know what you are looking at either way.",
+      "Every figure on your Payments page now has a “?” explaining exactly what it means and which charges apply.",
+    ],
+  },
+  {
     version: "0.9.2",
     date: "2026-08-12",
     notes: [

@@ -4,6 +4,29 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Phase 2 (v0.9.3)
+
+Verified on `localhost:3000` against production Supabase, signed in as Adam
+Creative viewing a job posted by EQ Admin Client.
+
+- ✅ `tsc --noEmit` clean.
+- ✅ "About the client" renders with real figures: 28 jobs posted, 6 open,
+  61% hire rate, MWK 388,000 paid through escrow, member since June 2026.
+- ✅ Badges: "Has funded escrow before", "Hires people again", "Phone on file".
+- ✅ `/clients/[id]` now reports the same 61% as the job page — the two
+  surfaces agreed for the first time.
+- ✅ Item 25: all three money tiles expose a `?` with an `aria-label`.
+- ✅ Reply-time row correctly ABSENT — this client has fewer than three
+  measured replies, so the field returns null and the row is omitted.
+
+Not yet tested:
+
+- ⚬ Item 22 with real data — no account has 3+ measured reply pairs yet, so
+  the median has never rendered a value. The null path is confirmed; the
+  formatting path ("under an hour" / "about 3 hours") is not.
+- ⚬ The "New to Ganyu Hub" branch — every test client has funded escrow.
+- ⚬ Hire rate below the 3-job threshold returning null.
+
 ## 2026-08-12 — Phase 0 and Phase 1 (v0.9.2)
 
 Verified against live data on `localhost:3000` (production Supabase), signed in

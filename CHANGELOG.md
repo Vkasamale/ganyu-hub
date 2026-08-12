@@ -3,6 +3,53 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Phase 2, derived trust numbers (v0.9.3)
+
+`IMPLEMENTATION_PLAN.md` items 18-25, audit §G2, §F3, §F9, §L2. Zero schema —
+every figure is computed from rows we already hold.
+
+**Item 24, "About the client" on job detail** — the plan calls this the biggest
+single gap in the product, and it is: the block that tells a creative whether
+writing a proposal is worth their evening. `components/about-client.tsx`, shown
+to everyone EXCEPT the client themselves, and skipped for unclaimed
+creative-made jobs where `client_id` is still null.
+
+**Escrow funded leads the block.** It is a stronger signal than Upwork's
+"payment method verified" and we have had it since escrow shipped — we simply
+never showed it.
+
+**One definition of the numbers, in `lib/client-trust.ts`.** `/clients/[id]`
+already computed its own hire rate off a different formula (jobs that left the
+open pool ÷ posted, no minimum sample), so the same client could show one
+percentage on their profile and another on a job page. That page now reads the
+shared source; verified live, both surfaces now agree at 61%.
+
+**Numbers withhold themselves below a useful sample size.** Hire rate returns
+null under three jobs — one job reads as either 0% or 100% and both are wrong
+about the person. Reply time returns null under three replies, because two fast
+replies is a mood, not a habit. The UI omits the row entirely rather than
+printing a dash (§Q7).
+
+**Reply time is a median, and counts first replies only.** A five-message burst
+answered once is one response, not five; counting each would flatter the
+number. A median means one reply sent after a weekend cannot define someone.
+
+**Nothing says "verified".** The plan asked for a "phone verified ✓" badge.
+`profiles.phone` is a plain text column — there is no OTP flow anywhere in this
+codebase — so the badge reads **"Phone on file"** with a tooltip saying we have
+not verified it. A trust marker we cannot back is worse than none, especially
+on the surface where someone decides whether to trust a stranger with a week of
+work.
+
+**A client with no history is told so, not hidden.** "New to Ganyu Hub", plus a
+line pointing out that escrow still protects the creative either way.
+
+**Item 25** — every money state on `/dashboard/payments` now carries a `?`. Our
+tooltips carry more weight than a comparable platform's: we charge 2% + MWK 700
+on bank payouts, hold funds to the next business day, and take a separate
+collection fee on the way in. A bare number invites someone to assume the worst
+about all three.
+
 ## 2026-08-12 — Phase 0 and Phase 1 (v0.9.2)
 
 `IMPLEMENTATION_PLAN.md` Phase 0 (all 8 items) and Phase 1 (items 9-17). The

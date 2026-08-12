@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Stars } from "@/components/stars";
-import { timeAgo, formatMonthYear } from "@/lib/utils";
+import { timeAgo, formatMonthYear, formatMwk } from "@/lib/utils";
+import { getClientTrust, formatReplyTime } from "@/lib/client-trust";
 
 // A client page is a hiring record, not a shop window — it exists for the one
 // creative deciding whether to bid. Keep it out of search results entirely.
@@ -50,12 +51,16 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   }
 
   const { data: jobs } = await supabase.from("jobs").select("id, status").eq("client_id", id);
-  const posted = jobs?.length || 0;
-  // "Awarded" = left the open pool for a real engagement. Anything still open
-  // or cancelled never became work for anyone.
-  const awarded = (jobs || []).filter((j) => j.status !== "open" && j.status !== "cancelled").length;
   const completed = (jobs || []).filter((j) => j.status === "completed").length;
-  const hireRate = posted > 0 ? Math.round((awarded / posted) * 100) : null;
+
+  // Phase 2: the hire rate now comes from lib/client-trust.ts, the one place
+  // that defines it. This page used to compute its own off a different formula
+  // (jobs that left the open pool, no minimum sample), so one client could show
+  // two different numbers depending on which page you were on. It also returns
+  // null under three jobs rather than reporting 100% off a single hire.
+  const trust = await getClientTrust(supabase, id);
+  const posted = trust.jobsPosted;
+  const hireRate = trust.hireRate == null ? null : Math.round(trust.hireRate * 100);
 
   const { data: reviews } = await supabase
     .from("reviews")
@@ -78,6 +83,15 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     { label: "Completed", value: String(completed) },
     { label: "On Ganyu Hub since", value: profile.created_at ? formatMonthYear(profile.created_at) : "—" },
   ];
+  // Items 20 and 22, appended only when there is something real to say. The
+  // four above are a fixed grid and keep their em-dashes; these would be
+  // padding if they were always present.
+  if (trust.totalSpentMwk > 0) {
+    stats.push({ label: "Paid through escrow", value: formatMwk(trust.totalSpentMwk) });
+  }
+  if (trust.medianReplyMins != null) {
+    stats.push({ label: "Usually replies in", value: formatReplyTime(trust.medianReplyMins) });
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-12">

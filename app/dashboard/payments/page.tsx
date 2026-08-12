@@ -102,16 +102,45 @@ export default async function PaymentsPage() {
   const releasedRecent = isClient ? await getReleasedSpend(user.id, sixMonthsAgo) : 0;
   const releasedLifetime = isClient ? await getReleasedSpend(user.id) : 0;
 
+  // Item 25 (§L2): every money state carries a `?`. These tooltips matter more
+  // for us than for the platforms we get compared to — we charge 2% + MWK 700
+  // on bank payouts, hold funds until the next business day, and take a
+  // separate collection fee on the way in. A number with no explanation lets
+  // someone assume the worst about all three.
   const stats = isClient
     ? [
-        { label: "In escrow", value: formatMwk(held) },
-        { label: "Released", value: formatMwk(releasedRecent) },
-        { label: "Lifetime released", value: formatMwk(releasedLifetime) },
+        {
+          label: "In escrow",
+          value: formatMwk(held),
+          hint: "Money you have funded that has not been released yet. It is held for you, not spent, and does not reach the creative until you approve the work.",
+        },
+        {
+          label: "Released",
+          value: formatMwk(releasedRecent),
+          hint: "Released to creatives in the last six months. Once released, funds cannot be pulled back.",
+        },
+        {
+          label: "Lifetime released",
+          value: formatMwk(releasedLifetime),
+          hint: "Everything you have ever released, all time.",
+        },
       ]
     : [
-        { label: "Pending payout", value: formatMwk(held) },
-        { label: "Paid out", value: formatMwk(released) },
-        { label: "Lifetime earned", value: formatMwk(lifetime) },
+        {
+          label: "Pending payout",
+          value: formatMwk(held),
+          hint: "Funded by the client and waiting on their approval. The money is already in escrow — this is not the client still owing it.",
+        },
+        {
+          label: "Paid out",
+          value: formatMwk(released),
+          hint: "Released to you. Your payout provider may deduct a transfer charge — 2% on mobile money, plus a flat MWK 700 on bank transfers.",
+        },
+        {
+          label: "Lifetime earned",
+          value: formatMwk(lifetime),
+          hint: "Everything released to you, plus everything currently in escrow for you, before payout charges.",
+        },
       ];
 
   return (
@@ -129,7 +158,16 @@ export default async function PaymentsPage() {
       <div className="grid gap-3 sm:grid-cols-3">
         {stats.map((s) => (
           <div key={s.label} className="card-soft p-5">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-ink/55">{s.label}</p>
+            <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-ink/55">
+              {s.label}
+              <span
+                title={s.hint}
+                aria-label={s.hint}
+                className="inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full border border-ink/20 text-[8px] font-semibold normal-case tracking-normal text-ink/50"
+              >
+                ?
+              </span>
+            </p>
             <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">{s.value}</p>
           </div>
         ))}

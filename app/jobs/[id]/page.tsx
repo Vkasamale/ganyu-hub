@@ -45,6 +45,8 @@ import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel, primaryClientAction } from "@/components/escrow-panel";
 import { StickyActionBar } from "@/components/sticky-action-bar";
+import { AboutClient } from "@/components/about-client";
+import { getClientTrust } from "@/lib/client-trust";
 import { isTestMode } from "@/lib/payments";
 import { ClientLinkCopy } from "@/components/client-link-copy";
 import { JobHeader } from "@/components/job-header";
@@ -224,6 +226,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
   const showClientLink = !job.client_id && !!job.client_link_token && isAcceptedCreative;
 
+  // Item 24. Only for people who are NOT the client: this block exists to help
+  // someone decide whether to bid, and a client does not need telling how many
+  // jobs they have posted. Skipped entirely for unclaimed creative-made jobs,
+  // where client_id is still null.
+  const clientTrust = user && !isClient && job.client_id ? await getClientTrust(supabase, job.client_id) : null;
+
   // Mobile sticky bar: only when the payment card is actually on the page and
   // the client has a money action waiting. Same label source as the button it
   // scrolls to, so the two can never drift apart.
@@ -271,6 +279,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           &middot; {timeAgo(job.created_at)}
         </p>
       </div>
+
+      {clientTrust && (
+        <AboutClient trust={clientTrust} clientId={job.client_id} clientName={client?.full_name || null} />
+      )}
 
       {/* Payment sits directly under the header. It's the most important thing
           on the page and it used to be a long scroll down. heldMwk feeds the
