@@ -45,7 +45,7 @@ Landing page is 11 of 11. **Phases 0, 1 and 2 complete** (items 1–25; 16 and 1
 already existed). Phases 3–9 unstarted. `lib/client-trust.ts` is now the ONE
 definition of hire rate, spend and reply time — do not recompute them inline.
 
-**Claude Design run is now due**: `IMPLEMENTATION_PLAN.md` schedules it after
+**Claude Design deferred to after Phase 9** (founder, 2026-08-12) — was: `IMPLEMENTATION_PLAN.md` schedules it after
 Phase 2, and the landing page, profiles and trust numbers are all real.
 
 

@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import {
   SignupsLineChart,
   JobStatusBarChart,
@@ -11,7 +12,7 @@ import { PLATFORM_COMMISSION, BETA_ZERO_COMMISSION } from "@/lib/fees";
 
 export default async function AdminPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
   if (!me?.is_admin) notFound();

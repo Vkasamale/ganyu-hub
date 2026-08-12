@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { upsertService, deleteService } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/money-input";
@@ -14,7 +15,7 @@ import { EmptyState } from "@/components/empty-state";
 
 export default async function ServicesPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
 
   const { data: services } = await supabase

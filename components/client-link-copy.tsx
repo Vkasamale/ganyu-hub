@@ -4,9 +4,15 @@ import { Button } from "@/components/ui/button";
 import { ShareButtons } from "@/components/share-buttons";
 import { absUrl } from "@/lib/site-url";
 
-export function ClientLinkCopy({ token }: { token: string }) {
+// `path` is the route segment the token belongs to: "j" for a job claim link,
+// "t" for a testimonial request. Defaults to "j" so existing callers are
+// unchanged.
+export function ClientLinkCopy({ token, path = "j" }: { token: string; path?: "j" | "t" }) {
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? `${window.location.origin}/j/${token}` : `/j/${token}`;
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/${path}/${token}`
+      : `/${path}/${token}`;
 
   async function copy() {
     try {
@@ -44,7 +50,7 @@ export function ClientLinkCopy({ token }: { token: string }) {
       <div className="mt-3 flex items-center gap-2">
         <span className="text-xs text-amber-800/80">Or send it via:</span>
         <ShareButtons
-          url={absUrl(`/j/${token}`)}
+          url={absUrl(`/${path}/${token}`)}
           title="You've got a job on Ganyu Hub"
           text="I've set up a job for you on Ganyu Hub — open this link to review it and fund escrow:"
         />

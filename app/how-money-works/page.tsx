@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { MoneyCalculator } from "@/components/money-calculator";
 import {
   BETA_ZERO_COMMISSION,
@@ -61,9 +62,7 @@ const FAQS = [
 
 export default async function HowMoneyWorksPage() {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
 
   // Viewing this page IS completing the checklist step. Write once, only when
   // unset. No revalidatePath here — calling it during render is what caused

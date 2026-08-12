@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { sendMessage } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
@@ -18,7 +19,7 @@ import { timeAgo } from "@/lib/utils";
 export default async function ThreadPage({ params: paramsP }: { params: Promise<{ threadId: string }> }) {
   const params = await paramsP;
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
 
   const { data: thread } = await supabase

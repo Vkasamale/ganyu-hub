@@ -15,6 +15,13 @@ Format per entry:
 
 ## In Progress
 
+- **[BUG-020] Supabase Auth 429s under repeated page loads — `over_request_rate_limit`.** — found 2026-08-12, auth. **Partially fixed 2026-08-12; root cause understood, not eliminated.**
+  - Symptom: every server action silently behaves as signed-out. `createTestimonialRequest` returned "Not signed in" and wrote nothing, with no failed INSERT in the log because the action bails before the write. Dev server log showed repeated `AuthApiError: Request rate limit reached` (status 429).
+  - Cause: `supabase.auth.getUser()` is a NETWORK call to the Supabase Auth API, not a local token check. **Measured: one dashboard page view made three of them** — `components/navbar.tsx`, `app/dashboard/layout.tsx` and `app/dashboard/page.tsx`, all inside a single request. 94 call sites exist in total (56 of them in `app/actions.ts`). There is no middleware, so nothing refreshes the session centrally once per request.
+  - Why the failure mode is nasty: a rate-limited `getUser()` is indistinguishable from being logged out. The user is silently signed out mid-action and nothing surfaces why.
+  - Fix so far: `lib/supabase/user.ts` exports `getSessionUser()`, wrapped in React `cache()`, which dedupes per request render. The three calls on the dashboard render path collapse to one. **No security change** — the same validated `getUser()` still runs, and the cache never crosses a request boundary. Server actions deliberately keep their own call: an action must re-validate its caller.
+  - Still open: the other ~35 page/component call sites have not been migrated, so other routes still make 2+ calls per view. The actual limit, whether it is per-IP or per-project, and whether real production traffic could reach it are all still unmeasured. **Do not swap `getUser()` for `getSession()`** — `getUser()` is the secure server-side choice.
+
 - **[BUG-019] Duplicate creative profiles show the same person twice on the landing page.** — found 2026-08-12, data. **Data issue, not a code bug.**
   - Repro: load `/` while L9 is live. "Liness Manda" and "Chimwemwe Chinkhuntha" each appear twice in the featured row, with identical headline, price and rating.
   - Cause: two distinct `profiles` rows per person — `4f38566f…`/`ad19c600…` and `5f3bf355…`/`116e17c6…`. Seed/test data, duplicated at creation. Both rows are complete, so both legitimately qualify for the featured row.

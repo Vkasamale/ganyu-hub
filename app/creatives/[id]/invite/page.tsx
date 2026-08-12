@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import { CATEGORIES } from "@/lib/types";
 export default async function InviteCreativePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect(`/login?next=/creatives/${id}/invite`);
   if (user.id === id) redirect(`/creatives/${id}`);
 

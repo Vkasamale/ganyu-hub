@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { updateProfile, updateAvailability, addPayoutMethod, setDefaultPayoutMethod, deletePayoutMethod } from "@/app/actions";
 import { getSupportedBanks } from "@/lib/payments";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,7 @@ function maskTail(s: string | null | undefined, keep = 4) {
 
 export default async function EditProfilePage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 

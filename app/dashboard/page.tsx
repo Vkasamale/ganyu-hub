@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { CountUp } from "@/components/animated";
 import { formatMwk } from "@/lib/utils";
@@ -12,7 +13,8 @@ type Role = "client" | "creative" | "agency";
 
 export default async function DashboardPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // BUG-020: one deduped Auth call per request render.
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   const role: Role = (profile?.role as Role) || "creative";

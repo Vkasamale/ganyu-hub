@@ -4,6 +4,38 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Phase 3 + BUG-020 (v0.9.4)
+
+- ✅ Migration applied; `testimonials` table reachable.
+- ✅ `/dashboard/testimonials` renders for a creative; "On your profile (0)".
+- ✅ **Create link works** — founder clicked it, row written with status
+  `pending` and a token.
+- ✅ `/t/<token>` renders for an anonymous visitor: creative's name, headline
+  and location, the explanation, three fields, and the notice that the creative
+  chooses whether to publish but cannot edit.
+- ✅ Invalid token renders the not-found page. NOTE: that fetch returned HTTP
+  200 rather than 404 — right page, questionable status. Confirm on a real
+  deploy.
+- ✅ BUG-020 migration: all 36 page-level `getUser()` call sites now use the
+  request-cached `getSessionUser()`. `/`, `/browse`, `/jobs`,
+  `/how-money-works`, `/login` all 200; dashboard renders signed in.
+  `components/multi-image-picker.tsx` deliberately untouched (client component).
+
+**⬜ NOT TESTED — the second half of the testimonial loop.** Claude's browser
+automation cannot submit React server-action forms in this app: across a click,
+`requestSubmit()`, a cleared service worker, a fresh `.next` build and after the
+auth rate limit reset, **no POST ever reached the server**. Forms clicked by the
+founder work first time, so this is a tooling limit, not a product defect — but
+these paths are unproven and must be exercised by hand before launch:
+
+- ⬜ `submitTestimonial` writing a submission
+- ⬜ the single-use token guard (second submission must be refused, and the
+  link must show "already done")
+- ⬜ publish/hide, and the block appearing on the public profile
+- ⬜ that testimonials stay OUT of the landing carousel (reviews only)
+- ⬜ Turnstile on the public form — disabled locally this session, so the bot
+  check has never run
+
 ## 2026-08-12 — Phase 2 (v0.9.3)
 
 Verified on `localhost:3000` against production Supabase, signed in as Adam

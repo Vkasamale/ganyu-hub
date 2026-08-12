@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { CreativeCard } from "@/components/creative-card";
 import { JobCard } from "@/components/job-card";
 import { EmptyState } from "@/components/empty-state";
@@ -10,7 +11,7 @@ type Tab = "creatives" | "jobs";
 export default async function SavedPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ tab?: string }> }) {
   const searchParams = (await searchParamsP) || {};
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
 
   const { data: rows } = await supabase

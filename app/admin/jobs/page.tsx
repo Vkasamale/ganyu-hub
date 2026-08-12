@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { adminHideJob } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { SavingForm } from "@/components/saving-form";
@@ -20,7 +21,7 @@ const STATUSES = [
 
 export default async function AdminJobsPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string }> }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
   if (!me?.is_admin) redirect("/dashboard");

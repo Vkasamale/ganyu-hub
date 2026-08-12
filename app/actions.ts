@@ -3152,3 +3152,157 @@ export async function deletePushSubscription(endpoint: string): Promise<{ ok: bo
   await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
   return { ok: true };
 }
+
+/* ---------------------------------------------------------------- Phase 3 --
+ * Testimonials (items 26-28, §M11). A REQUEST flow, which is the whole point:
+ * the creative sends a link, the past client writes the words. Self-written
+ * praise would be worth nothing and everyone reading it would know.
+ * ------------------------------------------------------------------------ */
+
+async function adminDb() {
+  // Dynamic import, matching the rest of this file — `require` is not safe in
+  // a "use server" module.
+  const { createServerClient } = await import("@supabase/ssr");
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } },
+  );
+}
+
+/** Creative creates a request and gets a link to send. */
+export async function createTestimonialRequest(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  // A profile with fifty pending testimonial links is a profile farming them.
+  const { count } = await supabase
+    .from("testimonials")
+    .select("*", { count: "exact", head: true })
+    .eq("creative_id", user.id)
+    .eq("status", "pending");
+  if ((count || 0) >= 10) {
+    return { error: "You have 10 unused testimonial links already. Use or delete some first." };
+  }
+
+  const crypto = await import("crypto");
+  const token = crypto.randomBytes(24).toString("base64url");
+
+  const { error } = await supabase.from("testimonials").insert({
+    creative_id: user.id,
+    token,
+    request_note: String(formData.get("request_note") || "").trim().slice(0, 120) || null,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/testimonials");
+  return { ok: true };
+}
+
+/**
+ * The past client submits. Unauthenticated, so it runs on the service role and
+ * every guard is explicit: the token must exist AND still be pending, which is
+ * what makes the link single-use.
+ */
+export async function submitTestimonial(formData: FormData) {
+  const token = String(formData.get("token") || "").trim();
+  const client_name = String(formData.get("client_name") || "").trim();
+  const relationship = String(formData.get("relationship") || "").trim();
+  const body = String(formData.get("body") || "").trim();
+
+  if (!token) return { error: "Missing link token." };
+  if (client_name.length < 2) return { error: "Please give your name." };
+  if (body.length < 40) return { error: "Please write at least a couple of sentences." };
+  if (body.length > 1500) return { error: "That is longer than we can publish — please shorten it." };
+
+  const { verifyTurnstile } = await import("@/lib/turnstile");
+  if (!(await verifyTurnstile(String(formData.get("cf-turnstile-response") || "") || null))) {
+    return { error: "Could not verify you are human. Please try again." };
+  }
+
+  const { rateLimit, clientIp } = await import("@/lib/rate-limit");
+  if (!(await rateLimit(`testimonial:${await clientIp()}`, 5, 3600))) {
+    return { error: "Too many submissions from this connection. Try again later." };
+  }
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { error: "Server misconfig: SUPABASE_SERVICE_ROLE_KEY is not set." };
+  }
+  const admin = await adminDb();
+
+  // Status guard in the WHERE clause, not in a read-then-write: two people
+  // opening the same link cannot both submit.
+  const { data, error } = await admin
+    .from("testimonials")
+    .update({
+      client_name: client_name.slice(0, 80),
+      relationship: relationship.slice(0, 120) || null,
+      body,
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+    })
+    .eq("token", token)
+    .eq("status", "pending")
+    .select("id, creative_id")
+    .maybeSingle();
+
+  if (error) return { error: error.message };
+  if (!data) return { error: "This link has already been used, or is no longer valid." };
+
+  await admin.from("notifications").insert({
+    user_id: data.creative_id,
+    kind: "message_received",
+    title: `${client_name.slice(0, 40)} wrote you a testimonial`,
+    body: body.length > 80 ? body.slice(0, 80) + "…" : body,
+    link: "/dashboard/testimonials",
+    target_type: "testimonial",
+    target_id: data.id,
+  });
+
+  return { ok: true };
+}
+
+/**
+ * Publish or hide. The creative chooses what appears on their profile but
+ * CANNOT edit a word of it — enforced in the database by column-level grants,
+ * not merely by this action omitting the fields.
+ */
+export async function setTestimonialStatus(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const id = String(formData.get("id") || "");
+  const status = String(formData.get("status") || "");
+  if (!id) return { error: "Missing id" };
+  if (!["published", "hidden"].includes(status)) return { error: "Invalid status" };
+
+  const { error } = await supabase
+    .from("testimonials")
+    .update({ status })
+    .eq("id", id)
+    .eq("creative_id", user.id)
+    // Only a real submission can be published — never an empty pending row.
+    .in("status", ["submitted", "published", "hidden"]);
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/testimonials");
+  revalidatePath(`/creatives/${user.id}`);
+  return { ok: true };
+}
+
+/** Delete an unused link or a testimonial the creative does not want kept. */
+export async function deleteTestimonial(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const id = String(formData.get("id") || "");
+  if (!id) return { error: "Missing id" };
+
+  const { error } = await supabase.from("testimonials").delete().eq("id", id).eq("creative_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/testimonials");
+  revalidatePath(`/creatives/${user.id}`);
+  return { ok: true };
+}

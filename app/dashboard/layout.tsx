@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { ProductTour } from "@/components/product-tour";
 import { formatMwk } from "@/lib/utils";
@@ -9,7 +10,8 @@ type Role = "client" | "creative" | "agency";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // BUG-020: request-deduped, so layout + page + navbar cost one Auth call.
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role, onboarded_at, is_admin, toured_at").eq("id", user.id).single();
   // No profile row yet, or an OAuth user who hasn't picked a role → send them to
@@ -89,7 +91,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: "/dashboard/jobs", label: "Jobs" },
     { href: "/dashboard/proposals", label: "Proposals" },
     { href: "/messages", label: "Messages" },
-    ...(!isClient ? [{ href: "/dashboard/portfolio", label: "Portfolio" }, { href: "/dashboard/services", label: "Rate card" }] : []),
+    ...(!isClient
+      ? [
+          { href: "/dashboard/portfolio", label: "Portfolio" },
+          { href: "/dashboard/services", label: "Rate card" },
+          { href: "/dashboard/testimonials", label: "Testimonials" },
+        ]
+      : []),
     { href: "/dashboard/payments", label: "Payments" },
     { href: "/dashboard/saved", label: "Saved" },
     { href: "/dashboard/profile", label: "Edit profile" },

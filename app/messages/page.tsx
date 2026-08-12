@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { ThreadList } from "@/components/thread-list";
 import { withPreviews, byRecentActivity, unreadByThread } from "@/lib/thread-previews";
 
 export default async function MessagesPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
 
   const { data: threads } = await supabase

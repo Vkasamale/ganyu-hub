@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { Button } from "@/components/ui/button";
 import { NotificationBell, type NotificationItem } from "@/components/notification-bell";
 import { NavbarBrowseLinks } from "@/components/navbar-browse-links";
@@ -8,7 +9,8 @@ import { Logo } from "@/components/logo";
 
 export async function Navbar() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // BUG-020: one deduped Auth call per request render.
+  const user = await getSessionUser();
 
   let notifications: NotificationItem[] = [];
   let profile: { full_name: string | null; is_admin: boolean | null } | null = null;

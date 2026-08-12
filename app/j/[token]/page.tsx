@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { acceptJobViaLink } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,7 @@ export default async function ClientLinkPage({ params }: { params: Promise<{ tok
 
   if (job.client_id) {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getSessionUser();
     if (user && user.id === job.client_id) redirect(`/jobs/${job.id}`);
   }
 

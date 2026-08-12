@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { notFound, redirect } from "next/navigation";
 import { StickyActionBar } from "@/components/sticky-action-bar";
 import { CaseStudyFacts } from "@/components/case-study-fields";
@@ -92,7 +93,7 @@ export default async function CreativePage({
   if (profile.role === "client") redirect(`/clients/${id}`);
   const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", id).order("created_at", { ascending: false });
   const { data: services } = await supabase.from("services").select("*").eq("profile_id", id).order("price_mwk", { ascending: true });
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   const isOwner = !!user && user.id === id;
   if (user && !isOwner) await recordView("creative", id);
 
@@ -123,6 +124,16 @@ export default async function CreativePage({
     .select("id, rating, comment, created_at, reviewer:profiles!reviews_reviewer_id_fkey(full_name)")
     .eq("reviewee_id", id)
     .order("created_at", { ascending: false });
+  // Item 28: published testimonials only. RLS enforces the same filter, but
+  // saying it here keeps the intent visible at the call site.
+  const { data: testimonialRows } = await supabase
+    .from("testimonials")
+    .select("id, client_name, relationship, body, submitted_at")
+    .eq("creative_id", id)
+    .eq("status", "published")
+    .order("submitted_at", { ascending: false });
+  const testimonials = testimonialRows || [];
+
   const reviewCount = reviews?.length || 0;
   const avgRating = reviewCount
     ? (reviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount)
@@ -412,6 +423,35 @@ export default async function CreativePage({
                   </Link>
                 )}
               </div>
+            </section>
+          )}
+
+          {/* Item 28 (§M1). Sits in the Reviews tab but is emphatically NOT a
+              review: no stars, no average, its own heading, and a line saying
+              where it came from. A testimonial is a past client vouching for
+              work Ganyu Hub never saw; a review is backed by a completed job
+              and money that moved through escrow. Presenting them as the same
+              thing would let the weaker signal borrow the stronger one's
+              credibility. */}
+          {testimonials.length > 0 && (
+            <section className={"card-soft p-6" + pane("reviews")}>
+              <p className="eyebrow">Vouched for, off Ganyu Hub</p>
+              <p className="mt-1.5 text-xs text-ink/55">
+                Clients {profile.full_name?.split(" ")[0] || "they"} worked with before joining, who
+                were sent a link and wrote this themselves. Not tied to a job on the platform, and
+                not backed by escrow.
+              </p>
+              <ul className="mt-4 space-y-4">
+                {testimonials.map((t: any) => (
+                  <li key={t.id} className="border-t border-ink/10 pt-4 first:border-0 first:pt-0">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">
+                      &ldquo;{t.body}&rdquo;
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-ink">{t.client_name}</p>
+                    {t.relationship && <p className="text-xs text-ink/55">{t.relationship}</p>}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

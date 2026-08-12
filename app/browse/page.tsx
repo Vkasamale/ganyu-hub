@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { CreativeCard } from "@/components/creative-card";
 import { FiltersBar } from "@/components/filters-bar";
 import { getSavedIds } from "@/lib/feed";
@@ -55,7 +56,7 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
   query = query.order("created_at", { ascending: false });
 
   const { data: profiles } = await query;
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   const saved = user ? await getSavedIds(supabase as any, user.id, "creative") : new Set<string>();
   const count = profiles?.length || 0;
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Stars } from "@/components/stars";
@@ -27,7 +28,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   // Creatives sell; this page doesn't describe them. Send them to their own.
   if (profile.role === "creative") redirect(`/creatives/${id}`);
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect(`/login?next=/clients/${id}`);
   const isOwner = user.id === id;
 

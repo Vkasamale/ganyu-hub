@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { formatMwk as _formatMwkMeta } from "@/lib/utils";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -85,7 +86,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const { data: client } = job.client_id
     ? await supabase.from("profiles").select("id, full_name").eq("id", job.client_id).single()
     : { data: null as { id: string; full_name: string | null } | null };
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   const isClient = !!(user && job.client_id && user.id === job.client_id);
   if (job.visibility === "private" && !isClient) {
     if (!user) notFound();

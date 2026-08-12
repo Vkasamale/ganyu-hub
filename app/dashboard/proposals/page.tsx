@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { PeriodBarChart, TwoSeriesBarChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
@@ -51,7 +52,7 @@ function countByStatus(rows: { status: string }[]) {
 export default async function ProposalsPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ tab?: string }> }) {
   const searchParams = (await searchParamsP) || {};
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
 
   const { data: sent } = await supabase

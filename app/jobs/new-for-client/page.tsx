@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { createJobForClient } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/money-input";
@@ -12,7 +13,7 @@ import { CATEGORIES } from "@/lib/types";
 
 export default async function NewJobForClientPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   const { data: me } = await supabase.from("profiles").select("role, onboarded_at").eq("id", user.id).single();
   if (me?.role !== "creative") redirect("/dashboard");

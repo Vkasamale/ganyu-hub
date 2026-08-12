@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import { getReleasedSpend, getCommittedValue } from "@/lib/money";
@@ -12,7 +13,7 @@ type Tab = "active" | "open" | "completed" | "proposals";
 export default async function DashboardJobsPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ tab?: string }> }) {
   const searchParams = (await searchParamsP) || {};
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   const role: Role = (profile?.role as Role) || "creative";

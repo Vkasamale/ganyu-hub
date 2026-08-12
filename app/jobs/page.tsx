@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
 import { JobCard } from "@/components/job-card";
 import { FiltersBar } from "@/components/filters-bar";
 import { StaggerList } from "@/components/animated";
@@ -36,7 +37,7 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
   else query = query.order("created_at", { ascending: false });
 
   const { data: jobs } = await query;
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   const saved = user ? await getSavedIds(supabase as any, user.id, "job") : new Set<string>();
   const count = jobs?.length || 0;
 

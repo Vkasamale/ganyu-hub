@@ -3,6 +3,44 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Phase 3, testimonials (v0.9.4)
+
+`IMPLEMENTATION_PLAN.md` items 26-28, audit §M11, §M1. The cold-start fix, and
+it comes before extending reviews on purpose: in closed beta, `reviews` cannot
+produce a row until an on-platform job completes, while a designer who has
+worked in Blantyre for six years has clients who would vouch for them today.
+
+**A separate `testimonials` table, NOT `reviews`** — and this corrects an
+assumption made earlier in the session, when L8 was built on the belief that
+Phase 3 would feed the review flow. A review is backed by a completed job and
+money that moved through escrow. A testimonial is a past client vouching for
+work Ganyu Hub never saw. Both are worth showing; merging them lets the weaker
+signal borrow the stronger one's credibility. **The landing carousel therefore
+still reads `reviews` only** — its cards say "Verified client", which must stay
+true.
+
+**It is a REQUEST flow, which is the entire point.** The creative creates a row
+(`pending`) and sends the link; the past client writes the words. Self-written
+praise is worth nothing and every reader knows it.
+
+**The creative can publish or hide, and cannot edit a word.** Enforced in the
+database by column-level grants — `revoke update on testimonials from
+authenticated; grant update (status)` — not by the UI declining to show an
+edit box. A UI-only limit still leaves the API open.
+
+**The link is single-use, enforced in the WHERE clause.** The submit updates
+`.eq("token", …).eq("status", "pending")` rather than reading then writing, so
+two people opening the same link cannot both submit. A spent link gets a warm
+"already done" page rather than a 404 — the likeliest visitor is the person who
+just submitted and pressed back.
+
+**Public block labelled off-platform** (§M1): no stars, no average, its own
+heading, and a line saying these are clients from before the creative joined,
+"not tied to a job on the platform, and not backed by escrow."
+
+Abuse controls on the public endpoint: Turnstile, an IP rate limit, a 10-link
+cap on unused requests per creative, and `noindex` on the page.
+
 ## 2026-08-12 — Phase 2, derived trust numbers (v0.9.3)
 
 `IMPLEMENTATION_PLAN.md` items 18-25, audit §G2, §F3, §F9, §L2. Zero schema —
