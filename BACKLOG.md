@@ -261,8 +261,11 @@ image. Ours is flat `#EFE6CE`. Everything else in our hero already matches
 theirs — the photograph is the entire gap.
 
 Photography rules now exist in `DESIGN.md` §10 (scrim treatment, no eye
-contact, ≤120 KB mobile budget, and "no visible location beats the wrong
-location"). Preferred provenance is **commissioning a beta photographer through
+contact, **≤160 KB desktop / 0 KB mobile**, and "no visible location beats the
+wrong location"). The mobile figure is zero on purpose — §Q8 corrected an
+earlier ≤120 KB mobile-crop budget once the mobile captures showed Fiverr
+ships no hero image on a phone at all. Do not art-direct a mobile crop;
+replace the element. Preferred provenance is **commissioning a beta photographer through
 the platform** — a completed job, real GMV, a case study and hero art in one.
 
 ### Hero photography — WAITING ON ASSETS (2026-08-12)

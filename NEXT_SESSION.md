@@ -2,13 +2,13 @@
 
 Paste this whole file into a new session as the opening message.
 
-> **Next session is the PWA.** That's the headline task — installable app,
-> manifest, service worker, caching/offline strategy, icons, install prompt.
-> Nothing below outranks it; the items here are context and follow-ups, not a
-> queue to clear first. Two genuinely interact with PWA work: the notification
-> split (§1) matters more once notifications can reach a phone, and the
-> WhatsApp-style Messages layout was built against a full-desktop reference and
-> has **not** been looked at at phone width.
+> **Next session is the landing page's dark sections — L8 to L11 — then Phase 0.**
+> That's the headline task. Everything below is context and follow-ups, not a
+> queue to clear first.
+>
+> The landing page went from two sections to eight this session. What's left of
+> it is four sections that get **built, wired, and left switched off** until
+> real data exists. Phase 0 is eight items needing no schema at all.
 
 ---
 
@@ -17,14 +17,22 @@ Paste this whole file into a new session as the opening message.
 - **Chrome** — signed in as **EQ Admin Client** (client + admin). Keep Vercel and
   Supabase open here; Claude can't see those tabs and will ask you to read them.
 - **In-app Browser pane** — signed in as **Adam Creative**. Must be *visible on
-  screen*; collapsed, it stops compositing and every click lands at (0,0).
+  screen*; collapsed, it stops compositing and every click lands at (0,0), and
+  screenshots time out with "the page is not compositing frames".
 
-Preview: `https://ganyu-hub-git-sandbox-test-vkasamales-projects.vercel.app`
+**Branches: `main` only.** `redesign/job-page` and `sandbox-test` were deleted
+locally and on the remote on 2026-08-12 — all three were at the same commit, so
+nothing was lost. `test/paychangu-sandbox` and three `vercel/*` branches still
+exist on the remote and were deliberately left alone.
 
-Branch `sandbox-test`, at `9606b0a` + a docs commit. `main` is production with
-live keys — never test there. Before any money moves, confirm Vercel → Settings →
-Environment Variables → **Preview** → `PAYCHANGU_SECRET_KEY` starts with
-`sec-test-`. See `PAYCHANGU_TESTING.md` for test numbers (leading zero required).
+`main` is production with live keys. Before any money moves, confirm
+Vercel → Settings → Environment Variables → **Preview** →
+`PAYCHANGU_SECRET_KEY` starts with `sec-test-`. See `PAYCHANGU_TESTING.md` for
+test numbers (leading zero required).
+
+Local dev: `npm run dev` in `C:\Users\vinny\GANYU HUB`. Note the OneDrive path
+is *not* the live repo — `.claude/launch.json` there is attach-only and points
+at `http://localhost:3000`.
 
 Ground rules that have held throughout: the founder performs all logins and
 clicks anything that moves money. Supabase is `select`-only without asking.
@@ -32,85 +40,142 @@ Update CHANGELOG, TEST_LOG, BUG_LOG and the roadmap on every push.
 
 ---
 
-## 0. Run the production backfill — do this first
+## 0. Read these three first
 
-`main` shipped the job-conversation feature on 2026-08-07, but the backfill was
-only ever run against **sandbox** (42 threads there). Until it runs against the
-**production** Supabase project, Messages on production shows a `Jobs 0` chip and
-none of the real jobs appear as conversations — the feature looks broken when it
-isn't.
+`IMPLEMENTATION_PLAN.md` is the spine — the 79 findings in
+`DESIGN_GAP_AUDIT.md` turned into phased work, with the landing page (L1–L11)
+sitting *before* Phase 0. `DESIGN.md` §4 (judge from a screenshot), §7 (14px
+cards, `rounded-md` controls) and §10 (imagery) are the rules that caught every
+defect this session.
 
-File: `supabase/backfill-job-threads.sql`. Three steps: dry run (writes nothing),
-insert, verify (`missing` must come back `0`). Idempotent — safe to re-run.
-**Founder runs it**; Claude does not write to the database.
+**The split rule, which decides what we do and what Claude Design does:** we
+build anything needing a table, a column, a query, a route or a form field.
+Claude Design polishes spacing, type, colour, motion, card composition, the
+stamp. Design can only design what exists, so structure ships first.
 
-Note before running: threads are created at acceptance, so this catches every job
-accepted before the code shipped. It stamps `created_at` with the job's real
-payment date, so backfilled threads sort by history instead of bunching at the
-top of the list.
+## 1. L8–L11 — build the sections, leave them dark
 
-## 1. Look at what shipped — none of it has been opened in a browser
+This is the headline task. Four sections, each rendering **nothing at all**
+below its threshold.
 
-Everything below is typechecked and pushed, 85/85 green, but unverified on
-screen. Start here; it's cheap and it's where surprises live.
+| # | Section | Turns on at |
+|---|---|---|
+| L8 | Testimonials carousel | ≥3 testimonials |
+| L9 | Featured creatives | ≥6 profiles with a portfolio item |
+| L10 | Success story | 1 completed job written up |
+| L11 | Trusted-by row | ≥4 named clients with permission |
 
-- **Notification tabs split.** *This is the thing the founder actually reported.*
-  Open the bell: job events (deliveries, disputes, releases) should now sit under
-  **Jobs**, real chat under **Messages**. Root cause was `notification_kind` being
-  a 4-value enum predating jobs, so everything job-shaped is written as
-  `message_received`; tabs now read `target_type` instead.
-- **The thread view.** Open any backfilled conversation. Expect: job events as
-  centred system notes between message bubbles, in time order starting at
-  proposal accepted; a "Latest event: …" jump link in the header; the job title
-  under the person's name linking back to the job.
-- **The job-picker chip.** In a thread composer, click **Job** — it should show a
-  removable chip with the job's title, *not* `[[job:<uuid>]]` in the text box.
-  Send one and confirm the job card still renders in the sent message.
-- **Send work for review → status advances.** Needs a **funded** job; the delivery
-  panel only renders while a job is active. Sending work should tick Delivered on
-  the stepper with no second button.
+**The pattern already exists — copy it, don't invent it.** `app/page.tsx:30` is
+`const showProof = jobsCompleted >= 3;` and the proof row simply isn't rendered
+below that. Audit §Q7 generalises it: *never a zero, never a placeholder, never
+`★ — (0 reviews)`.* An empty testimonial carousel says "nobody uses this"; a
+hidden one says nothing, which is accurate.
 
-## 2. The money-state stamp needs another pass
+Two things to settle while building:
 
-Position is settled and confirmed live — on the money's line, out at the card's
-right margin, bigger. The *texture* isn't. Currently the flanking rules read as a
-strike-through of the text and the double ring is too subtle to register; it's a
-rounder chip, not ink. Founder wants an actual rubber stamp.
+- **L8 has no data source yet.** Testimonials come from Phase 3, which uses the
+  existing `/j/[token]` share-link machinery to collect them from a creative's
+  *offline* clients. Closed beta produces zero review rows until on-platform
+  jobs complete, which is exactly why Phase 3 is sequenced before Phase 4.
+  Decide whether L8 reads `reviews` or a new testimonials source *before*
+  writing the query.
+- **Carousels must peek** (§Q8) — the next card deliberately half-visible at
+  the right edge is the only affordance saying the row swipes. A row ending
+  flush at the viewport edge reads as a static grid.
 
-Next attempt: rules **above and below** the text rather than beside it (that's the
-layout real stamps use), heavier outer ring visibly separated from the inner one,
-wider tracking, possibly a dashed outer ring to suggest ink bleed. **Judge it from
-a screenshot, not from markup** — that was the mistake last time.
+## 2. Phase 0 — eight items, no migrations, ~1 session
 
-Also still open: the header stamp says "Released to creative" while the Payment
-card beneath says "Payment released". Two labels for one fact. Probably drop the
-card's badge.
+| # | Item | Where | § |
+|---|---|---|---|
+| 1 | Price in the CTA — `Fund escrow (MWK 20,000)` | escrow panel, every money button | N4 |
+| 2 | Sticky action bar (mobile) + sticky money card (desktop) | job detail, profile | G1, M8 |
+| 3 | Verify briefs render `whitespace-pre-line` | job detail | G6 |
+| 4 | Persuasive empty states with a real CTA | ~12 surfaces | E, F8 |
+| 5 | Two empty-state weights — button for an empty inbox, quiet link for an empty thread | messages | H2 |
+| 6 | `+N` overflow on chip lists | skills, tags | M9 |
+| 7 | Unread count pills | thread list | H3 |
+| 8 | Weighted checklist — `Portfolio (+20%)` + "4.5x more likely to get hired" | `WelcomeChecklist` | L3 |
 
-## 3. Messages — the pieces deliberately left out
+Items 1 and 2 are the visible wins. Item 7 also closes a standing Messages gap
+(§5 below).
 
-- **Message-body search.** Search currently covers job titles, names and preview
-  text, all client-side. Searching message *history* needs a server query against
+## 3. Landing page — what shipped 2026-08-12, and what's untested
+
+Eight of eleven items. `main` at `4f38fb0`, badge `v0.9.1.2`.
+
+Shipped: L1 mobile hero (flat band — *finished*, not waiting), L1b install
+banner, L1c announcement bar, L2 value props, L3 category grid, L4 how it
+works, L5 real footer, L6 CTA band. L7 proof row pre-existed and is live on
+real numbers (MWK 1.6M, 19 jobs, 59 creatives).
+
+**Nothing here has been opened on a physical phone.** Three items need a real
+device and one needs a login:
+
+- **The install banner's iOS branch has never run.** It is the entire reason
+  the component exists — Safari implements no `beforeinstallprompt`, so the
+  Add-to-Home-Screen hint is the only install path an iPhone user has. On a
+  real iPhone the bar should read "Tap ⧉ then Add to Home Screen" with **no**
+  Install button. Desktop testing used a synthetic event.
+- **A real `beforeinstallprompt` on Android Chrome**, and whether `prompt()`
+  actually opens the install sheet.
+- **Install-banner suppression on `/dashboard`** — needs a signed-in session.
+- **The footer accordion is a touch control** and no thumb has tested the tap
+  targets. Keyboard traversal also unchecked.
+
+Also unexercised: setting `ANNOUNCEMENT = null` in
+`components/announcement-bar.tsx` to retire the beta bar. Correct by
+inspection; worth ten seconds the first time you use it.
+
+**Editing the announcement:** one constant at the top of
+`components/announcement-bar.tsx`. **Bump its `id` whenever the text changes** —
+dismissal is keyed on the id, so a visitor who closed the beta notice would
+otherwise never see the launch notice.
+
+## 4. Hero photography — waiting on assets
+
+Beta creatives are sending photographs; none have arrived. `DESIGN.md` §10 is
+the checklist to judge them against: no eye contact, face partial or absent,
+real space, mid-action, already dark, dead space left for type. Forbidden:
+posed, NGO grammar, chitenje-as-shorthand, and above all **the wrong country**.
+
+Budget is **≤160 KB desktop, 0 KB mobile**. Mobile ships no hero image at all
+and that is finished, not pending — Fiverr ships none either (§Q8). Do not
+art-direct a mobile crop; replace the element. Full arrival procedure in
+`BACKLOG.md`.
+
+## 5. Messages — the pieces deliberately left out
+
+- **Message-body search.** Search covers job titles, names and preview text,
+  all client-side. Searching message *history* needs a server query against
   `messages.body` plus a Postgres text index. Deferred until thread volume
   justifies the index — say so rather than quietly skipping it.
-- **Unread state.** No unread bolding or per-thread count yet; WhatsApp has both
-  and the founder's reference screenshot shows them.
+- **Unread state.** No unread bolding or per-thread count yet. Phase 0 item 7
+  covers the count pill.
 - **Empty-thread preview reads oddly**: a job thread with no messages and no
   events falls back to the other person's name, which is already the group
   header. Should read "No activity yet".
+- **Tab split for direct vs job conversations.** `All / Jobs / Direct` filter
+  chips already ship in `components/thread-list.tsx`. The founder had not seen
+  them when the request was made, so the real question is whether chips are the
+  right weight or whether this wants true tabs — **not** whether the split
+  exists. Ask before building; do not rebuild what is there.
 
-## 3b. Tab split for direct vs job conversations — founder request
+## 6. The money-state stamp needs another pass
 
-Raised at the end of 2026-08-07, logged in `BACKLOG.md` → Messages. **Check the
-live page before writing anything:** `All / Jobs / Direct` filter chips already
-ship in `components/thread-list.tsx`, taken from the founder's WhatsApp Web
-reference, and they replaced an earlier build that used stacked section headings.
-The founder had not seen the chips when the request was made.
+Position is settled and confirmed live — on the money's line, at the card's
+right margin, bigger. The *texture* isn't. The flanking rules read as a
+strike-through and the double ring is too subtle; it's a rounder chip, not ink.
 
-So the real question is whether chips are the right weight, or whether this wants
-true tabs (underline, persisted selection) — not whether the split exists.
-Ask before building; do not rebuild what is there.
+Next attempt: rules **above and below** the text rather than beside it (the
+layout real stamps use), heavier outer ring visibly separated from the inner
+one, wider tracking, possibly a dashed outer ring for ink bleed. **Judge it
+from a screenshot** — that was the mistake last time.
 
-## 4. Deposits — design settled, two decisions open
+Still open: the header stamp says "Released to creative" while the Payment card
+beneath says "Payment released". Two labels for one fact. Probably drop the
+card's badge.
+
+## 7. Deposits — design settled, two decisions open
 
 Creatives needing materials money upfront. Settled: an *early partial release*,
 not a second collection, capped as a percentage set at proposal stage as a
@@ -119,50 +184,74 @@ structured field. Still open:
 - Who absorbs the doubled payout fee (`2% + MWK 700` charged twice)?
 - Cancellation maths once deposit money is already out.
 
-`MONEY_STATE` in `components/job-header.tsx` is a keyed map, so "x deposited" is
-one added key.
+`MONEY_STATE` in `components/job-header.tsx` is a keyed map, so "x deposited"
+is one added key.
 
-## 5. Job page — the "job settings" idea
+## 8. Claude Design — a fresh run, and when
 
-Founder floated grouping Cancel job / Something gone wrong / deadline extension
-behind a per-job settings control, then said it wasn't a complete thought. Left
-alone deliberately. Worth revisiting *after* using the current layout, since
-merging delivery and submit already removed one standing control.
+The in-flight run was **terminated deliberately** on 2026-08-12: it was
+designing against a product about to change on nearly every surface, and
+feeding it corrections mid-run would have contradicted its own inputs.
+
+`IMPLEMENTATION_PLAN.md` puts the next run **after Phase 2**, once derived
+trust numbers exist, and a second one after Phase 6. Don't start one before
+then — the same problem recurs.
+
+The cheap version of the design-critic loop is worth using in the meantime and
+is already `DESIGN.md` §4: build → screenshot → critique against `DESIGN.md` →
+fix. It caught every defect this session, none of which were visible in code.
 
 ---
 
-## Closed 2026-08-07 — do not re-test
+## Outstanding — founder actions
 
-- **BUG-018** — verified live on `849eb4c9…`: exactly one `payment_released`,
-  `via = reconcile`. The webhook lost the compare-and-swap and wrote nothing.
-- **BUG-012** — verified live on the same job, released from `payment_disputed`:
-  `payout_ref` written, `payout_error` null. Money actually moved.
-- **BUG-017**, **BUG-016** — closed earlier the same day.
-- All five money-state badges seen on screen.
-- Chevron collapsibles, sandbox settlement copy, preview-URL share links.
-- **Who closes a job** — decided: releasing payment does NOT imply the work is
-  done (a client may pay a friend early), so completion is never inferred from
-  payment. Escrow panel recommends releasing once satisfied; **closing is the
-  creative's action, gated on `payment_released`**, and sits at the very bottom
-  of the page as a last resort.
-- **Send work for review** — sending work IS submitting it; "Mark as submitted"
-  is gone.
-- **Job conversation backfill** — run, 42 threads, 0 missing. Don't run again
-  (harmless if you do; it's idempotent).
+Nothing here is Claude's to do.
 
-## Still outstanding
-
-- ~~Rotate the exposed PayChangu keys~~ — **closed 2026-08-07, no action needed.**
-  Founder's call, and correct: those are `sec-test-` sandbox keys, not live ones.
-  They cannot move real money. Do not re-raise this.
+- **Production config, still not done** (carried from the PWA session):
+  Vercel **Production** env vars — `APP_URL`, `NEXT_PUBLIC_SITE_URL`,
+  `EMAIL_FROM`, and the three VAPID vars — then redeploy. Supabase Auth URL
+  Configuration. The production `push_subscriptions` table. PayChangu webhook
+  repointed at production.
+- **Flip the repo back to private.** It was opened for the Claude Design run;
+  the founder's call is to close it once design work is done.
+- **Buy `ganyuhub.com`** — gates working notification email.
 - **Clean up throwaway rows** — jobs `849eb4c9…`, `99e8569b…`, `d2a9aea7…`,
-  `0ba49618…`, and the three deadline extensions on `changu`. Note these now have
-  conversations attached, so deleting jobs should cascade or the threads go stale.
-- **Buy `ganyuhub.com`** (founder's) — gates working notification email.
+  `0ba49618…`, and the three deadline extensions on `changu`. These now have
+  conversations attached, so deleting jobs should cascade or the threads go
+  stale.
+
+## Known-stale data — don't be confused by it
+
 - **Four jobs at status `open` carrying an accepted proposal** (`testign2`,
   `email testing`, `poster`, `logo`). Legacy seed data; anything assuming
   "accepted ⇒ in progress" is wrong about them.
 - A client who releases early and goes quiet leaves the job open until the
   creative closes it — stale `in_progress` rows can accumulate.
-- Backlog proper lives in `BACKLOG.md`. Highest-value unblocked items: deposits,
-  moving "revisions included" from client to creative, portfolio image upload.
+
+## Closed — do not re-open
+
+- **Reviews exist.** `DESIGN_GAP_AUDIT.md` §C, §F and §G2 claim we have none;
+  they were written from screenshots without reading the schema. `reviews`
+  shipped 2026-07-03 (`supabase/schema.sql:211`) with role-neutral
+  `reviewer_id`/`reviewee_id`, so §G3's bidirectional requirement is already
+  satisfied structurally, and star averages already render on `/creatives/[id]`
+  and `/browse`. **Phase 4 is "extend and surface", not "build reviews".**
+- **Rotate the exposed PayChangu keys** — closed 2026-08-07, no action needed.
+  Those are `sec-test-` sandbox keys and cannot move real money. Do not
+  re-raise.
+- **BUG-018, BUG-012, BUG-017, BUG-016** — all verified closed 2026-08-07.
+- **Job conversation backfill** — run, 42 threads, 0 missing. Idempotent, but
+  no reason to run again.
+- **Who closes a job** — releasing payment does NOT imply the work is done (a
+  client may pay a friend early), so completion is never inferred from payment.
+  Closing is the creative's action, gated on `payment_released`.
+
+## Where things live
+
+- `IMPLEMENTATION_PLAN.md` — the build order. Start here.
+- `DESIGN_GAP_AUDIT.md` — 79 findings, §A–§Q. §Q is the landing pages, §Q8 is
+  mobile and corrects several desktop conclusions.
+- `DESIGN.md` — the rules. §4 screenshots, §7 radii, §10 imagery.
+- `BACKLOG.md` — known issues and waiting-on-assets.
+- `CHANGELOG.md` / `TEST_LOG.md` / `BUG_LOG.md` / `GanyuHub_DevRoadmap.md` —
+  updated on every push. The roadmap carries the L1–L11 status table.

@@ -52,6 +52,10 @@ categories — is already comparable. Upwork's hero carries the same
 
 ### Ship now — no new data
 
+**Status 2026-08-12: L1 (mobile), L1b, L1c, L2, L3, L4, L5, L6 all shipped.**
+Only the desktop hero photograph is outstanding, and it is blocked on assets.
+L7 was already live. Running status table in `GanyuHub_DevRoadmap.md`.
+
 | # | Item |
 |---|---|
 | L1 | Hero: **photo + scrim on `md:` and up, flat brand band on mobile** — white type, search on the image, category pills below. Fiverr ships no hero image on mobile at all; ours should not either (§Q8) |
@@ -67,7 +71,7 @@ categories — is already comparable. Upwork's hero carries the same
 
 | # | Section | Turns on at |
 |---|---|---|
-| L7 | Proof row | ≥3 completed jobs — **already built** |
+| L7 | Proof row | ≥3 completed jobs — **already built, and live** (19 jobs) |
 | L8 | Testimonials carousel | ≥3 testimonials |
 | L9 | Featured creatives | ≥6 profiles with a portfolio item |
 | L10 | Success story | 1 completed job written up |
