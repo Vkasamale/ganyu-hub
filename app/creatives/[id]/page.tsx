@@ -380,6 +380,27 @@ export default async function CreativePage({
             </section>
           )}
 
+          {/* Item 42 (§G4): questions this creative has already answered,
+              shown before anyone has to ask again. Renders nothing when none
+              were written. */}
+          {(services || []).some((s: any) => Array.isArray(s.faqs) && s.faqs.length > 0) && (
+            <section className={"card-soft p-6" + pane("services")}>
+              <p className="eyebrow">Common questions</p>
+              <dl className="mt-4 space-y-4">
+                {(services || []).flatMap((s: any) =>
+                  (Array.isArray(s.faqs) ? s.faqs : [])
+                    .filter((f: any) => f?.q && f?.a)
+                    .map((f: any, i: number) => (
+                      <div key={s.id + ":" + i} className="border-t border-ink/10 pt-3 first:border-0 first:pt-0">
+                        <dt className="text-sm font-medium text-ink">{f.q}</dt>
+                        <dd className="mt-1 text-sm leading-relaxed text-ink/70">{f.a}</dd>
+                      </div>
+                    )),
+                )}
+              </dl>
+            </section>
+          )}
+
           <section className={"card-soft p-6" + pane("services")}>
             <div className="flex items-baseline justify-between">
               <p className="eyebrow">Rate card</p>

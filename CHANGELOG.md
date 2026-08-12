@@ -3,6 +3,45 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — Phase 5, structured deliverables (v0.9.6)
+
+Items 37-42. **This is dispute prevention, not decoration.** We already have
+disputes, cancellations and an admin resolution queue; nearly every
+creative-services dispute is one of three arguments — "I thought the source
+file was included", "I expected three concepts, not one", "that's a revision,
+not a fix". A spec agreed at proposal time turns each from an argument into a
+lookup.
+
+**Item 37, category-specific wording** (`lib/deliverables.ts`). A logo job and
+a photoshoot both have "how many", but asking a photographer for "concepts"
+reads as though the form was written by someone who has never commissioned
+either. Design gets concepts, photography gets final images or cuts, writing
+gets drafts. **Only the label is category-specific — the number is stored
+generically**, because storing the label on every row would freeze today's
+wording into all of history.
+
+**Item 38, the spec on the proposal**, where the promise is actually made.
+
+**`source_files` is three-state, not a boolean.** Yes, no, and *not stated* are
+three different promises, and "not stated" is precisely the one that gets
+argued about — so it stays null rather than collapsing into a false "no".
+
+**Item 40, one priced add-on.** More than one needs a repeater, client state
+and delete buttons; one covers the common case (express delivery) and can grow.
+
+**Item 41, AI disclosure is free text, not a checkbox** (§G8). "Background
+removal only" and "fully generated" are different answers, and a boolean
+flattens them into the same one.
+
+**Item 42, seller FAQ** — a textarea, one entry per line as `question |
+answer`, rather than a repeater widget. Unlimited entries, no client state,
+and a line missing its separator is dropped rather than stored as half a
+question.
+
+**Already done, found by reading:** `proposals.revisions_offered` and
+`extra_revision_rate` exist and are wired end to end, so the `revisions_offered`
+item in `BACKLOG.md` needed nothing.
+
 ## 2026-08-12 — Phase 4, reviews extended and surfaced (v0.9.5)
 
 Items 29-36. The audit claimed we had no reviews; `reviews` shipped 2026-07-03

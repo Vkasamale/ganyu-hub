@@ -60,6 +60,22 @@ export default async function ServicesPage() {
               <Input id="delivery_days" name="delivery_days" type="number" min={1} defaultValue={7} />
             </div>
             <div className="space-y-1.5">
+              {/* Item 42 (§G4): the questions you already answer in DMs,
+                  answered once. One per line, question and answer split by a
+                  pipe — no repeater widget, unlimited entries. */}
+              <Label htmlFor="faqs">Common questions (optional)</Label>
+              <Textarea
+                id="faqs"
+                name="faqs"
+                rows={4}
+                placeholder={"Do you do rush jobs? | Yes, 50% surcharge for 48-hour turnaround.\nDo I get the source files? | Yes, AI and PDF on every logo."}
+              />
+              <p className="text-xs text-ink/55">
+                One per line: question, then a <span className="font-mono">|</span>, then your
+                answer. Shown on your public profile.
+              </p>
+            </div>
+            <div className="space-y-1.5">
               <Label>Image (optional)</Label>
               <ImagePicker name="image_file" shape="square" label="Upload image" />
             </div>

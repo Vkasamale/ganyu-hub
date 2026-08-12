@@ -370,6 +370,24 @@ export async function upsertService(formData: FormData) {
   if (!title) return { error: "Add a title for the service." };
   if (!price_mwk) return { error: "Add a starting price." };
 
+  // Item 42 (§G4) — seller-authored FAQ. One entry per line, "Question |
+  // Answer".
+  //
+  // ponytail: a textarea, not a repeater. A repeater means client state, an
+  // add-row button and a delete-row button for something most creatives will
+  // fill in once. A line-per-entry format gives unlimited entries with no
+  // widget at all, and anything missing its separator is dropped rather than
+  // stored as half a question.
+  const faqs = String(formData.get("faqs") || "")
+    .split(/\r?\n/)
+    .map((line) => {
+      const [q, ...rest] = line.split("|");
+      const a = rest.join("|").trim();
+      return { q: (q || "").trim().slice(0, 200), a: a.slice(0, 600) };
+    })
+    .filter((f) => f.q && f.a)
+    .slice(0, 10);
+
   const row: Record<string, unknown> = {
     profile_id: user.id,
     title,
@@ -377,6 +395,7 @@ export async function upsertService(formData: FormData) {
     price_mwk,
     price_mwk_max,
     delivery_days,
+    faqs,
   };
 
   const image = formData.get("image_file");
@@ -967,6 +986,26 @@ export async function submitProposal(formData: FormData) {
   const rateNum = rateRaw != null && String(rateRaw).trim() !== "" ? Number(rateRaw) : NaN;
   const extra_revision_rate = Number.isFinite(rateNum) && rateNum > 0 ? Math.floor(rateNum) : null;
 
+  // Phase 5 items 38-41: the deliverables spec. Every field optional — a
+  // creative who fills none of it in still gets a valid proposal, they just
+  // leave more room for an argument later.
+  const posInt = (key: string, max: number) => {
+    const n = Number(formData.get(key));
+    return Number.isFinite(n) && n >= 1 && n <= max ? Math.floor(n) : null;
+  };
+  const sourceRaw = String(formData.get("source_files") || "");
+  // Three states: "yes", "no", and unstated. Unstated must stay null — it is a
+  // different promise from an explicit no, and the difference is exactly what
+  // gets disputed.
+  const source_files = sourceRaw === "yes" ? true : sourceRaw === "no" ? false : null;
+
+  const addonLabel = String(formData.get("addon_label") || "").trim();
+  const addonPrice = Number(formData.get("addon_price"));
+  const addons =
+    addonLabel && Number.isFinite(addonPrice) && addonPrice > 0
+      ? [{ label: addonLabel.slice(0, 80), price_mwk: Math.round(addonPrice) }]
+      : [];
+
   const { error } = await supabase.from("proposals").insert({
     job_id,
     creative_id: user.id,
@@ -974,6 +1013,12 @@ export async function submitProposal(formData: FormData) {
     bid_mwk: Number(formData.get("bid_mwk")),
     revisions_offered,
     extra_revision_rate,
+    concepts: posInt("concepts", 99),
+    delivery_days: posInt("delivery_days", 365),
+    formats: formData.getAll("formats").map(String).slice(0, 12),
+    source_files,
+    addons,
+    ai_disclosure: String(formData.get("ai_disclosure") || "").trim().slice(0, 300) || null,
   });
   if (error) {
     const { logAdminError, GENERIC_ERROR } = await import("@/lib/admin-errors");

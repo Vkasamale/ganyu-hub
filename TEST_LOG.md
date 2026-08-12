@@ -4,6 +4,22 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Phase 5 (v0.9.6)
+
+- ✅ `tsc --noEmit` clean.
+- ✅ `proposals.revisions_offered` confirmed already wired — read, not assumed.
+
+**⬜ NOT TESTED.** `supabase/phase5-deliverables.sql` is not applied, so none of
+these columns exist yet. Nothing below has run:
+
+- ⬜ proposal spec capture (concepts, delivery days, formats, source files)
+- ⬜ the three-state source-files field storing null vs false
+- ⬜ add-on with price delta
+- ⬜ AI disclosure
+- ⬜ the spec table rendering on the job and on a proposal
+- ⬜ category-specific labels changing with the job's category
+- ⬜ seller FAQ parsing ("q | a" per line) and its profile block
+
 ## 2026-08-12 — Phase 4 (v0.9.5)
 
 - ✅ `tsc --noEmit` clean throughout; `/creatives/[id]?tab=reviews` 200.

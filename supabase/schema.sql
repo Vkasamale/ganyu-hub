@@ -1119,3 +1119,16 @@ create policy "reviews respond as reviewee" on reviews for update
   using (auth.uid() = reviewee_id) with check (auth.uid() = reviewee_id);
 revoke update on reviews from authenticated;
 grant update (response, responded_at) on reviews to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Phase 5 — structured deliverables (items 38, 40-42). Full statements with
+-- reasoning in supabase/phase5-deliverables.sql. Dispute prevention: a spec
+-- agreed at proposal time turns "I thought that was included" into a lookup.
+-- ---------------------------------------------------------------------------
+alter table proposals add column if not exists delivery_days integer;
+alter table proposals add column if not exists concepts integer;
+alter table proposals add column if not exists formats text[] default '{}';
+alter table proposals add column if not exists source_files boolean;
+alter table proposals add column if not exists addons jsonb not null default '[]'::jsonb;
+alter table proposals add column if not exists ai_disclosure text;
+alter table services add column if not exists faqs jsonb not null default '[]'::jsonb;

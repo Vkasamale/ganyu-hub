@@ -47,6 +47,7 @@ import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel, primaryClientAction } from "@/components/escrow-panel";
 import { StickyActionBar } from "@/components/sticky-action-bar";
 import { AboutClient } from "@/components/about-client";
+import { DeliverableSpecFields, SpecTable } from "@/components/deliverable-spec";
 import { getClientTrust } from "@/lib/client-trust";
 import { isTestMode } from "@/lib/payments";
 import { ClientLinkCopy } from "@/components/client-link-copy";
@@ -759,6 +760,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 </div>
               </div>
               <p className="text-xs text-ink/55">Leave the rate blank to make the included revisions a hard limit — clients won't be able to request more.</p>
+
+              {/* Phase 5 items 37-41 — the spec, in the category's own words. */}
+              <DeliverableSpecFields category={job.category} />
+
               <ProposalPayoutPreview />
               <SubmitButton pendingText="Sending…">Submit proposal</SubmitButton>
             </SavingForm>
@@ -775,6 +780,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             </p>
             <p className="mt-2 text-sm text-neutral-700 whitespace-pre-wrap">{myActiveProposal.cover_letter}</p>
             <p className="mt-2 text-sm">Bid: {formatMwk(myActiveProposal.bid_mwk)}</p>
+            <SpecTable proposal={myActiveProposal} category={job.category} className="mt-3" />
           </CardContent>
         </Card>
       )}
@@ -795,6 +801,8 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                   <p className="text-sm text-neutral-500">{p.creative?.headline}</p>
                   <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-700">{p.cover_letter}</p>
                   <p className="mt-2 text-sm font-medium">Bid: {formatMwk(p.bid_mwk)}</p>
+                  {/* Item 39: what they are actually promising, as a table. */}
+                  <SpecTable proposal={p} category={job.category} className="mt-3" />
                   {p.status === "pending" && (
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <AcceptProposalPicker proposalId={p.id} bidMwk={p.bid_mwk} testMode={isTestMode()} />
