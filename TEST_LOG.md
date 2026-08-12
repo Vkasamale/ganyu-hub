@@ -4,6 +4,27 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-12 — Landing page footer (L5)
+
+Automated + browser-rendered. **Not opened on a real phone.**
+
+- ✅ `tsc --noEmit` clean.
+- ✅ All 22 footer links return 200 against the dev server: `/jobs/new`,
+  `/browse`, `/how-money-works`, `/content-policy`, `/signup?role=creative`,
+  `/jobs`, `/dashboard/report`, the 8 category links, `/browse`, `/contact`,
+  `/terms`, `/privacy`, `/release-notes`.
+- ✅ `/release-notes` renders 200 and lists every entry in `RELEASES`.
+- ✅ Rendered at 1280×900: four columns, all lists `display: block`,
+  chevrons `display: none`, column buttons `pointer-events: none`.
+- ✅ Rendered at 375×812: all four lists `display: none`, chevrons visible,
+  clicking a column header flips `aria-expanded` to `true` and its list to
+  `block`. No horizontal overflow.
+- ✅ Judged from a screenshot at both widths per `DESIGN.md` §4. One defect
+  found that way and fixed — see CHANGELOG (the `mt-16` seam).
+- ⬜ Never opened on a physical phone. The accordion is a touch control and
+  the tap targets have not been checked by thumb.
+- ⬜ Keyboard traversal of the accordion not checked.
+
 ## 2026-08-08 — PWA + web push
 
 **Nothing here has been opened on a phone.** Automated checks only. The whole

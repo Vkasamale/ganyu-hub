@@ -3,6 +3,43 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-12 — The footer becomes a footer (v0.9.1)
+
+`IMPLEMENTATION_PLAN.md` L5. What sat at the bottom of every page was a legal
+strip — copyright, a version badge, and five links in a row. Audit §J2 records
+Fiverr at five columns and Upwork at four, both split by audience; §J3 ranked
+the audience split as the biggest structural gap in the whole footer category.
+
+`components/footer.tsx` is new and replaces the block that lived inline in
+`app/layout.tsx`. Four columns: **For clients** (post a job, browse creatives,
+how the money works, content policy), **For creatives** (join, find work, how
+you get paid, report an issue), **Categories** (8 of the 24 in `CATEGORIES`,
+each linking into a filtered `/browse`, plus "All categories"), and
+**Company** (contact, terms, privacy, release notes). 22 links, every one of
+them checked against a running server — all 200.
+
+**Columns on `md:`, accordions below.** Audit §Q8: both references collapse
+every footer column into a disclosure row on mobile, and that is the only
+thing that makes a four-column footer survivable on a phone. It is a client
+component for exactly that reason — one `useState` per column, with `md:block`
+forcing them open above the breakpoint so the toggle only means anything on
+mobile. Not `components/collapsible.tsx`: that is a native `<details>`, and
+`<details>` cannot be reliably forced open by a media query across browsers,
+which is the one behaviour this needs.
+
+`/release-notes` is new — audit §J3 #6, "the What's New panel already exists
+behind the version badge; give it a real link". Same `RELEASES` constant, no
+second source of truth.
+
+**Found by looking at it, not at the markup.** The footer's inherited `mt-16`
+left a band of dead white between the closing CTA and the new paper ground.
+The old strip needed that margin to separate itself from `<main>`; this one
+has its own ground and a hairline, so the gap only read as a seam. Removed.
+
+Not built: the "install the app" footer item (§J3 #5) belongs to L1b, the
+install banner, and an accessibility statement (§J3 #7), which is the
+founder's copy to write rather than mine to invent. Both stay in the plan.
+
 ## 2026-08-12 — The reference audit becomes a build order
 
 **Documentation only. No code changed, no schema touched.**

@@ -6,6 +6,15 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.1",
+    date: "2026-08-12",
+    notes: [
+      "A real home page: why the escrow works the way it does, every category you can hire in, and how a job runs from posting to payment.",
+      "A proper footer — separate routes for hiring and for finding work, category links, and everything folds away on a phone.",
+      "Release notes now have a page of their own.",
+    ],
+  },
+  {
     version: "0.9.0",
     date: "2026-08-08",
     notes: [
