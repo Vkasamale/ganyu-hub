@@ -24,6 +24,7 @@ export function FeedCarousel({
   seeAllLabel = "See all",
   children,
   count,
+  action,
 }: {
   title: string;
   eyebrow?: string;
@@ -32,6 +33,8 @@ export function FeedCarousel({
   children: React.ReactNode;
   /** How many items `children` contains. Zero renders nothing at all. */
   count: number;
+  /** Replaces the "See all" link — e.g. item 52's Clear All form. */
+  action?: React.ReactNode;
 }) {
   if (count === 0) return null;
 
@@ -42,7 +45,8 @@ export function FeedCarousel({
           {eyebrow && <p className="eyebrow text-ink/55">{eyebrow}</p>}
           <h2 className="mt-1 text-lg font-semibold text-ink md:text-xl">{title}</h2>
         </div>
-        {seeAllHref && (
+        {action}
+        {!action && seeAllHref && (
           <Link
             href={seeAllHref}
             className="group inline-flex items-center gap-1.5 text-sm font-medium text-brand-dark hover:underline"

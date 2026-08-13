@@ -61,6 +61,48 @@ export async function getTrending(supabase: SupabaseClient, kind: "job" | "creat
   return data || [];
 }
 
+/**
+ * Item 52 — what you were last looking at.
+ *
+ * Rebuilds the thread for someone who browsed on their phone yesterday and
+ * came back on a borrowed laptop today, which in this market is the normal
+ * case rather than the edge one.
+ *
+ * Dedupes by target keeping the most recent visit, so opening one profile four
+ * times does not fill the row with itself. Reads from `interactions`, which
+ * recordView already writes — no new table and no new write path.
+ */
+export async function getRecentlyViewed(
+  supabase: SupabaseClient,
+  userId: string,
+  targetType: "job" | "creative",
+  limit = 8,
+) {
+  const { data: views } = await supabase
+    .from("interactions")
+    .select("target_id, created_at")
+    .eq("user_id", userId)
+    .eq("kind", "view")
+    .eq("target_type", targetType)
+    .order("created_at", { ascending: false })
+    .limit(limit * 6);
+
+  const seen: string[] = [];
+  for (const v of (views || []) as { target_id: string }[]) {
+    if (!seen.includes(v.target_id)) seen.push(v.target_id);
+    if (seen.length >= limit) break;
+  }
+  if (!seen.length) return [];
+
+  const { data } = await supabase
+    .from(targetType === "job" ? "jobs" : "profiles")
+    .select("*")
+    .in("id", seen);
+
+  // Preserve most-recent-first: `in` returns rows in table order, not ours.
+  return seen.map((id) => (data || []).find((r: any) => r.id === id)).filter(Boolean);
+}
+
 export async function getSavedIds(supabase: SupabaseClient, userId: string, targetType: "job" | "creative") {
   const { data } = await supabase.from("saved_items").select("target_id").eq("user_id", userId).eq("target_type", targetType);
   return new Set((data || []).map((r: any) => r.target_id));

@@ -6,7 +6,8 @@ import { CreativeCard } from "@/components/creative-card";
 import { JobCard } from "@/components/job-card";
 import { WelcomeChecklist, type ChecklistStep } from "@/components/welcome-checklist";
 import { PushBanner } from "@/components/push-banner";
-import { getForYouCreatives, getForYouJobs, getSavedIds } from "@/lib/feed";
+import { getForYouCreatives, getForYouJobs, getRecentlyViewed, getSavedIds } from "@/lib/feed";
+import { clearBrowsingHistory } from "@/app/actions";
 import { checkProfileComplete } from "@/lib/profile-complete";
 
 /**
@@ -119,6 +120,16 @@ export async function SignedInHome({ userId }: { userId: string }) {
   const savedCreativeIds = isClient ? await getSavedIds(supabase as any, userId, "creative") : new Set<string>();
   const savedJobIds = !isClient ? await getSavedIds(supabase as any, userId, "job") : new Set<string>();
 
+  // Item 52. Same target type as the feed: a client browses creatives, a
+  // creative browses jobs. Showing someone their own history is only useful
+  // for the thing they were actually shopping for.
+  const recentlyViewed = await getRecentlyViewed(
+    supabase as any,
+    userId,
+    isClient ? "creative" : "job",
+    8,
+  );
+
   const completeness = isClient ? null : checkProfileComplete(profile || {}, portfolioCount, serviceCount);
   const progress =
     completeness && !completeness.complete
@@ -225,6 +236,33 @@ export async function SignedInHome({ userId }: { userId: string }) {
                 <JobCard job={j} saved={savedJobIds.has(j.id)} showSave />
               </FeedCard>
             ))}
+      </FeedCarousel>
+
+      {/* Item 52. Last, deliberately: history is for picking up where you left
+          off, not a recommendation, and it should not outrank one. */}
+      <FeedCarousel
+        title="Pick up where you left off"
+        count={recentlyViewed.length}
+        action={
+          <form action={clearBrowsingHistory}>
+            <button
+              type="submit"
+              className="text-sm font-medium text-ink/60 underline decoration-ink/25 underline-offset-4 hover:text-ink"
+            >
+              Clear all
+            </button>
+          </form>
+        }
+      >
+        {recentlyViewed.map((item: any) => (
+          <FeedCard key={item.id}>
+            {isClient ? (
+              <CreativeCard profile={item} saved={savedCreativeIds.has(item.id)} showSave />
+            ) : (
+              <JobCard job={item} saved={savedJobIds.has(item.id)} showSave />
+            )}
+          </FeedCard>
+        ))}
       </FeedCarousel>
     </div>
   );

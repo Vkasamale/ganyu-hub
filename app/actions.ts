@@ -1979,6 +1979,29 @@ export async function recordView(target_type: "job" | "creative", target_id: str
   await supabase.from("interactions").insert({ user_id: user.id, target_type, target_id, kind: "view" });
 }
 
+/**
+ * Item 52 — Clear All on browsing history.
+ *
+ * Deletes only `kind = 'view'` rows, and only the caller's own. Saves,
+ * messages and proposals are activity the user chose to record and are left
+ * alone; a "clear history" that silently unsaved things would be a betrayal of
+ * what the button says.
+ *
+ * The scope is stated twice on purpose — the user_id filter here, and RLS
+ * underneath. A delete is not the place to rely on one of them.
+ */
+export async function clearBrowsingHistory(): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase
+    .from("interactions")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("kind", "view");
+  revalidatePath("/");
+}
+
 // Payout reconcile — the fallback for when PayChangu's webhook never arrives.
 // Same pattern as /api/paychangu/callback for collections: re-verify server
 // side, settle the job state ourselves. Safe to call repeatedly (idempotent).
