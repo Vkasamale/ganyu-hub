@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
 import { CreativeCard } from "@/components/creative-card";
 import { FiltersBar } from "@/components/filters-bar";
+import { SearchScope } from "@/components/search-scope";
 import { getSavedIds } from "@/lib/feed";
 import { checkProfileComplete } from "@/lib/profile-complete";
 import { StaggerList } from "@/components/animated";
@@ -132,7 +133,14 @@ export default async function BrowsePage({ searchParams: searchParamsP, title, i
       <h1 className="text-3xl font-bold">{title || "Browse Malawian creatives"}</h1>
       <p className="mt-1 text-neutral-600">{visibleCount} {visibleCount === 1 ? "creative" : "creatives"} found</p>
       {intro}
-      <div className="mt-6">
+      {/* Item 53. Not on the /c/<slug> landing pages: switching scope there
+          would silently drop the category the page exists for. */}
+      {action === "/browse" && (
+        <div className="mt-6">
+          <SearchScope current="creatives" q={searchParams.q} />
+        </div>
+      )}
+      <div className="mt-4">
         <FiltersBar kind="creatives" action={action} q={searchParams.q} categories={cats} skills={searchParams.skills} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} styles={styleSel} />
       </div>
       <StaggerList className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

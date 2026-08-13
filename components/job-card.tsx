@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { SaveButton } from "@/components/save-button";
+import { DismissJob } from "@/components/dismiss-job";
+import type { CardTrust } from "@/lib/client-trust";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import type { Job } from "@/lib/types";
 
@@ -19,27 +21,46 @@ export function JobCard({
   showSave = false,
   proposalsCount = 0,
   clientName = null,
+  trust = null,
+  dismissable = false,
 }: {
   job: Job;
   saved?: boolean;
   showSave?: boolean;
   proposalsCount?: number;
   clientName?: string | null;
+  /** Item 54: batched client trust. Null on surfaces that don't compute it. */
+  trust?: CardTrust | null;
+  /** Item 54: show the dismiss control (job lists only, not saved lists). */
+  dismissable?: boolean;
 }) {
   const tags = [job.category].filter(Boolean) as string[];
   const clientInitials = initialsOf(clientName);
 
+  // Item 54 (§D). Whether the client has ever actually put money into escrow is
+  // the most useful thing a creative can know before writing, so it leads. Each
+  // signal is omitted rather than shown as a zero or an "unknown" (§Q7), and
+  // none of them says "verified", because we verify nothing.
+  const trustBits: string[] = [];
+  if (trust?.hasFundedEscrow) trustBits.push("Has paid into escrow");
+  if (trust?.hireRate != null) trustBits.push(`Hires ${Math.round(trust.hireRate * 100)}% of the time`);
+  if (trust && trust.jobsPosted > 1) trustBits.push(`${trust.jobsPosted} jobs posted`);
+
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-100 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+    <div
+      data-job-card={job.id}
+      className="group relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-100 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+    >
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 w-1 origin-left scale-x-0 bg-stamp transition-transform duration-200 group-hover:scale-x-100"
       />
 
       <div className="p-5 md:p-6">
-        {showSave && (
-          <div className="absolute right-4 top-4">
-            <SaveButton targetType="job" targetId={job.id} saved={saved} />
+        {(showSave || dismissable) && (
+          <div className="absolute right-4 top-4 flex items-center gap-1">
+            {showSave && <SaveButton targetType="job" targetId={job.id} saved={saved} />}
+            {dismissable && <DismissJob jobId={job.id} />}
           </div>
         )}
 
@@ -63,6 +84,17 @@ export function JobCard({
             Posted by <span className="font-medium text-ink/80">{clientName || "a client"}</span>
           </p>
         </div>
+
+        {trustBits.length > 0 && (
+          <ul className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink/60">
+            {trustBits.map((b, i) => (
+              <li key={b} className="flex items-center gap-2">
+                {i > 0 && <span aria-hidden className="text-ink/25">·</span>}
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        )}
 
         <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-mark/10 px-3 py-1.5 text-sm font-semibold text-mark">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" strokeLinecap="round" strokeLinejoin="round">

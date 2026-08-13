@@ -3,6 +3,38 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-13 — Phase 6 complete: items 51, 53, 54 (v0.9.12)
+
+**51 — real co-view.** `getAlsoViewed()` does two hops over `interactions`:
+who else opened this profile, then what else those people opened, ranked by
+distinct viewers. The creative page already had a box labelled "People also
+viewed" that actually showed a category match — a claim about behaviour we had
+never measured. The claim is now true when we can make it, and the fallback
+says what it really is ("Others in Design"). Returns nothing below two
+overlapping viewers: a co-view of sample size one is an accident presented as
+a pattern.
+
+**53 — search scope selector.** `/browse` and `/jobs` search different things
+and nothing said so; searching "logo" on the wrong one returns zero, which
+reads as "this platform is empty" rather than "wrong page". Two options, each
+with a sentence (§K3 — the bare words "Creatives" and "Jobs" mean nothing on a
+first visit), and the query carries across. Deliberately absent from the
+`/c/<slug>` landing pages, where switching scope would silently drop the
+category the page exists for.
+
+**54 — job card trust row + dismiss.** "Has paid into escrow · Hires 79% of the
+time · 28 jobs posted", each omitted rather than shown as a zero (§Q7), none
+claiming "verified" because we verify nothing. `getClientTrustBatch()` is two
+queries for a whole page where `getClientTrust()` would have been 3+ per card —
+same thresholds and definitions, a cheaper route to the same numbers rather
+than a second opinion. Dismiss is localStorage: `interaction_kind` is a
+Postgres enum, so persisting it means a migration for a preference whose job is
+tidying one list on one device.
+
+Verified: trust row and 38 dismiss controls on `/jobs`, a dismissed card still
+hidden after reload, scope selector carrying `?q=logo` across and absent on
+`/c/design`.
+
 ## 2026-08-13 — Item 50: visual style filters (v0.9.11)
 
 **Needs `supabase/phase6-styles.sql` run before it does anything.**

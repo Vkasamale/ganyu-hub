@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { StickyActionBar } from "@/components/sticky-action-bar";
 import { ReviewAxisBreakdown } from "@/components/review-axes";
 import { ServiceCard } from "@/components/service-card";
+import { getAlsoViewed } from "@/lib/feed";
 import { CaseStudyFacts } from "@/components/case-study-fields";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -159,6 +160,12 @@ export default async function CreativePage({
   const portfolioCount = portfolio?.length || 0;
   const serviceCount = services?.length || 0;
   const completeness = checkProfileComplete(profile, portfolioCount, serviceCount);
+
+  // Item 51 (§G4): real co-view, from interactions. The section below used to
+  // say "People also viewed" over a category match — a claim about behaviour
+  // we had never measured. Now the claim is true when we can make it, and the
+  // fallback says what it actually is.
+  const alsoViewed = await getAlsoViewed(supabase as any, "creative", id, 5);
 
   const primaryCat = (profile.categories || [])[0];
   const { data: similar } = primaryCat
@@ -653,11 +660,17 @@ export default async function CreativePage({
             </dl>
           </section>
 
-          {(similar?.length || 0) > 0 && (
+          {(alsoViewed.length > 0 || (similar?.length || 0) > 0) && (
             <section className="card-soft p-5">
-              <p className="eyebrow">People also viewed</p>
+              <p className="eyebrow">
+                {alsoViewed.length > 0
+                  ? "People who viewed this also viewed"
+                  : primaryCat
+                    ? `Others in ${primaryCat}`
+                    : "Other creatives"}
+              </p>
               <ul className="mt-3 space-y-3">
-                {(similar || []).map((s: any) => (
+                {(alsoViewed.length > 0 ? alsoViewed : similar || []).map((s: any) => (
                   <li key={s.id}>
                     <Link href={`/creatives/${s.id}`} className="group flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink/85 text-sm font-medium text-paper">

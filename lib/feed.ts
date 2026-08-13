@@ -103,6 +103,70 @@ export async function getRecentlyViewed(
   return seen.map((id) => (data || []).find((r: any) => r.id === id)).filter(Boolean);
 }
 
+/**
+ * Item 51 (§G4) — "people who viewed this also viewed".
+ *
+ * Two hops over `interactions`: who else opened this profile, then what else
+ * those people opened. Ranked by how many of them opened it.
+ *
+ * ponytail: two queries and a Map, not a recommendation engine. With the
+ * volume this platform has, co-view IS the algorithm — anything cleverer would
+ * be fitting a model to a dozen rows.
+ *
+ * Returns [] below `minOverlap` viewers rather than showing a row built on one
+ * person's browsing. A "customers also viewed" of sample size 1 is not social
+ * proof, it is an accident presented as a pattern.
+ */
+export async function getAlsoViewed(
+  supabase: SupabaseClient,
+  targetType: "job" | "creative",
+  targetId: string,
+  limit = 6,
+  minOverlap = 2,
+) {
+  const { data: viewers } = await supabase
+    .from("interactions")
+    .select("user_id")
+    .eq("target_type", targetType)
+    .eq("target_id", targetId)
+    .eq("kind", "view")
+    .limit(200);
+
+  const viewerIds = Array.from(new Set((viewers || []).map((v: any) => v.user_id)));
+  if (viewerIds.length < minOverlap) return [];
+
+  const { data: others } = await supabase
+    .from("interactions")
+    .select("target_id, user_id")
+    .eq("target_type", targetType)
+    .eq("kind", "view")
+    .neq("target_id", targetId)
+    .in("user_id", viewerIds)
+    .limit(1000);
+
+  // Count DISTINCT viewers per target, not raw views — one person refreshing a
+  // profile ten times is not ten people finding it interesting.
+  const byTarget = new Map<string, Set<string>>();
+  for (const row of (others || []) as { target_id: string; user_id: string }[]) {
+    if (!byTarget.has(row.target_id)) byTarget.set(row.target_id, new Set());
+    byTarget.get(row.target_id)!.add(row.user_id);
+  }
+
+  const ranked = [...byTarget.entries()]
+    .filter(([, users]) => users.size >= minOverlap)
+    .sort((a, b) => b[1].size - a[1].size)
+    .slice(0, limit)
+    .map(([id]) => id);
+  if (!ranked.length) return [];
+
+  const { data } = await supabase
+    .from(targetType === "job" ? "jobs" : "profiles")
+    .select("*")
+    .in("id", ranked);
+
+  return ranked.map((id) => (data || []).find((r: any) => r.id === id)).filter(Boolean);
+}
+
 export async function getSavedIds(supabase: SupabaseClient, userId: string, targetType: "job" | "creative") {
   const { data } = await supabase.from("saved_items").select("target_id").eq("user_id", userId).eq("target_type", targetType);
   return new Set((data || []).map((r: any) => r.target_id));

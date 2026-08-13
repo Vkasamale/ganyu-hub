@@ -165,6 +165,59 @@ async function medianReply(supabase: any, threadIds: string[], userId: string): 
 }
 
 /** "under an hour" / "about 3 hours" / "about 2 days" — never "127 minutes". */
+/**
+ * Item 54 — the trust row on a job card, for a whole list at once.
+ *
+ * getClientTrust above runs 3+ queries per client, which is right for one
+ * profile and wrong for twenty cards. This is two queries for the entire page.
+ *
+ * It deliberately returns a SUBSET: only the figures derivable from jobs and
+ * proposals alone. Reply time and reviews need per-client work and belong on
+ * the client's own page, not on a card someone is scanning. Same thresholds
+ * and same definitions as above — a cheaper route to the same numbers, never a
+ * second opinion about them.
+ */
+export type CardTrust = {
+  jobsPosted: number;
+  hasFundedEscrow: boolean;
+  /** Accepted ÷ posted. Null below MIN_JOBS_FOR_RATE, exactly as above. */
+  hireRate: number | null;
+};
+
+export async function getClientTrustBatch(
+  supabase: any,
+  clientIds: string[],
+): Promise<Map<string, CardTrust>> {
+  const out = new Map<string, CardTrust>();
+  const ids = Array.from(new Set(clientIds.filter(Boolean)));
+  if (!ids.length) return out;
+
+  const { data: jobs } = await supabase
+    .from("jobs")
+    .select("id, client_id, escrow_status")
+    .in("client_id", ids);
+
+  const jobIds = (jobs || []).map((j: any) => j.id);
+  const { data: accepted } = jobIds.length
+    ? await supabase.from("proposals").select("job_id").eq("status", "accepted").in("job_id", jobIds)
+    : { data: [] };
+
+  const acceptedJobIds = new Set((accepted || []).map((p: any) => p.job_id));
+
+  for (const id of ids) {
+    const mine = (jobs || []).filter((j: any) => j.client_id === id);
+    const hired = mine.filter((j: any) => acceptedJobIds.has(j.id)).length;
+    out.set(id, {
+      jobsPosted: mine.length,
+      hasFundedEscrow: mine.some(
+        (j: any) => j.escrow_status === "payment_held" || j.escrow_status === "payment_released",
+      ),
+      hireRate: mine.length >= MIN_JOBS_FOR_RATE ? hired / mine.length : null,
+    });
+  }
+  return out;
+}
+
 export function formatReplyTime(mins: number): string {
   if (mins < 60) return "under an hour";
   const hours = Math.round(mins / 60);

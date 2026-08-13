@@ -2,9 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
 import { JobCard } from "@/components/job-card";
 import { FiltersBar } from "@/components/filters-bar";
+import { SearchScope } from "@/components/search-scope";
 import { StaggerList } from "@/components/animated";
 import { EmptyState } from "@/components/empty-state";
 import { getSavedIds } from "@/lib/feed";
+import { getClientTrustBatch } from "@/lib/client-trust";
 import Link from "next/link";
 
 function toArray(v: string | string[] | undefined): string[] {
@@ -54,11 +56,17 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
     (proposals || []).forEach((p: any) => proposalsByJob.set(p.job_id, (proposalsByJob.get(p.job_id) || 0) + 1));
   }
 
+  // Item 54: two queries for the whole page, not three per card.
+  const trustByClient = await getClientTrustBatch(supabase as any, clientIds);
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-3xl font-bold">Open jobs</h1>
       <p className="mt-1 text-neutral-600">{count} {count === 1 ? "job" : "jobs"} found</p>
       <div className="mt-6">
+        <SearchScope current="jobs" q={searchParams.q} />
+      </div>
+      <div className="mt-4">
         <FiltersBar kind="jobs" action="/jobs" q={searchParams.q} categories={cats} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
       </div>
       <StaggerList className="mt-8 grid gap-5 md:grid-cols-2">
@@ -70,6 +78,8 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
             showSave={!!user}
             proposalsCount={proposalsByJob.get(j.id) || 0}
             clientName={clientName.get(j.client_id) || null}
+            trust={trustByClient.get(j.client_id) || null}
+            dismissable={!!user}
           />
         ))}
       </StaggerList>
