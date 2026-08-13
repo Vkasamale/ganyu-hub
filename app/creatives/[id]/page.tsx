@@ -8,6 +8,7 @@ import { ServiceCard } from "@/components/service-card";
 import { getAlsoViewed } from "@/lib/feed";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { GetToKnow } from "@/components/get-to-know";
+import { SellerSheet } from "@/components/seller-sheet";
 import { CaseStudyFacts } from "@/components/case-study-fields";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -727,13 +728,47 @@ export default async function CreativePage({
         </aside>
       </div>
 
-      {/* Owners get no bar — there is nothing to hire yourself for. */}
+      {/* Item 75 (§N5). Owners get no bar — there is nothing to hire yourself
+          for. This REPLACES the old anchor-jump sticky bar: same tap, but it
+          now opens the seller summary instead of scrolling you somewhere.
+
+          The sheet carries a SUMMARY of "At a glance", not a copy of it. The
+          full card still renders in the aside (visible on mobile further down,
+          sticky on desktop) and stays the single source for the long detail;
+          repeating seventy lines of it here would be two things to keep in
+          step. No form lives in here either — the Message form exists once, at
+          #actions, and this links to it. */}
       {user && !isOwner && (
-        <StickyActionBar
-          href="#actions"
-          label="Message"
-          hint={services?.length ? `Services from ${formatMwk(services[0].price_mwk)}` : profile.full_name || undefined}
-        />
+        <SellerSheet
+          name={profile.full_name || "This creative"}
+          fromPrice={services?.length ? formatMwk(services[0].price_mwk) : null}
+          rating={reviewCount > 0 ? { avg: avgRating, count: reviewCount } : null}
+          actionHref="#actions"
+          actionLabel="Message"
+        >
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between gap-3">
+              <dt className="text-ink/60">Location</dt>
+              <dd className="text-ink">{profile.location || "Malawi"}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-ink/60">Services</dt>
+              <dd className="text-ink">{serviceCount}</dd>
+            </div>
+            {profile.hours_per_week != null && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink/60">Availability</dt>
+                <dd className="text-ink">{profile.hours_per_week} hrs/week</dd>
+              </div>
+            )}
+            {profile.open_to_work === false && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink/60">Status</dt>
+                <dd className="text-ink/70">Not taking new work</dd>
+              </div>
+            )}
+          </dl>
+        </SellerSheet>
       )}
     </div>
   );
