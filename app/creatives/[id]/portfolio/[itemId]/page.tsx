@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { MediaCarousel } from "@/components/media-carousel";
 import { ShareButtons } from "@/components/share-buttons";
 import { absUrl } from "@/lib/site-url";
 
@@ -100,16 +101,9 @@ export default async function PortfolioItemPage({
 
       <section className="card-soft mt-4 overflow-hidden">
         {hero ? (
-          <div className="relative aspect-[16/9] w-full bg-ink/5">
-            <Image
-              src={hero}
-              alt={item.title}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              className="object-cover"
-            />
-          </div>
+          // Item 76: every image in one swipeable rail with a counter, rather
+          // than one hero here and the rest in a grid two screens down.
+          <MediaCarousel images={images} alt={item.title} />
         ) : (
           <div
             className="relative flex aspect-[16/6] w-full items-center justify-center"

@@ -7,6 +7,7 @@ import { ReviewAxisBreakdown } from "@/components/review-axes";
 import { ServiceCard } from "@/components/service-card";
 import { getAlsoViewed } from "@/lib/feed";
 import { VerifiedBadge } from "@/components/verified-badge";
+import { GetToKnow } from "@/components/get-to-know";
 import { CaseStudyFacts } from "@/components/case-study-fields";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -603,6 +604,18 @@ export default async function CreativePage({
               </SavingForm>
             </section>
           )}
+
+          {/* Item 78 (§G8): last thing in the column, because by here the
+              question has stopped being "is the work good" and become "who am
+              I about to hand money to". */}
+          <GetToKnow
+            name={profile.full_name || "this creative"}
+            bio={profile.bio}
+            location={profile.location}
+            languages={profile.languages}
+            hoursPerWeek={profile.hours_per_week}
+            memberSince={profile.created_at}
+          />
         </div>
 
         {/* §M8: the money card follows you down the page on desktop. `self-start`
