@@ -3,6 +3,23 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-13 — `/` is the signed-in home; the dashboard is the numbers (v0.9.10)
+
+Founder's call, and the right one: **signing in takes you to work, not to
+numbers.** This is the Upwork/Fiverr shape — the thing you land on is what to
+do next and what there is to look at; analytics are somewhere you go
+deliberately.
+
+- **`/` signed out** — unchanged marketing landing page.
+- **`/` signed in** — new `components/signed-in-home.tsx`: welcome header, the
+  two action cards, the For You carousel, welcome checklist and push banner.
+- **`/dashboard`** — now titled "Your numbers" and holds only that: stats,
+  profile insights, the 6-month chart, escrow/outcome donut, active jobs. It
+  links back to the home page for the day-to-day.
+- Sign-in and sign-up now redirect to `/` rather than `/dashboard`.
+
+The feed was moved, not rebuilt — same `lib/feed.ts` helpers, same components.
+
 ## 2026-08-13 — Phase 6: discovery in plain language, and SEO switched on (v0.9.9)
 
 Items 43, 47, 49.

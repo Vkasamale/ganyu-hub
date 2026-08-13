@@ -64,7 +64,8 @@ export async function signUp(formData: FormData) {
   if (!data.session) {
     redirect(`/login?info=${encodeURIComponent("Almost there — check your inbox and confirm your email to finish signing up.")}`);
   }
-  redirect("/dashboard");
+  // `/` not `/dashboard`: signing in lands you on work, not on numbers.
+  redirect("/");
 }
 
 export async function signIn(formData: FormData) {
@@ -87,7 +88,7 @@ export async function signIn(formData: FormData) {
     password: String(formData.get("password")),
   });
   if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
-  redirect("/dashboard");
+  redirect("/");
 }
 
 export async function signInWithGoogle() {

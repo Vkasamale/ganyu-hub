@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/supabase/user";
+import { SignedInHome } from "@/components/signed-in-home";
 import { HomeHero } from "@/components/home-hero";
 import {
   CategoryGrid,
@@ -18,6 +20,12 @@ import {
 
 
 export default async function HomePage() {
+  // Signed in? `/` is your working home — what to do next and what to look at.
+  // The marketing page below is for people who have not signed in. Numbers and
+  // charts live at /dashboard, which you visit deliberately.
+  const user = await getSessionUser();
+  if (user) return <SignedInHome userId={user.id} />;
+
   const supabase = createClient();
 
   // ponytail: pulling the same money numbers /admin computes, but only the 3

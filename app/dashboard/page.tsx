@@ -6,14 +6,6 @@ import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { CountUp } from "@/components/animated";
 import { formatMwk } from "@/lib/utils";
 import { getReleasedSpend } from "@/lib/money";
-import { WelcomeChecklist, type ChecklistStep } from "@/components/welcome-checklist";
-import { PushBanner } from "@/components/push-banner";
-import { HomeActionCards } from "@/components/home-action-cards";
-import { FeedCarousel, FeedCard } from "@/components/feed-carousel";
-import { CreativeCard } from "@/components/creative-card";
-import { JobCard } from "@/components/job-card";
-import { getForYouCreatives, getForYouJobs, getSavedIds } from "@/lib/feed";
-import { checkProfileComplete } from "@/lib/profile-complete";
 
 type Role = "client" | "creative" | "agency";
 
@@ -158,96 +150,23 @@ export default async function DashboardPage() {
         status: j.status,
       }));
 
-  const checklistSteps: ChecklistStep[] = isClient
-    ? [
-        { label: "Complete your profile", sub: "So creatives know who they're working with", href: "/dashboard/profile", done: !!profile?.onboarded_at },
-        { label: "Post your first job", sub: "Describe what you need — creatives come to you", href: "/jobs/new", done: myJobs.length > 0 },
-        { label: "See how the money works", sub: "Escrow, fees and payouts explained", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
-      ]
-    : [
-        // §L3: each step carries what it is worth. The percentages are not a
-        // guess — /browse hides any creative missing headline, bio, a portfolio
-        // item or a priced service (lib/profile-complete.ts), so each of the
-        // four is a quarter of "listed at all". The payoff line states that
-        // rule rather than an invented conversion statistic.
-        { label: "Complete your profile", sub: "Headline and bio — clients read these first", href: "/dashboard/profile", done: !!profile?.onboarded_at, weight: "+50% listing" },
-        { label: "Add a portfolio item", sub: "Without one you don't appear in Browse at all", href: "/dashboard/portfolio", done: portfolioCount > 0, weight: "+25% listing" },
-        { label: "List a service and price", sub: "Clients filter by price — no price, no results", href: "/dashboard/services", done: serviceCount > 0, weight: "+25% listing" },
-        { label: "Send your first proposal", sub: "Browse open jobs and bid", href: "/jobs", done: proposalsSent.length > 0 },
-        { label: "See how payouts work", sub: "What you keep after fees", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
-      ];
-
-  // Phase 6 items 44-46 (§B, §O1): the signed-in home leads with a feed, not
-  // statistics. §B is blunt that a stats dashboard is "right for a returning
-  // user with active jobs and wrong for a browsing client" — so the feed goes
-  // first and the numbers stay below, where a returning user still finds them.
-  //
-  // Every row uses the helpers that already existed in lib/feed.ts. Nothing new
-  // is invented, and each row renders nothing at all when empty (§Q7).
-  const feedCreatives = isClient ? await getForYouCreatives(supabase as any, user.id, 8) : [];
-  const feedJobs = !isClient ? await getForYouJobs(supabase as any, user.id, 8) : [];
-  const savedCreativeIds = isClient ? await getSavedIds(supabase as any, user.id, "creative") : new Set<string>();
-  const savedJobIds = !isClient ? await getSavedIds(supabase as any, user.id, "job") : new Set<string>();
-
-  // Item 45's progress card counts the same four things /browse uses to decide
-  // whether a creative is listed at all. Null once nothing is missing.
-  const completeness = isClient ? null : checkProfileComplete(profile || {}, portfolioCount, serviceCount);
-  const progress = completeness && !completeness.complete
-    ? {
-        done: 4 - completeness.missing.length,
-        total: 4,
-        nextLabel: completeness.missing[0].label,
-        nextHref: completeness.missing[0].href,
-      }
-    : null;
-
-  const proposalsWaiting = isClient
-    ? proposalsOnMyJobs.filter((p: any) => p.status === "pending").length
-    : 0;
+  // The feed, the action cards and the welcome checklist moved to `/`
+  // (components/signed-in-home.tsx) on 2026-08-13. This page is the numbers.
 
   return (
     <div className="space-y-6">
-      <WelcomeChecklist steps={checklistSteps} dismissed={!!profile?.welcome_dismissed_at} />
-      <PushBanner />
       <header>
         <p className="eyebrow">{role} workspace</p>
-        <h1 className="mt-2 font-display text-3xl md:text-4xl">
-          Welcome back,{" "}
-          <em className="text-stamp" style={{ fontStyle: "italic", fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}>
-            {profile?.full_name?.split(" ")[0] || "there"}.
-          </em>
-        </h1>
+        <h1 className="mt-2 font-display text-3xl md:text-4xl">Your numbers</h1>
+        <p className="mt-2 max-w-xl text-sm text-ink/65">
+          How your work is going. The day-to-day — what to do next, jobs and creatives worth a
+          look — lives on{" "}
+          <Link href="/" className="text-stamp-dark underline underline-offset-4">
+            your home page
+          </Link>
+          .
+        </p>
       </header>
-
-      <HomeActionCards
-        isClient={isClient}
-        firstName={profile?.full_name?.split(" ")[0] || "there"}
-        progress={progress}
-        proposalsWaiting={proposalsWaiting}
-      />
-
-      <FeedCarousel
-        eyebrow={isClient ? "Based on what you have posted" : "Matched to your categories"}
-        title={isClient ? "Creatives you might work with" : "Jobs worth a look"}
-        seeAllHref={isClient ? "/browse" : "/jobs"}
-        count={isClient ? feedCreatives.length : feedJobs.length}
-      >
-        {isClient
-          ? feedCreatives.map((c: any) => (
-              <FeedCard key={c.id}>
-                <CreativeCard profile={c} saved={savedCreativeIds.has(c.id)} showSave />
-              </FeedCard>
-            ))
-          : feedJobs.map((j: any) => (
-              <FeedCard key={j.id}>
-                <JobCard job={j} saved={savedJobIds.has(j.id)} showSave />
-              </FeedCard>
-            ))}
-      </FeedCarousel>
-
-      <section>
-        <p className="eyebrow text-ink/55">Your numbers</p>
-      </section>
 
       <section className="grid grid-cols-2 gap-5 md:grid-cols-4">
         {stats.map((s) => {
