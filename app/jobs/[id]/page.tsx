@@ -47,6 +47,7 @@ import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel, primaryClientAction } from "@/components/escrow-panel";
 import { StickyActionBar } from "@/components/sticky-action-bar";
 import { JobActivity } from "@/components/job-activity";
+import { RichText } from "@/components/rich-text";
 import { AboutClient } from "@/components/about-client";
 import { DeliverableSpecFields, SpecTable } from "@/components/deliverable-spec";
 import { getClientTrust } from "@/lib/client-trust";
@@ -347,9 +348,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             title="Project brief"
             summary={String(job.brief || "").slice(0, 110) + (String(job.brief || "").length > 110 ? "…" : "")}
           >
-            <p className="whitespace-pre-wrap break-words font-serif text-lg leading-relaxed text-ink/85 sm:text-xl">
+            {/* Item 69: markdown text in, sanitised elements out. Existing
+                plain-text briefs render unchanged — line breaks and dashes
+                are already valid markdown. */}
+            <RichText className="break-words font-serif text-lg leading-relaxed text-ink/85 sm:text-xl">
               {job.brief}
-            </p>
+            </RichText>
 
             {job.deliverables && (
               <div className="mt-6 border-t border-ink/10 pt-4">

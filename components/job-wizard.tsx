@@ -7,6 +7,7 @@ import { MoneyInput } from "@/components/money-input";
 import { SubmitButton } from "@/components/saving-form";
 import { CATEGORIES } from "@/lib/types";
 import { inferCategory } from "@/lib/infer-category";
+import { RichText } from "@/components/rich-text";
 import { formatMwk } from "@/lib/utils";
 
 /**
@@ -238,6 +239,12 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
             className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
           />
           <Counter value={brief.length} min={200} max={4000} unit="characters" />
+          {/* Item 69: the syntax people already use in WhatsApp, said once.
+              No toolbar — the preview on the last step is the feedback. */}
+          <p className="text-xs text-ink/45">
+            Start a line with <code className="rounded bg-ink/[0.06] px-1">-</code> for a bullet, or
+            wrap words in <code className="rounded bg-ink/[0.06] px-1">**</code> to make them bold.
+          </p>
         </Field>
       </div>
 
@@ -312,9 +319,13 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
               </>
             )}
           </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink/75">
-            {brief || "Your description will appear here."}
-          </p>
+          {brief ? (
+            <RichText className="mt-3">{brief}</RichText>
+          ) : (
+            <p className="mt-3 text-sm leading-relaxed text-ink/45">
+              Your description will appear here.
+            </p>
+          )}
           {deliverables && (
             <div className="mt-3 border-t border-ink/10 pt-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-ink/55">
