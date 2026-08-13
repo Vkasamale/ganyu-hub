@@ -6,6 +6,19 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.12",
+    date: "2026-08-13",
+    notes: [
+      "Signing in now takes you to your own home page — what happened while you were away, the jobs you have running and whose turn it is, then work and people worth a look. Your numbers moved to the dashboard, where you can go and look at them whenever you want.",
+      "Categories now say what they are for. “Get a logo, poster or menu designed” rather than “Design”.",
+      "Every category has its own page, so you can send someone straight to the photographers or the tailors.",
+      "Not sure what to call the style you want? Pick the picture closest to it and we will show you creatives who work that way.",
+      "Job pages show what is really happening on a job before you spend an evening writing a proposal — how many people have applied, whether anyone was invited directly, and when the client was last here.",
+      "Job cards show whether a client has actually paid into escrow before, and how often they hire.",
+      "You can hide a job you are not interested in, and pick up browsing where you left off — or clear that history in one click.",
+    ],
+  },
+  {
     version: "0.9.5",
     date: "2026-08-12",
     notes: [

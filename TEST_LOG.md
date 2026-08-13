@@ -4,6 +4,40 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-13 — Phase 6 complete + the home/dashboard split (v0.9.9–v0.9.12)
+
+- ✅ `tsc --noEmit` clean at every commit.
+- ✅ **Item 43** — 8 category cards lead with the task phrase, category as
+  subtitle, hrefs intact.
+- ✅ **Item 47** — service card renders cover (4500×4500 portfolio image),
+  "From MWK 50,000 · ~5d". Rating row correctly ABSENT for an unreviewed
+  creative.
+- ✅ **Item 49** — `/c/video-photography`: H1 "Film or photograph something",
+  8 creatives correctly filtered, canonical + meta description present,
+  filters post back to `/c/…` not `/browse`, unknown slug 404s.
+- ✅ **SEO** — `/robots.txt` serves the disallow list; `/sitemap.xml` 200 with
+  115 URLs including all 24 category pages.
+- ✅ **Home/dashboard split** — signed-in `/` shows welcome + action cards +
+  carousel and no marketing hero; `/dashboard` shows "Your numbers" with no
+  carousel; a **cookie-less fetch of `/` still returns the landing page**.
+- ✅ **Item 50** — 6 swatches on `?category=Design`, **0** on
+  `?category=Legal & Compliance` (the gate works), `?styles=flat` degrades to
+  "0 creatives found" with a removable chip rather than erroring.
+- ✅ **Item 55** — home lists 7 active jobs with per-role next steps; job page
+  shows "Proposals so far 1 of 10" and omits the zero rows.
+- ✅ **Item 52** — history row rendered, Clear All clicked, row gone.
+- ✅ **Item 53** — `?q=logo` carries `/browse` → `/jobs`, current scope marked,
+  correctly absent on `/c/design`.
+- ✅ **Item 54** — trust row live ("Has paid into escrow · Hires 79% of the
+  time · 28 jobs posted"), 38 dismiss controls, dismissal survives reload.
+- ⬜ **Item 50 end-to-end** — no creative has declared a style yet, so the
+  `overlaps` match itself is unproven. Declare one on `/dashboard/profile`,
+  then check `/browse?category=Design&styles=flat`.
+- ⬜ **Item 51 co-view** — needs ≥2 users with overlapping view history; the
+  seed data falls back to "Others in <category>".
+- ⬜ **Item 55 creative view** — "Client last active" unproven: every job to
+  hand belongs to the signed-in admin, so only the client branch rendered.
+
 ## 2026-08-12 — Phase 6 spine (v0.9.8)
 
 - ✅ `tsc --noEmit` clean.

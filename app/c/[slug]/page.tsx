@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BrowsePage from "@/app/browse/page";
 import { absUrl } from "@/lib/site-url";
-import { ALL_CATEGORY_SLUGS, categoryFromSlug, categorySlug, taskPhrase } from "@/lib/task-phrases";
+import { categoryFromSlug, categorySlug, taskPhrase } from "@/lib/task-phrases";
 
 /**
  * Item 49 (§O3) — category landing pages with plain-language descriptions.
@@ -17,9 +17,15 @@ import { ALL_CATEGORY_SLUGS, categoryFromSlug, categorySlug, taskPhrase } from "
  * metadata, and words a first-time client understands.
  */
 
-export function generateStaticParams() {
-  return ALL_CATEGORY_SLUGS.map((slug) => ({ slug }));
-}
+// NO generateStaticParams. It was here and it was wrong: this page renders
+// BrowsePage, which reads cookies to decide what is saved, so Next cannot
+// prerender it — it logged a dynamic-server-usage error for all 24 slugs and
+// silently fell back to on-demand rendering. Declaring static params we can
+// never honour is a claim about behaviour that isn't true.
+//
+// Nothing is lost for SEO: the HTML is still fully server-rendered per request,
+// which is what a crawler reads. If these ever need to be genuinely static, the
+// fix is a listing that takes no session — not a params list.
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

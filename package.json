@@ -1,6 +1,6 @@
 {
   "name": "ganyu-hub",
-  "version": "0.9.1",
+  "version": "0.9.12",
   "private": true,
   "scripts": {
     "dev": "next dev",
