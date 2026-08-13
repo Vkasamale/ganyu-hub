@@ -12,12 +12,16 @@ export function MoneyInput({
   required,
   placeholder,
   defaultValue,
+  onValueChange,
 }: {
   name: string;
   id?: string;
   required?: boolean;
   placeholder?: string;
   defaultValue?: number | null;
+  /** Optional: lets a parent react to the raw digits — e.g. the job wizard's
+   *  live preview. Omitted elsewhere, so existing uses are unchanged. */
+  onValueChange?: (raw: string) => void;
 }) {
   const [raw, setRaw] = useState<string>(defaultValue != null ? String(defaultValue) : "");
   const display = raw === "" ? "" : Number(raw).toLocaleString("en-US");
@@ -31,7 +35,11 @@ export function MoneyInput({
         required={required}
         placeholder={placeholder}
         value={display}
-        onChange={(e) => setRaw(e.target.value.replace(/[^\d]/g, ""))}
+        onChange={(e) => {
+          const next = e.target.value.replace(/[^\d]/g, "");
+          setRaw(next);
+          onValueChange?.(next);
+        }}
       />
       <input type="hidden" name={name} value={raw} />
     </>
