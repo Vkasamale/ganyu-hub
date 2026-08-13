@@ -22,8 +22,10 @@ Bump both on each shipped change. Public launch = `1.0.0` in both.
 ## Landing page build order — status (2026-08-12, v0.9.1)
 
 Full spec in [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (L1–L11), which
-sits **before Phase 0**. Of the 79 items in Phases 0–9, **items 1–55 are
-shipped** (Phases 0–6, plus item 61's footer out of order). Phases 7–9 remain.
+sits **before Phase 0**. **All 79 items across Phases 0–9 are shipped** as of
+2026-08-13. Seven of them turned out to be already built when reached.
+Outstanding work is verification and the founder actions below, not
+implementation.
 
 | | Item | State |
 |---|---|---|

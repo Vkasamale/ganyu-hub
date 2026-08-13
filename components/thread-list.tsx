@@ -179,7 +179,41 @@ export function ThreadList({
   const directShown = shown.filter((t) => !t.job_id);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1">
+      {/* Item 73 (§H3) — the desktop icon rail.
+          It REPLACES the chip row rather than joining it: the chips below are
+          `md:hidden`, so there is one filter control per breakpoint and one
+          piece of state behind both. A rail plus chips would have been two
+          answers to "which conversations am I looking at". Vertical icons need
+          height a phone does not have, which is why chips stay on mobile. */}
+      <nav
+        aria-label="Filter conversations"
+        className="hidden w-14 shrink-0 flex-col items-center gap-1 border-r border-ink/10 py-3 md:flex"
+      >
+        {FILTERS.map((f) => {
+          const on = filter === f.key;
+          const count = counts[f.key as keyof typeof counts];
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              aria-pressed={on}
+              title={`${f.label} (${count})`}
+              className={
+                "flex w-11 flex-col items-center gap-0.5 rounded-lg py-2 text-[10px] font-medium transition-colors " +
+                (on ? "bg-ink text-paper" : "text-ink/60 hover:bg-wash/60 hover:text-ink")
+              }
+            >
+              <RailIcon name={f.key} />
+              <span>{f.label}</span>
+              {count > 0 && <span className={on ? "text-paper/70" : "text-ink/40"}>{count}</span>}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-ink/10 px-3 pb-3">
         <div className="relative">
           <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/40">
@@ -196,7 +230,8 @@ export function ThreadList({
             className="w-full rounded-full border border-ink/15 bg-paper py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink/40 focus:border-ink/30 focus:outline-none"
           />
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        {/* Item 73: mobile only — the rail owns this above `md`. */}
+        <div className="mt-2 flex flex-wrap gap-1.5 md:hidden">
           {FILTERS.map((f) => {
             const on = filter === f.key;
             return (
@@ -329,6 +364,40 @@ export function ThreadList({
           </>
         )}
       </div>
+      </div>
     </div>
+  );
+}
+
+/** Item 73: one glyph per filter. Inline SVG — three shapes is not a library. */
+function RailIcon({ name }: { name: string }) {
+  const common = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    className: "h-[18px] w-[18px]",
+  };
+  if (name === "jobs") {
+    return (
+      <svg {...common} aria-hidden>
+        <rect x="3" y="7" width="18" height="13" rx="2" />
+        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      </svg>
+    );
+  }
+  if (name === "direct") {
+    return (
+      <svg {...common} aria-hidden>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common} aria-hidden>
+      <path d="M4 6h16M4 12h16M4 18h10" />
+    </svg>
   );
 }

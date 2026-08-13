@@ -66,6 +66,39 @@ Verified: six swatches on `?category=Design`, none on
 found" with a removable chip rather than erroring while the migration is
 outstanding.
 
+## 2026-08-13 — Phases 7, 8 and 9 complete: all 79 items shipped (v0.9.13)
+
+**Phase 7 — navigation.** The account dropdown had become where the app lived:
+two links in the header, thirteen ungrouped rows behind an avatar in the
+corner, in an app that installs to a home screen with no browser back button.
+Now a bottom tab bar (four destinations plus Menu, **no create action in the
+bar**), a drawer grouped Your work / Settings / Help with the version at the
+foot, a settings gear, verb-based desktop nav, one shared `lib/nav.ts` so the
+shells cannot drift, sub-tabs replacing four hand-rolled treatments, and a
+ways-in + trust band above the footer. "Money" became **Finances** — it named
+the subject where every other item names an area.
+
+**Phase 8 — posting a job.** Eight fields on one page became three steps, with
+a pencil on completed steps and no locks, a counter stating both ends, the
+category inferred from the title and always shown, a preview of the job as a
+creative will read it, and rich-text briefs (markdown **text** stored, never
+HTML; sanitised at render regardless).
+
+**Phase 9 — messages and the gig page.** Attachment cards with View/Save, event
+previews distinguished from typed messages, read receipts, the Ganyu-verified
+badge (admin-granted, withdrawable, wording that claims only what we can stand
+behind), a media carousel with a "1 of 20" counter, the get-to-know card, save
+counts, a mobile seller sheet replacing the anchor-jump bar, and a desktop icon
+rail replacing the filter chips above `md`.
+
+**Two bugs caught by verifying rather than trusting the code:** review
+notifications all read "You got a 0★ review" (BUG-021), and `message_threads`
+had no UPDATE policy, so every read-receipt write was denied silently.
+
+**Seven plan items turned out to be already built** — most recently item 74,
+whose component I wrote and then deleted rather than ship a second floating CTA
+beside the sticky bar that already says "Message".
+
 ## 2026-08-13 — `/` is the signed-in home; the dashboard is the numbers (v0.9.10)
 
 Founder's call, and the right one: **signing in takes you to work, not to

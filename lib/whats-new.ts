@@ -6,6 +6,19 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.13",
+    date: "2026-08-13",
+    notes: [
+      "On a phone there is now a bar along the bottom to move around with — home, finding work, messages and your jobs — so you are never hunting through a menu in the corner.",
+      "Posting a job is three short steps instead of one long form. It guesses the category from your title, shows you exactly how creatives will see the job before you post, and you can save and finish later.",
+      "You can use bold text and bullet points when describing a job.",
+      "Work with several pictures now swipes through them properly, and tells you how many there are.",
+      "Messages show whether the other person has opened your last one, and files arrive as proper cards with View and Save.",
+      "Creatives we have checked ourselves now carry a badge saying so.",
+      "Every profile ends with a short “get to know” section — where they are, what they speak, how much time they have.",
+    ],
+  },
+  {
     version: "0.9.12",
     date: "2026-08-13",
     notes: [
