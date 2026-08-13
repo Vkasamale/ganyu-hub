@@ -169,6 +169,14 @@ _(none currently open — see In Progress above)_
 
 Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-to-fix arc are included; pure feature ships aren't bugs.
 
+### 2026-08-13
+
+- **[BUG-021] Review notifications all said "You got a 0★ review".** — found 2026-08-13, reviews
+  - Symptom: every review notification title read `0★`, a rating the schema does not permit (`check (rating between 1 and 5)`). Found by eye, not by a test — it appeared on the new home feed the moment unread notifications were surfaced there.
+  - Cause: `app/actions.ts` built the title from `rating`, the legacy single-star form field. Since `ReviewAxes` began auto-posting from the three axes that field is never submitted, so `Number(undefined)` → `NaN` → rendered as `0`. The stored row was always correct — the insert uses the validated `overall` mean — so only the notification lied.
+  - Fix: title now uses `overall`. Commit 2026-08-13.
+  - **Not fixed: existing rows.** Notifications already written keep the wrong title. Rewriting them is a data edit and needs the founder — worth doing only if a real user ever saw one.
+
 ### 2026-08-07
 
 - **[BUG-011] A creative's review of a client linked the client to `/creatives/…`.** Found 2026-08-07 while building client profiles; fixed `a40cefe`.

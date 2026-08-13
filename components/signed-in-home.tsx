@@ -24,6 +24,17 @@ import { checkProfileComplete } from "@/lib/profile-complete";
  *
  * Every row renders nothing at all when empty (§Q7). No zero-state carousels.
  */
+/** "2h" / "3d" / "12 Jun". Short enough to sit inline after a sentence. */
+function sinceLabel(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours < 1) return "just now";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
 /**
  * Whose move it is. The two sides of a job are never waiting on the same
  * thing, so the same status reads differently depending on who is looking —
@@ -115,6 +126,23 @@ export async function SignedInHome({ userId }: { userId: string }) {
     .eq("target_type", "thread")
     .is("read_at", null);
 
+  // What you missed. These were previously reachable ONLY through the bell in
+  // the corner — which is the same as not existing for anyone who does not
+  // think to look there. The home is where someone lands, so this is where
+  // "you were away, here is what happened" belongs.
+  //
+  // Threads are excluded: they are counted as unread messages just above, and
+  // saying the same thing twice in one card makes both lines weaker.
+  const { data: newsRows } = await supabase
+    .from("notifications")
+    .select("id, title, body, link, created_at")
+    .eq("user_id", userId)
+    .is("read_at", null)
+    .not("target_type", "eq", "thread")
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const news = newsRows || [];
+
   const feedCreatives = isClient ? await getForYouCreatives(supabase as any, userId, 8) : [];
   const feedJobs = !isClient ? await getForYouJobs(supabase as any, userId, 8) : [];
   const savedCreativeIds = isClient ? await getSavedIds(supabase as any, userId, "creative") : new Set<string>();
@@ -174,10 +202,12 @@ export async function SignedInHome({ userId }: { userId: string }) {
         </h1>
       </header>
 
-      {(activeJobs.length > 0 || (unreadMessages ?? 0) > 0) && (
+      {(activeJobs.length > 0 || (unreadMessages ?? 0) > 0 || news.length > 0) && (
         <section className="card-soft p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="eyebrow text-ink/55">Your work right now</p>
+            <p className="eyebrow text-ink/55">
+              {news.length > 0 ? "Since you were last here" : "Your work right now"}
+            </p>
             {(unreadMessages ?? 0) > 0 && (
               <Link
                 href="/messages"
@@ -187,6 +217,32 @@ export async function SignedInHome({ userId }: { userId: string }) {
               </Link>
             )}
           </div>
+
+          {news.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {news.map((n: any) => (
+                <li key={n.id}>
+                  <Link
+                    href={n.link || "/"}
+                    className="group flex items-start gap-2.5 rounded-md py-1 text-sm hover:bg-wash/50"
+                  >
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
+                    <span className="min-w-0">
+                      <span className="font-medium text-ink group-hover:underline">{n.title}</span>
+                      {n.body && <span className="text-ink/65"> — {n.body}</span>}
+                      <span className="ml-1 whitespace-nowrap text-xs text-ink/45">
+                        {sinceLabel(n.created_at)}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {activeJobs.length > 0 && news.length > 0 && (
+            <p className="mt-4 text-xs uppercase tracking-wider text-ink/45">Your work right now</p>
+          )}
 
           {activeJobs.length > 0 && (
             <ul className="mt-3 divide-y divide-ink/[0.06]">

@@ -904,7 +904,10 @@ export async function submitReview(formData: FormData) {
   await supabase.from("notifications").insert({
     user_id: reviewee_id,
     kind: "message_received",
-    title: `You got a ${rating}★ review`,
+    // BUG-021: was `rating` — the legacy single-star field, which is absent
+    // now that ReviewAxes auto-posts from the three axes, so every title read
+    // "0★". `overall` is the validated 1-5 mean actually stored on the row.
+    title: `You got a ${overall}★ review`,
     body: isClient
       ? `Someone reviewed your work on "${job.title}".`
       : `The creative you hired reviewed working with you on "${job.title}".`,
