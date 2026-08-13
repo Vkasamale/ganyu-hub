@@ -14,7 +14,7 @@ function toArray(v: string | string[] | undefined): string[] {
 function sanitize(s: string) { return s.replace(/[,()]/g, " ").trim(); }
 
 export default async function BrowsePage({ searchParams: searchParamsP, title, intro, action = "/browse" }: {
-  searchParams: Promise<{ q?: string; category?: string | string[]; skills?: string; min_price?: string; max_price?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; category?: string | string[]; skills?: string; min_price?: string; max_price?: string; sort?: string; styles?: string | string[] }>;
   /** Item 49: the category landing pages delegate here rather than clone the
    *  query, and supply their own H1 and plain-language intro. */
   title?: string;
@@ -30,6 +30,10 @@ export default async function BrowsePage({ searchParams: searchParamsP, title, i
   const minP = searchParams.min_price ? Number(searchParams.min_price) : null;
   const maxP = searchParams.max_price ? Number(searchParams.max_price) : null;
   const sort = searchParams.sort || "newest";
+  // Item 50. `overlaps` = Postgres &&, which the GIN index in
+  // supabase/phase6-styles.sql serves. Picking two styles widens the search,
+  // it does not narrow it — someone pointing at two pictures means "either".
+  const styleSel = toArray(searchParams.styles);
 
   // Price filter runs off the services rate card, not the dead hourly_rate_mwk
   // column. A creative matches [min, max] if they have at least one service whose
@@ -54,6 +58,7 @@ export default async function BrowsePage({ searchParams: searchParamsP, title, i
   }
   if (cats.length) query = query.overlaps("categories", cats);
   if (skills.length) query = query.overlaps("skills", skills);
+  if (styleSel.length) query = query.overlaps("styles", styleSel);
   // Empty array ⇒ no creative matched the price range ⇒ zero results (correct).
   if (priceProfileIds != null) query = query.in("id", priceProfileIds);
   // ponytail: rate sort has to happen in memory — hourly_rate_mwk is dead;
@@ -128,7 +133,7 @@ export default async function BrowsePage({ searchParams: searchParamsP, title, i
       <p className="mt-1 text-neutral-600">{visibleCount} {visibleCount === 1 ? "creative" : "creatives"} found</p>
       {intro}
       <div className="mt-6">
-        <FiltersBar kind="creatives" action={action} q={searchParams.q} categories={cats} skills={searchParams.skills} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
+        <FiltersBar kind="creatives" action={action} q={searchParams.q} categories={cats} skills={searchParams.skills} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} styles={styleSel} />
       </div>
       <StaggerList className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {visibleProfiles.map((p) => (

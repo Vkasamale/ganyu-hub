@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, LayoutGroup } from "framer-motion";
 import { CategoryPicker } from "@/components/category-picker";
+import { StyleChoices } from "@/components/style-swatch";
+import { hasVisualCategory, styleLabel } from "@/lib/styles";
 
 type Kind = "creatives" | "jobs";
 
@@ -16,6 +18,8 @@ type Props = {
   minPrice?: string;
   maxPrice?: string;
   sort?: string;
+  /** Item 50: selected style slugs. Only meaningful for `creatives`. */
+  styles?: string[];
 };
 
 const SORTS: Record<Kind, { value: string; label: string }[]> = {
@@ -42,8 +46,14 @@ function buildUrl(action: string, params: Record<string, string | string[] | und
   return s ? `${action}?${s}` : action;
 }
 
-export function FiltersBar({ kind, action, q, categories = [], skills, minPrice, maxPrice, sort }: Props) {
+export function FiltersBar({ kind, action, q, categories = [], skills, minPrice, maxPrice, sort, styles = [] }: Props) {
   const [open, setOpen] = useState(false);
+  // Item 50 is gated to the four visual categories: a style question on
+  // Legal & Compliance is noise, and noise in a filter bar teaches people to
+  // stop reading it. Already-picked styles keep the section open so a filter
+  // can always be removed from where it was set.
+  const showStyles =
+    kind === "creatives" && (hasVisualCategory(categories) || styles.length > 0);
   const skillList = (skills || "").split(",").map((s) => s.trim()).filter(Boolean);
   const priceLabel = kind === "creatives" ? "Price (MWK)" : "Budget (MWK)";
   const placeholder =
@@ -51,9 +61,11 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
   const sorts = SORTS[kind];
 
   const activeCount =
-    (q ? 1 : 0) + categories.length + skillList.length + (minPrice ? 1 : 0) + (maxPrice ? 1 : 0);
+    (q ? 1 : 0) + categories.length + skillList.length + (minPrice ? 1 : 0) + (maxPrice ? 1 : 0) + styles.length;
 
-  const base = { q, category: categories, skills, min_price: minPrice, max_price: maxPrice, sort };
+  const base = { q, category: categories, skills, min_price: minPrice, max_price: maxPrice, sort, styles };
+  const removeStyleUrl = (s: string) =>
+    buildUrl(action, { ...base, styles: styles.filter((x) => x !== s) });
   const removeCategoryUrl = (c: string) =>
     buildUrl(action, { ...base, category: categories.filter((x) => x !== c) });
   const removeSkillUrl = (s: string) =>
@@ -97,6 +109,7 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
           {skills && <input type="hidden" name="skills" value={skills} />}
           {minPrice && <input type="hidden" name="min_price" value={minPrice} />}
           {maxPrice && <input type="hidden" name="max_price" value={maxPrice} />}
+          {styles.map((s) => <input key={s} type="hidden" name="styles" value={s} />)}
           <label htmlFor="sort" className="text-xs uppercase tracking-wider text-ink/55">Sort</label>
           <select
             id="sort"
@@ -118,6 +131,9 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
             {q && <Chip id="q" label={`"${q}"`} href={removeQUrl} />}
             {categories.map((c) => <Chip key={`c-${c}`} id={`c-${c}`} label={c} href={removeCategoryUrl(c)} />)}
             {skillList.map((s) => <Chip key={`s-${s}`} id={`s-${s}`} label={s} href={removeSkillUrl(s)} />)}
+            {styles.map((s) => (
+              <Chip key={`st-${s}`} id={`st-${s}`} label={styleLabel(s) || s} href={removeStyleUrl(s)} />
+            ))}
             {minPrice && <Chip id="min" label={`Min MWK ${Number(minPrice).toLocaleString()}`} href={removeMinUrl} />}
             {maxPrice && <Chip id="max" label={`Max MWK ${Number(maxPrice).toLocaleString()}`} href={removeMaxUrl} />}
             <Link href={action} className="text-xs font-medium text-stamp-dark underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp">
@@ -152,6 +168,18 @@ export function FiltersBar({ kind, action, q, categories = [], skills, minPrice,
                   <CategoryPicker selected={categories} name="category" />
                 </div>
               </div>
+
+              {showStyles && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/70">Style</p>
+                  <p className="mt-1 text-xs text-ink/55">
+                    Not sure what to call it? Pick the picture closest to what you want.
+                  </p>
+                  <div className="mt-2">
+                    <StyleChoices name="styles" selected={styles} />
+                  </div>
+                </div>
+              )}
 
               {kind === "creatives" && (
                 <div>

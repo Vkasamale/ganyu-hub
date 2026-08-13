@@ -178,6 +178,16 @@ export async function updateProfile(formData: FormData) {
     update.open_to_work = formData.get("open_to_work") === "on";
   }
 
+  // Item 50. Same marker rule as above — "no styles picked" and "this form
+  // does not ask about styles" are different things, and only the first should
+  // clear the column. Slugs are validated against lib/styles.ts rather than
+  // trusted: this is a text[] and the values arrive from a query string.
+  if (formData.has("styles_present")) {
+    const { STYLES } = await import("@/lib/styles");
+    const valid = new Set(STYLES.map((s) => s.slug as string));
+    update.styles = formData.getAll("styles").map(String).filter((s) => valid.has(s));
+  }
+
   const avatar = formData.get("avatar_file");
   if (avatar instanceof File && avatar.size > 0) {
     if (avatar.size > 5 * 1024 * 1024) return { error: "Avatar too large (max 5MB)." };

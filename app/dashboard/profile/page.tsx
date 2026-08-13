@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { ImagePicker } from "@/components/image-picker";
 import { CategoryPicker } from "@/components/category-picker";
+import { StyleChoices } from "@/components/style-swatch";
+import { hasVisualCategory } from "@/lib/styles";
 import { AddPayoutMethodForm } from "@/components/add-payout-method-form";
 
 function maskTail(s: string | null | undefined, keep = 4) {
@@ -142,6 +144,21 @@ export default async function EditProfilePage() {
               <Label>Categories</Label>
               <CategoryPicker selected={profile?.categories || []} />
             </div>
+            {/* Item 50 (§K2): the creative declares their own style — we never
+                infer it from their portfolio. Only asked of the four visual
+                categories; a style question elsewhere is noise. */}
+            {hasVisualCategory(profile?.categories) && (
+              <div className="space-y-1.5">
+                <Label>Your style</Label>
+                <p className="text-xs text-ink/55">
+                  Clients who don&apos;t know the words for what they want pick a picture instead.
+                  Choose any that match your work — or none.
+                </p>
+                <input type="hidden" name="styles_present" value="1" />
+                <StyleChoices name="styles" selected={profile?.styles || []} />
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label htmlFor="skills">Skills (comma-separated)</Label>
               <Input id="skills" name="skills" defaultValue={(profile?.skills || []).join(", ")} placeholder="Figma, Branding, React" />

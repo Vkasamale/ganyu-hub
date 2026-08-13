@@ -3,6 +3,37 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-13 — Item 50: visual style filters (v0.9.11)
+
+**Needs `supabase/phase6-styles.sql` run before it does anything.**
+
+§O3's standout item: many clients here have never commissioned design and do
+not have the vocabulary. Letting them point at a picture is the difference
+between briefing and giving up.
+
+- `lib/styles.ts` — six styles (flat, 3d, hand-drawn, vintage, photographic,
+  bold-type) and the four visual categories they apply to.
+- `components/style-swatch.tsx` — every swatch is inline SVG. No image files,
+  nothing to licence, and a swatch can never be a photo of work nobody here
+  made. Six images at the top of a filter panel would be the slowest thing on
+  the page on a Malawian mobile connection; these weigh nothing.
+- **Gated to Design, Animation & Motion, Video & Photography and Crafts &
+  Handmade.** A style question on Legal & Compliance is noise, and noise in a
+  filter bar teaches people to stop reading it.
+- **Declared, never inferred (§K2).** The creative picks their own on
+  `/dashboard/profile`, behind the same `styles_present` marker used by the
+  Phase 1 toggles so other callers of `updateProfile` cannot silently clear
+  the column. Slugs are validated server-side — they arrive from a query
+  string into a `text[]`.
+- Filtering uses `overlaps` (Postgres `&&`) against the new GIN index. Two
+  styles widens the search rather than narrowing it: pointing at two pictures
+  means "either".
+
+Verified: six swatches on `?category=Design`, none on
+`?category=Legal & Compliance`, and `?styles=flat` degrades to "0 creatives
+found" with a removable chip rather than erroring while the migration is
+outstanding.
+
 ## 2026-08-13 — `/` is the signed-in home; the dashboard is the numbers (v0.9.10)
 
 Founder's call, and the right one: **signing in takes you to work, not to
