@@ -4,6 +4,48 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-13 — Phases 7, 8 and most of 9
+
+Verified as Adam Creative (Chrome) and as EQ Admin Client (preview browser).
+
+- ✅ `tsc --noEmit` clean and 93/93 unit tests green at every commit.
+- ✅ **Phase 7 shell** — tab bar pinned to the viewport bottom at 375×812 (bar
+  bottom 812), 5 slots, Home marked current, desktop nav hidden; drawer opens
+  with 4 groups, 12 links, version at the foot, body scroll locked; at full
+  scroll the footer ends at 756 with the bar at 758.
+- ✅ **Verb nav, both roles** — client sees Find someone / Manage work /
+  Finances; **creative sees Find work / Deliver work / Get paid** (confirmed on
+  Adam's session), settings gear present.
+- ✅ **Item 59** — sub-tabs render with active state; zero counts hidden.
+- ✅ **Items 62/63** — role-aware ways-in cards; signed-out gets "Join as a
+  creative" plus the trust cards and no tab bar.
+- ✅ **Phase 8 wizard** — inference fills the category, Continue advances,
+  completed steps stay clickable with a pencil, preview shows title/category/
+  budget, draft saves and restores.
+- ✅ **Item 69 XSS** — a brief containing `<script>` and an `onerror` img
+  executed nothing and left zero script/img elements, while bold and bullets
+  rendered. Links carry `rel="noopener noreferrer nofollow ugc"`.
+- ✅ **Item 76, 10-image piece (Adam)** — "1 of 10" at rest, tracks a real
+  scroll gesture to "6 of 10" then "8 of 10", arrows reach "10 of 10" where
+  Next disables. Single-image items show no counter; an item with no cover
+  renders the gradient instead.
+- ✅ **Item 78** — renders bio, "Based in Malawi", "On Ganyu Hub since July
+  2026"; nothing invented.
+- ✅ **Item 72** — exactly one receipt, on the last of my messages, reading
+  "1d ago · Sent".
+- ⬜ **Item 72 "Seen"** — needs `phase9-messages.sql` RE-RUN (the RLS update
+  policy was added after the first run) and then both accounts opening the
+  same thread.
+- ⬜ **Item 77 admin control** — Mark checked / Withdraw unverified; the
+  browser session was signed out when it was built.
+- ⬜ **Message editing** — `edited_at` renders an "Edited" marker but no edit
+  UI exists, so the marker is dormant.
+
+**Measurement note for the next session:** Chrome suppresses scroll events in a
+BACKGROUNDED tab (`document.hidden === true`), so synthetic `scrollLeft` writes
+fire no handlers and a carousel looks broken when it is not. Drive a real
+gesture (`computer` scroll) before concluding anything about scroll code.
+
 ## 2026-08-13 — Phase 6 complete + the home/dashboard split (v0.9.9–v0.9.12)
 
 - ✅ `tsc --noEmit` clean at every commit.
