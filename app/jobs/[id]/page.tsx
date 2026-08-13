@@ -46,6 +46,7 @@ import { JobStatusPanel } from "@/components/job-status-panel";
 import { JobRealtime } from "@/components/job-realtime";
 import { EscrowPanel, primaryClientAction } from "@/components/escrow-panel";
 import { StickyActionBar } from "@/components/sticky-action-bar";
+import { JobActivity } from "@/components/job-activity";
 import { AboutClient } from "@/components/about-client";
 import { DeliverableSpecFields, SpecTable } from "@/components/deliverable-spec";
 import { getClientTrust } from "@/lib/client-trust";
@@ -144,6 +145,27 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     .eq("job_id", job.id);
   const proposalLimit = (job as { proposal_limit?: number | null }).proposal_limit ?? 10;
   const isFull = (proposalCount ?? 0) >= proposalLimit;
+
+  // Item 55 (§G1). Three counted reads — nothing estimated, nothing stored.
+  // "Client last active" is their most recent interaction anywhere on the
+  // site: the honest answer to "is this person still looking?", which is what
+  // a creative is really asking before spending an hour on a proposal.
+  const [{ count: invitesSent }, { count: jobViews }, { data: clientActivity }] = await Promise.all([
+    supabase.from("job_invites").select("id", { count: "exact", head: true }).eq("job_id", job.id),
+    supabase
+      .from("interactions")
+      .select("id", { count: "exact", head: true })
+      .eq("target_type", "job")
+      .eq("target_id", job.id)
+      .eq("kind", "view"),
+    supabase
+      .from("interactions")
+      .select("created_at")
+      .eq("user_id", job.client_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   const isAcceptedCreative = !isClient && myProposal?.status === "accepted";
   const isParty = isClient || isAcceptedCreative;
@@ -786,6 +808,19 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           </CardContent>
         </Card>
       )}
+
+      {/* Item 55: sits above the proposals so a creative reads it before
+          deciding to write, not after. */}
+      <div className="mt-8">
+        <JobActivity
+          proposalCount={proposalCount ?? 0}
+          proposalLimit={proposalLimit}
+          invitesSent={invitesSent ?? 0}
+          views={jobViews ?? 0}
+          clientLastActive={clientActivity?.created_at ?? null}
+          isClient={isClient}
+        />
+      </div>
 
       {isClient && (
         <section className="mt-8">

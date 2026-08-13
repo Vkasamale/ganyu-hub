@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { HomeActionCards } from "@/components/home-action-cards";
 import { FeedCarousel, FeedCard } from "@/components/feed-carousel";
@@ -22,6 +23,28 @@ import { checkProfileComplete } from "@/lib/profile-complete";
  *
  * Every row renders nothing at all when empty (§Q7). No zero-state carousels.
  */
+/**
+ * Whose move it is. The two sides of a job are never waiting on the same
+ * thing, so the same status reads differently depending on who is looking —
+ * "submitted" is a to-do for the client and a please-wait for the creative.
+ */
+function nextStep(status: string, isClient: boolean): { label: string; onYou: boolean } {
+  switch (status) {
+    case "scope_pending":
+      return { label: "Confirm the scope", onYou: true };
+    case "submitted":
+      return isClient
+        ? { label: "Review the delivery", onYou: true }
+        : { label: "Waiting on the client", onYou: false };
+    case "revision_requested":
+      return isClient
+        ? { label: "Revisions requested", onYou: false }
+        : { label: "Revisions to make", onYou: true };
+    default:
+      return { label: "In progress", onYou: false };
+  }
+}
+
 export async function SignedInHome({ userId }: { userId: string }) {
   const supabase = createClient();
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
@@ -57,6 +80,39 @@ export async function SignedInHome({ userId }: { userId: string }) {
     serviceCount = sc || 0;
     proposalsSent = sent || 0;
   }
+
+  // Work in progress, above everything else. A user with a live job has one
+  // question — "what is happening with my job" — and recommendations are not
+  // an answer to it. Upwork and Fiverr both put active work above discovery.
+  const ACTIVE = ["scope_pending", "in_progress", "submitted", "revision_requested"];
+  let activeJobs: { id: string; title: string; status: string }[] = [];
+  if (isClient) {
+    const { data } = await supabase
+      .from("jobs")
+      .select("id, title, status")
+      .eq("client_id", userId)
+      .in("status", ACTIVE)
+      .order("created_at", { ascending: false });
+    activeJobs = data || [];
+  } else {
+    const { data } = await supabase
+      .from("proposals")
+      .select("jobs:jobs!proposals_job_id_fkey(id, title, status)")
+      .eq("creative_id", userId)
+      .eq("status", "accepted");
+    activeJobs = (data || [])
+      .map((p: any) => p.jobs)
+      .filter((j: any) => j && ACTIVE.includes(j.status));
+  }
+
+  // One head-count. Unread thread notifications ARE unread messages — see
+  // lib/thread-previews.ts for why that needs no migration.
+  const { count: unreadMessages } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("target_type", "thread")
+    .is("read_at", null);
 
   const feedCreatives = isClient ? await getForYouCreatives(supabase as any, userId, 8) : [];
   const feedJobs = !isClient ? await getForYouJobs(supabase as any, userId, 8) : [];
@@ -106,6 +162,44 @@ export async function SignedInHome({ userId }: { userId: string }) {
           </em>
         </h1>
       </header>
+
+      {(activeJobs.length > 0 || (unreadMessages ?? 0) > 0) && (
+        <section className="card-soft p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="eyebrow text-ink/55">Your work right now</p>
+            {(unreadMessages ?? 0) > 0 && (
+              <Link
+                href="/messages"
+                className="text-sm font-medium text-brand-dark hover:underline"
+              >
+                {unreadMessages} unread message{unreadMessages === 1 ? "" : "s"}
+              </Link>
+            )}
+          </div>
+
+          {activeJobs.length > 0 && (
+            <ul className="mt-3 divide-y divide-ink/[0.06]">
+              {activeJobs.map((j) => {
+                const next = nextStep(j.status, isClient);
+                return (
+                  <li key={j.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">
+                    <Link href={`/jobs/${j.id}`} className="min-w-0 font-medium text-ink hover:underline">
+                      {j.title}
+                    </Link>
+                    <span
+                      className={
+                        "text-sm " + (next.onYou ? "font-medium text-brand-dark" : "text-ink/55")
+                      }
+                    >
+                      {next.label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
 
       <HomeActionCards
         isClient={isClient}
