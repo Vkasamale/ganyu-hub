@@ -10,7 +10,13 @@
 import { JOB_EVENT_LABELS } from "@/components/job-timeline";
 import type { JobEventType } from "@/lib/job-events";
 
-export type ThreadPreview = { text: string; at: string };
+/**
+ * Item 71 (§H3): `kind` lets the list SHOW that "Files delivered" is something
+ * that happened rather than something someone typed. The text alone reads the
+ * same either way, and someone scanning for a reply should not have to parse a
+ * sentence to work out that nobody has written back.
+ */
+export type ThreadPreview = { text: string; at: string; kind: "message" | "event" };
 
 /**
  * Per-thread unread counts (audit §H3), derived from `notifications` rather
@@ -75,22 +81,24 @@ export async function withPreviews<T extends MinimalThread>(
   ]);
 
   // Rows arrive newest-first, so the first hit per key is the latest one.
-  const lastMsg = new Map<string, { text: string; at: string }>();
+  const lastMsg = new Map<string, ThreadPreview>();
   for (const m of (msgs || []) as any[]) {
     if (lastMsg.has(m.thread_id)) continue;
     const text = (m.body || "").replace(/\[\[job:[0-9a-f-]+\]\]/gi, "").trim();
     lastMsg.set(m.thread_id, {
       text: text || (m.attachment_name ? `📎 ${m.attachment_name}` : "Shared a job"),
       at: m.created_at,
+      kind: "message",
     });
   }
 
-  const lastEvent = new Map<string, { text: string; at: string }>();
+  const lastEvent = new Map<string, ThreadPreview>();
   for (const e of (evs || []) as any[]) {
     if (lastEvent.has(e.job_id)) continue;
     lastEvent.set(e.job_id, {
       text: JOB_EVENT_LABELS[e.event_type as JobEventType] ?? e.event_type,
       at: e.created_at,
+      kind: "event",
     });
   }
 

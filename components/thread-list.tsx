@@ -13,7 +13,7 @@ export type ThreadRow = {
   client?: { id: string; full_name: string | null } | null;
   creative?: { id: string; full_name: string | null } | null;
   job?: { id: string; title: string } | null;
-  preview?: { text: string; at: string } | null;
+  preview?: { text: string; at: string; kind?: "message" | "event" } | null;
   unread?: number;
 };
 
@@ -85,6 +85,14 @@ function Row({
           </div>
           <div className="flex items-center gap-2">
             <p className={`min-w-0 flex-1 truncate text-xs ${unread ? "text-ink/80" : "text-ink/55"}`}>
+              {/* Item 71: an event is something that HAPPENED, not something
+                  someone typed. The dot says so without spending words. */}
+              {t.preview?.kind === "event" && (
+                <span
+                  aria-hidden
+                  className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-mark align-middle"
+                />
+              )}
               {preview}
             </p>
             {unread > 0 && (

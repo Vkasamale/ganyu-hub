@@ -36,23 +36,66 @@ export function MessageAttachment({
     );
   }
 
+  // Item 70 (§H1): a file card, not a mystery link. Name, extension and size
+  // on the face of it, with View and Save as SEPARATE actions.
+  //
+  // Why separate: a delivered .ai or .psd cannot be shown in a browser, so a
+  // single "open" link either previews or dumps a blank tab, and the creative
+  // has no way to say "just give me the file". `download=` is Supabase
+  // Storage's own parameter for forcing an attachment disposition on a signed
+  // URL; elsewhere the HTML attribute alone still does the job.
+  const ext = (label.includes(".") ? label.split(".").pop() : "")?.toUpperCase().slice(0, 4) || "FILE";
+  const saveUrl = url.includes("?")
+    ? `${url}&download=${encodeURIComponent(label)}`
+    : `${url}?download=${encodeURIComponent(label)}`;
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className={
-        mine
-          ? "mt-1 inline-flex max-w-full items-center gap-2 rounded-lg border border-paper/25 bg-paper/10 px-3 py-2 text-xs text-paper hover:bg-paper/15"
-          : "mt-1 inline-flex max-w-full items-center gap-2 rounded-lg border border-ink/15 bg-wash/40 px-3 py-2 text-xs text-ink hover:bg-wash/60"
+        "mt-1 flex max-w-full items-center gap-3 rounded-lg border px-3 py-2 " +
+        (mine ? "border-paper/25 bg-paper/10 text-paper" : "border-ink/15 bg-wash/40 text-ink")
       }
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-      </svg>
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {meta && <span className={mine ? "shrink-0 text-paper/60" : "shrink-0 text-ink/50"}>{meta}</span>}
-    </a>
+      <span
+        className={
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[9px] font-bold tracking-tight " +
+          (mine ? "bg-paper/15 text-paper" : "bg-ink/[0.07] text-ink/60")
+        }
+        aria-hidden
+      >
+        {ext}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-medium">{label}</span>
+        {meta && (
+          <span className={"block text-[10px] " + (mine ? "text-paper/60" : "text-ink/50")}>{meta}</span>
+        )}
+      </span>
+
+      <span className="flex shrink-0 items-center gap-1 text-xs">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={
+            "rounded px-2 py-1 font-medium underline-offset-2 hover:underline " +
+            (mine ? "text-paper" : "text-brand-dark")
+          }
+        >
+          View
+        </a>
+        <a
+          href={saveUrl}
+          download={label}
+          className={
+            "rounded px-2 py-1 font-medium underline-offset-2 hover:underline " +
+            (mine ? "text-paper/80" : "text-ink/60")
+          }
+        >
+          Save
+        </a>
+      </span>
+    </div>
   );
 }
