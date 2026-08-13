@@ -1,5 +1,11 @@
 # Ganyu Hub — mobile UI brief
 
+> **Status 2026-08-13:** the product is now feature-complete (all 79 planned
+> items across Phases 0–9). If the design run CAN see the repo, use
+> [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md) — it carries the current surface
+> inventory. This file remains the brief for a session working from
+> screenshots alone. §6 has been corrected: several asks are already built.
+
 For a design session that has no access to this repo. Everything a designer
 needs in order to produce work that can actually be built here, plus the
 patterns worth taking from Fiverr / Upwork / WhatsApp and the ones worth
@@ -90,15 +96,34 @@ trust row (payment verified ✓ · rating · spend · location).
 
 ## 6. The specific asks
 
-1. **Bottom tab bar.** 5 destinations for each role. Proposal: Home ·
-   Browse · Messages · Jobs · Profile. Show active/inactive, badge counts, and
-   how it sits over a scrolled page. Must survive `env(safe-area-inset-bottom)`
-   on iOS and the absence of a browser back button when installed as a PWA.
-2. **Mobile job card** for the browse list, in at least two money states.
+> **Updated 2026-08-13: 1 and 4 are now BUILT.** They were asks when this was
+> written; they now exist in code and want *restyling*, not inventing. Design
+> them as they are, or argue for a change — do not draw a different structure
+> by accident.
+
+1. **Bottom tab bar — built.** Four destinations plus Menu, and they are
+   **role-aware**: `Home · Find work · Messages · My work · Menu` for a
+   creative, `Home · Find someone · Messages · My work · Menu` for a client.
+   Messages carries an unread count.
+   **There is deliberately no create action in the bar** — a "+" between two
+   tabs is what people hit by accident; posting a job is a header button. There
+   is no Profile tab either; account lives in the drawer.
+   Still wanted from you: active/inactive treatment, badge styling, and how the
+   bar sits over a scrolled page. It already respects
+   `env(safe-area-inset-bottom)` and the page reserves its height.
+2. **Mobile job card** for the browse list, in at least two money states. The
+   card now also carries a trust row ("Has paid into escrow · Hires 79% of the
+   time · 28 jobs posted") and a dismiss control.
 3. **Mobile job detail**, top third only: what is visible before any scroll.
    The money state and the primary action must both be above the fold.
-4. **Header + drawer** on mobile: what stays in the top bar, what moves into
-   the drawer.
+4. **Drawer — built.** Grouped `Your work / Settings / Help` (plus `Admin` for
+   admins), version number at the foot, opening from the Menu tab as a bottom
+   sheet. Still wanted: the sheet's weight, group-heading treatment and row
+   density.
+5. **Seller sheet** (new, built). On a creative's profile a bar sits above the
+   tab bar reading `<name> · From MWK 50,000 · Details`; tapping it opens a
+   summary sheet. It contains **no form** — it links to the one real Message
+   form. The two fixed bars stack and must never overlap.
 
 Deliverables as images or self-contained HTML. Real MWK figures, real job
 titles ("Logo for a Blantyre bakery", not "Lorem"), both roles represented.

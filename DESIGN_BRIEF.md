@@ -1,151 +1,164 @@
-# Design brief — deferred until after Phase 9
+# Design brief — the run is now unblocked
 
-> **Schedule changed 2026-08-12 (founder).** `IMPLEMENTATION_PLAN.md` puts
-> design runs after Phase 2 and after Phase 6. The founder’s call is to run
-> design **once, after every phase is built.** That trades away early visual
-> feedback in exchange for never designing a surface twice — defensible,
-> given Phase 6 rebuilds the signed-in home wholesale.
+> **Status 2026-08-13: all 79 items across Phases 0–9 are built.** The founder's
+> call was to run design **once, after every phase**, trading early visual
+> feedback for never designing a surface twice. That has now happened. Nothing
+> structural is scheduled after this run, so **every surface is safe to compose,
+> not just style.**
 >
-> Consequence to accept knowingly: the product stays visually unfinished
-> through Phases 4–9, and the whole visual system lands in one pass at the
-> end. Keep this brief current as phases land — a stale brief is what made
-> the 2026-08-12 run unusable.
+> The 2026-08-12 run was terminated because the brief described a product that
+> no longer existed. This file was rewritten from the code on 2026-08-13.
 
-## Original scope (still applies, now against the finished product)
-
-For the Claude Design run scheduled in [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)
-after Phase 2. Read with [`DESIGN.md`](DESIGN.md), which is the binding rulebook —
-this brief says what to work on and what not to touch. Where the two disagree,
-`DESIGN.md` wins.
+Read with [`DESIGN.md`](DESIGN.md) — that is the binding rulebook. This brief
+says what to work on and what not to touch. Where they disagree, `DESIGN.md`
+wins.
 
 ---
 
-## ⚠️ Prerequisite — do not start the run until this is true
+## Before starting
 
-**Phases 0–2 are committed locally but NOT pushed.** As of writing, `main` on
-the remote is at `26eaffa`, which predates all of it.
-
-A run started before the push would design:
-
-- the old proof row — no testimonials, no featured creatives, no trusted-by
-- empty states as bare grey sentences
-- profiles with no tabs, no tagline, no languages, no case-study fields
-- job pages with no "About the client" block
-- money buttons that do not name the amount
-
-That is designing against a product that no longer exists — the exact reason
-the 2026-08-12 run was terminated. **Push `claude/next-session-8450b2` (two
-commits, `cd7fa28` and `535bc69`), merge to `main`, and make the repo readable
-by the run first.**
-
----
+The work is on branch **`claude/next-session-8450b2`**, pushed. `main` is far
+behind and designing against it would repeat the 2026-08-12 mistake. Point the
+run at that branch, or merge it to `main` first.
 
 ## The split rule
 
 **We build anything needing a table, a column, a query, a route or a form
-field. Design polishes.** Design can only design what exists — hand it a
-skeleton and it designs a skeleton beautifully. Structure ships first, finish
-ships last.
+field. Design polishes.** Structure shipped first; finish ships now.
 
-## What is handed over
+---
 
-From `IMPLEMENTATION_PLAN.md` § "Handed to Claude Design":
+## What exists (the surface inventory)
 
-- **Stamp texture.** Position is settled and confirmed live — on the money's
-  line, at the card's right margin, larger. The *texture* is not. The flanking
-  rules read as a strike-through and the double ring is too subtle; it reads as
-  a rounded chip, not as ink. Next attempt: rules **above and below** the text
-  rather than beside it, a heavier outer ring visibly separated from the inner
-  one, wider tracking, possibly a dashed outer ring for ink bleed.
-- **Shadows and elevation** (`DESIGN.md` §6).
-- **Type scale.**
-- **Card composition.**
-- **Motion.**
-- **Carousel styling** — the testimonial row on the landing page, and any
-  carousel in Phase 6. The peek is a requirement, not a style choice (§Q8).
+Next.js App Router, Tailwind, server components by default. Everything below is
+live and populated with real seed data.
+
+**Public**
+- `/` signed out — the landing page. 11 of 11 sections.
+- `/c/<slug>` — 24 category landing pages ("Get a logo, poster or menu
+  designed" as the H1, category as subtitle).
+- `/browse`, `/jobs` — listings with a filter bar, and a **search scope
+  selector** above it (two cards, each with a sentence).
+- `/creatives/<id>` — profile: hero, tabs, rate card, portfolio grid, reviews,
+  testimonials, "Get to know <name>" at the foot.
+- `/creatives/<id>/portfolio/<id>` — **full-bleed media carousel** with a
+  "1 of 20" counter.
+- `/jobs/<id>` — job detail: money header, progress bar, brief (markdown),
+  "About the client", "Activity on this job", proposals.
+- `/how-money-works`, `/release-notes`, legal pages.
+
+**Signed in**
+- `/` — **the home feed.** "Since you were last here" (unread notifications,
+  unread messages, live jobs and whose move each is), then two action cards,
+  then a For You carousel, then "Pick up where you left off".
+- `/dashboard` — **numbers only.** Stats, profile insights, 6-month chart,
+  escrow donut, active-jobs table.
+- `/dashboard/*` — jobs, proposals, saved, portfolio, services, payments,
+  profile, account, testimonials.
+- `/messages` + `/messages/<id>` — thread list with a **desktop icon rail**,
+  attachment cards, read receipts.
+- `/jobs/new` — **three-step wizard** with a live preview.
+- `/admin/*` — internal.
+
+**Shell**
+- Mobile: **bottom tab bar** (4 destinations + Menu, no create action) and a
+  **grouped drawer** (Your work / Settings / Help, version at the foot).
+- Desktop: **verb nav** (Find work / Deliver work / Get paid — or Find someone /
+  Manage work / Finances), settings gear, avatar menu.
+- Every page: **pre-footer** (ways-in cards + trust cards) then the footer.
+
+**Components most worth your attention** — each is reused, so a change lands
+in several places at once:
+`creative-card`, `job-card`, `service-card`, `feed-carousel`, `page-tabs`,
+`empty-state`, `pre-footer`, `bottom-tab-bar`, `media-carousel`, `seller-sheet`,
+`get-to-know`, `verified-badge`, `style-swatch`, `job-wizard`, `rich-text`.
+
+---
+
+## In scope
+
+Everything. Specifically the unfinished visual decisions:
+
+- **Stamp texture.** Position is settled — on the money's line, at the card's
+  right margin, larger. The *texture* is not: the flanking rules read as a
+  strike-through and the double ring is too subtle, so it reads as a rounded
+  chip rather than ink. Try rules **above and below** the text, a heavier outer
+  ring visibly separated from the inner one, wider tracking, possibly a dashed
+  outer ring for bleed.
 - **The paper-vs-white inconsistency** (`DESIGN.md` §2). Surfaces mix `paper`
-  (`#EFE6CE`), `wash` (`#DACFB2`) and plain white with no stated rule for which
-  belongs where. Decide the rule, then apply it.
-- **The `font-display` conflict** (`DESIGN.md` §3). Three faces are defined —
-  Inter for UI, Plex Mono for money and eyebrows, Instrument Serif for display
-  italic — and usage has drifted. Settle which face owns headings.
-
-**Finish, not features.**
-
-## Scope: the system first, and one finished surface
-
-This run happens with Phases 3–9 still ahead, so **most screens are going to
-change structurally.** Spend the run on what survives that, not on composition
-work Phase 6 will throw away.
-
-**In scope — the visual system.** Stamp texture, shadows and elevation, type
-scale, motion, the paper-vs-white rule, the `font-display` conflict. These are
-decisions about the language, and they apply to screens that do not exist yet
-as much as to the ones that do.
-
-**In scope — the landing page.** Eight live sections plus two that state "not
-yet". It is finished at 11 of 11 and **no remaining phase touches it**, so it
-is the one surface where composition work is safe today.
-
-**Treat carefully — job detail and creative profile.** Both are freshly built
-and worth looking at, but Phase 5 adds structured deliverables to job detail
-and Phase 4 rewrites the reviews block on the profile. Style what is there; do
-not re-architect either page.
-
-**OUT of scope — the signed-in dashboard.** Phase 6 (item 44, audit §B and
-§O1) replaces it wholesale: it stops being a stats dashboard and becomes a feed
-of sections, led by two eyebrow action cards — `RECOMMENDED FOR YOU` and
-`PROFILE PROGRESS` — with carousels beneath. Designing it now means designing a
-page already scheduled for demolition. The plan puts the *third* design run
-immediately after Phase 6 for exactly this reason.
-
-**OUT of scope — messages.** Phase 9.
+  (`#EFE6CE`), `wash` (`#DACFB2`) and plain white with no stated rule. Decide
+  the rule, then apply it everywhere.
+- **The `font-display` conflict** (`DESIGN.md` §3). Three faces — Inter for UI,
+  Plex Mono for money and eyebrows, Instrument Serif for display italic — and
+  usage has drifted. Settle which face owns headings.
+- **Shadows and elevation** (§6), **type scale**, **card composition**,
+  **motion**.
+- **The new Phase 7–9 surfaces**, which have had no design pass at all: the tab
+  bar, the drawer, the icon rail, the seller sheet, the wizard's step rail, the
+  style swatches.
 
 ---
 
 ## Do not change
 
-These are not aesthetic preferences. Each is a decision with a reason, and
-several were expensive to arrive at.
+Each is a decision with a reason, several expensive to reach.
 
-- **Never render a zero, a dash, or a placeholder where we have no data** (§Q7).
-  Sections with a data threshold render *nothing* below it. Do not "improve" a
-  hidden section by giving it a skeleton, a sample card, or a greyed-out
-  preview. An empty testimonial carousel says "nobody uses this"; a hidden one
-  says nothing, which is accurate.
-- **Do not invent numbers.** No "4.5x more likely", no sample ratings, no
-  filler statistics in mockups. Every figure on screen is derived from real
-  rows and traceable to `lib/client-trust.ts` or an equivalent.
+- **Never render a zero, a dash, or a placeholder where we have no data**
+  (§Q7). Sections below their data threshold render *nothing*. Do not
+  "improve" a hidden section with a skeleton, a sample card or a greyed
+  preview. An empty testimonial row says "nobody uses this"; a hidden one says
+  nothing, which is accurate. This is why the media carousel shows no counter
+  at one image, the save count hides below 3, and tabs hide a count of 0.
+- **Do not invent numbers.** No sample ratings, no filler statistics, no
+  "4.5x more likely". Every figure on screen traces to a real row.
 - **Do not upgrade "Phone on file" to "Phone verified."** We do not verify
-  phone numbers. The wording is exact and deliberate.
-- **Do not restyle the money-state semantics** (`DESIGN.md` §2, "Money states —
-  semantic, and non-negotiable"). Held, released, disputed and pending each own
-  a colour. Texture is yours; meaning is not.
-- **Do not give the mobile hero a photograph.** Mobile ships no hero image at
-  all and that is finished, not pending. Do not art-direct a mobile crop.
-- **Card radius is 14px; controls are `rounded-md`** (§7). No
-  rounded-everything.
+  phone numbers.
+- **Do not reword the trust badge.** It says "Checked by Ganyu Hub" — a claim
+  about our process, not a guarantee about someone's conduct. Not "Verified
+  professional", not "Trusted".
+- **One live action per surface.** The mobile seller sheet and the escrow bar
+  contain **no forms** — they link to the single real form. Two live submits
+  for one payment is how double-charges happen.
+- **No create action in the bottom tab bar.** A "+" between two tabs is what
+  people hit by accident.
+- **One filter control per breakpoint.** The messages icon rail replaces the
+  chips above `md`; they never both show.
+- **Do not restyle the money-state semantics** (`DESIGN.md` §2). Held,
+  released, disputed and pending each own a colour. Texture is yours; meaning
+  is not.
+- **Do not give the mobile hero a photograph.** Mobile ships no hero image and
+  that is finished, not pending.
+- **Card radius is 14px; controls are `rounded-md`** (§7).
 - **Hairlines are `ink` at 18% opacity, never solid.** `ink` is `#1A1611`,
   never `#000`.
-- **Copy that states a fact is not decoration.** Lines like "no work starts
-  until the money is in" or "we never guess it from when you were last online"
-  are commitments to the reader. Tighten the words; do not delete the claim.
+- **Style swatches are inline SVG, not images.** Six of them, drawn in code, so
+  nothing loads on a Malawian mobile connection and no swatch can be a photo of
+  work nobody here made. Restyle the shapes; do not replace them with assets.
+- **Copy that states a fact is not decoration.** "No work starts until the
+  money is in", "we never guess it from when you were last online" — tighten
+  the words, keep the claim.
 - **Do not convert server components to client components for a visual
-  effect.** The profile tabs, landing sections and trust block are all
-  server-rendered on purpose.
+  effect.** Profile tabs, landing sections, the trust block and the pre-footer
+  are server-rendered on purpose.
+
+---
 
 ## How to judge the work
 
 `DESIGN.md` §4: **build → screenshot → critique against `DESIGN.md` → fix.**
 Judge from a screenshot, never from the code. Every defect found in the
-2026-08-12 landing-page session was invisible in the source and obvious in the
-image.
+2026-08-12 session was invisible in the source and obvious in the image.
+
+Check both breakpoints. The mobile shell (tab bar, drawer, seller sheet) does
+not exist above `md`, and the desktop shell (verb nav, icon rail) does not
+exist below it — a screenshot at one width shows you half the product.
 
 ## Known-good reference points
 
 Settled. Match these rather than redesigning them:
 
 - The proof row's restraint on the landing page.
-- The peeking testimonial carousel's card width and gap.
-- `CreativeCard` — reused on `/browse`, saved items and the landing page, so a
-  change there lands in three places at once.
+- The peeking carousel's card width and gap — the peek is a requirement, not a
+  style choice (§Q8).
+- `CreativeCard` — reused on `/browse`, saved items, the home feed and the
+  landing page, so one change lands in four places.

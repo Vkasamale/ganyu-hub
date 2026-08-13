@@ -1,5 +1,21 @@
 # Gap audit — Fiverr / Upwork / WhatsApp vs Ganyu Hub
 
+> **STATUS 2026-08-13 — READ THIS FIRST. Every gap in this file has been
+> closed.** All 79 items derived from it (Phases 0–9 of
+> [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)) are built and shipped.
+>
+> **This is no longer a to-do list.** It is now the *reasoning record*: why
+> each thing on screen is shaped the way it is. Read it to understand intent
+> before restyling something — the §-numbers below (§B, §H3, §K2, §N5, §Q7 …)
+> are cited in code comments throughout the repo.
+>
+> Seven items turned out to be already built when reached, and are marked as
+> such in `CHANGELOG.md` rather than here.
+>
+> If you are the design run: the current surface inventory is in
+> [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md), not in this file. This file describes
+> what was missing in August 2026, not what is missing now.
+
 What the references have that we don't. Working notes, built screenshot by
 screenshot. Companion to `DESIGN_BRIEF_MOBILE.md` (which is the outward brief);
 this file is the inventory of missing flesh.
