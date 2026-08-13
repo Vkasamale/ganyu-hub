@@ -3,6 +3,40 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-13 — Phase 6: discovery in plain language, and SEO switched on (v0.9.9)
+
+Items 43, 47, 49.
+
+**43 — task-phrased entry points.** `lib/task-phrases.ts` maps all 24
+`CATEGORIES` to a sentence a first-time client would actually say. The home
+grid now leads with "Get a logo, poster or menu designed" and demotes *Design*
+to a subtitle. §L1's point: the taxonomy is ours, not theirs.
+
+**47 — service card shape.** `components/service-card.tsx`: cover image,
+rating, title, **From MWK X**. Two honest departures, both §Q7 — there is no
+per-service image or rating in the schema, so the cover falls back to the
+creative's newest portfolio piece with a `cover_url`, and the rating is shown
+*labelled as the creative's* rather than invented per service. No ♡:
+`target_kind` is `('job','creative')` only, and the real one already sits on
+that page.
+
+**49 — category landing pages** at `/c/<slug>`, e.g. `/c/video-photography`.
+Each has a plain-language intro, its own title/description/canonical, and
+`generateStaticParams` over all 24. It **renders `BrowsePage`** rather than
+cloning its query — the price aggregation, rating shrinkage and completeness
+gate are non-trivial and already correct.
+
+**SEO groundwork now that `ganyuhub.com` is live** (BACKLOG "Domain unlocked"
+§4): `app/sitemap.ts` (115 URLs — static, all 24 categories, complete creative
+profiles, open jobs) and `app/robots.ts` (disallowing `/dashboard`,
+`/messages`, `/t/`, `/auth/`, `/api/`). Creative profiles are filtered by the
+same completeness rule `/browse` uses — submitting a half-finished profile to
+Google is submitting a thin page with our name on it.
+
+`lib/site-url.ts`'s last-resort fallback moved from `ganyu-hub.vercel.app` to
+`https://www.ganyuhub.com`. Env vars still win; this only affects the case
+where none is set.
+
 ## 2026-08-12 — Phase 6 begins: the signed-in home is a feed (v0.9.8)
 
 Items 44-46, plus 48 falling out for free.

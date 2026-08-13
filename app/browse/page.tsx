@@ -13,8 +13,14 @@ function toArray(v: string | string[] | undefined): string[] {
 }
 function sanitize(s: string) { return s.replace(/[,()]/g, " ").trim(); }
 
-export default async function BrowsePage({ searchParams: searchParamsP }: {
+export default async function BrowsePage({ searchParams: searchParamsP, title, intro, action = "/browse" }: {
   searchParams: Promise<{ q?: string; category?: string | string[]; skills?: string; min_price?: string; max_price?: string; sort?: string }>;
+  /** Item 49: the category landing pages delegate here rather than clone the
+   *  query, and supply their own H1 and plain-language intro. */
+  title?: string;
+  intro?: React.ReactNode;
+  /** Where the filters form posts back to — its own URL, not /browse. */
+  action?: string;
 }) {
   const searchParams = (await searchParamsP) || {};
   const supabase = createClient();
@@ -118,10 +124,11 @@ export default async function BrowsePage({ searchParams: searchParamsP }: {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-bold">Browse Malawian creatives</h1>
+      <h1 className="text-3xl font-bold">{title || "Browse Malawian creatives"}</h1>
       <p className="mt-1 text-neutral-600">{visibleCount} {visibleCount === 1 ? "creative" : "creatives"} found</p>
+      {intro}
       <div className="mt-6">
-        <FiltersBar kind="creatives" action="/browse" q={searchParams.q} categories={cats} skills={searchParams.skills} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
+        <FiltersBar kind="creatives" action={action} q={searchParams.q} categories={cats} skills={searchParams.skills} minPrice={searchParams.min_price} maxPrice={searchParams.max_price} sort={searchParams.sort} />
       </div>
       <StaggerList className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {visibleProfiles.map((p) => (

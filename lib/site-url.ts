@@ -18,7 +18,9 @@ export const SITE_URL = (
   (previewHost ? `https://${previewHost}` : null) ||
   process.env.APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ganyu-hub.vercel.app"
+  // ganyuhub.com is live and Vercel serves www as canonical (apex 308s to it).
+  // Last resort only — APP_URL / NEXT_PUBLIC_SITE_URL still win above.
+  "https://www.ganyuhub.com"
 ).replace(/\/$/, "");
 
 export function absUrl(path: string) {

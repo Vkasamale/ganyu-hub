@@ -12,7 +12,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { CATEGORIES } from "@/lib/types";
-import { taskPhrase } from "@/lib/task-phrases";
+import { categorySlug, taskPhrase } from "@/lib/task-phrases";
 
 /**
  * Landing-page sections below the hero. IMPLEMENTATION_PLAN.md L2, L3, L4, L6.
@@ -120,7 +120,7 @@ export function CategoryGrid() {
           {shown.map((cat) => (
             <li key={cat}>
               <Link
-                href={`/browse?category=${encodeURIComponent(cat)}`}
+                href={`/c/${categorySlug(cat)}`}
                 className="group flex h-full items-center justify-between gap-2 rounded-md border border-ink/10 bg-white px-4 py-4 text-sm font-medium text-ink transition-colors hover:border-brand/40 hover:text-brand-dark"
               >
                 {/* §L1: the task leads, the taxonomy is the subtitle. */}

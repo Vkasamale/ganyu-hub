@@ -44,3 +44,23 @@ const PHRASES: Record<Category, string> = {
 export function taskPhrase(category: string): string | null {
   return PHRASES[category as Category] ?? null;
 }
+
+/**
+ * Item 49 — URL slug for a category landing page. "Video & Photography" →
+ * "video-photography". Derived, not stored: a slug column would be a second
+ * source of truth that can disagree with CATEGORIES.
+ */
+export function categorySlug(category: string): string {
+  return category
+    .toLowerCase()
+    .replace(/&/g, " ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/** Reverse lookup. Null for an unknown slug, so the route can 404 honestly. */
+export function categoryFromSlug(slug: string): string | null {
+  return Object.keys(PHRASES).find((c) => categorySlug(c) === slug) ?? null;
+}
+
+export const ALL_CATEGORY_SLUGS = Object.keys(PHRASES).map(categorySlug);
