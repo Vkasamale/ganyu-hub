@@ -94,6 +94,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {!bareLayout && <Navbar />}
         <main>{children}</main>
         {!bareLayout && <Footer />}
+        {/* Phase 7 item 56: the tab bar is fixed, so the last thing on every
+            page would sit underneath it. Height of the bar plus the iOS home
+            indicator; collapses to zero from `md` up, where no bar renders. */}
+        {!bareLayout && (
+          <div aria-hidden className="h-[calc(3.5rem+env(safe-area-inset-bottom))] md:hidden" />
+        )}
         <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
