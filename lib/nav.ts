@@ -54,7 +54,9 @@ export function primaryDestinations(role: NavRole): Dest[] {
     ? [
         { href: "/browse", label: "Find someone", icon: "search", prefix: true },
         { href: "/dashboard/jobs", label: "Manage work", icon: "briefcase", prefix: true },
-        { href: "/dashboard/payments", label: "Money", icon: "wallet", prefix: true },
+        // "Money" was too generic for a link that lands on Payments — the
+        // label should name the area, not the subject matter.
+        { href: "/dashboard/payments", label: "Finances", icon: "wallet", prefix: true },
       ]
     : [
         { href: "/jobs", label: "Find work", icon: "search", prefix: true },

@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/supabase/user";
 import { CreativeCard } from "@/components/creative-card";
 import { JobCard } from "@/components/job-card";
 import { EmptyState } from "@/components/empty-state";
+import { PageTabs } from "@/components/page-tabs";
 
 type Tab = "creatives" | "jobs";
 
@@ -43,30 +44,14 @@ export default async function SavedPage({ searchParams: searchParamsP }: { searc
       </header>
 
       <section className="card-soft p-6">
-        <nav className="flex gap-1 border-b border-ink/10 pb-3">
-          <Link
-            href="/dashboard/saved?tab=creatives"
-            scroll={false}
-            className={
-              tab === "creatives"
-                ? "rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper"
-                : "rounded-md px-4 py-2 text-sm text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
-            }
-          >
-            Creatives <span className="ml-1 text-xs opacity-70">{creativesCount}</span>
-          </Link>
-          <Link
-            href="/dashboard/saved?tab=jobs"
-            scroll={false}
-            className={
-              tab === "jobs"
-                ? "rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper"
-                : "rounded-md px-4 py-2 text-sm text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
-            }
-          >
-            Jobs <span className="ml-1 text-xs opacity-70">{jobsCount}</span>
-          </Link>
-        </nav>
+        <PageTabs
+          active={tab}
+          className="mb-3"
+          tabs={[
+            { key: "creatives", label: "Creatives", href: "/dashboard/saved?tab=creatives", count: creativesCount },
+            { key: "jobs", label: "Jobs", href: "/dashboard/saved?tab=jobs", count: jobsCount },
+          ]}
+        />
 
         <div className="mt-5">
           {tab === "creatives" ? (

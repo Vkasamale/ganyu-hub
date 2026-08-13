@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
 import { ServiceWorkerRegistrar } from "@/components/pwa";
 import { Footer } from "@/components/footer";
+import { PreFooter } from "@/components/pre-footer";
 import { InstallBanner } from "@/components/install-banner";
 import { AnnouncementBar } from "@/components/announcement-bar";
 
@@ -93,6 +94,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {!bareLayout && <InstallBanner />}
         {!bareLayout && <Navbar />}
         <main>{children}</main>
+        {/* Items 62 + 63: a way back in, then the reason to trust us — the two
+            things the bottom of a page was missing. */}
+        {!bareLayout && <PreFooter />}
         {!bareLayout && <Footer />}
         {/* Phase 7 item 56: the tab bar is fixed, so the last thing on every
             page would sit underneath it. Height of the bar plus the iOS home

@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/supabase/user";
 import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { formatMwk, timeAgo } from "@/lib/utils";
 import { getReleasedSpend, getCommittedValue } from "@/lib/money";
+import { PageTabs } from "@/components/page-tabs";
 
 type Role = "client" | "creative" | "agency";
 
@@ -205,26 +206,16 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
         ];
         return (
           <section className="card-soft overflow-hidden">
-            <div className="flex items-center gap-1 border-b border-ink/[0.06] px-3 py-2">
-              {tabs.map((t) => {
-                const active = tab === t.key;
-                return (
-                  <Link
-                    key={t.key}
-                    href={`/dashboard/jobs?tab=${t.key}`}
-                    scroll={false}
-                    className={
-                      active
-                        ? "rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper"
-                        : "rounded-md px-4 py-2 text-sm text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
-                    }
-                  >
-                    {t.label}
-                    <span className={`ml-2 tabular-nums text-xs ${active ? "text-paper/70" : "text-ink/45"}`}>{t.count}</span>
-                  </Link>
-                );
-              })}
-            </div>
+            <PageTabs
+              active={tab}
+              className="px-3"
+              tabs={tabs.map((t) => ({
+                key: t.key,
+                label: t.label,
+                href: `/dashboard/jobs?tab=${t.key}`,
+                count: t.count,
+              }))}
+            />
 
             {tab === "active" && (
               <JobsTableBody
