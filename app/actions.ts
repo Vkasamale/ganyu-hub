@@ -3307,6 +3307,47 @@ async function adminDb() {
   );
 }
 
+/**
+ * Item 77 (§O2) — grant or withdraw Ganyu-verified.
+ *
+ * Service-role, because phase9-messages.sql revokes those three columns from
+ * `authenticated`. That revoke is the point: the "profiles update self" policy
+ * would otherwise let a creative award themselves the badge, and a badge you
+ * can self-issue is worse than no badge — it actively misleads the client it
+ * exists to reassure.
+ *
+ * Withdrawable on purpose. Vetting is a judgement about a person at a moment,
+ * and a trust signal that can only ever be granted is one we cannot correct.
+ */
+export async function setVerified(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  if (!me?.is_admin) return { error: "Admin only." };
+
+  const targetId = String(formData.get("profile_id") || "");
+  if (!targetId) return { error: "Missing profile." };
+  const grant = String(formData.get("grant") || "") === "1";
+  const note = String(formData.get("note") || "").trim() || null;
+
+  const admin = await adminDb();
+  const { error } = await admin
+    .from("profiles")
+    .update(
+      grant
+        ? { verified_at: new Date().toISOString(), verified_by: user.id, verified_note: note }
+        : { verified_at: null, verified_by: null, verified_note: null },
+    )
+    .eq("id", targetId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/creatives/${targetId}`);
+  revalidatePath("/browse");
+  return { ok: true };
+}
+
 /** Creative creates a request and gets a link to send. */
 export async function createTestimonialRequest(formData: FormData) {
   const supabase = createClient();

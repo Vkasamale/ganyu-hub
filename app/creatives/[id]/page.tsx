@@ -6,6 +6,7 @@ import { StickyActionBar } from "@/components/sticky-action-bar";
 import { ReviewAxisBreakdown } from "@/components/review-axes";
 import { ServiceCard } from "@/components/service-card";
 import { getAlsoViewed } from "@/lib/feed";
+import { VerifiedBadge } from "@/components/verified-badge";
 import { CaseStudyFacts } from "@/components/case-study-fields";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -167,6 +168,14 @@ export default async function CreativePage({
   // fallback says what it actually is.
   const alsoViewed = await getAlsoViewed(supabase as any, "creative", id, 5);
 
+  // Item 79: how many people saved this creative. A head count, no rows.
+  const { count: saveCountRaw } = await supabase
+    .from("saved_items")
+    .select("id", { count: "exact", head: true })
+    .eq("target_type", "creative")
+    .eq("target_id", id);
+  const saveCount = saveCountRaw || 0;
+
   const primaryCat = (profile.categories || [])[0];
   const { data: similar } = primaryCat
     ? await supabase
@@ -271,7 +280,18 @@ export default async function CreativePage({
                 )}
               </div>
               <div className="pb-1">
-                <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">{profile.full_name || "Unnamed"}</h1>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">{profile.full_name || "Unnamed"}</h1>
+                  <VerifiedBadge verifiedAt={profile.verified_at} size="lg" />
+                  {/* Item 79 (§G8): a save count is other people's judgement,
+                      which the ♡ toggle alone never showed. Hidden below 3 —
+                      "♡ 1" is not social proof, it is one person. */}
+                  {saveCount >= 3 && (
+                    <span className="text-sm text-ink/55" title={`${saveCount} people saved this creative`}>
+                      ♡ {saveCount}
+                    </span>
+                  )}
+                </div>
                 {profile.headline ? (
                   <p className="mt-1 text-sm text-ink/70 md:text-base">{profile.headline}</p>
                 ) : isOwner ? (

@@ -3,6 +3,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
 import { formatSAST } from "@/lib/admin-format";
+import { VerifiedBadge } from "@/components/verified-badge";
+import { setVerified } from "@/app/actions";
+import { SavingForm } from "@/components/saving-form";
 
 const ROLES = [
   { key: "all", label: "All" },
@@ -24,7 +27,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
   const q = (sp?.q || "").trim();
 
   let query = supabase.from("profiles")
-    .select("id, full_name, role, is_admin, created_at")
+    .select("id, full_name, role, is_admin, created_at, verified_at")
     .order("created_at", { ascending: false })
     .limit(100);
   if (role === "admin") query = query.eq("is_admin", true);
@@ -80,9 +83,38 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
               </Link>
               <p className="text-xs text-ink/55">{p.role} · joined {formatSAST(p.created_at)}</p>
             </div>
-            {p.is_admin && (
-              <span className="rounded-full bg-stamp/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stamp-dark">admin</span>
-            )}
+            <div className="flex items-center gap-2">
+              {p.is_admin && (
+                <span className="rounded-full bg-stamp/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stamp-dark">admin</span>
+              )}
+              <VerifiedBadge verifiedAt={p.verified_at} />
+              {/* Item 77: clients are not vetted — the badge answers "can I
+                  trust this creative with my money", which nobody asks about
+                  the person paying. SavingForm rather than a bare <form>: this
+                  action is admin-gated and service-role, so it can fail, and a
+                  silent failure on a trust badge is the worst kind. */}
+              {p.role !== "client" && (
+                <SavingForm
+                  action={setVerified}
+                  successText={p.verified_at ? "Withdrawn." : "Marked as checked."}
+                  silent
+                >
+                  <input type="hidden" name="profile_id" value={p.id} />
+                  <input type="hidden" name="grant" value={p.verified_at ? "0" : "1"} />
+                  <button
+                    type="submit"
+                    className={
+                      "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors " +
+                      (p.verified_at
+                        ? "border-ink/15 text-ink/60 hover:border-ink/30"
+                        : "border-mark/40 text-mark hover:bg-mark/[0.06]")
+                    }
+                  >
+                    {p.verified_at ? "Withdraw" : "Mark checked"}
+                  </button>
+                </SavingForm>
+              )}
+            </div>
           </div>
         ))}
       </div>
