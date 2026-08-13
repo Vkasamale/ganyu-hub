@@ -12,6 +12,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { CATEGORIES } from "@/lib/types";
+import { taskPhrase } from "@/lib/task-phrases";
 
 /**
  * Landing-page sections below the hero. IMPLEMENTATION_PLAN.md L2, L3, L4, L6.
@@ -122,7 +123,13 @@ export function CategoryGrid() {
                 href={`/browse?category=${encodeURIComponent(cat)}`}
                 className="group flex h-full items-center justify-between gap-2 rounded-md border border-ink/10 bg-white px-4 py-4 text-sm font-medium text-ink transition-colors hover:border-brand/40 hover:text-brand-dark"
               >
-                <span>{cat}</span>
+                {/* §L1: the task leads, the taxonomy is the subtitle. */}
+                <span className="min-w-0">
+                  {taskPhrase(cat) ?? cat}
+                  {taskPhrase(cat) && (
+                    <span className="mt-0.5 block text-xs font-normal text-ink/50">{cat}</span>
+                  )}
+                </span>
                 <ArrowRight
                   className="h-4 w-4 shrink-0 text-ink/25 transition-all group-hover:translate-x-0.5 group-hover:text-brand"
                   aria-hidden

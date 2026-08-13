@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/supabase/user";
 import { notFound, redirect } from "next/navigation";
 import { StickyActionBar } from "@/components/sticky-action-bar";
 import { ReviewAxisBreakdown } from "@/components/review-axes";
+import { ServiceCard } from "@/components/service-card";
 import { CaseStudyFacts } from "@/components/case-study-fields";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -407,16 +408,15 @@ export default async function CreativePage({
               <span className="text-xs text-ink/55">Starting prices</span>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {/* Item 47: one card shape. The cover is the creative's newest
+                  portfolio piece — services carry no image of their own. */}
               {(services || []).map((s: any) => (
-                <div key={s.id} className="rounded-lg border border-ink/10 bg-paper p-4">
-                  <p className="font-medium text-ink">{s.title}</p>
-                  {s.description && <p className="mt-1 line-clamp-2 text-xs text-ink/65">{s.description}</p>}
-                  <p className="mt-3 text-sm">
-                    <span className="font-semibold text-ink">{formatMwk(s.price_mwk)}</span>
-                    {s.price_mwk_max && <span className="text-ink/65"> – {formatMwk(s.price_mwk_max)}</span>}
-                    {s.delivery_days && <span className="text-ink/55"> · ~{s.delivery_days}d</span>}
-                  </p>
-                </div>
+                <ServiceCard
+                  key={s.id}
+                  service={s}
+                  coverUrl={(portfolio || []).find((p: any) => p.cover_url)?.cover_url || null}
+                  rating={reviewCount ? { avg: avgRating, count: reviewCount } : null}
+                />
               ))}
               {serviceCount === 0 && (
                 <p className="text-sm text-ink/55">No services listed yet.</p>
