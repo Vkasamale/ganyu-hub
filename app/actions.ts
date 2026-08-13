@@ -1975,6 +1975,43 @@ export async function toggleSave(formData: FormData) {
   return { ok: true };
 }
 
+/**
+ * Item 72 (§H3) — stamp that this person has now seen the thread.
+ *
+ * Called from the thread page's render, exactly like recordView below, and
+ * deliberately WITHOUT revalidatePath: revalidating during a render is the
+ * FIX-2026-07-13b bug, and a receipt is not worth re-rendering a page for.
+ *
+ * Which column depends on which side you are on, and a non-participant matches
+ * neither — RLS blocks the row anyway, but the check says so out loud rather
+ * than relying on a policy two files away.
+ */
+export async function markThreadRead(threadId: string) {
+  const supabase = createClient();
+  const user = await getSessionUser();
+  if (!user) return;
+
+  const { data: t } = await supabase
+    .from("message_threads")
+    .select("client_id, creative_id")
+    .eq("id", threadId)
+    .maybeSingle();
+  if (!t) return;
+
+  const column =
+    t.client_id === user.id
+      ? "client_last_read_at"
+      : t.creative_id === user.id
+        ? "creative_last_read_at"
+        : null;
+  if (!column) return;
+
+  await supabase
+    .from("message_threads")
+    .update({ [column]: new Date().toISOString() })
+    .eq("id", threadId);
+}
+
 export async function recordView(target_type: "job" | "creative", target_id: string) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

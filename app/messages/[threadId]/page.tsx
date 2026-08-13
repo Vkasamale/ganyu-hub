@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
-import { sendMessage } from "@/app/actions";
+import { sendMessage, markThreadRead } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { AttachmentPicker } from "@/components/attachment-picker";
@@ -50,6 +50,19 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
       if (s.signedUrl && s.path) signedMap.set(s.path, s.signedUrl);
     });
   }
+
+  // Item 72: opening the thread IS reading it. Stamped before the receipt is
+  // computed below, so my own visit never counts as the other side's.
+  await markThreadRead(params.threadId);
+
+  // The other party's last read. `iAmClient` decides which column is theirs.
+  const iAmClient = thread.client_id === user.id;
+  const theirLastRead: string | null = iAmClient
+    ? thread.creative_last_read_at
+    : thread.client_last_read_at;
+  // Only the LAST of my messages carries a receipt. A "Seen" under every
+  // bubble is noise; the only one anyone checks is the most recent.
+  const myLastMessageId = [...(messages || [])].reverse().find((m: any) => m.sender_id === user.id)?.id;
 
   // Embedded-job cards: collect all [[job:UUID]] refs across this thread's
   // messages and batch-fetch metadata in one round-trip.
@@ -240,7 +253,23 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         mine={mine}
                       />
                     )}
-                    <p className={`mt-1 text-[10px] ${mine ? "text-paper/60" : "text-ink/50"}`}>{timeAgo(m.created_at)}</p>
+                    <p className={`mt-1 text-[10px] ${mine ? "text-paper/60" : "text-ink/50"}`}>
+                      {timeAgo(m.created_at)}
+                      {/* Item 72: null edited_at means never edited — the
+                          honest default for every row written before the
+                          column existed, which is why it is not backfilled. */}
+                      {m.edited_at && <span className="ml-1.5">· Edited</span>}
+                      {/* The receipt: shown only on my newest message, and only
+                          once they have opened the thread since I sent it. */}
+                      {mine && m.id === myLastMessageId && (
+                        <span className="ml-1.5">
+                          ·{" "}
+                          {theirLastRead && new Date(theirLastRead) >= new Date(m.created_at)
+                            ? "Seen"
+                            : "Sent"}
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
               );

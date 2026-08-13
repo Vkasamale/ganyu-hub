@@ -17,6 +17,27 @@
 alter table message_threads add column if not exists client_last_read_at timestamptz;
 alter table message_threads add column if not exists creative_last_read_at timestamptz;
 
+-- RLS: message_threads had SELECT and INSERT policies and NO UPDATE policy, so
+-- with RLS enabled every read-receipt write was denied — silently, returning
+-- zero rows. "Seen" would simply never have appeared, and nothing would have
+-- errored to say why. Caught before shipping; this is the fix.
+--
+-- The column grant is what keeps it narrow: participants may write the two
+-- read-state columns and nothing else, so this policy cannot be used to edit
+-- job_id or hand a thread to someone else.
+drop policy if exists "threads update read state" on message_threads;
+create policy "threads update read state" on message_threads for update
+  using (auth.uid() in (client_id, creative_id))
+  with check (auth.uid() in (client_id, creative_id));
+
+revoke update on message_threads from authenticated;
+grant update (client_last_read_at, creative_last_read_at) on message_threads to authenticated;
+
+-- Known ceiling: a participant could stamp the OTHER side's column via a
+-- direct API call and fake a "Seen". markThreadRead picks the correct column
+-- server-side, so the app never does this. Closing it properly needs a BEFORE
+-- UPDATE trigger; not worth one until a receipt carries weight in a dispute.
+
 -- The "Edited" marker. Null means never edited — the honest default for every
 -- row written before this column existed. Deliberately NOT backfilled to
 -- created_at, which would claim every old message had been edited.
