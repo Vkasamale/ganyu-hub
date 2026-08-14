@@ -2,13 +2,25 @@
 
 Paste this whole file into a new session as the opening message.
 
-> **Next session is the landing page's dark sections — L8 to L11 — then Phase 0.**
-> That's the headline task. Everything below is context and follow-ups, not a
-> queue to clear first.
+> **Next session is the DESIGN TEMPLATE. Not feature work.**
 >
-> The landing page went from two sections to eight this session. What's left of
-> it is four sections that get **built, wired, and left switched off** until
-> real data exists. Phase 0 is eight items needing no schema at all.
+> All 79 plan items (Phases 0–9) are shipped and merged to `main` as of
+> 2026-08-13, and the Claude Design **system** run is done. What remains is the
+> template step.
+>
+> **Before anything else, ask the founder for the transcribed YouTube video
+> about using Claude Design.** It is not in this repo and did not survive
+> compaction. The founder supplied it deliberately, because the generic
+> approach needed adapting to how this site is built — so do not improvise the
+> template step without it.
+>
+> Then read **`BACKLOG.md` → "▶ NEXT SESSION STARTS HERE"**, which lists the
+> prepared inputs (`DESIGN.md`, `DESIGN_BRIEF.md`, the handoff folder on the
+> Desktop) and the two decisions — paper-vs-white and the `font-display`
+> conflict — worth settling before anything is composed on top of them.
+>
+> Everything below this line is older context, kept for reference. It is **not**
+> a queue to clear, and its "headline task" is long finished.
 
 ---
 

@@ -2,6 +2,61 @@
 
 Things that work but could be better. Not urgent, not blocking. Pull from here when there's room.
 
+---
+
+## ▶ NEXT SESSION STARTS HERE — the design template (added 2026-08-13)
+
+**Where we stopped:** all 79 plan items (Phases 0–9) are shipped and merged to
+`main`. The **Claude Design system run has been done**. The next step is the
+**template**, not more feature work.
+
+**⚠️ First thing to ask the founder for: the transcribed YouTube video about
+using Claude Design.** It was supplied in an earlier session and is NOT in the
+current context — it did not survive compaction, and no copy exists in this
+repo. Do not attempt the template step from memory or from general knowledge of
+Claude Design; the founder's stated reason for providing it was that the
+generic approach needed adapting to how *this* site is built. Ask for it, read
+it, then start.
+
+**Inputs already prepared, current as of 2026-08-13:**
+
+- [`DESIGN.md`](DESIGN.md) — binding rulebook. Unchanged; its responsive table
+  already describes the shipped shell.
+- [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md) — **rewritten from the code.** Surface
+  inventory (public / signed-in / shell / reused components), the open visual
+  decisions, and the do-not-change list.
+- [`DESIGN_BRIEF_MOBILE.md`](DESIGN_BRIEF_MOBILE.md) — for a run with no repo
+  access. §6 corrected: the tab bar and drawer are built, and the shipped tabs
+  are `Home · Find work/Find someone · Messages · My work · Menu`, NOT the
+  `Home/Browse/Messages/Jobs/Profile` the old draft proposed.
+- [`DESIGN_GAP_AUDIT.md`](DESIGN_GAP_AUDIT.md) — every gap closed; now the
+  reasoning record behind the §-numbers cited in code comments, not a to-do
+  list.
+- **Handoff folder** at `C:\Users\vinny\Desktop\ganyu-design-handoff` (3 MB, no
+  `node_modules`): `components/` (92 files), `app/` (47 routes +
+  `globals.css`), `tailwind.config.ts` (the palette), four `lib/` files (`nav`,
+  `styles`, `task-phrases`, `utils`), the four design docs and the logo.
+  Rebuildable from the repo at any time.
+
+**Two decisions to settle before anything is composed on top of them** — both
+ripple across every screen:
+
+1. **paper-vs-white** (`DESIGN.md` §2). Surfaces mix `paper` `#EFE6CE`, `wash`
+   `#DACFB2` and plain white with no stated rule.
+2. **The `font-display` conflict** (§3). Inter / IBM Plex Mono / Instrument
+   Serif — settle which face owns headings.
+
+**Outstanding and NOT design work** (do not let these bleed into the template
+session):
+
+- Message editing: `messages.edited_at` renders an "Edited" marker but no edit
+  UI exists. Needs an RLS update policy on `messages` plus an edit flow.
+- `VERIFY_BACKLOG.md` steps 2–6 — founder clicks.
+- The Ganyu-verified admin control (`/admin/users` → "Mark checked") is built
+  but never exercised; it grants a public trust badge, so the founder decides.
+
+---
+
 ## Auth / Login (next-session task — scoped 2026-08-05)
 
 - ~~**"Continue with Google" login.**~~ **Built 2026-08-05.** Button on `/login` + `/signup` → `signInWithGoogle` server action → `signInWithOAuth`; callback verified. Role wrinkle solved at the root: `profiles.role` made nullable (no default), `handle_new_user` no longer defaults to creative, new `/onboarding/role` picker (`chooseRole`) + dashboard-layout gate route null-role users to pick once. Unit tests green, tsc clean. **Pending activation:** re-run `schema.sql` + configure/enable Google provider in Supabase (see CHANGELOG + DevRoadmap). Original scope below for reference.
