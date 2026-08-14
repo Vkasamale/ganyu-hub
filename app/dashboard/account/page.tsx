@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
+import { RegisterPasskey } from "@/components/passkey";
 
 export default async function AccountPage() {
   const supabase = createClient();
@@ -58,6 +59,19 @@ export default async function AccountPage() {
             </div>
             <SubmitButton>Update password</SubmitButton>
           </SavingForm>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Passkeys</CardTitle>
+          <p className="text-sm text-neutral-500">
+            Sign in with your fingerprint, face or screen lock instead of typing a password. The passkey stays on your
+            device — we never see it, and it cannot be phished.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <RegisterPasskey />
         </CardContent>
       </Card>
     </div>

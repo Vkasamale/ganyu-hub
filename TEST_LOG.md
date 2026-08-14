@@ -4,6 +4,23 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-14 — Passkey sign-in
+
+- ✅ `tsc --noEmit` clean and `npm run build` green.
+- 🕒 **Everything else is unverified, and cannot be verified here.** WebAuthn
+  requires the page origin to match the Relying Party ID (`ganyuhub.com`), so
+  the buttons do nothing on localhost or on a preview deployment. The founder
+  must test on the live site:
+  1. `/dashboard/account` → Passkeys → **Add a passkey** → device prompt →
+     "Passkey added".
+  2. Sign out, then `/login` → **Continue with a passkey** → device prompt →
+     lands on `/dashboard` already signed in.
+  3. Cancel the prompt at step 2 — expected: the button returns to rest with
+     **no** red error, since a cancel is not a failure.
+  4. Open `/login` on a browser without WebAuthn — expected: the passkey
+     button is absent entirely, not present-and-broken.
+- ⬜ Deleting a passkey. Not built; there is no way to remove one from the UI.
+
 ## 2026-08-13 — Phases 7, 8 and most of 9
 
 Verified as Adam Creative (Chrome) and as EQ Admin Client (preview browser).

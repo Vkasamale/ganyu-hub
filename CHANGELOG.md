@@ -3,6 +3,28 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-14 — Passkey sign-in (v0.9.13)
+
+Supabase Passkeys was switched on in the dashboard, so the app side now exists:
+`components/passkey.tsx` exports `PasskeySignIn` (login page, beside Continue
+with Google) and `RegisterPasskey` (a new Passkeys card on `/dashboard/account`).
+A passkey has to be created before it can be used, so the account card is the
+entry point and the login button is the payoff.
+
+These are the **first client-side auth components in the app** — every other
+path is a server-action form, and `navigator.credentials` cannot run in one.
+`lib/supabase/client.ts` gained `auth.experimental.passkey: true`; without that
+opt-in both SDK methods throw, because passkeys are beta in Supabase.
+
+Neither control renders on a browser without `window.PublicKeyCredential` — a
+dead button that fails on tap is worse than no button. A cancelled prompt is
+silent; only real failures show a message.
+
+**Not verifiable outside production.** WebAuthn binds a credential to the
+Relying Party ID (`ganyuhub.com`), so passkeys cannot work on a Vercel preview
+URL or on localhost. This is the first feature that has to be tested on the
+live site.
+
 ## 2026-08-13 — Phase 6 complete: items 51, 53, 54 (v0.9.12)
 
 **51 — real co-view.** `getAlsoViewed()` does two hops over `interactions`:

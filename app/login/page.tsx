@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Turnstile } from "@/components/turnstile";
 import { GoogleSignin } from "@/components/google-signin";
+import { PasskeySignIn } from "@/components/passkey";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; info?: string }> }) {
   const { error, info } = await searchParams;
@@ -24,7 +25,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               {decodeURIComponent(error)}
             </p>
           )}
-          <GoogleSignin />
+          <div className="space-y-2">
+            <GoogleSignin />
+            <PasskeySignIn />
+          </div>
           <div className="my-4 flex items-center gap-3 text-xs text-neutral-400">
             <span className="h-px flex-1 bg-neutral-200" />or<span className="h-px flex-1 bg-neutral-200" />
           </div>
