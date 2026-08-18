@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title,
     description: descParts.join(" · "),
+    alternates: { canonical: absUrl(`/jobs/${id}`) },
     openGraph: { title, description: descParts.join(" · "), type: "article" },
     twitter: { card: "summary", title, description: descParts.join(" · ") },
   };
@@ -55,7 +56,8 @@ import { isTestMode } from "@/lib/payments";
 import { ClientLinkCopy } from "@/components/client-link-copy";
 import { JobHeader } from "@/components/job-header";
 import { ShareButtons } from "@/components/share-buttons";
-import { absUrl } from "@/lib/site-url";
+import { absUrl, SITE_URL } from "@/lib/site-url";
+import { JsonLd } from "@/components/json-ld";
 import { JobPayoutMethodPicker } from "@/components/job-payout-method-picker";
 import { AcceptProposalPicker } from "@/components/accept-proposal-picker";
 import { ProposalPayoutPreview } from "@/components/proposal-payout-preview";
@@ -268,6 +270,38 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
+      {/*
+        Google Jobs only. Emitted for OPEN, PUBLIC jobs and nothing else —
+        a `JobPosting` left up after the job is filled is the one thing Google
+        actively penalises, and a private invite must not be indexed at all.
+        `validThrough` is the deadline where we have one; without it Google
+        assumes the posting is live for 30 days and then flags it as stale.
+      */}
+      {job.status === "open" && job.visibility !== "private" && (
+        <JsonLd
+          data={{
+            "@type": "JobPosting",
+            title: job.title,
+            description: job.brief || job.title,
+            datePosted: job.created_at,
+            ...(job.deadline ? { validThrough: new Date(job.deadline).toISOString() } : {}),
+            employmentType: "CONTRACTOR",
+            hiringOrganization: { "@type": "Organization", name: "Ganyu Hub", sameAs: SITE_URL },
+            jobLocationType: "TELECOMMUTE",
+            applicantLocationRequirements: { "@type": "Country", name: "Malawi" },
+            ...(job.budget_mwk
+              ? {
+                  baseSalary: {
+                    "@type": "MonetaryAmount",
+                    currency: "MWK",
+                    // A job budget is the whole piece of work, not a rate.
+                    value: { "@type": "QuantitativeValue", value: job.budget_mwk, unitText: "DAY" },
+                  },
+                }
+              : {}),
+          }}
+        />
+      )}
       {user && <JobRealtime jobId={job.id} />}
       <Link href="/jobs" className="text-sm text-neutral-500 hover:underline">
         All jobs

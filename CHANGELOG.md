@@ -3,6 +3,38 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-19 — Structured data, canonicals, and Sentry (v0.9.14)
+
+Two things the domain unblocked, plus error tracking.
+
+**SEO.** `components/json-ld.tsx` emits schema.org markup: `JobPosting` on job
+pages (open and public only — an expired posting left live is the one thing
+Google penalises), `Person` with `aggregateRating` on creative profiles behind
+the same completeness gate the sitemap uses, and `Organization` on the landing
+page. Canonical URLs added to `/`, `/jobs/[id]` and `/creatives/[id]`; only
+`/c/[slug]` had one before.
+
+Found while doing it: `app/layout.tsx` carried its own copy of the site-URL
+resolution that still fell back to `ganyu-hub.vercel.app`, so with `APP_URL`
+unset, `metadataBase` (OG tags, canonicals) and `absUrl()` (share links)
+disagreed about the host. Both now read `SITE_URL` from `lib/site-url.ts`.
+
+**Sentry.** `@sentry/nextjs` across all three runtimes, plus
+`app/global-error.tsx` for root-layout failures and a `captureException` in the
+existing `app/error.tsx`, which was swallowing client render errors silently.
+Source maps upload when `SENTRY_AUTH_TOKEN` is set; browser events tunnel
+through `/monitoring` so ad blockers don't drop them (excluded from `proxy.ts`).
+
+Errors and tracing only. Session Replay was deliberately left off — the screens
+worth replaying here are private messages, briefs and MWK amounts, and its
+masking defaults deserve an audit against those screens first. `dataCollection`
+is omitted everywhere for the same reason: passing that object at all, even
+empty, flips unset categories to permissive.
+
+Every `Sentry.init` is gated on a DSN, so with the env vars unset the SDK
+no-ops. `app/api/sentry-check` throws on demand to verify delivery, gated on
+`CRON_SECRET` rather than being a public example page.
+
 ## 2026-08-14 — Passkey sign-in (v0.9.13)
 
 Supabase Passkeys was switched on in the dashboard, so the app side now exists:

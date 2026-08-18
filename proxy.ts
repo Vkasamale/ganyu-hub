@@ -40,6 +40,10 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// `monitoring` is Sentry's tunnelRoute (next.config.mjs). It must skip this
+// proxy: it carries no Supabase session, so running the session refresh on it
+// wastes an auth round-trip per event, and it is a machine endpoint that should
+// never be redirected by anything meant for a browsing user.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!monitoring|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

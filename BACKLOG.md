@@ -77,6 +77,26 @@ session):
 
 ## Infrastructure
 
+- **Sentry: not yet verified end to end.** SDK wired 2026-08-19 (errors +
+  tracing, all three runtimes, `global-error.tsx`, source-map upload gated on
+  `SENTRY_AUTH_TOKEN`, tunnel at `/monitoring`). **No DSN exists yet** — every
+  `init` is gated on one, so today it no-ops everywhere. Founder must create the
+  Sentry project and set `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`; only then can
+  a real error be confirmed to land. Until that happens this is installed, not
+  working, and should not be counted as error coverage.
+
+- **Sentry Session Replay — deliberately NOT enabled.** It is Sentry's headline
+  recommendation for user-facing apps and it was skipped on purpose: the
+  surfaces worth replaying here are private messages, job briefs and MWK
+  amounts. Replay masks text by default, but that default deserves an audit
+  against *our* screens before it records a single session — not a shrug.
+  Same reason `dataCollection` is omitted from every `init`: passing the object
+  at all, even `{}`, flips unset categories to permissive.
+
+- **Sentry crons.** `app/api/cron` + `vercel.json` crons are exactly what
+  Sentry's cron check-ins are for — a silently-never-firing daily job is
+  invisible today. Worth adding once the DSN exists and errors are confirmed.
+
 - **Turn on Plausible analytics.** Script tag shipped 2026-07-16, gated by env var. To activate: (1) sign up free at plausible.io, (2) add site `ganyu-hub.vercel.app` (later `ganyuhub.com`), (3) set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=ganyu-hub.vercel.app` in Vercel env, (4) redeploy. Pageviews only — custom events (`job_posted`, `job_completed`) added later if pageview data can't answer the question.
 
 - ~~**Buy `ganyuhub.com` and verify in Resend.**~~ **Done 2026-08-09.** Bought at

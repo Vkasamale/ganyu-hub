@@ -10,6 +10,7 @@ import { Footer } from "@/components/footer";
 import { PreFooter } from "@/components/pre-footer";
 import { InstallBanner } from "@/components/install-banner";
 import { AnnouncementBar } from "@/components/announcement-bar";
+import { SITE_URL } from "@/lib/site-url";
 
 const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
@@ -32,7 +33,12 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-const siteUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://ganyu-hub.vercel.app";
+// Was a second, drifted copy of this resolution that still fell back to the
+// vercel.app host — so with APP_URL unset, every OG/canonical URL Next resolves
+// against metadataBase pointed at the old domain while share links (absUrl)
+// pointed at ganyuhub.com. One source now; preview deploys keep resolving to
+// themselves, which is the behaviour lib/site-url.ts exists for.
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

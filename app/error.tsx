@@ -1,7 +1,17 @@
 "use client";
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 
-export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
+export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  // `onRequestError` in instrumentation.ts covers server-side throws, but an
+  // error caught by this boundary is otherwise swallowed — the user sees "oops"
+  // and we see nothing. Every route's render errors route through here, so
+  // reporting once at the boundary covers all of them.
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-4 py-24 text-center">
       <p className="font-serif text-6xl italic text-ink/30">oops</p>

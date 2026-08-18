@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { JsonLd } from "@/components/json-ld";
+import { absUrl, SITE_URL } from "@/lib/site-url";
+
+// The homepage is what picks up campaign/referral query strings, and every one
+// of them is the same page. Set here rather than in the root layout: a
+// canonical in the layout would apply to every page that doesn't override it.
+export const metadata: Metadata = { alternates: { canonical: absUrl("/") } };
 import { getSessionUser } from "@/lib/supabase/user";
 import { SignedInHome } from "@/components/signed-in-home";
 import { HomeHero } from "@/components/home-hero";
@@ -60,6 +68,19 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Names the brand for search engines. Only the signed-out home renders
+          it — this is the page Google crawls, and the signed-in view returns
+          <SignedInHome /> long before here. */}
+      <JsonLd
+        data={{
+          "@type": "Organization",
+          name: "Ganyu Hub",
+          url: SITE_URL,
+          logo: absUrl("/icon-512.png"),
+          description: "The marketplace for hiring Malawian designers, developers, and creatives.",
+          areaServed: { "@type": "Country", name: "Malawi" },
+        }}
+      />
       <HomeHero />
       {showProof && <ProofRow gmv={gmv} jobsCompleted={jobsCompleted} creativesLive={creativesLive || 0} />}
       <ValueProps />

@@ -34,6 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title,
     description,
+    alternates: { canonical: absUrl(`/creatives/${id}`) },
     openGraph: {
       title,
       description,
@@ -61,6 +62,7 @@ import { formatMwk, timeAgo, formatMonthYear } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
 import { ShareButtons } from "@/components/share-buttons";
 import { absUrl } from "@/lib/site-url";
+import { JsonLd } from "@/components/json-ld";
 
 /**
  * Item 15 (§F4): About · Services · Portfolio · Reviews.
@@ -201,6 +203,34 @@ export default async function CreativePage({
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12">
+      {/*
+        Same completeness gate the sitemap uses: an incomplete profile is not
+        listed on /browse, so it must not be handed to Google as a rich result
+        either. `aggregateRating` is omitted entirely at zero reviews —
+        Google rejects a rating with a count of 0, and §Q7 says never a zero.
+      */}
+      {completeness.complete && (
+        <JsonLd
+          data={{
+            "@type": "Person",
+            name: profile.full_name || "Creative",
+            url: absUrl(`/creatives/${profile.id}`),
+            ...(profile.headline ? { jobTitle: profile.headline } : {}),
+            ...(profile.avatar_url ? { image: profile.avatar_url } : {}),
+            address: { "@type": "PostalAddress", addressCountry: "MW" },
+            ...(reviewCount > 0
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: avgRating.toFixed(1),
+                    reviewCount,
+                    bestRating: 5,
+                  },
+                }
+              : {}),
+          }}
+        />
+      )}
       {isOwner && !completeness.complete && (
         <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-900">
