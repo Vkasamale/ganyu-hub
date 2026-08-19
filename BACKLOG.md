@@ -77,13 +77,18 @@ session):
 
 ## Infrastructure
 
-- **Sentry: not yet verified end to end.** SDK wired 2026-08-19 (errors +
-  tracing, all three runtimes, `global-error.tsx`, source-map upload gated on
-  `SENTRY_AUTH_TOKEN`, tunnel at `/monitoring`). **No DSN exists yet** — every
-  `init` is gated on one, so today it no-ops everywhere. Founder must create the
-  Sentry project and set `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`; only then can
-  a real error be confirmed to land. Until that happens this is installed, not
-  working, and should not be counted as error coverage.
+- **Sentry: live and verified 2026-08-19.** Errors + tracing across all three
+  runtimes, `global-error.tsx`, source maps gated on `SENTRY_AUTH_TOKEN`, tunnel
+  at `/monitoring`. Verified end to end on production: `/api/sentry-check`
+  thrown twice, both events arrived in the `javascript-nextjs` project. Env vars
+  come from the Vercel/Sentry integration, which provisions
+  `NEXT_PUBLIC_SENTRY_DSN` only — hence the server/edge fallback to it.
+
+  Still worth doing: turn on **Automatically expose System Environment
+  Variables** in Vercel. Without it `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` is
+  undefined, so browser-side errors carry no `release` tag and can't be pinned
+  to a deploy. `lib/site-url.ts` wants that toggle too, for preview-deploy share
+  links.
 
 - **Sentry Session Replay — deliberately NOT enabled.** It is Sentry's headline
   recommendation for user-facing apps and it was skipped on purpose: the
