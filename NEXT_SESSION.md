@@ -2,22 +2,31 @@
 
 Paste this whole file into a new session as the opening message.
 
-> **Next session is the DESIGN TEMPLATE. Not feature work.**
+> **Next session is the DESIGN FEEDBACK LOOP. Not feature work.**
 >
-> All 79 plan items (Phases 0–9) are shipped and merged to `main` as of
-> 2026-08-13, and the Claude Design **system** run is done. What remains is the
-> template step.
+> All 79 plan items (Phases 0–9) are shipped and merged to `main`. The Claude
+> Design **system** run is done, the **template** prompt has been written and
+> run, and the founder has made adjustments inside Claude Design.
 >
-> **Before anything else, ask the founder for the transcribed YouTube video
-> about using Claude Design.** It is not in this repo and did not survive
-> compaction. The founder supplied it deliberately, because the generic
-> approach needed adapting to how this site is built — so do not improvise the
-> template step without it.
+> **Read [`CLAUDE_DESIGN_WORKFLOW.md`](CLAUDE_DESIGN_WORKFLOW.md) first.** The
+> YouTube tutorial is written up there in full, so it never needs re-supplying
+> again. It also carries the ground decisions of 2026-08-19, the seven answers
+> given to Claude Design, and the exact next prompt.
 >
-> Then read **`BACKLOG.md` → "▶ NEXT SESSION STARTS HERE"**, which lists the
-> prepared inputs (`DESIGN.md`, `DESIGN_BRIEF.md`, the handoff folder on the
-> Desktop) and the two decisions — paper-vs-white and the `font-display`
-> conflict — worth settling before anything is composed on top of them.
+> **Two things to know before touching anything:**
+>
+> 1. The **`CLAUDE.md` step has not been done.** Until that request is sent,
+>    no correction carries forward and every session repeats itself. It is the
+>    whole point of the method.
+> 2. The **paper-vs-white decision is settled and the docs disagree with it.**
+>    Off-white `#F7F6F3` is the ground, pure white is the raised surface,
+>    cream `#EFE6CE` survives as an accent only. `DESIGN.md` §2 and
+>    `DESIGN_BRIEF.md` still protect the cream ground and are wrong. The
+>    `font-display` question is *partly* settled — serif for page titles only —
+>    but whether the serif survives on white is still open.
+>
+> Then read **`BACKLOG.md` → "▶ NEXT SESSION STARTS HERE"** for the prepared
+> inputs and the handoff folder on the Desktop.
 >
 > Everything below this line is older context, kept for reference. It is **not**
 > a queue to clear, and its "headline task" is long finished.

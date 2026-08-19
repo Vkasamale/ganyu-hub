@@ -4,19 +4,31 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 ---
 
-## ▶ NEXT SESSION STARTS HERE — the design template (added 2026-08-13)
+## ▶ NEXT SESSION STARTS HERE — the design feedback loop (updated 2026-08-19)
 
 **Where we stopped:** all 79 plan items (Phases 0–9) are shipped and merged to
-`main`. The **Claude Design system run has been done**. The next step is the
-**template**, not more feature work.
+`main`. The Claude Design **system run is done**, the **template prompt has
+been written and run**, and the founder has made adjustments inside Claude
+Design. The next step is the **feedback loop**, not more feature work.
 
-**⚠️ First thing to ask the founder for: the transcribed YouTube video about
-using Claude Design.** It was supplied in an earlier session and is NOT in the
-current context — it did not survive compaction, and no copy exists in this
-repo. Do not attempt the template step from memory or from general knowledge of
-Claude Design; the founder's stated reason for providing it was that the
-generic approach needed adapting to how *this* site is built. Ask for it, read
-it, then start.
+**Read [`CLAUDE_DESIGN_WORKFLOW.md`](CLAUDE_DESIGN_WORKFLOW.md) first.** The
+YouTube tutorial no longer has to be re-supplied — the whole method is written
+down there, along with every ground decision made on 2026-08-19, the seven
+answers given to Claude Design, and the exact next prompt to send.
+
+**⚠️ The single most important step, and it has not been done:** the
+`CLAUDE.md` request. Until it is sent, no correction the founder makes carries
+forward to the next design, and every session re-explains the same things.
+Exact wording is at the foot of `CLAUDE_DESIGN_WORKFLOW.md`.
+
+**⚠️ The design docs are now out of date on purpose.** `DESIGN.md` §2 and
+`DESIGN_BRIEF.md` still say the cream paper ground `#EFE6CE` is an asset to
+protect. **That decision was reversed on 2026-08-19** — off-white `#F7F6F3` is
+the page ground, pure white is the raised surface, cream survives only as an
+accent. The founder chose not to rewrite the docs and to override them from
+the prompt instead. A session that reads only the docs will get this wrong,
+which is precisely what killed the 2026-08-12 run. Reconcile them before
+resuming design work.
 
 **Inputs already prepared, current as of 2026-08-13:**
 
@@ -66,9 +78,27 @@ session):
   - **⚠️ The real work — role wrinkle:** email/password signup captures `role` (creative/client/agency) via `signUp` metadata (`app/actions.ts:39,54`); downstream logic keys off `profiles.role` + `onboarded_at`. **Google users skip the form → arrive with no role.** Must add a one-time "Are you a creative or a client?" step right after first Google sign-in (fold into the existing onboarding redirect — dashboard already routes un-onboarded users by role). Do NOT ship Google login without this; a null-role account breaks onboarding/job flows.
   - Confirm-email doesn't apply to Google (Google already verified the address) — only the role step is needed for OAuth users.
 
-- ~~**Passkey (WebAuthn) authentication — DEFERRED, do not build yet.**~~ **Built 2026-08-14**, at the founder's call after enabling Passkeys in the Supabase dashboard. `components/passkey.tsx` — `RegisterPasskey` on `/dashboard/account`, `PasskeySignIn` on `/login`. Still BETA at Supabase, hence `auth.experimental.passkey: true` in `lib/supabase/client.ts`. Original deferral reasoning, kept because the trade-off was accepted knowingly rather than forgotten: Supabase Passkeys is BETA; needs WebAuthn UI, device registration/management, and fallbacks. Email+password + Google covers every user at v0.8.0. Requested 2026-08-05; held until 2026-08-14.
+- ~~**Passkey (WebAuthn) authentication — DEFERRED, do not build yet.**~~ **Built 2026-08-19**, at the founder's call after enabling Passkeys in the Supabase dashboard. `components/passkey.tsx` — `RegisterPasskey` on `/dashboard/account`, `PasskeySignIn` on `/login`. Still BETA at Supabase, hence `auth.experimental.passkey: true` in `lib/supabase/client.ts`. Original deferral reasoning, kept because the trade-off was accepted knowingly rather than forgotten: Supabase Passkeys is BETA; needs WebAuthn UI, device registration/management, and fallbacks. Email+password + Google covers every user at v0.8.0. Requested 2026-08-05; held until 2026-08-19.
   - **Relying Party ID is `ganyuhub.com`** with origins `https://www.ganyuhub.com,https://ganyuhub.com`. Do not narrow the RP ID to the `www` host — the apex is not a subdomain of it, and passkeys would silently stop being offered to anyone arriving without the `www`.
   - **Still missing: no way to remove a passkey.** A user who loses the device has no self-service path; they fall back to email+password, which is survivable but not final. `auth.passkey.*` exposes list/update/delete — wire them into the account card when someone actually needs it.
+
+## Search Console / SEO (2026-08-19)
+
+- **Sitemap not yet submitted.** `https://www.ganyuhub.com/sitemap.xml` is live
+  and valid — 95 URLs, all on `www.ganyuhub.com` — and `robots.txt` points at
+  it while blocking `/dashboard`, `/messages`, `/t/`, `/auth/` and `/api/`.
+  Both verified live. All that remains is founder clicks: Search Console →
+  Sitemaps → add `sitemap.xml`, then URL inspection on the homepage → Request
+  indexing, once. The property is already a Domain property
+  (`sc-domain:ganyuhub.com`), which covers apex, `www` and every subdomain —
+  do **not** add a URL-prefix property, it splits the reporting.
+- **Open decision: should beta creative profiles be indexed?** The sitemap
+  includes creative profiles and job pages, so real users' profiles become
+  searchable while the product is still closed beta. Recommendation is to
+  leave it — those URLs are already public and search visibility is the point
+  of a marketplace — but it is a change in kind for beta users. To hold them
+  back, drop the creative and job URLs from `app/sitemap.ts` and keep the
+  landing and category pages.
 
 ## Onboarding / guidance
 

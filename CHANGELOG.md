@@ -34,8 +34,27 @@ empty, flips unset categories to permissive.
 Every `Sentry.init` is gated on a DSN, so with the env vars unset the SDK
 no-ops. `app/api/sentry-check` throws on demand to verify delivery, gated on
 `CRON_SECRET` rather than being a public example page.
+## 2026-08-19 — Claude Design workflow written down
 
-## 2026-08-14 — Passkey sign-in (v0.9.13)
+`CLAUDE_DESIGN_WORKFLOW.md` — new. The YouTube tutorial the founder had to
+re-supply twice is now recorded in the repo, in our own words, along with the
+ground decisions of 2026-08-19, the seven answers given to Claude Design, and
+the exact next prompt. `BACKLOG.md` and `NEXT_SESSION.md` repointed at it; both
+previously opened with "ask the founder for the transcript", which is no longer
+true.
+
+The substantive change it records: **the cream paper ground is dropped.**
+`#EFE6CE` reads retro, and the target is modern. Off-white `#F7F6F3` becomes
+the page ground with pure white as the raised surface, which means shadows and
+hairlines now carry separation rather than the colour step. Cream survives as
+an accent on the stamp, empty states and inset panels.
+
+`DESIGN.md` §2 and `DESIGN_BRIEF.md` were deliberately **not** rewritten — the
+founder chose to override them from the prompt. Both handoff docs now carry a
+loud warning, because a session reading only the docs would repeat the failure
+that killed the 2026-08-12 run.
+
+## 2026-08-19 — Passkey sign-in (v0.9.13)
 
 Supabase Passkeys was switched on in the dashboard, so the app side now exists:
 `components/passkey.tsx` exports `PasskeySignIn` (login page, beside Continue

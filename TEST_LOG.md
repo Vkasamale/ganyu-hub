@@ -4,7 +4,7 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
-## 2026-08-14 — Passkey sign-in
+## 2026-08-19 — Passkey sign-in
 
 - ✅ `tsc --noEmit` clean and `npm run build` green.
 - 🕒 **Everything else is unverified, and cannot be verified here.** WebAuthn
