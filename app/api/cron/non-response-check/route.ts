@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { timingSafeEqual } from "crypto";
+import * as Sentry from "@sentry/nextjs";
 import { logJobEvent } from "@/lib/job-events";
 
 export const runtime = "nodejs";
@@ -20,7 +21,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
-    return await run();
+    // Sentry cron check-in. withMonitor stamps a start on entry and an ok/error
+    // on exit, so Sentry alerts on a run that FAILS *and* on a run that never
+    // happens — the second is the one nothing else here can see. A Vercel cron
+    // that silently stops firing produces no error, no log and no request.
+    //
+    // The schedule is declared inline so it upserts the monitor on first run;
+    // it must stay in step with vercel.json ("0 6 * * *"). checkinMargin is
+    // generous because Vercel Hobby crons are best-effort, not to-the-minute —
+    // a tighter margin would page us about Vercel's queue, not our job.
+    return await Sentry.withMonitor("non-response-check", () => run(), {
+      schedule: { type: "crontab", value: "0 6 * * *" },
+      checkinMargin: 30,
+      maxRuntime: 10,
+      timezone: "Etc/UTC",
+    });
   } catch (e: any) {
     const { logAdminError } = await import("@/lib/admin-errors");
     await logAdminError({ operation: "cron_non_response", error: e });
