@@ -1,5 +1,12 @@
 # Ganyu Hub — DESIGN.md
 
+> **Authority: [`design-system/CLAUDE.md`](design-system/CLAUDE.md) wins.**
+> The Claude Design system export lives in [`design-system/`](design-system/)
+> and is the live source of truth for colour, type, elevation, geometry and the
+> stamp. Where this file disagrees with it, this file is wrong. The sections
+> below were corrected against the export of 2026-08-20; anything not corrected
+> should be checked against `design-system/tokens/` before it is trusted.
+
 Design system rulebook. Read this before generating or changing any UI.
 
 Values here are **extracted from the running codebase**, not invented:
@@ -28,12 +35,12 @@ beauty.
 
 **The register: warm editorial, not startup SaaS.**
 
-- A **warm paper ground** (`#EFE6CE`), not white, not grey, not dark
+- **Pure white** (`#FFFFFF`) is the page ground; **off-white** `#F7F6F3` is
+  the raised surface. Light grey `#ECECEC` is the accent. **Cream is deleted**
 - **Deep teal** as the single accent — one colour, used with discipline
-- **Instrument Serif** for display, used italic for emphasis; humane, printed,
-  a little literary
-- **IBM Plex Mono** for money and metadata — numbers should read as *recorded*,
-  not decorative
+- **Inter is the only typeface.** Hierarchy comes from weight and tracking,
+  never from a change of face. Money uses Inter's tabular figures — the
+  alignment was always the point, not the monospace look
 - A **rubber-stamp motif** carrying money state — the most distinctive device
   in the product. Ink on paper, not a badge.
 
@@ -56,9 +63,13 @@ not trade it away for familiarity.
 | `brand` / `stamp` | `#069494` | Primary action, links, the stamp ink |
 | `brand-dark` / `stamp-dark` | `#046B6B` | Hover / pressed |
 | `ink` / `brand-ink` | `#1A1611` | Body text, rules. Warm near-black — **never** `#000` |
-| `paper` / `brand-paper` | `#EFE6CE` | Warm canvas |
+| `ground` / `--gh-ground` | `#FFFFFF` | The page ground. Pure white |
+| `raised` / `--gh-raised` | `#F7F6F3` | Raised off the ground — cards, sheets, the tab bar, sticky header |
+| `band` / `--gh-ground-2` | `#F2F1EE` | One step deeper — alternating sections |
+| `inset` / `--gh-grey-soft` | `#F1F1F0` | Recessed panels inside a card. **Always with a `#DCDCDC` hairline** |
+| `grey` / `--gh-grey` | `#ECECEC` | The accent surface — stamp ground, empty-state panels |
 | `brand-muted` | `#736A5C` | Secondary text, eyebrows |
-| `wash` | `#DACFB2` | Deeper paper, for banding and inset areas |
+| `inverse` | `#1A1611` | Ink. Closing CTA, dark blocks |
 | `mark` | `#2F5D3B` | Reserved green accent. Use sparingly |
 | `rule` | `#1A1611` | Hairlines — always at **18% opacity**, never solid |
 
@@ -80,48 +91,73 @@ Five states, five distinct colours. Rendered as the stamp in
 "nothing changed", and these are the five most consequential facts in the
 product.
 
-| State | Label | Tone |
-|---|---|---|
-| `none` | Not funded yet | `border-ink/25 bg-paper text-ink/60` |
-| `payment_pending` | Payment pending | amber-400 / amber-50 / amber-900 |
-| `payment_held` | Held in escrow | sky-400 / sky-50 / sky-900 |
-| `payment_released` | Released to creative | emerald-500 / emerald-50 / emerald-900 |
-| `payment_disputed` | In dispute | red-400 / red-50 / red-900 |
+The five states are **supplied stamp artwork**, not coded chips — one PNG per
+state in `design-system/assets/stamps/`, rendered by `MoneyStamp`. The
+amber / sky / emerald chip triples were replaced on 2026-08-20. The inks below
+exist so anything sitting *next to* a stamp can match it.
 
-⚠️ **Known inconsistency to resolve, not to copy:** `paper` is defined as the
-canvas and `--background` is the warm HSL equivalent, but `html, body` is
-currently hard-set to `#FFFFFF`. The warm ground is therefore *declared but not
-shipped*. New work should sit on paper or on white cards over paper — decide
-deliberately, do not inherit the accident.
+| State | Stamp label | Ink |
+|---|---|---|
+| `none` | NO PAYMENT YET | `#8C8C8C` grey |
+| `payment_pending` | PAYMENT PENDING | `#E9A23B` orange |
+| `payment_held` | IN ESCROW | `#1D6E9E` blue |
+| `payment_released` | RELEASED | `#1B9455` green |
+| `payment_disputed` | IN DISPUTE | `#C22A2A` red |
+
+A **sixth stamp, `nothing-yet`** (`#8C8C8C`), marks absence and belongs to
+`EmptyState`. The five money stamps are never borrowed for it — they name
+stages of money, and nothing has moved yet.
+
+### Ground vs raised — settled 2026-08-14
+
+**Cream `#EFE6CE` is deleted.** Not demoted, not an accent — removed from the
+system, along with `#DACFB2` and the `paper` / `wash` tokens. Any text calling
+cream "the page background and an asset to protect" is dead.
+
+Pure white is the ground, off-white `#F7F6F3` is the raised surface, light grey
+`#ECECEC` is the accent. The ground-to-raised step is deliberately small, so
+**separation is carried by shadow and hairline, not by the colour difference.**
+The elevation scale in §6 is therefore load-bearing: three levels, soft and
+low-spread, warm ink at 4–12%, no hard drop shadows, every level pairing a
+shadow with a hairline.
+
+⚠️ **Not yet repainted in code.** `tailwind.config.ts`, `app/globals.css` and
+`app/manifest.ts` still ship the cream palette. Canonical values are in
+[`design-system/tokens/colors.css`](design-system/tokens/colors.css) — port
+from there, not from this table.
 
 ---
 
 ## 3. Typography Rules
 
-| Face | Variable | Use |
-|---|---|---|
-| **Inter** | `--font-inter` | UI, body, headings |
-| **IBM Plex Mono** | `--font-plex-mono` | Money, eyebrows, references, metadata |
-| **Instrument Serif** | `--font-instrument-serif` | Display, used **italic** for emphasis |
+**Inter is the only typeface** (settled 2026-08-14). Page titles to body.
+Hierarchy comes from weight and tracking, never from a change of face — one
+font file is also one download on a paid mobile connection.
+
+- **Instrument Serif: removed.**
+- **IBM Plex Mono: removed.** Money, references and eyebrow labels are Inter
+  with `font-variant-numeric: tabular-nums`.
+- `--font-display` and `--font-mono` survive as aliases; both mean Inter.
+- Page titles 30–44px at 600. Headings 21–26px at 600. Tracking tightens as
+  size grows: −0.02em at 21px, −0.03em at 44px+.
+- Landing hero: **"Malawian creatives." is not italic.**
 
 **Shipped rules**
 
 - `h1,h2,h3`: weight **600**, `letter-spacing: -0.015em`, `text-wrap: balance`
 - `p, li`: `text-wrap: pretty`
-- `.eyebrow`: Plex Mono · `0.72rem` · `0.18em` tracking · uppercase · `#736A5C`
-- `.price`: Plex Mono, `tabular-nums`, `ss01`, with a **teal `k` prefix** via
-  `::before` — the MWK marker
+- `.eyebrow`: `0.72rem` · `0.18em` tracking · uppercase · `#736A5C`
+- `.price`: `tabular-nums`, `ss01`, with a **teal `k` prefix** via `::before` —
+  the MWK marker
 - `.tabular-nums` / `[data-tabular]` for any aligned figures
 - Font smoothing: antialiased, `optimizeLegibility`
 
-**Money typography is a rule, not a preference.** Every MWK figure is Plex
-Mono with tabular numerals. Amounts must align vertically in any column, and a
+**Money typography is a rule, not a preference.** Every MWK figure uses
+tabular numerals. Amounts must align vertically in any column, and a
 number must never reflow when it changes.
 
-⚠️ **Second known inconsistency:** Tailwind's `font-display` maps to **Inter**,
-while `--font-display` in CSS maps to **Instrument Serif**. Two different
-answers to "what is display type". Instrument Serif is the intended display
-face; the Tailwind mapping is the bug.
+The old `font-display` conflict is dissolved rather than resolved: both
+mappings now mean Inter.
 
 **Locale is fixed.** `en-GB`, `Africa/Blantyre`. Currency is MWK with thousands
 separators, no `$`, typical range 1,000–500,000. Formatters are pinned in
@@ -209,7 +245,7 @@ rail. In both cases the money and the action must never scroll out of view.
 
 1. Put the amount on any button that moves money.
 2. Give each of the five money states its own colour.
-3. Use Plex Mono + tabular numerals for every MWK figure.
+3. Use tabular numerals for every MWK figure.
 4. Use hairlines at 18% ink instead of boxed borders.
 5. Keep one accent. Teal earns attention by being rare.
 6. Write empty states with a reason and a route — "Talent are hired 9x more
@@ -256,16 +292,17 @@ chrome and no back button.
 ```
 teal   #069494   hover #046B6B
 ink    #1A1611   muted #736A5C
-paper  #EFE6CE   wash  #DACFB2
+ground #FFFFFF   raised #F7F6F3   band #F2F1EE
+inset  #F1F1F0   grey accent #ECECEC (+ #DCDCDC edge)
 rule   ink @ 18%
 radius 14px cards · rounded-md controls
-type   Inter · IBM Plex Mono (money) · Instrument Serif (display, italic)
-money  MWK, en-GB, Africa/Blantyre, tabular Plex Mono
+type   Inter only · tabular-nums for money
+money  MWK, en-GB, Africa/Blantyre, tabular figures
 ```
 
 **Example prompts**
 
-- "A job card on paper: hairline dividers, teal title, MWK in Plex Mono,
+- "A job card: off-white #F7F6F3 raised on the white ground, hairline dividers, teal title, MWK in tabular figures,
   money-state stamp at the right margin of the money line."
 - "Mobile bottom tab bar, 5 destinations, icon + label, tinted active shape,
   safe-area padding."
@@ -275,7 +312,7 @@ money  MWK, en-GB, Africa/Blantyre, tabular Plex Mono
 **Documented gaps — do not silently invent these**
 
 - Body background is white while `paper` is the declared canvas (§2).
-- `font-display` resolves to Inter in Tailwind, Instrument Serif in CSS (§3).
+- `font-display` and `font-mono` are both aliases for Inter (§3).
 - The stamp's texture is unresolved; position is settled (§4).
 - No dark mode exists. Do not add one uninvited.
 - Ratings and reviews **do** exist (`reviews` table, shipped 2026-07-03) but

@@ -18,12 +18,13 @@ Paste this whole file into a new session as the opening message.
 > 1. The **`CLAUDE.md` step has not been done.** Until that request is sent,
 >    no correction carries forward and every session repeats itself. It is the
 >    whole point of the method.
-> 2. The **paper-vs-white decision is settled and the docs disagree with it.**
+> 2. The **paper-vs-white decision is settled and the docs now agree with it.**
 >    Off-white `#F7F6F3` is the ground, pure white is the raised surface,
->    cream `#EFE6CE` survives as an accent only. `DESIGN.md` §2 and
->    `DESIGN_BRIEF.md` still protect the cream ground and are wrong. The
->    `font-display` question is *partly* settled — serif for page titles only —
->    but whether the serif survives on white is still open.
+>    cream `#EFE6CE` survives as an accent only. `DESIGN.md`, `DESIGN_BRIEF.md`
+>    and `DESIGN_BRIEF_MOBILE.md` were reconciled on 2026-08-19; **the code was
+>    not repainted** and still ships the cream palette. The `font-display`
+>    question is *partly* settled — serif for page titles only — but whether
+>    the serif survives on white is still open.
 >
 > Then read **`BACKLOG.md` → "▶ NEXT SESSION STARTS HERE"** for the prepared
 > inputs and the handoff folder on the Desktop.

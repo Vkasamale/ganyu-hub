@@ -1,0 +1,52 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Listings — creative, job, service, rail" subtitle="The three listing cards and the peeking carousel that carries them." -->
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--surface-canvas);color:var(--text-body);font-family:var(--font-body);padding:18px 20px;box-sizing:border-box}*{box-sizing:border-box}.lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--gh-ink-45);text-transform:uppercase;margin:0 0 8px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { CreativeCard, JobCard, ServiceCard, FeedCarousel, FeedCard } = window.GanyuHubDesignSystem_1b2ec0;
+function Demo() {
+  return (
+    <div style={{display:"grid",gap:22}}>
+      <FeedCarousel eyebrow="Near you" title="Creatives in Blantyre" seeAllHref="#" count={4} style={{"--carousel-card":"216px"}}>
+        <FeedCard style={{width:216}}>
+          <CreativeCard name="Thandiwe Banda" location="Blantyre" category="Design"
+            headline="Brand identity and packaging for food businesses."
+            skills={["Logo design","Packaging","Illustration","Brand guides"]}
+            rating={4.8} reviewCount={12} fromPriceMwk={45000} showSave />
+        </FeedCard>
+        <FeedCard style={{width:216}}>
+          <CreativeCard name="Chikondi Mwale" location="Lilongwe" category="Photography"
+            headline="Product and event photography." skills={["Product","Events"]}
+            availability="busy" fromPriceMwk={30000} />
+        </FeedCard>
+        <FeedCard style={{width:216}}>
+          <CreativeCard name="Limbani Phiri" location="Mzuzu" category="Animation & Motion"
+            headline="Short explainers and social cutdowns." skills={["After Effects","Editing","Sound"]}
+            availability="away" />
+        </FeedCard>
+      </FeedCarousel>
+
+      <JobCard title="Logo and signage for a new bakery" category="Design" postedAgo="2 days ago"
+        clientName="Grace Phiri" budgetMwk={120000} proposalsCount={4}
+        trustBits={["Has paid into escrow","Hires 80% of the time","3 jobs posted"]}
+        brief="We open in Limbe next month and need a logo we can put on the shopfront, plus a simple sign layout the printer can work from."
+        showSave />
+
+      <div>
+        <p className="lab">ServiceCard &mdash; rate card, recessed on paper</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+          <ServiceCard title="Logo and brand basics" description="Wordmark, one icon, colour and type in a two-page guide." priceMwk={45000} priceMaxMwk={90000} deliveryDays={7} rating={{avg:4.8,count:12}} />
+          <ServiceCard title="Packaging label" description="Print-ready label artwork for one SKU." priceMwk={30000} deliveryDays={5} />
+          <ServiceCard title="Full brand system" description="Everything above, plus social templates and signage." />
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script></body></html>

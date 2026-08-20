@@ -1,0 +1,58 @@
+/* Ganyu Hub — elevation. Rewritten 2026-08-14.
+
+   The ground (#F7F6F3) and the raised surface (#FFFFFF) are one small step
+   apart on purpose. That means SHADOW AND HAIRLINE carry separation, not the
+   colour difference — so the scale below is doing real work, not decoration.
+
+   Three levels. Soft, low-spread, warm ink at low alpha. No hard drop shadows,
+   no dark halos, nothing retro. Every level pairs its shadow with a hairline;
+   on a small contrast step, an edge reads before a shadow does. */
+:root {
+  /* Level 0 — flat on the ground. Hairline only, no shadow. Use for rows,
+     dividers, and anything that sits IN the page rather than ON it. */
+  --elev-0-border: 1px solid var(--border-hairline);
+
+  /* Level 1 — the card. Rests on the ground: job cards, creative cards,
+     panels, list rows that lift. */
+  --elev-1: 0 1px 2px rgba(26, 22, 17, 0.04), 0 4px 12px rgba(26, 22, 17, 0.06);
+  --elev-1-border: 1px solid rgba(26, 22, 17, 0.08);
+
+  /* Level 2 — floats over the page: sticky headers, the bottom tab bar,
+     dropdowns, popovers, the sticky action bar. */
+  --elev-2: 0 2px 4px rgba(26, 22, 17, 0.04), 0 12px 28px rgba(26, 22, 17, 0.08);
+  --elev-2-border: 1px solid rgba(26, 22, 17, 0.10);
+
+  /* Level 3 — covers the page: bottom sheets, drawers, modals. */
+  --elev-3: 0 4px 8px rgba(26, 22, 17, 0.05), 0 24px 56px rgba(26, 22, 17, 0.12);
+  --elev-3-border: 1px solid rgba(26, 22, 17, 0.12);
+
+  /* A sheet rising from the bottom edge throws its shadow UPWARD. */
+  --elev-sheet-up: 0 -2px 8px rgba(26, 22, 17, 0.04), 0 -16px 40px rgba(26, 22, 17, 0.10);
+
+  /* Aliases kept so existing components and cards keep working. */
+  --shadow-card: var(--elev-1);
+  --shadow-card-warm: var(--elev-1);
+  --shadow-listing: var(--elev-1);
+  --shadow-listing-hover: var(--elev-2);
+  --shadow-raised: var(--elev-2);
+  --shadow-menu: var(--elev-2);
+  --shadow-sheet: var(--elev-sheet-up);
+  --shadow-panel-soft: 0 1px 2px rgba(26, 22, 17, 0.04);
+  --shadow-inset-rule: 0 1px 0 rgba(26, 22, 17, 0.06);
+
+  /* Type on a photograph — the one place a heavier shadow is allowed. */
+  --shadow-on-image: 0 8px 28px rgba(0, 0, 0, 0.35);
+
+  /* Every image is mounted, never floating. */
+  --image-outline: 1px solid rgba(26, 22, 17, 0.10); /* @kind other */
+
+  /* Hero scrim: ink, never pure black. */
+  --hero-scrim: linear-gradient(90deg, rgba(26, 22, 17, 0.75) 0%, rgba(26, 22, 17, 0.35) 100%); /* @kind color */
+}
+
+.gh-card-soft {
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  border: var(--elev-1-border);
+  box-shadow: var(--elev-1);
+}

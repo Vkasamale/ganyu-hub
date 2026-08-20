@@ -1,0 +1,18 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Layout & mobile chrome" subtitle="1280px max · 768px switch · 44px targets · safe-area clearance." -->
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"><style>body{margin:0;background:var(--surface-canvas);color:var(--text-body);font-family:var(--font-body);padding:18px 20px;box-sizing:border-box}*{box-sizing:border-box}.row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}.lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--gh-ink-55);text-transform:uppercase}</style></head><body><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+<div>
+<p class="lab" style="margin:0 0 8px">Widths</p>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr style="border-bottom:1px solid var(--gh-ink-07)"><td style="padding:3px 0;font-family:var(--font-mono);color:var(--gh-ink-70)">1280px</td><td style="color:var(--gh-ink-60)">Content max; margins grow</td></tr><tr style="border-bottom:1px solid var(--gh-ink-07)"><td style="padding:3px 0;font-family:var(--font-mono);color:var(--gh-ink-70)">1152px</td><td style="color:var(--gh-ink-60)">Signed-in home</td></tr><tr style="border-bottom:1px solid var(--gh-ink-07)"><td style="padding:3px 0;font-family:var(--font-mono);color:var(--gh-ink-70)">768px</td><td style="color:var(--gh-ink-60)">Mobile → desktop shell</td></tr><tr style="border-bottom:1px solid var(--gh-ink-07)"><td style="padding:3px 0;font-family:var(--font-mono);color:var(--gh-ink-70)">1024px</td><td style="color:var(--gh-ink-60)">Content + sticky rail</td></tr>
+</table>
+</div>
+<div>
+<p class="lab" style="margin:0 0 8px">Mobile chrome</p>
+<div style="border:1px solid var(--gh-ink-15);border-radius:8px;overflow:hidden">
+<div style="height:52px;background:var(--surface-inset);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gh-ink-55)">page content</div>
+<div style="height:44px;border-top:1px solid var(--gh-ink-10);background:rgba(247,246,243,.94);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--gh-ink-65)">tab bar 3.5rem</div>
+<div style="height:16px;background:var(--gh-grey);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:9px;color:var(--gh-ink-55)">env(safe-area-inset-bottom)</div>
+</div>
+<p style="margin:8px 0 0;font-size:11px;color:var(--gh-ink-65)">Pages pad by <code style="font-family:var(--font-mono);font-size:10px">--tabbar-clearance</code>. Touch targets never below 44px.</p>
+</div>
+</div></body></html>

@@ -1,0 +1,9 @@
+/* Ganyu Hub webfonts.
+   INTER IS THE ONLY FACE (settled 2026-08-14). Instrument Serif and IBM Plex
+   Mono have both been removed from the system.
+
+   Figures that need to align in a column — money, references, counts — use
+   Inter's own tabular figures via font-variant-numeric: tabular-nums, not a
+   second typeface. One font file for the whole site also means one download on
+   a paid mobile connection. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap");

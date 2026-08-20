@@ -1,0 +1,128 @@
+/* Ganyu Hub — colour.
+   Every value extracted from tailwind.config.ts, app/globals.css,
+   components/job-header.tsx and components/job-progress-bar.tsx.
+   One accent: teal. Teal earns attention by being rare. */
+:root {
+  /* ── Brand ──────────────────────────────────────────────────────────── */
+  --gh-teal: #069494;          /* primary action, links, stamp ink */
+  --gh-teal-dark: #046b6b;     /* hover / pressed */
+  --gh-ink: #1a1611;           /* warm near-black. NEVER #000 */
+  --gh-ground: #ffffff;        /* THE page ground. Pure white */
+  --gh-raised: #f7f6f3;        /* raised off the ground: cards, sheets, bars */
+  --gh-ground-2: #f2f1ee;      /* one step deeper: bands */
+
+  /* Light grey is the accent, replacing cream (removed 2026-08-14). It carries
+     the stamp ground, empty-state panels and insets inside cards. */
+  --gh-grey: #ececec;          /* accent surface */
+  --gh-grey-soft: #f1f1f0;     /* inset panels inside a white card */
+  --gh-grey-edge: #dcdcdc;     /* the accent's border */
+
+  /* Cream #EFE6CE and its deeper tone #DACFB2 were REMOVED on 2026-08-14, along
+     with the tokens --gh-paper and --gh-wash. There is no cream in this system.
+     Use --gh-ground, --gh-raised or --gh-grey. */
+
+  --gh-muted: #736a5c;         /* secondary text, eyebrows */
+  --gh-mark: #2f5d3b;          /* reserved green. Budget pills, verified badge */
+  --gh-white: #ffffff;         /* literal white === the ground. Prefer --gh-ground */
+
+  /* Teal tints, as used in code (stamp/10, brand/[0.06], stamp/25 …) */
+  --gh-teal-04: rgba(6, 148, 148, 0.04);
+  --gh-teal-06: rgba(6, 148, 148, 0.06);
+  --gh-teal-10: rgba(6, 148, 148, 0.10);
+  --gh-teal-15: rgba(6, 148, 148, 0.15);
+  --gh-teal-25: rgba(6, 148, 148, 0.25);
+  --gh-teal-30: rgba(6, 148, 148, 0.30);
+  --gh-teal-40: rgba(6, 148, 148, 0.40);
+  --gh-mark-10: rgba(47, 93, 59, 0.10);
+
+  /* Ink at the opacities the codebase actually uses. Text hierarchy is ink at
+     a percentage, not a second grey. */
+  --gh-ink-03: rgba(26, 22, 17, 0.03);
+  --gh-ink-05: rgba(26, 22, 17, 0.05);
+  --gh-ink-06: rgba(26, 22, 17, 0.06);
+  --gh-ink-07: rgba(26, 22, 17, 0.07);
+  --gh-ink-10: rgba(26, 22, 17, 0.10);
+  --gh-ink-15: rgba(26, 22, 17, 0.15);
+  --gh-ink-18: rgba(26, 22, 17, 0.18);   /* the hairline. Never solid */
+  --gh-ink-20: rgba(26, 22, 17, 0.20);
+  --gh-ink-25: rgba(26, 22, 17, 0.25);
+  --gh-ink-40: rgba(26, 22, 17, 0.40);   /* sheet scrim */
+  --gh-ink-45: rgba(26, 22, 17, 0.45);
+  --gh-ink-55: rgba(26, 22, 17, 0.55);
+  --gh-ink-60: rgba(26, 22, 17, 0.60);
+  --gh-ink-65: rgba(26, 22, 17, 0.65);
+  --gh-ink-70: rgba(26, 22, 17, 0.70);
+  --gh-ink-75: rgba(26, 22, 17, 0.75);   /* hero scrim, type side */
+  --gh-ink-80: rgba(26, 22, 17, 0.80);
+  --gh-ink-85: rgba(26, 22, 17, 0.85);   /* avatar ground */
+
+  /* ── Semantic surface + text aliases ───────────────────────────────────
+     The ground rule, settled 2026-08-14 (this SUPERSEDES DESIGN.md §2):
+       canvas   = pure white #FFFFFF  the page ground
+       card     = off-white #F7F6F3   anything raised off the ground
+       band     = #F2F0EA             alternating sections
+       inset    = #F1F1F0             recessed panels inside a card
+       accent   = light grey #ECECEC  the stamp, empty states
+       inverse  = ink                 closing CTA, dark blocks
+
+     The canvas-to-card step is deliberately small. Separation is carried by
+     SHADOW AND HAIRLINE, not by the colour difference — see elevation.css. */
+  --surface-canvas: var(--gh-ground);
+  --surface-band: var(--gh-ground-2);
+  --surface-card: var(--gh-raised);
+  --surface-inset: var(--gh-grey-soft);
+  /* Every surface in this palette needs its edge — the inset is not an
+     exception. Pair --surface-inset with --border-inset, always. */
+  --border-inset: var(--gh-grey-edge);
+  --surface-accent: var(--gh-grey);
+  --surface-accent-edge: var(--gh-grey-edge);
+  --surface-inverse: var(--gh-ink);
+  --surface-sheet: var(--gh-raised);
+  --surface-bar: rgba(247, 246, 243, 0.94);
+  --surface-scrim: var(--gh-ink-40);
+
+  --text-body: var(--gh-ink);
+  --text-secondary: var(--gh-ink-65);
+  --text-quiet: var(--gh-ink-55);
+  --text-faint: var(--gh-ink-45);
+  --text-eyebrow: var(--gh-muted);
+  --text-on-ink: var(--gh-ground);
+  --text-on-teal: var(--gh-white);
+  --text-link: var(--gh-teal-dark);
+
+  --border-hairline: var(--gh-ink-18);
+  --border-card: rgba(0, 0, 0, 0.06);
+  --border-control: #d4d4d4;         /* neutral-300, the shipped field border */
+  --border-control-hover: #a3a3a3;   /* neutral-400 */
+  --focus-ring: var(--gh-teal);
+
+  /* ── Money states. Five states, five colours. Never grey. ─────────────
+     The stamp's ink, one per state. Rendered by MoneyStamp, which loads the
+     artwork from assets/stamps/ — these tokens exist so anything sitting NEXT
+     to a stamp (a rule, a caption, a progress marker) can match its ink.
+     Meaning is fixed. Replaced the old amber/sky/emerald chip set 2026-08-20. */
+  --money-none-ink: #8c8c8c;      /* grey   — no payment yet */
+  --money-pending-ink: #e9a23b;   /* orange — payment pending */
+  --money-held-ink: #1d6e9e;      /* blue   — in escrow */
+  --money-released-ink: #1b9455;  /* green  — released */
+  --money-disputed-ink: #c22a2a;  /* red    — in dispute */
+
+  /* ── Job stage colours (job-progress-bar.tsx). Five stages, in order. ── */
+  --stage-1: #0ea5e9;  /* sky-500     — posted */
+  --stage-2: #6366f1;  /* indigo-500  — hired */
+  --stage-3: #8b5cf6;  /* violet-500  — funded */
+  --stage-4: #f59e0b;  /* amber-500   — delivered */
+  --stage-5: #059669;  /* emerald-600 — released */
+  --stage-cancelled: #dc2626;  /* red-600 */
+  --stage-idle-bg: #f5f5f5;
+  --stage-idle-border: #d4d4d4;
+  --stage-idle-text: #a3a3a3;
+
+  /* ── Status accents used outside money ─────────────────────────────── */
+  --status-star: #fbbf24;       /* amber-400, the only star colour */
+  --status-available: #22c55e;  /* green-500 */
+  --status-busy: #facc15;       /* yellow-400 */
+  --status-away: #a3a3a3;       /* neutral-400 */
+  --status-danger: #dc2626;     /* red-600, log out + destructive only */
+  --status-danger-bg: #fef2f2;
+}

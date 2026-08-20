@@ -1,5 +1,10 @@
 # Design brief — the run is now unblocked
 
+> **Authority: [`design-system/CLAUDE.md`](design-system/CLAUDE.md) wins.** The
+> Claude Design export in [`design-system/`](design-system/) is the live source
+> of truth. This brief was written before it existed; where the two disagree,
+> the export is right.
+
 > **Status 2026-08-13: all 79 items across Phases 0–9 are built.** The founder's
 > call was to run design **once, after every phase**, trading early visual
 > feedback for never designing a surface twice. That has now happened. Nothing
@@ -79,18 +84,19 @@ in several places at once:
 
 Everything. Specifically the unfinished visual decisions:
 
-- **Stamp texture.** Position is settled — on the money's line, at the card's
-  right margin, larger. The *texture* is not: the flanking rules read as a
-  strike-through and the double ring is too subtle, so it reads as a rounded
-  chip rather than ink. Try rules **above and below** the text, a heavier outer
-  ring visibly separated from the inner one, wider tracking, possibly a dashed
-  outer ring for bleed.
-- **The paper-vs-white inconsistency** (`DESIGN.md` §2). Surfaces mix `paper`
-  (`#EFE6CE`), `wash` (`#DACFB2`) and plain white with no stated rule. Decide
-  the rule, then apply it everywhere.
-- **The `font-display` conflict** (`DESIGN.md` §3). Three faces — Inter for UI,
-  Plex Mono for money and eyebrows, Instrument Serif for display italic — and
-  usage has drifted. Settle which face owns headings.
+- ~~**The paper-vs-white inconsistency**~~ **Closed 2026-08-14.** Pure white
+  `#FFFFFF` is the page ground, off-white `#F7F6F3` is the raised surface,
+  light grey `#ECECEC` is the accent. **Cream `#EFE6CE` is deleted from the
+  system**, along with `#DACFB2` and the `paper` / `wash` tokens. The
+  ground-to-raised step is small on purpose, so separation is carried by shadow
+  and hairline. **Porting it into the code is still outstanding.**
+- ~~**The `font-display` conflict**~~ **Closed 2026-08-14. Inter is the only
+  typeface.** Instrument Serif and IBM Plex Mono are both removed; money and
+  eyebrows are Inter with `font-variant-numeric: tabular-nums`. Hierarchy comes
+  from weight and tracking, never from a change of face.
+- ~~**Stamp texture**~~ **Closed 2026-08-20.** The stamp is supplied artwork,
+  six PNGs in `design-system/assets/stamps/` rendered by `MoneyStamp`. Never
+  redraw or approximate it.
 - **Shadows and elevation** (§6), **type scale**, **card composition**,
   **motion**.
 - **The new Phase 7–9 surfaces**, which have had no design pass at all: the tab

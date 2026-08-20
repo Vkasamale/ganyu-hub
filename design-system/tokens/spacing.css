@@ -1,0 +1,51 @@
+/* Ganyu Hub — spacing, radii, layout.
+   8px base unit (Tailwind's default scale). Do not invent half-steps. */
+:root {
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;      /* the base unit */
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;     /* card padding, mobile gutter */
+  --space-5: 20px;     /* card padding, roomy */
+  --space-6: 24px;     /* card padding, desktop; ui/Card default */
+  --space-8: 32px;     /* desktop gutter */
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;    /* section padding, mobile; tab-bar height */
+  --space-20: 80px;    /* section padding, desktop */
+
+  /* Radii. Two answers, deliberately: 14px cards, rounded-md controls.
+     No rounded-everything. */
+  --radius-control: 6px;    /* rounded-md — buttons, inputs, selects */
+  --radius-panel: 8px;      /* rounded-lg — filter panels, sheets, tiles */
+  --radius-inset: 12px;     /* rounded-xl — ways-in cards */
+  --radius-card: 14px;      /* THE card radius (.card-soft, closing CTA) */
+  --radius-card-lg: 16px;   /* rounded-2xl — listing cards, drawers, dropdowns */
+  --radius-pill: 9999px;
+
+  /* Layout */
+  --page-max: 1280px;       /* max-w-7xl. Margins grow, content does not */
+  --page-max-feed: 1152px;  /* max-w-6xl, the signed-in home */
+  --gutter: var(--space-4);
+  --gutter-md: var(--space-8);
+
+  --bp-md: 768px;    /* the desktop switch. Mobile is the default */
+  --bp-lg: 1024px;   /* two-column: content + sticky right rail */
+  --bp-xl: 1280px;
+
+  /* Fixed mobile chrome. Body needs the bar height plus the safe area. */
+  --tabbar-height: 3.5rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-clearance: calc(var(--tabbar-height) + var(--safe-bottom));
+
+  --touch-min: 44px;  /* never smaller */
+
+  /* Carousel geometry. The peek is a requirement, not a style choice: the next
+     card must stay half-visible or nobody swipes the row. */
+  --carousel-card: 16rem;
+  --carousel-card-sm: 18rem;
+  --carousel-gap: var(--space-4);
+  --carousel-peek: 3rem;
+}

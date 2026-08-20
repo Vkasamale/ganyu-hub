@@ -21,14 +21,13 @@ answers given to Claude Design, and the exact next prompt to send.
 forward to the next design, and every session re-explains the same things.
 Exact wording is at the foot of `CLAUDE_DESIGN_WORKFLOW.md`.
 
-**⚠️ The design docs are now out of date on purpose.** `DESIGN.md` §2 and
-`DESIGN_BRIEF.md` still say the cream paper ground `#EFE6CE` is an asset to
-protect. **That decision was reversed on 2026-08-19** — off-white `#F7F6F3` is
-the page ground, pure white is the raised surface, cream survives only as an
-accent. The founder chose not to rewrite the docs and to override them from
-the prompt instead. A session that reads only the docs will get this wrong,
-which is precisely what killed the 2026-08-12 run. Reconcile them before
-resuming design work.
+**✅ The design docs are reconciled (2026-08-19).** `DESIGN.md` §1/§2/§3/§9,
+`DESIGN_BRIEF.md` and `DESIGN_BRIEF_MOBILE.md` now state the reversal:
+off-white `#F7F6F3` is the page ground, pure white is the raised surface,
+cream `#EFE6CE` is an accent only, and separation is carried by shadows and
+hairlines. **The code has not been repainted** — `tailwind.config.ts` and
+`app/globals.css` still ship the cream palette and `html, body` is hard-set to
+`#FFFFFF`. Docs describe intent; the repaint is outstanding.
 
 **Inputs already prepared, current as of 2026-08-13:**
 

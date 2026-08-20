@@ -1,0 +1,14 @@
+<!-- @dsCard group="Brand" viewport="700x160" name="Iconography — Lucide" subtitle="Lucide at 1.5–2px stroke. One family, no emoji." -->
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"><style>body{margin:0;background:var(--surface-canvas);color:var(--text-body);font-family:var(--font-body);padding:18px 20px;box-sizing:border-box}*{box-sizing:border-box}.row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}.lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--gh-ink-55);text-transform:uppercase}</style></head><body><script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<div id="icons" style="display:flex;flex-wrap:wrap;gap:18px"></div>
+<p style="margin:14px 0 0;font-size:12px;color:var(--gh-ink-65)">Sizes 14 (inline meta) &middot; 18 (drawer) &middot; 20 (tab bar) &middot; 24 (feature). Icons take <code style="font-family:var(--font-mono);font-size:11px">currentColor</code> and inherit the row's ink opacity — never a second colour beside their label.</p>
+<script>
+var NAMES=["Home","Search","MessageSquare","Briefcase","Inbox","Bookmark","ChartNoAxesColumn","FolderOpen","List","User","Shield","Wallet","ExternalLink","CircleHelp","Flag","Sparkles","Settings","Menu","BadgeCheck","HandCoins","Scale","ShieldCheck","ArrowRight","ChevronDown"];
+var lib=(window.lucide&&(window.lucide.icons||window.lucide))||{};
+document.getElementById("icons").innerHTML=NAMES.map(function(n){
+  var node=lib[n]; if(!node) return "";
+  var kids=(Array.isArray(node)&&node[0]==="svg")?node[2]:node;
+  var inner=(kids||[]).map(function(c){var a=Object.keys(c[1]).map(function(k){return k+'="'+c[1][k]+'"'}).join(" ");return "<"+c[0]+" "+a+"/>"}).join("");
+  return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;width:52px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1A1611" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg><span style="font-size:9px;color:var(--gh-ink-45);text-align:center;line-height:1.2">'+n+'</span></span>';
+}).join("");
+</script></body></html>

@@ -1,5 +1,9 @@
 # Ganyu Hub — mobile UI brief
 
+> **Authority: `design-system/CLAUDE.md` wins.** This brief exists for a run
+> with no repo access. Where it disagrees with the Claude Design export, the
+> export is right.
+
 > **Status 2026-08-13:** the product is now feature-complete (all 79 planned
 > items across Phases 0–9). If the design run CAN see the repo, use
 > [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md) — it carries the current surface
@@ -33,19 +37,30 @@ legible, and the app must not look like a foreign import.
 | `brand.DEFAULT` | `#069494` | teal, primary actions |
 | `brand.dark` | `#046B6B` | hover/active |
 | `brand.ink` | `#1A1611` | body text |
-| `brand.paper` | `#EFE6CE` | warm background |
+| `ground` | `#FFFFFF` | the page ground, pure white |
+| `raised` | `#F7F6F3` | cards, sheets, tab bar, sticky header |
+| `band` | `#F2F1EE` | alternating sections |
+| `inset` | `#F1F1F0` | recessed panels inside a card, always with a `#DCDCDC` hairline |
+| `grey` | `#ECECEC` | the accent surface — stamp ground, empty-state panels |
 | `brand.muted` | `#736A5C` | secondary text |
 
-Type: **Inter** (sans/UI), **IBM Plex Mono** (numerals, refs), **Instrument
-Serif** (display headings, used italic for emphasis).
+Type: **Inter, and nothing else.** Instrument Serif and IBM Plex Mono were both
+removed on 2026-08-14. Figures that must align use `font-variant-numeric:
+tabular-nums`, not a second face.
 
 There is a **rubber-stamp motif** on the job header carrying money state. It is
 the most distinctive thing in the product. Keep it.
 
-**This palette is an asset, not a placeholder.** Paper-and-teal with a serif
-display face reads local and considered; it does not read as a Fiverr clone.
-Any direction that arrives at white-plus-green has thrown away the one thing
-that differentiates the product visually.
+**Updated 2026-08-14: cream is deleted, not demoted.** `#EFE6CE` read retro and
+craft-fair; the target is modern. There is no cream in the system — the ground
+is white, the raised surface off-white, the accent light grey. Because that step
+is small, **separation is carried by shadow and hairline**, so the elevation
+scale is load-bearing: three levels, soft, low-spread, warm ink at 4–12%, no
+hard drop shadows, every level pairing a shadow with a hairline.
+
+**What differentiates the product now is the rubber stamp**, not the palette —
+supplied artwork, six states, heavy pressed ink. Teal is the only chromatic
+accent and earns attention by being rare. Grey is a surface, not a colour.
 
 ## 3. Constraints a mockup must respect
 

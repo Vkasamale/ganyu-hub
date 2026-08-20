@@ -1,0 +1,35 @@
+/* Ganyu Hub — base. Ported from app/globals.css, with the one documented
+   inconsistency resolved: `html, body` is hard-set to #FFFFFF in the shipped
+   product while `paper` is the declared canvas (DESIGN.md §2). This system
+   ships the warm ground. White is a CARD colour, not a page colour. */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+body {
+  margin: 0;
+  background: var(--surface-canvas);
+  color: var(--text-body);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+h1, h2, h3 { text-wrap: balance; letter-spacing: var(--tracking-display); font-weight: var(--weight-semibold); margin: 0; }
+p, li, .text-pretty { text-wrap: pretty; }
+/* Photographs are mounted, never floating — but the outline is opt-in via
+   .gh-mounted, not global: it boxed every transparent PNG (the stamps, the
+   logo) in a visible hairline square. */
+img { outline: none; }
+.gh-mounted { outline: var(--image-outline); outline-offset: -1px; }
+a { color: var(--text-link); text-decoration: none; }
+a:hover { color: var(--gh-teal); text-decoration: underline; text-underline-offset: 4px; }
+*:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

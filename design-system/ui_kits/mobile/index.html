@@ -1,0 +1,101 @@
+<!-- @dsCard group="Mobile app" viewport="390x844" name="Mobile app (PWA)" subtitle="Click-through phone shell: home feed, jobs, browse, job detail with escrow, messages, post-a-job." -->
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Ganyu Hub — mobile app</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../data.js"></script>
+<style>html,body{margin:0}body{background:var(--surface-canvas);color:var(--text-body);font-family:var(--font-body);font-size:var(--text-sm)}*{box-sizing:border-box}#phone::-webkit-scrollbar,ul::-webkit-scrollbar,nav::-webkit-scrollbar,div::-webkit-scrollbar{display:none}</style>
+</head><body><div id="root"></div>
+<script type="text/babel" src="MobileScreens.jsx"></script>
+<script type="text/babel">
+const { BottomTabBar, NavDrawer, CLIENT_TABS, CREATIVE_TABS, StickyActionBar, Button } = window.GanyuHubDesignSystem_1b2ec0;
+
+const DRAWER = [
+  { title: "Your work", items: [
+    { href: "/dashboard/jobs", label: "My jobs", icon: "Briefcase" },
+    { href: "/dashboard/proposals", label: "Proposals sent", icon: "Inbox" },
+    { href: "/messages", label: "Messages", icon: "MessageSquare" },
+    { href: "/dashboard/portfolio", label: "Portfolio", icon: "FolderOpen" },
+    { href: "/dashboard/services", label: "Rate card", icon: "List" },
+    { href: "/dashboard/saved", label: "Saved jobs", icon: "Bookmark" },
+    { href: "/dashboard", label: "Your numbers", icon: "ChartNoAxesColumn" } ] },
+  { title: "Settings", items: [
+    { href: "/dashboard/profile", label: "Edit profile", icon: "User" },
+    { href: "/dashboard/account", label: "Account & security", icon: "Shield" },
+    { href: "/dashboard/payments", label: "Payments & payouts", icon: "Wallet" },
+    { href: "/creatives/me", label: "View public profile", icon: "ExternalLink" } ] },
+  { title: "Help", items: [
+    { href: "/how-money-works", label: "How the money works", icon: "CircleHelp" },
+    { href: "/dashboard/report", label: "Report a problem", icon: "Flag" },
+    { href: "/release-notes", label: "What's new", icon: "Sparkles" } ] },
+];
+
+function App() {
+  const [route, setRoute] = React.useState("/");
+  const [role, setRole] = React.useState("creative");
+  const [drawer, setDrawer] = React.useState(false);
+  const [stage, setStage] = React.useState(2);
+  const scroller = React.useRef(null);
+  const go = (r) => { setRoute(r); setDrawer(false); if (scroller.current) scroller.current.scrollTop = 0; };
+  const detail = route === "/jobs/j1";
+  const wizard = route === "/jobs/new";
+  const tabRoute = detail || wizard ? "/jobs" : route;
+
+  return (
+    <div style={{ display: "flex", gap: 40, alignItems: "flex-start", justifyContent: "center", padding: "32px 20px" }}>
+      {/* Phone */}
+      <div style={{ position: "relative", width: 390, height: 780, flexShrink: 0, overflow: "hidden", borderRadius: 40, background: "var(--surface-canvas)", border: "9px solid #17130f", boxShadow: "0 30px 70px rgba(26,22,17,0.28)" }}>
+        <div ref={scroller} id="phone" style={{ position: "absolute", inset: 0, overflowY: "auto", scrollbarWidth: "none", paddingBottom: 62 }}>
+          <AppBar
+            title={detail ? "Job" : wizard ? "Post a job" : null}
+            back={detail || wizard}
+            onBack={() => go(wizard ? "/" : "/jobs")}
+          />
+          {route === "/" && <HomeFeed go={go} role={role} />}
+          {route === "/jobs" && <JobsMobile go={go} />}
+          {route === "/browse" && <BrowseMobile go={go} />}
+          {route === "/messages" && <MessagesMobile go={go} />}
+          {route === "/dashboard/jobs" && <JobsMobile go={go} />}
+          {detail && <JobDetailMobile go={go} stage={stage} setStage={setStage} />}
+          {wizard && <PostJobMobile go={go} />}
+        </div>
+        {detail && (
+          <StickyActionBar
+            position="absolute"
+            style={{ bottom: 56 }}
+            hint={stage >= 4 ? "Released to creative" : "MWK 120,000 " + (stage >= 2 ? "held" : "not funded")}
+            label={stage < 2 ? "Fund escrow" : stage === 2 ? "Mark delivered" : stage === 3 ? "Release payment" : "Done"}
+            onClick={(e) => { e.preventDefault(); setStage(Math.min(4, stage + 1)); }}
+          />
+        )}
+        <BottomTabBar position="absolute" tabs={role === "client" ? CLIENT_TABS : CREATIVE_TABS} active={tabRoute} unreadCount={2} onNavigate={go} onMenu={() => setDrawer(true)} />
+        {drawer && <NavDrawer groups={DRAWER} version="1.4.0" onClose={() => setDrawer(false)} onNavigate={go} />}
+      </div>
+
+      {/* Notes beside the phone */}
+      <div style={{ maxWidth: 300, paddingTop: 8 }}>
+        <p className="gh-eyebrow" style={{ margin: 0 }}>Mobile shell</p>
+        <h2 style={{ margin: "6px 0 0", fontFamily: "var(--font-display)", fontSize: "var(--text-2xl)", fontWeight: 400 }}>Four tabs, plus Menu.</h2>
+        <p style={{ margin: "10px 0 0", fontSize: "var(--text-sm)", lineHeight: "var(--leading-relaxed)", color: "var(--gh-ink-70)" }}>
+          No create action in the bar. Posting a job is a deliberate button on the page, not a &ldquo;+&rdquo; between two tabs.
+        </p>
+        <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
+          <Button variant="outline" size="sm" onClick={() => setRole(role === "client" ? "creative" : "client")}>
+            Switch role &mdash; currently {role}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => go("/jobs/new")}>Open the post-a-job flow</Button>
+          <Button variant="outline" size="sm" onClick={() => { go("/jobs/j1"); setStage(0); }}>Job detail, unfunded</Button>
+          <Button variant="outline" size="sm" onClick={() => setDrawer(true)}>Open the drawer</Button>
+        </div>
+        <p style={{ margin: "16px 0 0", fontSize: "var(--text-xs)", lineHeight: "var(--leading-snug)", color: "var(--gh-ink-60)" }}>
+          On the job detail, the pinned bar advances the escrow stage: <b style={{ fontWeight: 600 }}>not funded &rarr; held &rarr; delivered &rarr; released</b>. Watch the stamp and the tracker.
+        </p>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script></body></html>

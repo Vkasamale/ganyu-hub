@@ -1,0 +1,47 @@
+<!-- @dsCard group="Components" viewport="700x460" name="Trust & inputs" subtitle="Verification, ratings, the save heart, style swatches, tag input, and both empty states." -->
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--surface-canvas);color:var(--text-body);font-family:var(--font-body);padding:18px 20px;box-sizing:border-box}*{box-sizing:border-box}.lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--gh-ink-45);text-transform:uppercase;margin:0 0 8px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { VerifiedBadge, Stars, StarRatingInput, SaveButton, EmptyState, TagInput, StyleChoices } = window.GanyuHubDesignSystem_1b2ec0;
+function Demo() {
+  return (
+    <div style={{display:"grid",gap:20}}>
+      <div>
+        <p className="lab">Trust marks &mdash; there is no &ldquo;not verified&rdquo; state</p>
+        <div className="row" style={{gap:20}}>
+          <VerifiedBadge verifiedAt="2026-07-01" size="lg" />
+          <VerifiedBadge verifiedAt="2026-07-01" />
+          <span className="row" style={{gap:6}}><Stars value={4.6} size={16} /><span style={{fontSize:"var(--text-xs)",color:"var(--gh-ink-60)"}}>4.6 &middot; 12 reviews</span></span>
+          <span className="row" style={{gap:6}}><Stars value={0} size={16} /><span style={{fontSize:"var(--text-xs)",color:"var(--gh-ink-60)"}}>New &middot; no reviews yet</span></span>
+          <SaveButton saved={false} />
+          <SaveButton saved={true} />
+          <StarRatingInput name="rating" defaultValue={4} />
+        </div>
+      </div>
+      <div>
+        <p className="lab">StyleChoices &mdash; point instead of naming a style you have no word for</p>
+        <StyleChoices name="styles" selected={["flat","vintage"]} />
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
+        <div>
+          <p className="lab">TagInput</p>
+          <TagInput name="skills" defaultValue={["Logo design","Packaging"]} placeholder="Add a skill" />
+          <p className="lab" style={{marginTop:16}}>EmptyState &middot; quiet</p>
+          <EmptyState tone="quiet" title="No messages in this thread yet." body="Say hello — most creatives reply within a day." />
+        </div>
+        <div>
+          <p className="lab">EmptyState &middot; prompt</p>
+          <EmptyState title="No proposals yet" body="Creatives usually reply within a day. You can also invite someone directly." actionLabel="Browse creatives" style={{padding:"32px 24px"}} />
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script></body></html>

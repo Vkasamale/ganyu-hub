@@ -1,0 +1,24 @@
+/* Ganyu Hub — motion. Short, ease-out, physical. Nothing bounces.
+   prefers-reduced-motion is honoured globally in base.css. */
+:root {
+  --dur-card: 100ms; /* @kind other */     /* listing-card hover lift */
+  --dur-control: 150ms; /* @kind other */  /* buttons: background, shadow, transform, colour */
+  --dur-panel: 200ms; /* @kind other */    /* disclosure grid-template-rows, chevron flips */
+  --dur-theme: 250ms; /* @kind other */    /* hero mode swap — colour crossfade */
+  --dur-image: 300ms; /* @kind other */    /* cover image scale on card hover */
+  --dur-rail: 400ms; /* @kind other */     /* rotating category batch */
+  --dur-progress: 700ms; /* @kind other */ /* progress-bar connectors filling */
+
+  --ease-out: ease-out; /* @kind other */                          /* the default */
+  --ease-emphasis: cubic-bezier(0.32, 0.72, 0, 1); /* @kind other */   /* carousels, rails */
+  --ease-enter: cubic-bezier(0.2, 0.8, 0.2, 1); /* @kind other */      /* stagger-in lists */
+
+  --stagger: 40ms; /* @kind other */   /* per item in a rotating rail */
+  --stagger-list: 50ms; /* @kind other */
+
+  /* Press: a physical, stamp-like acknowledgement. */
+  --press-scale: 0.97; /* @kind other */
+  /* Hover lift on a listing card. 2px, no more. */
+  --hover-lift: -2px;
+  --pop-scale: 1.3; /* @kind other */  /* the save-button heart, 350ms, ease-out */
+}
