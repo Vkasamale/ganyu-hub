@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Screen templates" description="The five reusable Ganyu Hub screen layouts at 390 and 1440, plus three rubber-stamp variants." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap">
+<style>body{margin:0;background:#FFFFFF;font-variant-numeric:tabular-nums}*{box-sizing:border-box}::-webkit-scrollbar{display:none}</style>
+</helmet>
+<div style="background:#FFFFFF;color:#1A1611;font-family:Inter,system-ui,sans-serif;font-size:14px;padding:48px 40px 96px">
+
+<div style="max-width:1180px;margin:0 auto 56px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Ganyu Hub &middot; screen templates</p>
+<h1 style="margin:10px 0 0;font-family:Inter,system-ui,sans-serif;font-size:44px;font-weight:600;line-height:1.04;letter-spacing:-.03em">Five layouts, <i>two widths</i>.</h1>
+<p style="margin:14px 0 0;max-width:64ch;font-size:15px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">Every future mockup starts here. The ground is pure white <span style="font-family:Inter,system-ui,sans-serif;font-size:13px">#FFFFFF</span>; off-white <span style="font-family:Inter,system-ui,sans-serif;font-size:13px">#F7F6F3</span> is the raised surface; light grey <span style="font-family:Inter,system-ui,sans-serif;font-size:13px">#ECECEC</span> is the accent, carrying the stamp, empty states, and inset panels inside cards. Because the ground-to-card step is small, separation is carried by shadow and hairline.</p>
+</div>
+
+<!-- ══════════ THE STAMP ══════════ -->
+<div style="max-width:1180px;margin:0 auto 24px;border-top:1px solid rgba(26,22,17,.18);padding-top:28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Settled</p>
+<h2 style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em">The rubber stamp</h2>
+<p style="margin:10px 0 0;max-width:68ch;font-size:14px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">A heavy, hand-pressed stamp &mdash; not a badge and not a chip. The stamps are supplied artwork, not drawn in code: a double ring carrying <b style="font-weight:600">Ganyu Hub</b> arced above and below, three stars each side, and an angled label band naming the state. Worn edges, uneven ink, every one different. Six exist: one per stage of a job's money, plus <b style="font-weight:600">nothing yet</b> for empty states. The five money stamps are never borrowed for absence, and no stamp appears anywhere outside those two jobs.</p>
+<p style="margin:10px 0 0;max-width:68ch;font-size:13px;line-height:1.6;color:rgba(26,22,17,.55);text-wrap:pretty">Earlier chip variants, and the coded imitation that followed them, were both replaced by this artwork on 20 August 2026. The files live in <span style="font-family:Inter,system-ui,sans-serif;font-weight:600">assets/stamps/</span>.</p>
+</div>
+
+<!-- five states, as pressed ink -->
+<div style="max-width:1180px;margin:0 auto 88px">
+<p style="margin:0 0 16px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">All five money states</p>
+<div style="background:#ECECEC;border:1px solid #DCDCDC;border-radius:14px;padding:28px 12px;overflow-x:auto;overflow-y:hidden">
+<div style="display:flex;flex-wrap:nowrap;align-items:center;width:max-content;margin:0 auto">
+<img src="assets/stamps/no-payment-yet.png" alt="No payment yet" width="184" height="184" loading="lazy" decoding="async" style="display:block;flex-shrink:0;margin-inline:-10px">
+<img src="assets/stamps/payment-pending.png" alt="Payment pending" width="184" height="184" loading="lazy" decoding="async" style="display:block;flex-shrink:0;margin-inline:-10px">
+<img src="assets/stamps/in-escrow.png" alt="In escrow" width="184" height="184" loading="lazy" decoding="async" style="display:block;flex-shrink:0;margin-inline:-10px">
+<img src="assets/stamps/released.png" alt="Released" width="184" height="184" loading="lazy" decoding="async" style="display:block;flex-shrink:0;margin-inline:-10px">
+<img src="assets/stamps/in-dispute.png" alt="In dispute" width="184" height="184" loading="lazy" decoding="async" style="display:block;flex-shrink:0;margin-inline:-10px">
+</div>
+</div>
+<p style="margin:14px 0 0;max-width:74ch;font-size:13px;line-height:1.6;color:rgba(26,22,17,.68)">The five stamps mark the stages a job's money passes through, and they are the artwork itself &mdash; pressed, worn, each one different. Keyed to transparent so they sit on any ground, and cut from 2048px to 512px: the set is now about a tenth of the weight it arrived at, which matters on a paid connection.</p>
+</div>
+
+<!-- ══════════ PAGE TITLE FACE ══════════ -->
+<div style="max-width:1180px;margin:0 auto 24px;border-top:1px solid rgba(26,22,17,.18);padding-top:28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">For your judgement</p>
+<h2 style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em">Page title weights</h2>
+<p style="margin:10px 0 0;max-width:66ch;font-size:14px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">Instrument Serif has been removed &mdash; Inter is the typeface. Hierarchy now comes from weight and tracking, not from a change of face. Italic on the left for emphasis, plain on the right.</p>
+</div>
+<div style="max-width:1180px;margin:0 auto 88px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:32px 28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Open jobs</p>
+<h3 style="margin:8px 0 0;font-family:Inter,system-ui,sans-serif;font-size:34px;font-weight:600;line-height:1.1;letter-spacing:-.025em">Find work <i>to do</i></h3>
+<p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:rgba(26,22,17,.68)">Jobs posted in Blantyre, Lilongwe and Mzuzu, with budgets attached.</p>
+<p style="margin:22px 0 0;font-family:Inter,system-ui,sans-serif;font-size:11px;color:rgba(26,22,17,.45)">Inter italic &middot; 34px &middot; 600 &middot; &minus;0.025em</p>
+</div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:32px 28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Open jobs</p>
+<h3 style="margin:8px 0 0;font-size:34px;font-weight:600;line-height:1.12;letter-spacing:-.025em">Find work to do</h3>
+<p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:rgba(26,22,17,.68)">Jobs posted in Blantyre, Lilongwe and Mzuzu, with budgets attached.</p>
+<p style="margin:22px 0 0;font-family:Inter,system-ui,sans-serif;font-size:11px;color:rgba(26,22,17,.45)">Inter &middot; 34px &middot; 600 &middot; &minus;0.025em</p>
+</div>
+</div>
+
+<!-- ══════════ 1. PAGE SHELL ══════════ -->
+<div style="max-width:1180px;margin:0 auto 24px;border-top:1px solid rgba(26,22,17,.18);padding-top:28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Template 1</p>
+<h2 style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em">Page shell</h2>
+<p style="margin:10px 0 0;max-width:66ch;font-size:14px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">Header, page title, and the two shells that never coexist: the bottom tab bar and drawer below md, the verb nav above it. Pre-footer and footer close both. No create action in the tab bar.</p>
+</div>
+
+<div style="display:flex;gap:36px;align-items:flex-start;overflow-x:auto;padding-bottom:20px;margin-bottom:80px">
+
+<div style="flex-shrink:0">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">390 &middot; mobile</p>
+<div style="position:relative;width:390px;height:760px;border-radius:34px;border:8px solid #17130f;overflow:hidden;background:#FFFFFF;box-shadow:0 24px 56px rgba(26,22,17,.18)">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:64px">
+<div style="position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 16px;background:rgba(247,246,243,.94);backdrop-filter:blur(8px);border-bottom:1px solid rgba(26,22,17,.18);box-shadow:0 2px 4px rgba(26,22,17,.04),0 12px 28px rgba(26,22,17,.08)">
+<span style="display:inline-flex;align-items:center;gap:8px"><img src="assets/logo-g.png" width="26" height="26" style="border-radius:9999px;display:block"><span style="font-family:Inter,system-ui,sans-serif;font-size:17px;line-height:1;letter-spacing:-.015em">Ganyu <span style="color:rgba(26,22,17,.60)">Hub</span></span></span>
+<span style="margin-left:auto;display:flex;gap:2px;color:rgba(26,22,17,.70)">
+<span style="display:flex;height:44px;width:44px;align-items:center;justify-content:center"><x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="Search" size="20" hint-size="20px,20px"></x-import></span>
+<span style="position:relative;display:flex;height:44px;width:44px;align-items:center;justify-content:center"><x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="Bell" size="20" hint-size="20px,20px"></x-import></span>
+</span>
+</div>
+<div style="padding:20px 16px 0">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Open jobs</p>
+<h3 style="margin:7px 0 0;font-family:Inter,system-ui,sans-serif;font-size:28px;font-weight:600;line-height:1.12;letter-spacing:-.025em">Find work <i>to do</i></h3>
+<p style="margin:8px 0 0;font-size:14px;line-height:1.55;color:rgba(26,22,17,.68)">Jobs posted this week, with budgets attached.</p>
+</div>
+<div style="margin-top:20px;padding:0 16px;display:grid;gap:12px">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:18px">
+<h4 style="margin:0;font-size:17px;font-weight:600;line-height:1.25;letter-spacing:-.01em">Logo for a Blantyre bakery</h4>
+<div style="margin-top:7px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:rgba(26,22,17,.55)"><span>2 days ago</span><span>&middot;</span><span style="border-radius:9999px;background:#ECECEC;padding:2px 10px;font-weight:500;color:rgba(26,22,17,.75)">Design</span></div>
+<div style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;border-radius:8px;background:rgba(47,93,59,.10);padding:6px 12px;font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:#2F5D3B">MWK 85,000</div>
+</div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:18px">
+<h4 style="margin:0;font-size:17px;font-weight:600;line-height:1.25;letter-spacing:-.01em">Product photos for 14 jars of honey</h4>
+<div style="margin-top:7px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:rgba(26,22,17,.55)"><span>6 hours ago</span><span>&middot;</span><span style="border-radius:9999px;background:#ECECEC;padding:2px 10px;font-weight:500;color:rgba(26,22,17,.75)">Video &amp; Photography</span></div>
+<div style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;border-radius:8px;background:rgba(47,93,59,.10);padding:6px 12px;font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:#2F5D3B">MWK 65,000</div>
+</div>
+</div>
+<div style="margin-top:28px;background:#ECECEC;border-top:1px solid #DCDCDC;padding:28px 16px">
+<h4 style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:21px;font-weight:600;line-height:1.25;letter-spacing:-.02em">Money is held until you approve.</h4>
+<p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:rgba(26,22,17,.72)">The client funds the job before work starts. We hold it. Nobody has to trust a stranger.</p>
+<a href="#" style="display:inline-flex;align-items:center;justify-content:center;margin-top:16px;min-height:44px;border-radius:6px;background:#069494;padding:0 20px;font-size:14px;font-weight:500;color:#fff;text-decoration:none">How the money works</a>
+</div>
+<div style="background:#F2F1EE;border-top:1px solid rgba(26,22,17,.18);padding:24px 16px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:rgba(26,22,17,.50)">Blantyre &middot; Lilongwe &middot; Mzuzu</p>
+<p style="margin:10px 0 0;font-size:12px;color:rgba(26,22,17,.55)">Ganyu Hub &middot; Terms &middot; Privacy</p>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:10;display:flex;background:rgba(247,246,243,.94);backdrop-filter:blur(8px);border-top:1px solid rgba(26,22,17,.18);box-shadow:0 -2px 8px rgba(26,22,17,.04),0 -16px 40px rgba(26,22,17,.10)">
+<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:10px;font-weight:500;color:rgba(26,22,17,.55)"><x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="Home" size="20" hint-size="20px,20px"></x-import>Home</span>
+<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:10px;font-weight:500;color:#046B6B"><x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="Search" size="20" hint-size="20px,20px"></x-import>Find work</span>
+<span style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:10px;font-weight:500;color:rgba(26,22,17,.55)"><x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="MessageSquare" size="20" hint-size="20px,20px"></x-import><span style="position:absolute;top:5px;right:24%;min-width:16px;border-radius:9999px;background:#069494;padding:0 4px;font-size:9px;font-weight:700;line-height:16px;color:#fff;text-align:center">2</span>Messages</span>
+<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:10px;font-weight:500;color:rgba(26,22,17,.55)"><x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="Briefcase" size="20" hint-size="20px,20px"></x-import>My work</span>
+<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:10px;font-weight:500;color:rgba(26,22,17,.55)"><x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="Menu" size="20" hint-size="20px,20px"></x-import>Menu</span>
+</div>
+</div>
+</div>
+
+<div style="flex-shrink:0">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">1440 &middot; desktop &middot; shown at 55%</p>
+<div style="width:792px;height:474px;overflow:hidden;border-radius:12px;border:1px solid rgba(26,22,17,.18);box-shadow:0 2px 4px rgba(26,22,17,.04),0 12px 28px rgba(26,22,17,.08)">
+<div style="width:1440px;height:862px;transform:scale(.55);transform-origin:top left;background:#FFFFFF">
+<div style="display:flex;align-items:center;gap:28px;padding:14px 40px;background:rgba(247,246,243,.94);border-bottom:1px solid rgba(26,22,17,.18);box-shadow:0 2px 4px rgba(26,22,17,.04),0 12px 28px rgba(26,22,17,.08)">
+<span style="display:inline-flex;align-items:center;gap:9px"><img src="assets/logo-g.png" width="32" height="32" style="border-radius:9999px;display:block"><span style="font-family:Inter,system-ui,sans-serif;font-size:21px;line-height:1;letter-spacing:-.015em">Ganyu <span style="color:rgba(26,22,17,.60)">Hub</span></span></span>
+<nav style="display:flex;gap:4px">
+<span style="border-radius:8px;background:rgba(26,22,17,.06);padding:7px 13px;font-size:14px;font-weight:500">Find work</span>
+<span style="border-radius:8px;padding:7px 13px;font-size:14px;color:rgba(26,22,17,.70)">Deliver work</span>
+<span style="border-radius:8px;padding:7px 13px;font-size:14px;color:rgba(26,22,17,.70)">Get paid</span>
+</nav>
+<span style="margin-left:auto;display:flex;align-items:center;gap:14px;color:rgba(26,22,17,.65)">
+<x-import component-from-global-scope="GanyuHubDesignSystem_1b2ec0.Icon" name="Bell" size="20" hint-size="20px,20px"></x-import>
+<span style="border-radius:6px;background:#069494;padding:9px 17px;font-size:14px;font-weight:500;color:#fff">Post a job</span>
+<span style="display:flex;height:34px;width:34px;align-items:center;justify-content:center;border-radius:9999px;background:rgba(26,22,17,.85);font-size:12px;font-weight:600;color:#F7F6F3">TB</span>
+</span>
+</div>
+<div style="max-width:1280px;margin:0 auto;padding:40px 40px 0">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Open jobs</p>
+<h3 style="margin:10px 0 0;font-family:Inter,system-ui,sans-serif;font-size:40px;font-weight:600;line-height:1.06;letter-spacing:-.028em">Find work <i>to do</i></h3>
+<p style="margin:12px 0 0;max-width:56ch;font-size:16px;line-height:1.6;color:rgba(26,22,17,.68)">Jobs posted in Blantyre, Lilongwe and Mzuzu, with budgets attached.</p>
+<div style="margin-top:32px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:22px"><h4 style="margin:0;font-size:19px;font-weight:600;line-height:1.25;letter-spacing:-.01em">Logo for a Blantyre bakery</h4><div style="margin-top:8px;font-size:13px;color:rgba(26,22,17,.55)">2 days ago &middot; Design</div><div style="margin-top:16px;display:inline-flex;border-radius:8px;background:rgba(47,93,59,.10);padding:7px 13px;font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:#2F5D3B">MWK 85,000</div></div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:22px"><h4 style="margin:0;font-size:19px;font-weight:600;line-height:1.25;letter-spacing:-.01em">Product photos for 14 jars of honey</h4><div style="margin-top:8px;font-size:13px;color:rgba(26,22,17,.55)">6 hours ago &middot; Video &amp; Photography</div><div style="margin-top:16px;display:inline-flex;border-radius:8px;background:rgba(47,93,59,.10);padding:7px 13px;font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:#2F5D3B">MWK 65,000</div></div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:22px"><h4 style="margin:0;font-size:19px;font-weight:600;line-height:1.25;letter-spacing:-.01em">Chichewa voiceover for a health campaign</h4><div style="margin-top:8px;font-size:13px;color:rgba(26,22,17,.55)">1 day ago &middot; Music &amp; Audio</div><div style="margin-top:16px;display:inline-flex;border-radius:8px;background:rgba(47,93,59,.10);padding:7px 13px;font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:#2F5D3B">MWK 40,000</div></div>
+</div>
+</div>
+<div style="margin-top:48px;background:#ECECEC;border-top:1px solid #DCDCDC;padding:52px 40px">
+<div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:32px">
+<div><h4 style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:30px;font-weight:600;line-height:1.2;letter-spacing:-.022em">Money is held until you approve.</h4><p style="margin:10px 0 0;max-width:56ch;font-size:15px;line-height:1.6;color:rgba(26,22,17,.72)">The client funds the job before work starts. We hold it. The creative gets paid when the work is approved.</p></div>
+<span style="flex-shrink:0;border-radius:6px;background:#069494;padding:13px 26px;font-size:15px;font-weight:500;color:#fff">How the money works</span>
+</div>
+</div>
+<div style="background:#F2F1EE;border-top:1px solid rgba(26,22,17,.18);padding:36px 40px">
+<div style="max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;gap:32px">
+<div><p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:rgba(26,22,17,.50)">Blantyre &middot; Lilongwe &middot; Mzuzu</p><p style="margin:12px 0 0;font-size:13px;color:rgba(26,22,17,.55)">Ganyu Hub &middot; Terms &middot; Privacy</p></div>
+<div style="display:flex;gap:56px;font-size:13px;color:rgba(26,22,17,.65)"><div><p style="margin:0;font-weight:600;color:#1A1611">For clients</p><p style="margin:8px 0 0">Post a job</p><p style="margin:6px 0 0">Browse creatives</p></div><div><p style="margin:0;font-weight:600;color:#1A1611">For creatives</p><p style="margin:8px 0 0">Find work</p><p style="margin:6px 0 0">Get paid</p></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════ 2. LIST PAGE ══════════ -->
+<div style="max-width:1180px;margin:0 auto 24px;border-top:1px solid rgba(26,22,17,.18);padding-top:28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Template 2</p>
+<h2 style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em">List page</h2>
+<p style="margin:10px 0 0;max-width:66ch;font-size:14px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">Filter bar, a grid of cards, and the empty state the same grid falls back to. Mobile scrolls its filters horizontally; desktop puts them in a sticky rail. Result counts appear only when there is a count to show.</p>
+</div>
+
+<div style="display:flex;gap:36px;align-items:flex-start;overflow-x:auto;padding-bottom:20px;margin-bottom:80px">
+<div style="flex-shrink:0">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">390 &middot; mobile</p>
+<div style="position:relative;width:390px;height:760px;border-radius:34px;border:8px solid #17130f;overflow:hidden;background:#FFFFFF;box-shadow:0 24px 56px rgba(26,22,17,.18)">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:64px">
+<div style="padding:20px 16px 0">
+<h3 style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:27px;font-weight:600;line-height:1.15;letter-spacing:-.025em">Find someone <i>to hire</i></h3>
+</div>
+<div style="margin-top:14px;display:flex;gap:8px;overflow-x:auto;padding:0 16px">
+<span style="flex-shrink:0;border-radius:9999px;border:1px solid #069494;background:#069494;padding:8px 15px;font-size:12px;font-weight:500;color:#fff;white-space:nowrap">All</span>
+<span style="flex-shrink:0;border-radius:9999px;border:1px solid rgba(26,22,17,.18);background:#F7F6F3;padding:8px 15px;font-size:12px;font-weight:500;color:rgba(26,22,17,.70);white-space:nowrap">Design</span>
+<span style="flex-shrink:0;border-radius:9999px;border:1px solid rgba(26,22,17,.18);background:#F7F6F3;padding:8px 15px;font-size:12px;font-weight:500;color:rgba(26,22,17,.70);white-space:nowrap">Photography</span>
+<span style="flex-shrink:0;border-radius:9999px;border:1px solid rgba(26,22,17,.18);background:#F7F6F3;padding:8px 15px;font-size:12px;font-weight:500;color:rgba(26,22,17,.70);white-space:nowrap">Writing</span>
+</div>
+<p style="margin:16px 16px 0;font-size:13px;color:rgba(26,22,17,.62)"><b style="font-weight:600;color:#1A1611">6</b> creatives taking work</p>
+<div style="margin-top:12px;padding:0 16px;display:grid;gap:12px">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden">
+<div style="height:120px;background:radial-gradient(120% 80% at 30% 30%,#069494 0%,#046B6B 55%,#023939 100%);display:flex;align-items:center;justify-content:center"><span style="font-family:Inter,system-ui,sans-serif;font-size:42px;color:#F7F6F3">TB</span></div>
+<div style="padding:14px">
+<p style="margin:0;font-size:15px;font-weight:600">Thandiwe Banda</p>
+<p style="margin:2px 0 0;font-size:12px;color:rgba(26,22,17,.55)">Blantyre</p>
+<p style="margin:9px 0 0;font-size:13px;line-height:1.5;color:rgba(26,22,17,.75)">Brand identity and packaging for food businesses.</p>
+<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(26,22,17,.10);display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:rgba(26,22,17,.60)">Checked by Ganyu Hub</span><span style="font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">From MWK 45,000</span></div>
+</div>
+</div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden">
+<div style="height:120px;background:radial-gradient(120% 80% at 30% 30%,#069494 0%,#046B6B 55%,#023939 100%);display:flex;align-items:center;justify-content:center"><span style="font-family:Inter,system-ui,sans-serif;font-size:42px;color:#F7F6F3">CM</span></div>
+<div style="padding:14px">
+<p style="margin:0;font-size:15px;font-weight:600">Chikondi Mwale</p>
+<p style="margin:2px 0 0;font-size:12px;color:rgba(26,22,17,.55)">Lilongwe</p>
+<p style="margin:9px 0 0;font-size:13px;line-height:1.5;color:rgba(26,22,17,.75)">Product and event photography, same-week turnaround.</p>
+<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(26,22,17,.10);display:flex;align-items:center;justify-content:flex-end"><span style="font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">From MWK 30,000</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="flex-shrink:0">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">1440 &middot; desktop &middot; shown at 55%</p>
+<div style="width:792px;height:474px;overflow:hidden;border-radius:12px;border:1px solid rgba(26,22,17,.18);box-shadow:0 2px 4px rgba(26,22,17,.04),0 12px 28px rgba(26,22,17,.08)">
+<div style="width:1440px;height:862px;transform:scale(.55);transform-origin:top left;background:#FFFFFF;padding:40px">
+<h3 style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:40px;font-weight:600;line-height:1.06;letter-spacing:-.028em">Find someone <i>to hire</i></h3>
+<div style="margin-top:32px;display:grid;grid-template-columns:280px 1fr;gap:36px;align-items:start">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:20px">
+<div style="display:flex;align-items:center;justify-content:space-between"><p style="margin:0;font-size:15px;font-weight:600">Filters</p><span style="font-size:13px;font-weight:500;color:#046B6B">Clear all</span></div>
+<div style="height:1px;background:rgba(26,22,17,.18);margin:14px 0"></div>
+<p style="margin:0 0 10px;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Category</p>
+<div style="display:grid;gap:5px;font-size:14px">
+<span style="border-radius:6px;background:rgba(6,148,148,.10);padding:8px 11px;font-weight:500;color:#046B6B">All categories</span>
+<span style="padding:8px 11px;color:rgba(26,22,17,.70)">Design</span>
+<span style="padding:8px 11px;color:rgba(26,22,17,.70)">Video &amp; Photography</span>
+<span style="padding:8px 11px;color:rgba(26,22,17,.70)">Writing &amp; Translation</span>
+<span style="padding:8px 11px;color:rgba(26,22,17,.70)">Music &amp; Audio</span>
+</div>
+<div style="height:1px;background:rgba(26,22,17,.18);margin:16px 0"></div>
+<p style="margin:0 0 10px;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Budget from</p>
+<div style="height:44px;border-radius:6px;border:1px solid #D4D4D4;background:#F7F6F3;display:flex;align-items:center;padding:0 13px;font-size:14px;color:rgba(26,22,17,.75)">Any</div>
+</div>
+<div>
+<p style="margin:0;font-size:15px;color:rgba(26,22,17,.62)"><b style="font-weight:600;color:#1A1611">6</b> creatives taking work</p>
+<div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden"><div style="height:130px;background:radial-gradient(120% 80% at 30% 30%,#069494 0%,#046B6B 55%,#023939 100%);display:flex;align-items:center;justify-content:center"><span style="font-family:Inter,system-ui,sans-serif;font-size:44px;color:#F7F6F3">TB</span></div><div style="padding:16px"><p style="margin:0;font-size:16px;font-weight:600">Thandiwe Banda</p><p style="margin:3px 0 0;font-size:13px;color:rgba(26,22,17,.55)">Blantyre</p><p style="margin:10px 0 0;font-size:14px;line-height:1.5;color:rgba(26,22,17,.75)">Brand identity and packaging.</p><div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(26,22,17,.10);font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums">From MWK 45,000</div></div></div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden"><div style="height:130px;background:radial-gradient(120% 80% at 30% 30%,#069494 0%,#046B6B 55%,#023939 100%);display:flex;align-items:center;justify-content:center"><span style="font-family:Inter,system-ui,sans-serif;font-size:44px;color:#F7F6F3">CM</span></div><div style="padding:16px"><p style="margin:0;font-size:16px;font-weight:600">Chikondi Mwale</p><p style="margin:3px 0 0;font-size:13px;color:rgba(26,22,17,.55)">Lilongwe</p><p style="margin:10px 0 0;font-size:14px;line-height:1.5;color:rgba(26,22,17,.75)">Product and event photography.</p><div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(26,22,17,.10);font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums">From MWK 30,000</div></div></div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden"><div style="height:130px;background:radial-gradient(120% 80% at 30% 30%,#069494 0%,#046B6B 55%,#023939 100%);display:flex;align-items:center;justify-content:center"><span style="font-family:Inter,system-ui,sans-serif;font-size:44px;color:#F7F6F3">LP</span></div><div style="padding:16px"><p style="margin:0;font-size:16px;font-weight:600">Limbani Phiri</p><p style="margin:3px 0 0;font-size:13px;color:rgba(26,22,17,.55)">Mzuzu</p><p style="margin:10px 0 0;font-size:14px;line-height:1.5;color:rgba(26,22,17,.75)">Short explainers and social cutdowns.</p><div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(26,22,17,.10);font-size:13px;color:rgba(26,22,17,.60)">New &middot; no reviews yet</div></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════ 3. DETAIL PAGE ══════════ -->
+<div style="max-width:1180px;margin:0 auto 24px;border-top:1px solid rgba(26,22,17,.18);padding-top:28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Template 3</p>
+<h2 style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em">Detail page</h2>
+<p style="margin:10px 0 0;max-width:66ch;font-size:14px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">The money header leads: the amount in Inter tabular figures, the stamp pressed at the right margin on its grey ground, then the fee breakdown as a grey inset inside the white card. Mobile pins the action; desktop puts it in a sticky rail.</p>
+</div>
+
+<div style="display:flex;gap:36px;align-items:flex-start;overflow-x:auto;padding-bottom:20px;margin-bottom:80px">
+<div style="flex-shrink:0">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">390 &middot; mobile</p>
+<div style="position:relative;width:390px;height:760px;border-radius:34px;border:8px solid #17130f;overflow:hidden;background:#FFFFFF;box-shadow:0 24px 56px rgba(26,22,17,.18)">
+<div style="position:absolute;inset:0;overflow-y:auto;padding:16px 16px 150px">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden">
+<div style="padding:20px 18px">
+<h3 style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:23px;font-weight:600;line-height:1.2;letter-spacing:-.022em">Logo for a Blantyre bakery</h3>
+</div>
+<div style="background:#ECECEC;border-top:1px solid #DCDCDC;border-bottom:1px solid #DCDCDC;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div><p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Agreed price</p><p style="margin:5px 0 0;font-family:Inter,system-ui,sans-serif;font-size:27px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1">MWK 85,000</p></div>
+<img src="assets/stamps/in-escrow.png" alt="In escrow" width="104" height="104" loading="lazy" decoding="async" style="display:block;flex-shrink:0;margin:-6px -4px">
+</div>
+<div style="padding:18px">
+<div style="border-radius:12px;background:#F1F1F0;border:1px solid #DCDCDC;padding:14px">
+<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(26,22,17,.08);font-size:13px"><span style="color:rgba(26,22,17,.65)">Agreed price</span><span style="font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums">MWK 85,000</span></div>
+<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(26,22,17,.08);font-size:13px"><span style="color:rgba(26,22,17,.65)">Processing fee</span><span style="font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums">MWK 2,550</span></div>
+<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px"><span style="font-weight:600">You paid</span><span style="font-family:Inter,system-ui,sans-serif;font-weight:600;font-variant-numeric:tabular-nums">MWK 87,550</span></div>
+</div>
+<p style="margin:14px 0 0;font-size:13px;line-height:1.6;color:rgba(26,22,17,.75)">We open in Limbe next month and need a logo we can put on the shopfront, plus a simple sign layout the printer can work from. Two colours if possible &mdash; the sign painter charges by colour.</p>
+<div style="margin-top:16px;display:grid;gap:6px;font-size:12px;color:rgba(26,22,17,.65)"><span>Posted 2 days ago by Grace Phiri</span><span>Deadline 14th of September 2026</span></div>
+</div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:10;display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(247,246,243,.94);backdrop-filter:blur(8px);border-top:1px solid rgba(26,22,17,.18);box-shadow:0 -2px 8px rgba(26,22,17,.04),0 -16px 40px rgba(26,22,17,.10)">
+<p style="margin:0;flex:1;min-width:0;font-size:12px;color:rgba(26,22,17,.62);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">MWK 85,000 held in escrow</p>
+<span style="display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:6px;background:#069494;padding:0 20px;font-size:14px;font-weight:500;color:#fff">Release payment</span>
+</div>
+</div>
+</div>
+
+<div style="flex-shrink:0">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">1440 &middot; desktop &middot; shown at 55%</p>
+<div style="width:792px;height:474px;overflow:hidden;border-radius:12px;border:1px solid rgba(26,22,17,.18);box-shadow:0 2px 4px rgba(26,22,17,.04),0 12px 28px rgba(26,22,17,.08)">
+<div style="width:1440px;height:862px;transform:scale(.55);transform-origin:top left;background:#FFFFFF;padding:40px">
+<p style="margin:0;font-size:13px;color:rgba(26,22,17,.55)">Find work / Design / Logo for a Blantyre bakery</p>
+<div style="margin-top:20px;display:grid;grid-template-columns:1fr 360px;gap:36px;align-items:start">
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden">
+<div style="padding:32px 32px 24px"><h3 style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:34px;font-weight:600;line-height:1.1;letter-spacing:-.025em">Logo for a Blantyre bakery</h3></div>
+<div style="background:#ECECEC;border-top:1px solid #DCDCDC;border-bottom:1px solid #DCDCDC;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+<div><p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Agreed price</p><p style="margin:8px 0 0;font-family:Inter,system-ui,sans-serif;font-size:40px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1">MWK 85,000</p></div>
+<img src="assets/stamps/in-escrow.png" alt="In escrow" width="148" height="148" loading="lazy" decoding="async" style="display:block;flex-shrink:0;margin:-8px -6px">
+</div>
+<div style="padding:28px 32px 32px">
+<p style="margin:0;font-size:16px;line-height:1.65;color:rgba(26,22,17,.80)">We open in Limbe next month and need a logo we can put on the shopfront, plus a simple sign layout the printer can work from. Two colours if possible &mdash; the sign painter charges by colour.</p>
+<div style="margin-top:24px;display:flex;gap:44px;font-size:14px;color:rgba(26,22,17,.70)"><span><span style="color:rgba(26,22,17,.55)">Posted</span> 2 days ago</span><span><span style="color:rgba(26,22,17,.55)">Deadline</span> 14th of September 2026</span><span><span style="color:rgba(26,22,17,.55)">Location</span> Limbe, Blantyre</span></div>
+</div>
+</div>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:24px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Escrow</p>
+<div style="margin-top:14px;border-radius:12px;background:#F1F1F0;border:1px solid #DCDCDC;padding:16px">
+<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(26,22,17,.08);font-size:14px"><span style="color:rgba(26,22,17,.65)">Agreed price</span><span style="font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums">MWK 85,000</span></div>
+<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(26,22,17,.08);font-size:14px"><span style="color:rgba(26,22,17,.65)">Processing fee</span><span style="font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums">MWK 2,550</span></div>
+<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:14px"><span style="font-weight:600">You paid</span><span style="font-family:Inter,system-ui,sans-serif;font-weight:600;font-variant-numeric:tabular-nums">MWK 87,550</span></div>
+</div>
+<div style="margin-top:18px;display:grid;gap:9px">
+<span style="display:flex;align-items:center;justify-content:center;height:44px;border-radius:6px;background:#069494;font-size:15px;font-weight:500;color:#fff">Approve &amp; release payment</span>
+<span style="display:flex;align-items:center;justify-content:center;height:44px;border-radius:6px;border:1px solid #D4D4D4;background:#F7F6F3;font-size:15px;font-weight:500">Message Thandiwe</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════ 4. CARDS ══════════ -->
+<div style="max-width:1180px;margin:0 auto 24px;border-top:1px solid rgba(26,22,17,.18);padding-top:28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Template 4</p>
+<h2 style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em">Card</h2>
+<p style="margin:10px 0 0;max-width:66ch;font-size:14px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">Both cards appear on four screens each, so they are specified at full mobile width, where the constraint is real. 14px radius, level-1 shadow, hairline border. The creative below the fold has no reviews, so that row renders nothing rather than a zero.</p>
+</div>
+
+<div style="max-width:1180px;margin:0 auto 88px;display:flex;gap:24px;align-items:flex-start;overflow-x:auto;padding-bottom:20px">
+<div style="flex:0 0 390px">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">Job card &middot; 390</p>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:20px;position:relative;overflow:hidden">
+<span style="position:absolute;left:0;top:0;bottom:0;width:4px;background:#069494"></span>
+<h4 style="margin:0;padding-right:32px;font-size:18px;font-weight:600;line-height:1.25;letter-spacing:-.01em">Logo for a Blantyre bakery</h4>
+<div style="margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:rgba(26,22,17,.55)"><span>2 days ago</span><span>&middot;</span><span style="border-radius:9999px;background:#ECECEC;padding:2px 10px;font-weight:500;color:rgba(26,22,17,.75)">Design</span></div>
+<div style="margin-top:12px;display:flex;align-items:center;gap:8px"><span style="display:flex;height:28px;width:28px;align-items:center;justify-content:center;border-radius:9999px;background:rgba(26,22,17,.85);font-size:10px;font-weight:600;color:#F7F6F3">GP</span><span style="font-size:12px;color:rgba(26,22,17,.65)">Posted by <b style="font-weight:500;color:rgba(26,22,17,.80)">Grace Phiri</b></span></div>
+<p style="margin:8px 0 0;font-size:11px;color:rgba(26,22,17,.60)">Has paid into escrow &middot; 3 jobs posted</p>
+<div style="margin-top:14px;display:inline-flex;align-items:center;border-radius:8px;background:rgba(47,93,59,.10);padding:7px 13px;font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:#2F5D3B">MWK 85,000</div>
+<p style="margin:14px 0 0;font-size:13px;line-height:1.6;color:rgba(26,22,17,.75)">We open in Limbe next month and need a logo we can put on the shopfront, plus a simple sign layout the printer can work from.</p>
+<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(26,22,17,.10);display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:rgba(26,22,17,.60)"><b style="font-weight:600;color:rgba(26,22,17,.80)">4</b> proposals</span><span style="border-radius:6px;background:#1A1611;padding:7px 13px;font-size:12px;font-weight:500;color:#F7F6F3">See more</span></div>
+</div>
+</div>
+
+<div style="flex:0 0 390px">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">Creative card &middot; 390</p>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);overflow:hidden">
+<div style="position:relative;height:150px;background:radial-gradient(120% 80% at 30% 30%,#069494 0%,#046B6B 55%,#023939 100%);display:flex;align-items:center;justify-content:center">
+<span style="font-family:Inter,system-ui,sans-serif;font-size:52px;color:#F7F6F3">TB</span>
+<span style="position:absolute;left:12px;bottom:12px;border-radius:9999px;background:rgba(255,255,255,.94);padding:4px 12px;font-size:11px;font-weight:500">Design</span>
+</div>
+<div style="padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="position:relative;display:flex;height:36px;width:36px;flex-shrink:0;align-items:center;justify-content:center;border-radius:9999px;background:rgba(26,22,17,.85);font-size:11px;font-weight:600;color:#F7F6F3">TB<span style="position:absolute;right:-2px;bottom:-2px;height:12px;width:12px;border-radius:9999px;background:#22C55E;box-shadow:0 0 0 2px #fff"></span></span>
+<div style="min-width:0"><p style="margin:0;font-size:14px;font-weight:600">Thandiwe Banda</p><p style="margin:0;font-size:11px;color:rgba(26,22,17,.55)">Blantyre</p></div>
+</div>
+<p style="margin:12px 0 0;font-size:14px;line-height:1.5;color:rgba(26,22,17,.80)">Brand identity and packaging for food businesses.</p>
+<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+<span style="border-radius:9999px;background:rgba(26,22,17,.05);padding:3px 10px;font-size:10px;font-weight:500;color:rgba(26,22,17,.70)">Logo design</span>
+<span style="border-radius:9999px;background:rgba(26,22,17,.05);padding:3px 10px;font-size:10px;font-weight:500;color:rgba(26,22,17,.70)">Packaging</span>
+<span style="border-radius:9999px;padding:3px 6px;font-size:10px;font-weight:500;color:rgba(26,22,17,.45)">+2</span>
+</div>
+<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(26,22,17,.10);display:flex;align-items:center;justify-content:space-between;gap:8px">
+<span style="display:inline-flex;align-items:center;gap:4px;border-radius:9999px;background:rgba(47,93,59,.10);padding:3px 9px;font-size:11px;font-weight:500;color:#2F5D3B">Checked by Ganyu Hub</span>
+<span style="font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap">From MWK 45,000</span>
+</div>
+</div>
+</div>
+</div>
+
+<div style="flex:1 1 320px;min-width:320px">
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">Notes</p>
+<div style="background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:20px;font-size:13px;line-height:1.6;color:rgba(26,22,17,.72)">
+<p style="margin:0"><b style="font-weight:600;color:#1A1611">Radius 14px, level&nbsp;1, hairline border.</b> On the small ground-to-card step the border does as much work as the shadow.</p>
+<p style="margin:12px 0 0"><b style="font-weight:600;color:#1A1611">Three surfaces, no more.</b> White ground, off-white card, light-grey accent. The category pill uses the accent at chip scale.</p>
+<p style="margin:12px 0 0"><b style="font-weight:600;color:#1A1611">No zeros.</b> A creative below their first review shows &ldquo;New &middot; no reviews yet&rdquo;; a client trust signal that cannot be computed is omitted entirely.</p>
+<p style="margin:12px 0 0"><b style="font-weight:600;color:#1A1611">Money is Inter, tabular figures.</b> Always <span style="font-family:Inter,system-ui,sans-serif">MWK 85,000</span> &mdash; grouped, never a currency symbol.</p>
+</div>
+</div>
+</div>
+
+<!-- ══════════ 5. EMPTY STATE ══════════ -->
+<div style="max-width:1180px;margin:0 auto 24px;border-top:1px solid rgba(26,22,17,.18);padding-top:28px">
+<p style="margin:0;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(26,22,17,.55)">Template 5</p>
+<h2 style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em">Empty state</h2>
+<p style="margin:10px 0 0;max-width:66ch;font-size:14px;line-height:1.6;color:rgba(26,22,17,.70);text-wrap:pretty">No illustration. The panel is light grey with a dashed edge and carries the <b style="font-weight:600">nothing yet</b> stamp &mdash; its own artwork, never one of the five money stamps, which name stages of money that has not started moving here. Two weights: a whole empty surface gets the stamp and a way out, while one empty region on a page that is otherwise full gets a line of text and nothing else.</p>
+</div>
+
+<div style="max-width:1180px;margin:0 auto 40px;display:grid;grid-template-columns:390px 1fr;gap:24px;align-items:start">
+<div>
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">390 &middot; full surface</p>
+<div style="border-radius:14px;border:2px dashed #DCDCDC;background:#ECECEC;padding:40px 24px 48px;text-align:center">
+<div style="display:flex;justify-content:center;margin-bottom:12px"><img src="assets/stamps/nothing-yet.png" alt="" width="104" height="104" loading="lazy" decoding="async" style="display:block"></div>
+<p style="margin:0;font-size:17px;font-weight:600">No proposals yet</p>
+<p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:rgba(26,22,17,.68)">Creatives usually reply within a day. You can also invite someone directly.</p>
+<span style="display:inline-flex;align-items:center;justify-content:center;margin-top:22px;min-height:44px;border-radius:6px;border:1px solid rgba(26,22,17,.25);background:#F7F6F3;padding:0 22px;font-size:14px;font-weight:500">Browse creatives</span>
+</div>
+</div>
+<div>
+<p style="margin:0 0 12px;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgba(26,22,17,.45)">1440 &middot; full surface, and the quiet weight below</p>
+<div style="border-radius:14px;border:2px dashed #DCDCDC;background:#ECECEC;padding:48px 32px 60px;text-align:center">
+<div style="display:flex;justify-content:center;margin-bottom:12px"><img src="assets/stamps/nothing-yet.png" alt="" width="124" height="124" loading="lazy" decoding="async" style="display:block"></div>
+<p style="margin:0;font-size:19px;font-weight:600">No jobs match these filters</p>
+<p style="margin:8px 0 0;max-width:46ch;margin-left:auto;margin-right:auto;font-size:15px;line-height:1.6;color:rgba(26,22,17,.68)">Nothing open in this category right now. Try another category, or save the search and we will tell you when something lands.</p>
+<span style="display:inline-flex;align-items:center;justify-content:center;margin-top:24px;min-height:44px;border-radius:6px;border:1px solid rgba(26,22,17,.25);background:#F7F6F3;padding:0 22px;font-size:15px;font-weight:500">Clear filters</span>
+</div>
+<div style="margin-top:20px;background:#F7F6F3;border:1px solid rgba(26,22,17,.08);border-radius:14px;box-shadow:0 1px 2px rgba(26,22,17,.04),0 4px 12px rgba(26,22,17,.06);padding:40px 24px;text-align:center">
+<p style="margin:0;font-size:14px;color:rgba(26,22,17,.60)">No messages on this job yet.</p>
+<p style="margin:5px 0 0;font-size:12px;color:rgba(26,22,17,.45)">The quiet weight &mdash; one empty region on a page that is otherwise full. No panel, no button.</p>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
