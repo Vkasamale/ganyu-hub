@@ -20,3 +20,6 @@ skills-lock.json
 /private/
 *.private.md
 PROJECT_FRAMEWORK.md
+
+# Impeccable skill working dir
+design-system/.impeccable/

@@ -3,6 +3,25 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-21 — The 390 pass (v0.9.15)
+
+Every ported screen viewed at phone width, signed in, with boxes measured
+rather than judged by eye. It found four defects; one of them meant nobody
+could send a message from a phone.
+
+**The message composer was behind the bottom tab bar.** The messages shell is a
+fixed-height flexbox and its own bottom edge has to clear the bar — the
+page-level spacer sits after it and cannot help. Measured at 821px in an 812px
+viewport. Fixed with `dvh` and 4.5rem of clearance, arrived at by measuring the
+bar at 54px and finding 3.5rem still 7px short.
+
+Also: "Unread 0" no longer renders (never render a zero), the faded prior stamp
+no longer lands on the price below `md`, five filter chips scroll in one row
+instead of wrapping to two, and the two-pane "Pick a conversation" empty state
+is hidden on phones. See BUG-022 through BUG-025.
+
+The dashboard money tiles were the only ported surface that needed no change.
+
 ## 2026-08-21 — The design port: cream out, stamps in (v0.9.15)
 
 The Claude Design system and its eight screens were exported into the repo and

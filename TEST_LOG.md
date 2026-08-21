@@ -19,9 +19,15 @@ Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test,
 - ✅ Page titles are upright — caught only from a screenshot, since `<em>` is
   italic by default and the diff looked correct.
 - ✅ `/auth/signout` GET redirects instead of returning 404.
-- 🕒 **Never seen at 390:** the job-detail two-stamp header, the dashboard money
-  tiles, and the messages money rows. All were judged at desktop width only,
-  and `design-system/CLAUDE.md` says judge every screen at 390 first.
+- ✅ **The 390 pass is done** (signed in, 375x812, in-app browser). It found
+  four real defects, all fixed in `a30d530` and logged as BUG-022 through
+  BUG-025. The worst was the message composer sitting entirely behind the
+  bottom tab bar — messaging was unusable on a phone, and it was found by
+  measuring the composer's bottom edge (821px in an 812px viewport), not by
+  looking. The dashboard money tiles were the only surface that needed no
+  change.
+- ✅ Composer re-measured after the fix: attach, Job, field and Send all clear
+  of the tab bar.
 - 🕒 **Sign out itself was not clicked.** The GET redirect is verified; the POST
   path that ends the session, and the cache revalidation added with it, are
   correct by inspection only.

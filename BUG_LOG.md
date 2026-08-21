@@ -169,6 +169,30 @@ _(none currently open — see In Progress above)_
 
 Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-to-fix arc are included; pure feature ships aren't bugs.
 
+### 2026-08-21
+
+Found in one pass: every ported screen viewed at 375x812 in the in-app browser,
+signed in, with element boxes measured rather than judged by eye.
+
+- **[BUG-025] The message composer was completely hidden behind the bottom tab bar on a phone.** — found 2026-08-21, messages
+  - Repro: sign in on a 390-wide viewport, open any thread. The attach button, the field and Send are all off-screen. There is no way to reply from a phone.
+  - Cause: `.messages-shell` is a fixed-height flexbox sized `100vh - 7rem`, which accounted for the header but not for the mobile tab bar. The page-level spacer in `app/layout.tsx` sits *after* the shell, so it cannot push the shell's own bottom edge up. Measured: the composer's bottom sat at 821px in an 812px viewport.
+  - Fix: `app/globals.css` — `height: calc(100dvh - 7rem - 4.5rem - env(safe-area-inset-bottom))` below `md`. The bar measures 54px, and 3.5rem of clearance still left the field 7px under it; 4.5rem clears it with room for a thumb. `dvh` rather than `vh` so a collapsing address bar cannot push it back under. Commit `a30d530`.
+
+- **[BUG-024] "Unread 0" rendered on the mobile filter chips.** — found 2026-08-21, messages
+  - Repro: a phone-width thread list with nothing unread shows a chip reading "Unread 0".
+  - Cause: the desktop rail already guarded its counts; the mobile chip row, added later, interpolated the count unconditionally. `design-system/CLAUDE.md` says never render a zero.
+  - Fix: `components/thread-list.tsx` — count appended only when `> 0`. Commit `a30d530`.
+
+- **[BUG-023] The faded prior stamp landed on top of the price at 390.** — found 2026-08-21, job detail
+  - Repro: open a released job on a phone. The faded `funded` stamp overlaps "MWK 2,000".
+  - Cause: the layered history stamp has to sit outside the released stamp's box to be legible, and at 390 there is no column left to sit in.
+  - Fix: `components/job-header.tsx` — layering is `md` and up only. The dated caption still carries the same history in words below `md`. Commit `a30d530`.
+
+- **[BUG-022] Five filter chips wrapped to two rows and the desktop empty state showed on phones.** — found 2026-08-21, messages
+  - Cause: the chip row had no overflow behaviour, and "Pick a conversation" — a two-pane affordance — had no width gate, so it ate half a phone screen above the list.
+  - Fix: `components/thread-list.tsx` — one horizontally scrolling row with the scrollbar hidden, matching the mockup; the empty state is `hidden md:flex`. Commit `a30d530`.
+
 ### 2026-08-13
 
 - **[BUG-021] Review notifications all said "You got a 0★ review".** — found 2026-08-13, reviews
