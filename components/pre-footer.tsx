@@ -61,14 +61,14 @@ export async function PreFooter() {
   ];
 
   return (
-    <section className="border-t border-ink/[0.07] bg-wash/40">
+    <section className="border-t border-ink/[0.07] bg-band">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-16">
         <div className="grid gap-3 sm:grid-cols-3">
           {ways.map((w) => (
             <Link
               key={w.href}
               href={w.href}
-              className="group flex flex-col rounded-xl border border-ink/10 bg-paper p-5 transition-colors hover:border-brand/40"
+              className="group flex flex-col rounded-[14px] border border-ink/[0.08] bg-ground p-5 shadow-elev-1 transition-colors hover:border-brand/40"
             >
               <p className="font-medium text-ink">{w.title}</p>
               <p className="mt-1 flex-1 text-sm leading-relaxed text-ink/65">{w.body}</p>

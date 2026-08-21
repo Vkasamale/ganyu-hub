@@ -199,7 +199,7 @@ export function HowItWorks() {
   const [audience, setAudience] = useState<Audience>("hiring");
 
   return (
-    <section className="border-y border-ink/10 bg-wash/40 py-14 md:py-20">
+    <section className="border-y border-ink/10 bg-band py-14 md:py-20">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-5">
           <h2 className="text-2xl font-semibold tracking-tight text-ink md:text-3xl">
