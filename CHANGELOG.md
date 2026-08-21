@@ -3,6 +3,76 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-21 — The design port: cream out, stamps in (v0.9.15)
+
+The Claude Design system and its eight screens were exported into the repo and
+ported into the app. This is the largest visual change since launch, and the
+palette it replaces is the one the original brief called an asset to protect.
+
+**The export is now in the repo.** `design-system/` carries the live design
+system — `CLAUDE.md`, tokens, 22 components, guidelines, the screen templates
+and six stamp PNGs. `design-screens/` carries the eight generated screens plus
+the photographs. `DESIGN.md` and both briefs now name `design-system/CLAUDE.md`
+as the authority, so a session reading only the repo cannot reintroduce cream.
+
+**Colour.** Pure white is the page ground, off-white `#F7F6F3` the raised
+surface, `#F2F1EE` the band, `#F1F1F0` the inset, `#ECECEC` the accent. Cream
+`#EFE6CE` and `#DACFB2` are deleted, not demoted. The `paper` and `wash` token
+names survive as aliases pointing at the new values — roughly 200 call sites use
+them, and renaming those is a large diff for no visible change. The last cream
+was found in the hero, written out as `hsl(43, 33%, 94%)` by hand rather than
+taken from a token, which is why every earlier pass walked past it.
+
+**Type.** Inter is the only face. Instrument Serif and IBM Plex Mono are no
+longer loaded; money and eyebrows use `font-variant-numeric: tabular-nums`, and
+one font file is one download on a paid mobile connection. Page titles are
+upright — `<em>` is italic by default, so removing the explicit `font-style`
+was not enough and the slant survived until a screenshot caught it.
+
+**Elevation is now load-bearing.** The ground-to-raised step is about 2%, so
+separation is carried by shadow and hairline rather than colour. Three levels,
+soft and low-spread, warm ink at 4–12%; every level pairs a shadow with a
+hairline. Cards, listing cards, bars, menus and sheets all moved onto it, and
+the old hard black drop shadows are gone — on a near-white ground they read as
+grime rather than depth.
+
+**The stamp is artwork.** The coded chip is replaced by six supplied PNGs in
+`public/stamps/`. A border plus a ring reads as a rounded chip however it is
+tuned; the wear and the arced lettering are the point. The money-state colours
+changed with it — grey, orange, blue, green, red. A sixth stamp, `nothing-yet`,
+marks absence and belongs to empty states, never borrowed from the five that
+name stages of money. The global `img { outline }` rule was removed because it
+drew a hairline box around every transparent PNG; photographs now opt in with
+`.gh-mounted`.
+
+**Screens ported against their mockups.** Job detail gained a sticky money card
+on desktop, built with grid placement rather than by re-parenting 500 lines of
+conditionals, and guarded so a signed-out visitor never gets an empty column;
+a released job now shows its funded stamp underneath at 35% with a dated
+caption, because the money has a past. Messages carry what the money is doing
+on every thread row and in the thread header, with escrow events set as stamped
+lines in their state's ink. A creative's home leads with two money tiles —
+what is held, what has been released — neither of which renders at zero.
+
+**Hero photography.** Seven photographs crossfade behind the landing hero at
+every width, cropped rather than replaced on mobile. `next/image` is what makes
+that affordable: a 229 KB original goes out at 39 KB at 640px wide. The scrim
+runs the way the type does — vertical and never below 72% on a phone, where
+lines run full width; horizontal on desktop, stopping at 68% because our right
+column holds the skill list rather than open photograph.
+
+**Also fixed.** Sign out lands on the landing page: the redirect could hit a
+cached render still showing the signed-in shell, and `/auth/signout` returned
+404 to anyone who typed it, because the route only exported POST.
+
+**Known gaps.** Four items from the mockups are deliberately unbuilt, each
+needing data the page does not fetch: the "Needs a reply" filter, the "What you
+paid" breakdown, the accepted-of-total proposal count, and a month filter on
+the released figure. The landing photographs are city and street shots rather
+than the creatives-at-work images `DESIGN.md` section 10 asks for — chosen by
+the founder over that objection — and one carries a photographer's watermark
+and should not ship.
+
 ## 2026-08-19 — Structured data, canonicals, and Sentry (v0.9.14)
 
 Two things the domain unblocked, plus error tracking.

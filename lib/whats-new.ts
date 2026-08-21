@@ -6,6 +6,19 @@ export type Release = { version: string; date: string; notes: string[] };
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.15",
+    date: "2026-08-21",
+    notes: [
+      "Ganyu Hub has a new look. The warm cream background is gone — pages are white now, cards sit just off-white on top of them, and everything is quieter so the work and the money stand out.",
+      "The money stamp on a job is now proper pressed ink rather than a rounded label. Each of the five stages has its own colour, and once a job is paid out you can see both stamps together with the dates.",
+      "The front page carries photographs of Malawi behind the search.",
+      "On a computer, the payment box on a job now follows you down the page instead of scrolling out of sight.",
+      "Your conversations show what the money on each job is doing, so you can tell at a glance which thread is about money already held.",
+      "Creatives see what is held for them in escrow and what has been paid out, at the top of their home page.",
+      "Empty pages now say plainly that nothing has happened yet, instead of looking broken.",
+    ],
+  },
+  {
     version: "0.9.13",
     date: "2026-08-13",
     notes: [

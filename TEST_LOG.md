@@ -4,6 +4,34 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-21 — The design port
+
+- ✅ `tsc --noEmit` clean and `npx next build` green.
+- ✅ **Verified in the preview at 1440 and 390:** white ground with off-white
+  cards, teal intact; the landing bands alternate white and `#F2F1EE`; the
+  drawer and bottom tab bar read as raised; empty states show the `nothing-yet`
+  stamp; the hero photographs crossfade and every line of type holds at both
+  widths.
+- ✅ **Measured rather than eyeballed:** the thread list rows were 531px inside
+  a 364px panel and every timestamp was clipped — three containers needed
+  `min-w-0`. The sticky money card holds at 80px through a 1200px scroll. A
+  229 KB hero original is served at 39 KB at 640px wide.
+- ✅ Page titles are upright — caught only from a screenshot, since `<em>` is
+  italic by default and the diff looked correct.
+- ✅ `/auth/signout` GET redirects instead of returning 404.
+- 🕒 **Never seen at 390:** the job-detail two-stamp header, the dashboard money
+  tiles, and the messages money rows. All were judged at desktop width only,
+  and `design-system/CLAUDE.md` says judge every screen at 390 first.
+- 🕒 **Sign out itself was not clicked.** The GET redirect is verified; the POST
+  path that ends the session, and the cache revalidation added with it, are
+  correct by inspection only.
+- ⬜ **No physical device.** Everything above is the in-app browser at a resized
+  viewport, which is not a mid-range Android in sunlight — the exact condition
+  the small ground-to-raised step was accepted against.
+- ⬜ The seven hero photographs have not been checked for licensing. One of the
+  originally supplied set carries a "PJM PHOTOGRAPHY" watermark; provenance for
+  the rest is unconfirmed.
+
 ## 2026-08-19 — Passkey sign-in
 
 - ✅ `tsc --noEmit` clean and `npm run build` green.
