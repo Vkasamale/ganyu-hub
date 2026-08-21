@@ -39,7 +39,7 @@ export function CreativeCard({
   const priceLabel = fromPriceMwk != null ? `From ${formatMwk(fromPriceMwk)}` : "Custom pricing";
 
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-100 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-[14px] border border-ink/[0.08] bg-raised shadow-elev-1 transition-all duration-100 ease-out hover:-translate-y-0.5 hover:shadow-elev-2">
       {showSave && (
         <div className="absolute right-3 top-3 z-10">
           <SaveButton targetType="creative" targetId={profile.id} saved={saved} />

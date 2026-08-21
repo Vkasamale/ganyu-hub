@@ -81,7 +81,7 @@ export function UserMenu({ name, email, userId, isAdmin }: { name: string | null
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 flex max-h-[calc(100vh-5rem)] w-72 max-w-[calc(100vw-1rem)] flex-col overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.10)]">
+        <div className="absolute right-0 z-50 mt-2 flex max-h-[calc(100vh-5rem)] w-72 max-w-[calc(100vw-1rem)] flex-col overflow-y-auto overscroll-contain rounded-[14px] border border-ink/10 bg-raised shadow-elev-2">
           <div className="flex items-center gap-3 px-4 py-3.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-stamp text-sm font-semibold text-white">{initial}</span>
             <div className="min-w-0">

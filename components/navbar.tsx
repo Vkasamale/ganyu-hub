@@ -44,7 +44,7 @@ export async function Navbar() {
 
   return (
     <>
-    <header className="sticky top-0 z-40 border-b border-black/[0.08] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <header className="sticky top-0 z-40 border-b border-ink/10 bg-raised/95 backdrop-blur supports-[backdrop-filter]:bg-raised/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
         <Logo />
         {/* Item 60 (§K3): verbs for signed-in users — "Find work" says what you

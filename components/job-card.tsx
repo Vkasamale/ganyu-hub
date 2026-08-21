@@ -49,7 +49,7 @@ export function JobCard({
   return (
     <div
       data-job-card={job.id}
-      className="group relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-100 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+      className="group relative overflow-hidden rounded-[14px] border border-ink/[0.08] bg-raised shadow-elev-1 transition-all duration-100 ease-out hover:-translate-y-0.5 hover:shadow-elev-2"
     >
       <span
         aria-hidden

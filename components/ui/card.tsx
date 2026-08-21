@@ -2,7 +2,11 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-2xl border border-ink/[0.06] bg-white shadow-[0_1px_2px_rgba(26,22,17,0.04),0_4px_12px_rgba(26,22,17,0.05),0_16px_32px_rgba(26,22,17,0.04)]", className)} {...props} />;
+  // Level 1 of the elevation scale: the card, resting on the ground. Radius is
+  // 14px, the system's card radius. The ground is white and the card is
+  // off-white, which is a ~2% step — so the hairline and the shadow are what
+  // actually separate them, and both are required, never one alone.
+  return <div className={cn("rounded-[14px] border border-ink/[0.08] bg-raised shadow-elev-1", className)} {...props} />;
 }
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />;

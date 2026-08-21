@@ -26,7 +26,7 @@ export function StickyActionBar({
   return (
     <>
       <div aria-hidden className="h-20 md:hidden" />
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/95 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-raised/95 shadow-elev-2 backdrop-blur md:hidden">
         <div className="flex items-center gap-3 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {hint && <p className="min-w-0 flex-1 truncate text-xs text-ink/60">{hint}</p>}
           <Link

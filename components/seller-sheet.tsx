@@ -54,7 +54,7 @@ export function SellerSheet({
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-ink/40"
           />
-          <div className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-paper pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_rgba(0,0,0,0.18)]">
+          <div className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-[14px] bg-raised pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-elev-sheet">
             <div className="sticky top-0 flex justify-center bg-paper py-3">
               <span aria-hidden className="h-1 w-10 rounded-full bg-ink/15" />
             </div>

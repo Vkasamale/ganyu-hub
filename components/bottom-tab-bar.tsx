@@ -60,8 +60,8 @@ export function BottomTabBar({
             onClick={() => setMenuOpen(false)}
             className="absolute inset-0 bg-ink/40"
           />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-paper pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_rgba(0,0,0,0.18)]">
-            <div className="sticky top-0 flex justify-center bg-paper py-3">
+          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[14px] bg-raised pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-elev-sheet">
+            <div className="sticky top-0 flex justify-center bg-raised py-3">
               <span aria-hidden className="h-1 w-10 rounded-full bg-ink/15" />
             </div>
 
@@ -102,7 +102,7 @@ export function BottomTabBar({
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-raised/95 pb-[env(safe-area-inset-bottom)] shadow-elev-2 backdrop-blur md:hidden"
       >
         <ul className="flex items-stretch">
           {tabs.map((t) => {

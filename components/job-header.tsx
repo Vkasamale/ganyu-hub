@@ -44,7 +44,7 @@ export function JobHeader({
   const bankNet = Math.max(0, gross - payoutFee(gross, "bank"));
 
   return (
-    <div className="rounded-lg border border-ink/10 bg-white p-5 sm:p-6">
+    <div className="rounded-[14px] border border-ink/[0.08] bg-raised p-5 shadow-elev-1 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="font-display text-2xl leading-tight sm:text-3xl">{job.title}</h1>
         {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}
