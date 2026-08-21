@@ -341,6 +341,26 @@ export default async function CreativePage({
             </div>
           </div>
 
+          {/* Screen 03: the star average, stated once, with its review count.
+              It used to live only in the sidebar, which on a phone falls below
+              the tabs — a visitor deciding whether to read on never saw it.
+              Full width under the identity block rather than beside the name:
+              the column next to a 128px avatar is too narrow at 390 and
+              "1 review" wrapped onto its own line. Omitted entirely at zero
+              reviews rather than shown as 0.0. */}
+          {reviewCount > 0 && (
+            <Link
+              href={`/creatives/${profile.id}?tab=reviews`}
+              className="mt-4 inline-flex items-center gap-2 text-sm hover:underline"
+            >
+              <Stars value={avgRating} className="h-4 w-4" />
+              <span className="font-semibold text-ink">{avgRating.toFixed(1)}</span>
+              <span className="whitespace-nowrap text-ink/55">
+                {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+              </span>
+            </Link>
+          )}
+
           {(profile.categories || []).length > 0 && (
             <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {(profile.categories || []).map((c: string) => (
@@ -660,10 +680,12 @@ export default async function CreativePage({
                 <dt className="text-ink/60">Location</dt>
                 <dd className="text-ink">{profile.location || "Malawi"}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-ink/60">Services</dt>
-                <dd className="text-ink">{serviceCount}</dd>
-              </div>
+              {serviceCount > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-ink/60">Services</dt>
+                  <dd className="text-ink">{serviceCount}</dd>
+                </div>
+              )}
               {/* Phase 1 items 11-13. Each row appears only if stated — a
                   "Languages: —" row is worse than no row. */}
               {(profile.languages || []).length > 0 && (
@@ -702,25 +724,6 @@ export default async function CreativePage({
                   <dd className="text-ink">{memberSince}</dd>
                 </div>
               )}
-              <div className="flex justify-between">
-                <dt className="text-ink/60">Rating</dt>
-                <dd className="text-ink">
-                  {reviewCount > 0 ? (
-                    // Item 32 (§F2): the count is the link — someone reading
-                    // "4.8 (153)" wants the 153, not a hunt for the tab.
-                    <Link
-                      href={`/creatives/${profile.id}?tab=reviews`}
-                      className="inline-flex items-center gap-1.5 hover:underline"
-                    >
-                      <Stars value={avgRating} className="h-3.5 w-3.5" />
-                      <span className="font-medium">{avgRating.toFixed(1)}</span>
-                      <span className="text-ink/55">({reviewCount})</span>
-                    </Link>
-                  ) : (
-                    <span className="text-ink/55">No reviews yet</span>
-                  )}
-                </dd>
-              </div>
             </dl>
           </section>
 

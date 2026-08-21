@@ -123,9 +123,14 @@ export function JobCard({
             ))}
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-ink/60">
-              <span className="font-semibold text-ink/80">{proposalsCount}</span> {proposalsCount === 1 ? "proposal" : "proposals"}
-            </span>
+            {/* Never render a zero (design-system/CLAUDE.md). "0 proposals" on a
+                fresh job reads as neglect rather than as an open field, and the
+                mockup's second card drops the line entirely. */}
+            {proposalsCount > 0 && (
+              <span className="text-xs text-ink/60">
+                <span className="font-semibold text-ink/80">{proposalsCount}</span> {proposalsCount === 1 ? "proposal" : "proposals"}
+              </span>
+            )}
             <Link
               href={`/jobs/${job.id}`}
               className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-paper transition-colors hover:bg-stamp"

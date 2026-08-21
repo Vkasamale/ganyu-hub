@@ -5,9 +5,10 @@ import { FeedCarousel, FeedCard } from "@/components/feed-carousel";
 import { CreativeCard } from "@/components/creative-card";
 import { JobCard } from "@/components/job-card";
 import { WelcomeChecklist, type ChecklistStep } from "@/components/welcome-checklist";
+import { SavingForm } from "@/components/saving-form";
 import { PushBanner } from "@/components/push-banner";
 import { getForYouCreatives, getForYouJobs, getRecentlyViewed, getSavedIds } from "@/lib/feed";
-import { clearBrowsingHistory } from "@/app/actions";
+import { clearBrowsingHistory, updateAvailability } from "@/app/actions";
 import { creativeGross } from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
@@ -220,6 +221,12 @@ export async function SignedInHome({ userId }: { userId: string }) {
         { label: "See how payouts work", sub: "What you keep after fees", href: "/how-money-works", done: !!profile?.money_guide_seen_at },
       ];
 
+  // "busy" counts as not available: the switch is two-state, the column is
+  // three, and anything that is not plainly "available" should not read as an
+  // invitation.
+  const isAvailable = (profile?.availability ?? "available") === "available";
+  const needsYouCount = activeJobs.filter((j) => nextStep(j.status, isClient).onYou).length;
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-10 md:px-8">
       <WelcomeChecklist steps={checklistSteps} dismissed={!!profile?.welcome_dismissed_at} />
@@ -232,7 +239,59 @@ export async function SignedInHome({ userId }: { userId: string }) {
             {firstName}.
           </em>
         </h1>
+        {/* Screen 04 leads with a sentence, not just a greeting — "Two jobs
+            need you today" is the whole point of opening the page. Counted
+            from the same nextStep() the list below uses, so the number and the
+            highlighted rows can never disagree. Silent when nothing is on you:
+            "0 jobs need you" is a worse greeting than none. */}
+        {needsYouCount > 0 && (
+          <p className="mt-1.5 text-ink/65">
+            {needsYouCount === 1 ? "One job needs you today." : `${needsYouCount} jobs need you today.`}
+          </p>
+        )}
       </header>
+
+      {/* The availability switch, the one control at the top: it decides
+          whether the rest of the page matters. Writes `availability`, which is
+          the field Browse actually reads — `open_to_work` only ever drew a
+          sidebar row. A plain form, so it works before any JS arrives. */}
+      {!isClient && (
+        <SavingForm
+          action={updateAvailability}
+          successText={isAvailable ? "You are no longer taking new work." : "You are available for work."}
+          className="card-soft flex items-center justify-between gap-4 p-4"
+        >
+          <input type="hidden" name="availability" value={isAvailable ? "unavailable" : "available"} />
+          <span>
+            <span className="block text-sm font-medium text-ink">
+              {isAvailable ? "Available for work" : "Not taking new work"}
+            </span>
+            <span className="block text-xs text-ink/55">
+              {isAvailable
+                ? "Clients can send you jobs"
+                : "You stay listed, marked as not taking work"}
+            </span>
+          </span>
+          <button
+            type="submit"
+            role="switch"
+            aria-checked={isAvailable}
+            aria-label="Available for work"
+            className={
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors " +
+              (isAvailable ? "bg-stamp" : "bg-ink/20")
+            }
+          >
+            <span
+              aria-hidden
+              className={
+                "absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow-elev-1 transition-transform " +
+                (isAvailable ? "translate-x-[22px]" : "translate-x-0.5")
+              }
+            />
+          </button>
+        </SavingForm>
+      )}
 
       {/* The two money facts, before anything else. "Held for you" is the one
           that answers "is this real" — a creative who can see the client's money
@@ -306,7 +365,17 @@ export async function SignedInHome({ userId }: { userId: string }) {
 
           {activeJobs.length > 0 && (
             <ul className="mt-3 divide-y divide-ink/[0.06]">
-              {activeJobs.map((j) => {
+              {/* Screen 04 puts the jobs that need something from you above
+                  everything that can wait. Same list, ordered by whose move it
+                  is — the label already says which, the order makes it the
+                  first thing read. */}
+              {[...activeJobs]
+                .sort(
+                  (a, b) =>
+                    Number(nextStep(b.status, isClient).onYou) -
+                    Number(nextStep(a.status, isClient).onYou),
+                )
+                .map((j) => {
                 const next = nextStep(j.status, isClient);
                 return (
                   <li key={j.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">

@@ -139,6 +139,9 @@ export async function updateAvailability(formData: FormData) {
   if (error) return { error: error.message };
   revalidatePath("/dashboard/profile");
   revalidatePath(`/creatives/${user.id}`);
+  // The switch also lives on the signed-in home now, so "/" has to
+  // re-render or the toggle appears to do nothing.
+  revalidatePath("/");
   return { ok: true };
 }
 
