@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -45,13 +46,18 @@ export function EmptyState({
   }
 
   return (
-    <div className="mt-8 flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-paper px-6 py-16 text-center">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-wash/60 text-ink/40">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-      </div>
+    <div className="mt-8 flex flex-col items-center rounded-2xl border-2 border-dashed border-grey-edge bg-grey px-6 pb-14 pt-12 text-center">
+      {/* Its own artwork, deliberately. The five money stamps are never borrowed
+          for an empty state — they name stages of a job's money, and nothing
+          has happened here yet. Only the loud weight gets a stamp; a quiet
+          empty region on an otherwise full page should not announce itself. */}
+      <Image
+        src="/stamps/nothing-yet.png"
+        alt=""
+        width={112}
+        height={112}
+        className="mb-3 block select-none"
+      />
       <p className="text-base font-semibold text-ink">{title}</p>
       {body && <p className="mt-1 max-w-sm text-sm text-ink/60">{body}</p>}
       {actionLabel && actionHref && (
