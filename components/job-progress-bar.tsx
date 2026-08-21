@@ -3,28 +3,29 @@
 import { useEffect, useState } from "react";
 import { STAGES, type JobStageResult } from "@/lib/job-stages";
 
-// One accent, not five. This bar used to run sky - indigo - violet - amber -
-// emerald, which invented a colour per stage and made a job look like it was
-// changing category as it progressed. Teal is the system's only chromatic
-// accent, and progress is one idea: done, here, not yet. The stage number
-// under each dot already tells them apart.
+// The five stage colours, from design-system/tokens/colors.css (--stage-1..5).
+// These are the design system's own values, not an invention: sky, indigo,
+// violet, amber, emerald. On 2026-08-22 this was flattened to a single teal by
+// a session that had read design-system/CLAUDE.md — a 212-line summary — and
+// assumed it was the whole system. The tokens were in the repo the entire time.
 //
-// Deliberately NOT the money-state inks: those five colours name what a job's
-// money is doing, and four of these five stages are not money events.
-const STAGE_COLORS = Array.from({ length: 5 }, () => ({
-  bg: "bg-stamp",
-  ring: "ring-stamp/25",
-  text: "text-stamp-dark",
-  bar: "bg-stamp",
-}));
+// They are NOT the money-state inks and must never be swapped for them: the
+// money inks say what a job's money is doing, these say how far along the job
+// itself is.
+const STAGE_COLORS = [
+  { bg: "bg-stage-1", ring: "ring-stage-1/25", text: "text-stage-1", bar: "bg-stage-1" },
+  { bg: "bg-stage-2", ring: "ring-stage-2/25", text: "text-stage-2", bar: "bg-stage-2" },
+  { bg: "bg-stage-3", ring: "ring-stage-3/25", text: "text-stage-3", bar: "bg-stage-3" },
+  { bg: "bg-stage-4", ring: "ring-stage-4/25", text: "text-stage-4", bar: "bg-stage-4" },
+  { bg: "bg-stage-5", ring: "ring-stage-5/25", text: "text-stage-5", bar: "bg-stage-5" },
+];
 
 export function JobProgressBar({ stage }: { stage: JobStageResult }) {
   const { currentIdx, overlay } = stage;
   const jobDead = overlay?.kind === "cancelled";
-  // A dispute IS a money state, so it takes that state's ink. A cancellation
-  // is not — the money went back — so it reads as ink rather than as a sixth
-  // money colour.
-  const overlayColor = overlay?.kind === "cancelled" ? "bg-ink/70" : "bg-money-disputed";
+  // --stage-cancelled for a cancelled job; a dispute is a money state and takes
+  // that state's ink.
+  const overlayColor = overlay?.kind === "cancelled" ? "bg-stage-cancelled" : "bg-money-disputed";
   const overlayLabel = overlay?.kind === "cancelled" ? "Cancelled here" : "Disputed here";
 
   // Grow-in on mount, matching the recharts default animation feel.
@@ -87,7 +88,7 @@ export function JobProgressBar({ stage }: { stage: JobStageResult }) {
               <div className={`text-[11px] leading-tight sm:text-xs ${showOverlay ? "font-semibold text-ink" : current ? `font-semibold ${color.text}` : done ? "text-ink/70" : "text-ink/45"}`}>
                 {s.label}
                 {showOverlay && (
-                  <div className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${overlay?.kind === "cancelled" ? "text-ink/70" : "text-money-disputed"}`}>
+                  <div className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${overlay?.kind === "cancelled" ? "text-stage-cancelled" : "text-money-disputed"}`}>
                     {overlayLabel}
                   </div>
                 )}

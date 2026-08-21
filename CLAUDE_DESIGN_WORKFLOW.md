@@ -232,25 +232,186 @@ ring for bleed.
 
 ---
 
-## Where this stands, and what comes next
+## Where this stands
 
-The template prompt has been written and run, and the founder has made
-adjustments inside Claude Design. **The next step is the feedback loop, and
-specifically the `CLAUDE.md` step**, which has not been done yet:
+The eight screens were generated, exported and ported. `CLAUDE.md` was written
+and lives at `design-system/CLAUDE.md`. Both items left open at the last
+writing are closed: the serif question was settled by deleting the serif, and
+the repo docs were reconciled with the live system on 2026-08-21.
 
-> In addition to making those edits, create a CLAUDE.md you will read before
-> every future Ganyu Hub design, capturing the decisions we just made and
-> anything I correct from here on.
+**Export as HTML, never Print to PDF.** The two PDFs made on 2026-08-20 contain
+zero extractable text, no renderer available here can rasterise them, and the
+capture clipped most of both documents.
 
-From then on: **new chat inside the same project**, never a new project.
+**There is a live connection now.** The `DesignSync` tool reads and writes the
+Claude Design project directly, so the design system can be re-read at any time
+instead of waiting for a zip. New screens no longer need exporting by hand.
 
-Two things still open:
+## `design-system/CLAUDE.md` is a summary, not the system
 
-- **The serif question** from decision 2 above. It needs judging from a
-  mockup, not from argument.
-- **The repo's design docs now disagree with the live design system.**
-  `DESIGN.md` §2 and `DESIGN_BRIEF.md` both still protect the cream ground.
-  The prompt out-ranked them for this run, which is survivable, but a session
-  that reads only the docs will get it wrong. Reconcile before the design work
-  is picked up again — this is exactly the failure that killed the 2026-08-12
-  run.
+Read this before touching colour.
+
+`CLAUDE.md` is 212 lines. It is a digest, and it does not list every token. The
+actual values live in **`design-system/tokens/colors.css`** and are explained in
+**`design-system/guidelines/*.card.html`**. Both have been in the repo since the
+export.
+
+On 2026-08-22 a session read only `CLAUDE.md`, concluded the system defined no
+stage or status colours, and "fixed" two components that were already correct:
+
+- The job progress bar carried `--stage-1` to `--stage-5` — sky, indigo, violet,
+  amber, emerald. It was flattened to a single teal and the commit called it "a
+  rainbow that invents a colour per stage". It was a faithful port.
+- The availability dot carried `--status-available` and `--status-busy`. It was
+  changed to teal and ink tints.
+
+Both are restored, and both now reference named `stage-*` and `status-*` values
+in `tailwind.config.ts` rather than raw hexes, so the next reader can see they
+come from the system.
+
+**The rule: grep `design-system/tokens/` before deciding a colour is unowned.**
+
+---
+
+# What to ask for next
+
+Eight routes were designed. **Thirty-eight were not** — the register is
+[`DESIGN.md`](DESIGN.md) section 15. Each brief below quotes the copy that is in
+the app today.
+
+## 0. First — the one real colour gap
+
+The system covers a great deal: brand, ink ladder, surfaces, money states, job
+stages, and the status set (star, available, busy, away, danger). What it does
+**not** define is *messaging*: what an error banner, a warning banner, a success
+banner and an inline field error look like. Roughly a hundred raw colour values
+across the app improvise that, mostly as red-50/red-200/red-700 tints.
+
+`--status-danger` exists but the guideline reserves it: red-600 appears on log
+out and destructive actions and nowhere else. So form errors cannot simply
+borrow it.
+
+> The design system defines status colours for availability, stars and
+> destructive actions, but nothing for messages. Add error, warning, success and
+> information: as a full-width banner, as an inline error under a form field,
+> and as a small chip. Say how each differs from the five money-state inks and
+> from the five job-stage colours, since a page can show all three at once.
+
+## 1. Screen 09 — Post a job
+
+The only un-designed route where a weak screen costs money directly.
+
+> Screen 09: Post a job, the client three-step form.
+>
+> Steps: "What you need" (title, category, description), "What you will get"
+> (deliverables, deadline, revisions included, format), "Budget" (one MWK
+> figure).
+>
+> The budget step shows the job as a creative will actually read it: a live
+> preview card with title, category chip, budget, deadline and brief, filling in
+> as they type.
+>
+> Footer on every step: Back, Continue (or "Post this job" on the last), and
+> "Save and finish later" because drafts are normal, not a failure. Under it,
+> permanently: posting does not commit you to anything, and nobody is paid until
+> you approve the work.
+>
+> Show 390 and 1440.
+
+**Keep the preview.** It is what stops a client writing three vague lines and
+getting no proposals.
+
+Covers `/jobs/new`, `/jobs/new-for-client`.
+
+## 2. Screen 10 — The share link, signed out
+
+The first thing someone with no account ever sees, and it asks them for money.
+
+> Screen 10: A job offer opened from a share link by someone with no account.
+> The page carries no header and no footer.
+>
+> Headline "A job for you". The job title, budget, deadline, deliverables and
+> revisions included. The creative who sent it. Then the money: what is being
+> asked for, the 3% processing fee, the total, and what escrow means in one
+> sentence for a reader who has never heard the word.
+>
+> Primary action "Accept this job and fund escrow".
+>
+> Show 390 and 1440.
+
+Covers `/j/[token]`, `/t/[token]`; informs `/c/[slug]`.
+
+## 3. Screen 11 — Money
+
+Where a creative goes to answer "where is my money", and where a wrong number is
+unforgivable.
+
+> Screen 11: The money page, in two parts.
+>
+> "Where the money sits": the amounts held in escrow and released, with the jobs
+> behind each, using the money stamps.
+>
+> "Transactions": every movement, what it was, which job, when, how much, and
+> where it went (Airtel Money, TNM Mpamba, bank). Cash-out fees are charged by
+> the payment provider, not by Ganyu Hub, and the page should say so without
+> making it feel like a warning.
+>
+> MWK with thousands separators and tabular figures. Nothing renders as a zero.
+>
+> Show 390 and 1440. On a phone this cannot be a table.
+
+Covers `/dashboard/payments`; informs `/dashboard/report`.
+
+## 4. Screen 12 — Setting yourself up
+
+Nine routes share one shape: a long surface filled in once, revisited rarely.
+
+> Screen 12: The profile and account editing surface. Long forms in sections:
+> who you are, your work, your prices, your payout method, security and
+> passkeys.
+>
+> Show what an unfinished profile looks like. A creative with no portfolio item
+> does not appear in Browse at all, and the screen has to say that where it
+> matters rather than in a banner at the top.
+>
+> Include the saved state, the unsaved state, and one field in error while the
+> rest of the form is fine.
+>
+> Show 390 and 1440.
+
+Covers `/dashboard/profile`, `/dashboard/account`, `/dashboard/services`,
+`/dashboard/portfolio`, `/dashboard/portfolio/[id]`, `/dashboard/testimonials`,
+`/creatives/[id]/invite`.
+
+## 5. Screen 13 — Getting in
+
+Small, and already close, but it is where a stranger decides whether this site
+deserves a password.
+
+> Screen 13: Sign in and sign up. Email and password, Google, and a passkey.
+> Sign-up asks one question first, "I am a creative, I want to show my work and
+> get hired" or "I am a client, I want to hire creatives for work", and that
+> answer changes what is asked next.
+>
+> Show the error states: a wrong password, and an email already registered.
+>
+> Show 390 and 1440.
+
+Covers `/login`, `/signup`, `/forgot-password`, `/reset-password`,
+`/onboarding/role`, `/onboarding/client`, `/onboarding/creative`.
+
+## Not worth a screen
+
+**Admin**, `/admin` and its five sub-pages: internal, one viewer, already
+consistent. **Legal and static**, `/terms`, `/privacy`, `/content-policy`,
+`/release-notes`, `/contact`, `/offline`: these want the page-shell template
+that already exists.
+
+## Order, if only some get made
+
+1. The messaging colours, which unblock roughly a hundred sites
+2. Screen 09, Post a job, the only one that costs money when it is weak
+3. Screen 10, the share link, first impression for people with no account
+4. Screen 11, Money, where a wrong number does real damage
+5. Screen 12, setting up, nine routes each seen rarely
+6. Screen 13, getting in, small and already close

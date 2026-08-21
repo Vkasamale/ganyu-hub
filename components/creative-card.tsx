@@ -90,15 +90,15 @@ export function CreativeCard({
               <span
                 title={profile.availability === "busy" ? "Busy" : "Not taking work"}
                 className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-white ${
-                  // Not the money ink: those five colours name what a job's
-                  // money is doing, and borrowing amber for "busy" would make
-                  // a person's calendar look like a payment state.
-                  profile.availability === "busy" ? "bg-ink/45" : "bg-ink/25"
+                  // --status-busy / --status-away from the design system's
+                  // tokens. Not the money inks — those name what a job's money
+                  // is doing, not whether a person is free.
+                  profile.availability === "busy" ? "bg-status-busy" : "bg-status-away"
                 }`}
               />
             )}
             {profile.availability === "available" && (
-              <span title="Available" className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-stamp ring-2 ring-white" />
+              <span title="Available" className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-status-available ring-2 ring-white" />
             )}
           </div>
           <div className="min-w-0">

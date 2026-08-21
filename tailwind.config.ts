@@ -37,6 +37,31 @@ const config: Config = {
           released: "#1B9455",
           disputed: "#C22A2A",
         },
+        // The five job stages, from design-system/tokens/colors.css. These are
+        // NOT the money-state inks and are not interchangeable with them: the
+        // money inks say what a job's money is doing, these say how far along
+        // the job itself is. Named here so the progress bar references the
+        // system rather than happening to match it — on 2026-08-22 the bar was
+        // flattened to one accent by a session that had read only
+        // design-system/CLAUDE.md and never opened the tokens.
+        stage: {
+          1: "#0EA5E9",
+          2: "#6366F1",
+          3: "#8B5CF6",
+          4: "#F59E0B",
+          5: "#059669",
+          cancelled: "#DC2626",
+        },
+        // Availability, star ratings and destructive actions. Also from the
+        // tokens file. Amber-400 is the only star colour; red-600 appears on
+        // log out and destructive actions and nowhere else.
+        status: {
+          star: "#FBBF24",
+          available: "#22C55E",
+          busy: "#FACC15",
+          away: "#A3A3A3",
+          danger: "#DC2626",
+        },
       },
       // Inter is the only face (settled 2026-08-14). `display` and `mono` are
       // aliases so existing classNames keep working; figures align via
