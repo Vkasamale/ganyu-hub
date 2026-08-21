@@ -349,6 +349,54 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
         <div id="payment" className="job-money scroll-mt-24">
         <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
+        {/* Screens 05 and 06: "What you paid", broken out. The client agreed a
+            price and was charged more than it, and until now the difference
+            was only ever visible on the checkout page they have long since
+            left. Three lines and the sentence that stops the obvious worry —
+            the 3% is charged once, on the way in, not again on release.
+
+            Real numbers where we have them: collection_fee_mwk is what
+            PayChangu actually charged, written on verify. The estimate is only
+            a fallback, and it is labelled as one. Renders only once money has
+            actually gone in. */}
+        {(() => {
+          const principal = job.total_paid_mwk ?? job.accepted_bid_mwk ?? null;
+          if (!principal) return null;
+          if (job.escrow_status !== "payment_held" && job.escrow_status !== "payment_released") return null;
+          const realFee = job.collection_fee_mwk as number | null | undefined;
+          const fee = realFee ?? collectionFee(principal, "mobile_money");
+          const paidOn = job.payment_held_at
+            ? new Date(job.payment_held_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" })
+            : null;
+          return (
+            <Card className="mt-4">
+              <CardContent className="p-5">
+                <p className="eyebrow">What you paid</p>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-ink/60">Agreed price</dt>
+                    <dd className="font-medium tabular-nums text-ink">{formatMwk(principal)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-ink/60">
+                      Processing fee (3%){realFee == null && <span className="text-ink/40"> · estimate</span>}
+                    </dt>
+                    <dd className="font-medium tabular-nums text-ink">{formatMwk(fee)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3 border-t border-ink/10 pt-2">
+                    <dt className="font-medium text-ink">You paid</dt>
+                    <dd className="font-display text-base font-semibold tabular-nums text-ink">
+                      {formatMwk(principal + fee)}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="mt-3 text-xs text-ink/55">
+                  {paidOn ? `Paid ${paidOn}. ` : ""}The 3% is charged once, when money comes in.
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
         </div>
       )}
       {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
@@ -463,6 +511,16 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 </div>
               );
             })()}
+            {/* Screens 05/06: "1 proposal accepted of 4". Only once one has
+                been accepted — before that the count is already on the
+                proposal form, and "0 accepted of 4" is a scoreboard nobody
+                asked for. */}
+            {job.accepted_bid_mwk != null && (proposalCount ?? 0) > 0 && (
+              <div className="flex items-baseline gap-2">
+                <dt className="text-xs uppercase tracking-wide text-ink/50">Proposals</dt>
+                <dd className="font-medium text-ink">1 accepted of {proposalCount}</dd>
+              </div>
+            )}
             {job.format_spec && (
               <div className="flex items-baseline gap-2">
                 <dt className="text-xs uppercase tracking-wide text-ink/50">Format</dt>

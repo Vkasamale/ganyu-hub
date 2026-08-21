@@ -28,6 +28,32 @@ Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test,
   change.
 - ✅ Composer re-measured after the fix: attach, Job, field and Send all clear
   of the tab bar.
+
+## 2026-08-21 — Screens 02, 03, 04, 08 and the deferred data
+
+- ✅ Screen 02 needed one change only — "0 proposals" is gone. Confirmed at 390
+  that no card renders a zero and that "1 proposal" still does.
+- ✅ Screen 03: the star average now sits under the identity block. Checked on a
+  profile with reviews (reads "5.0  1 review" on one line) and on one without
+  (no rating row at all, rather than 0.0).
+- ✅ Screen 04: the availability switch renders and its knob sits inside the
+  track — the first version had no `left` anchor and the knob measured 44px
+  past the end of a 44px track, which a screenshot alone would not have caught.
+  The greeting sentence correctly stays silent when nothing is on you.
+- ✅ The released tile is now a month: MWK 22,000 in August against a lifetime
+  MWK 211,000, so the filter is demonstrably doing something.
+- ✅ "Needs a reply" filters 19 threads down to 1 — the direct message the other
+  person sent last. Its count renders; "Unread" with nothing unread still shows
+  no number.
+- ✅ "1 accepted of 4" renders on a job with an accepted proposal.
+- 🕒 **"What you paid" has never been seen.** It renders only for the client on
+  a funded job, and the signed-in account is a creative. The figures are correct
+  by inspection — real `collection_fee_mwk` where PayChangu wrote one, the 3%
+  estimate labelled as an estimate otherwise — but nobody has looked at it.
+- 🕒 **The availability switch has not been clicked.** It writes through the
+  existing `updateAvailability`, which the profile page already uses, but
+  toggling it changes whether clients can send this account work, so it was
+  left for the founder.
 - 🕒 **Sign out itself was not clicked.** The GET redirect is verified; the POST
   path that ends the session, and the cache revalidation added with it, are
   correct by inspection only.

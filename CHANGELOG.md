@@ -3,6 +3,37 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-21 — The rest of the screens, and the data they were waiting on (v0.9.15)
+
+Screens 02, 03, 04 and 08 ported against the mockups, and all four items that
+had been deferred for want of data are now built.
+
+**Screen 02 (browse)** was already faithful — the scope selector's two
+sentences are verbatim, the client-trust line leads the job card, and a
+creative with no reviews reads "New · no reviews yet". The one violation left
+was "0 proposals" on a fresh job; it is omitted now, as the mockup does.
+
+**Screen 03 (creative profile)** states the star average once, beside the name.
+It had been in the sidebar only, which on a phone falls below the tabs — a
+visitor deciding whether to read on never saw a rating at all.
+
+**Screen 04 (dashboard)** gains the two things its design note calls
+load-bearing: a greeting that says how many jobs need you today, counted from
+the same function the list below uses; and the availability switch at the top,
+because it decides whether the rest of the page matters. It writes
+`availability`, the field Browse actually reads.
+
+**Screen 08** — the empty thread was one grey line. It now says the room is
+empty, says what to write, and offers the job to read first.
+
+**The deferred four.** The released tile is a month ("Released to you in
+August"), falling back to the lifetime figure so a quiet month never reads as
+"you have never been paid". "Needs a reply" is a real filter, counting threads
+where the other person wrote last — deliberately not the same pile as unread.
+"What you paid" breaks out agreed price, the 3% processing fee and the total,
+using the fee PayChangu actually charged where we have it. And a job with an
+accepted proposal says "1 accepted of 4".
+
 ## 2026-08-21 — The 390 pass (v0.9.15)
 
 Every ported screen viewed at phone width, signed in, with boxes measured
