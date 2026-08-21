@@ -203,7 +203,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             )}
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-paper/60 px-5 py-5">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-ground px-5 py-5">
             {/* §H2, quiet weight: the compose box is directly below, so this
                 needs to say the room is empty and nothing more. */}
             {stream.length === 0 && (
@@ -216,7 +216,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                 const e = row.data;
                 return (
                   <div key={`e-${e.id}`} id={`event-${e.id}`} className="flex scroll-mt-4 justify-center">
-                    <div className="max-w-[85%] rounded-full border border-ink/10 bg-wash/50 px-3.5 py-1.5 text-center">
+                    <div className="max-w-[85%] rounded-full border border-ink/10 bg-grey px-3.5 py-1.5 text-center">
                       <p className="text-xs font-medium text-ink/70">
                         {JOB_EVENT_LABELS[e.event_type as JobEventType] ?? e.event_type}
                         <span className="font-normal text-ink/45"> · {timeAgo(e.created_at)}</span>
@@ -235,8 +235,8 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                   <div
                     className={
                       mine
-                        ? "max-w-[75%] rounded-2xl rounded-br-sm bg-ink px-4 py-2.5 text-sm text-paper shadow-sm"
-                        : "max-w-[75%] rounded-2xl rounded-bl-sm border border-ink/10 bg-paper px-4 py-2.5 text-sm text-ink shadow-sm"
+                        ? "max-w-[75%] rounded-[14px] rounded-br-sm bg-ink px-4 py-2.5 text-sm text-paper shadow-elev-1"
+                        : "max-w-[75%] rounded-[14px] rounded-bl-sm border border-ink/[0.08] bg-raised px-4 py-2.5 text-sm text-ink shadow-elev-1"
                     }
                   >
                     {m.body && (
@@ -279,7 +279,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             )}
           </div>
 
-          <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex flex-wrap items-center gap-2 border-t border-ink/10 bg-paper px-5 py-4">
+          <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex flex-wrap items-center gap-2 border-t border-ink/10 bg-raised px-5 py-4">
             <input type="hidden" name="thread_id" value={thread.id} />
             <AttachmentPicker />
             <MessageJobPicker jobs={attachableJobs} />

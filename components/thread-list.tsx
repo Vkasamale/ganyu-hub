@@ -61,7 +61,7 @@ function Row({
       <Link
         href={`/messages/${t.id}`}
         className={
-          (active ? "bg-wash/70" : "transition-colors hover:bg-wash/30") +
+          (active ? "bg-grey" : "transition-colors hover:bg-band") +
           " flex items-center gap-3 px-4 py-3"
         }
       >
@@ -227,7 +227,7 @@ export function ThreadList({
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search jobs, people, messages"
             aria-label="Search conversations"
-            className="w-full rounded-full border border-ink/15 bg-paper py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink/40 focus:border-ink/30 focus:outline-none"
+            className="w-full rounded-full border border-ink/15 bg-ground py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink/40 focus:border-ink/30 focus:outline-none"
           />
         </div>
         {/* Item 73: mobile only — the rail owns this above `md`. */}

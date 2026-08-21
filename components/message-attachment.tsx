@@ -28,7 +28,7 @@ export function MessageAttachment({
         <img
           src={url}
           alt={label}
-          className="max-h-64 w-auto max-w-full rounded-lg border border-ink/10 bg-paper"
+          className="max-h-64 w-auto max-w-full rounded-lg border border-ink/10 bg-raised"
           loading="lazy"
         />
         {meta && <p className={`mt-1 text-[10px] ${mine ? "text-paper/60" : "text-ink/50"}`}>{meta}</p>}
