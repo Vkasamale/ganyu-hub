@@ -132,12 +132,21 @@ export async function SignedInHome({ userId }: { userId: string }) {
   let heldJobs = 0;
   let releasedMwk = 0;
   let releasedJobs = 0;
+  // Screen 04 frames the second tile as a month — "Released to you in August"
+  // — because what a creative wants on a Tuesday morning is what has actually
+  // landed recently, not a lifetime total that only ever grows. Kept honest by
+  // falling back to the lifetime figure when nothing has landed this month:
+  // losing the tile entirely would read as "you have never been paid".
+  let releasedMonthMwk = 0;
+  let releasedMonthJobs = 0;
+  const monthLabel = new Date().toLocaleDateString("en-GB", { month: "long" });
   if (!isClient) {
     const { data: paid } = await supabase
       .from("proposals")
       .select("jobs:jobs!proposals_job_id_fkey(id, escrow_status, total_paid_mwk, accepted_bid_mwk)")
       .eq("creative_id", userId)
       .eq("status", "accepted");
+    const releasedAmountByJob = new Map<string, number>();
     for (const row of (paid || []) as any[]) {
       const j = row.jobs;
       if (!j) continue;
@@ -149,9 +158,34 @@ export async function SignedInHome({ userId }: { userId: string }) {
       } else if (j.escrow_status === "payment_released") {
         releasedMwk += creativeGross(amount);
         releasedJobs += 1;
+        releasedAmountByJob.set(j.id, creativeGross(amount));
+      }
+    }
+
+    // When the money landed lives in job_events, not on the job row. Deduped by
+    // job_id: BUG-018 wrote some payment_released events twice, and although
+    // the race is fixed the historic duplicates are still in the table.
+    if (releasedAmountByJob.size > 0) {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const { data: releases } = await supabase
+        .from("job_events")
+        .select("job_id")
+        .eq("event_type", "payment_released")
+        .in("job_id", Array.from(releasedAmountByJob.keys()))
+        .gte("created_at", monthStart.toISOString());
+      for (const jobId of new Set((releases || []).map((r: any) => r.job_id))) {
+        const amount = releasedAmountByJob.get(jobId as string);
+        if (!amount) continue;
+        releasedMonthMwk += amount;
+        releasedMonthJobs += 1;
       }
     }
   }
+  const showMonth = releasedMonthMwk > 0;
+  const releasedShownMwk = showMonth ? releasedMonthMwk : releasedMwk;
+  const releasedShownJobs = showMonth ? releasedMonthJobs : releasedJobs;
 
   // One head-count. Unread thread notifications ARE unread messages — see
   // lib/thread-previews.ts for why that needs no migration.
@@ -311,10 +345,12 @@ export async function SignedInHome({ userId }: { userId: string }) {
           )}
           {releasedMwk > 0 && (
             <div className="card-soft p-5">
-              <p className="eyebrow text-ink/55">Released to you</p>
-              <p className="mt-1.5 text-3xl font-semibold tabular-nums text-ink">{formatMwk(releasedMwk)}</p>
+              <p className="eyebrow text-ink/55">
+                {showMonth ? `Released to you in ${monthLabel}` : "Released to you"}
+              </p>
+              <p className="mt-1.5 text-3xl font-semibold tabular-nums text-ink">{formatMwk(releasedShownMwk)}</p>
               <p className="mt-1 text-xs text-ink/55">
-                {releasedJobs} {releasedJobs === 1 ? "job" : "jobs"} · paid out to your payout method
+                {releasedShownJobs} {releasedShownJobs === 1 ? "job" : "jobs"} · paid out to your payout method
               </p>
             </div>
           )}

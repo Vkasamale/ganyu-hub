@@ -180,7 +180,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     .eq("target_id", params.threadId)
     .is("read_at", null);
 
-  const sidebarWithPreview = await withPreviews(supabase, (threads || []) as any);
+  const sidebarWithPreview = await withPreviews(supabase, (threads || []) as any, user.id);
   const sidebarUnread = await unreadByThread(supabase, user.id, sidebarWithPreview.map((t) => t.id));
   const sidebarRows = byRecentActivity(
     sidebarWithPreview.map((t) => ({ ...t, unread: sidebarUnread.get(t.id) || 0 })),

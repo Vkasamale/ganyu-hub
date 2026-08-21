@@ -16,7 +16,7 @@ export default async function MessagesPage() {
     .or(`client_id.eq.${user.id},creative_id.eq.${user.id}`)
     .order("created_at", { ascending: false });
 
-  const withPreview = await withPreviews(supabase, (threads || []) as any);
+  const withPreview = await withPreviews(supabase, (threads || []) as any, user.id);
   const unread = await unreadByThread(supabase, user.id, withPreview.map((t) => t.id));
   const rows = byRecentActivity(withPreview.map((t) => ({ ...t, unread: unread.get(t.id) || 0 })));
 

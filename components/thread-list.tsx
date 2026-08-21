@@ -19,7 +19,7 @@ export type ThreadRow = {
     total_paid_mwk?: number | null;
     accepted_bid_mwk?: number | null;
   } | null;
-  preview?: { text: string; at: string; kind?: "message" | "event" } | null;
+  preview?: { text: string; at: string; kind?: "message" | "event"; fromMe?: boolean } | null;
   unread?: number;
 };
 
@@ -152,13 +152,17 @@ function Row({
 // opens this page with. Unread and Money held come first for that reason; the
 // job/direct split stays because it is the other real division in the list.
 //
-// ponytail: no "Needs a reply" chip, though the mockup has one. It needs the
-// sender of the last message, and the preview carries text and kind but not
-// who wrote it. Adding it means widening the preview query — worth doing when
-// someone asks for it, not worth guessing at now.
+/** The last thing that happened was the other person writing. Not the same as
+ *  unread: you can read a message and still owe an answer, and that is exactly
+ *  the pile the mockup's chip is counting. A job event is nobody's turn. */
+function needsReply(t: ThreadRow): boolean {
+  return t.preview?.kind === "message" && t.preview.fromMe === false;
+}
+
 const FILTERS = [
   { key: "all", label: "All" },
   { key: "unread", label: "Unread" },
+  { key: "reply", label: "Needs a reply" },
   { key: "held", label: "Money held" },
   { key: "jobs", label: "Jobs" },
   { key: "direct", label: "Direct" },
@@ -184,6 +188,7 @@ export function ThreadList({
     () => ({
       all: threads.length,
       unread: threads.filter((t) => (t.unread || 0) > 0).length,
+      reply: threads.filter(needsReply).length,
       held: threads.filter((t) => jobOf(t)?.escrow_status === "payment_held").length,
       jobs: threads.filter((t) => t.job_id).length,
       direct: threads.filter((t) => !t.job_id).length,
@@ -209,6 +214,7 @@ export function ThreadList({
     if (filter === "jobs") return !!t.job_id;
     if (filter === "direct") return !t.job_id;
     if (filter === "unread") return (t.unread || 0) > 0;
+    if (filter === "reply") return needsReply(t);
     if (filter === "held") return jobOf(t)?.escrow_status === "payment_held";
     return true;
   });

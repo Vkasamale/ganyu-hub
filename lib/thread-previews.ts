@@ -16,7 +16,15 @@ import type { JobEventType } from "@/lib/job-events";
  * same either way, and someone scanning for a reply should not have to parse a
  * sentence to work out that nobody has written back.
  */
-export type ThreadPreview = { text: string; at: string; kind: "message" | "event" };
+export type ThreadPreview = {
+  text: string;
+  at: string;
+  kind: "message" | "event";
+  /** True when the viewer wrote the last message. Undefined when withPreviews
+   *  was called without a viewer, or when the last activity was a job event —
+   *  an event belongs to nobody. */
+  fromMe?: boolean;
+};
 
 /**
  * Per-thread unread counts (audit §H3), derived from `notifications` rather
@@ -58,7 +66,10 @@ type MinimalThread = { id: string; job_id: string | null; created_at: string };
 
 export async function withPreviews<T extends MinimalThread>(
   supabase: any,
-  threads: T[]
+  threads: T[],
+  /** Who is looking. Supplied, the preview also says whether the last message
+   *  was theirs — which is what "Needs a reply" is counting. */
+  viewerId?: string
 ): Promise<(T & { preview: ThreadPreview | null })[]> {
   if (!threads.length) return [];
 
@@ -68,7 +79,7 @@ export async function withPreviews<T extends MinimalThread>(
   const [{ data: msgs }, { data: evs }] = await Promise.all([
     supabase
       .from("messages")
-      .select("thread_id, body, attachment_name, created_at")
+      .select("thread_id, body, attachment_name, created_at, sender_id")
       .in("thread_id", threadIds)
       .order("created_at", { ascending: false }),
     jobIds.length
@@ -89,6 +100,7 @@ export async function withPreviews<T extends MinimalThread>(
       text: text || (m.attachment_name ? `📎 ${m.attachment_name}` : "Shared a job"),
       at: m.created_at,
       kind: "message",
+      fromMe: viewerId ? m.sender_id === viewerId : undefined,
     });
   }
 
