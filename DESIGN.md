@@ -418,3 +418,65 @@ Many users are on mid-range Android over paid mobile data. Fiverr ships a
 
 Same rule as the stamp (§4). A photograph plus a scrim plus white type cannot
 be evaluated from markup. Render it and look.
+
+---
+
+## 15. Which screens the design system has actually seen
+
+Claude Design produced eight screens. Eight routes were ported against them,
+one for one. **The other thirty-eight have never been designed** — they inherit
+the tokens, the components and the shell, and that is all. They fit in; they
+have not been considered.
+
+This register exists so nobody mistakes "looks consistent" for "designed".
+
+### Ported against a mockup
+
+| Route | Screen |
+|---|---|
+| `/` (signed out) | 01 Signed-out landing |
+| `/browse` | 02 Browse — creatives |
+| `/jobs` | 02 Browse — jobs |
+| `/creatives/[id]` | 03 Creative profile |
+| `/` (signed in) | 04 Dashboard home |
+| `/jobs/[id]` | 05 and 06 Job detail, held and released |
+| `/messages`, `/messages/[threadId]` | 07 Messages |
+| empty states everywhere | 08 Three empty states, three weights |
+
+### Never designed — inheriting the system only
+
+**Money and work, the ones a real user hits most**
+`/dashboard`, `/dashboard/jobs`, `/dashboard/proposals`, `/dashboard/payments`,
+`/dashboard/saved`, `/jobs/new`, `/jobs/new-for-client`, `/clients/[id]`,
+`/how-money-works`
+
+**Setting yourself up**
+`/dashboard/profile`, `/dashboard/account`, `/dashboard/portfolio`,
+`/dashboard/portfolio/[id]`, `/dashboard/services`, `/dashboard/testimonials`,
+`/dashboard/report`, `/creatives/[id]/portfolio/[itemId]`,
+`/creatives/[id]/invite`
+
+**Getting in**
+`/login`, `/signup`, `/forgot-password`, `/reset-password`, `/onboarding/role`,
+`/onboarding/client`, `/onboarding/creative`
+
+**Public and shareable**
+`/c/[slug]`, `/j/[token]`, `/t/[token]`, `/contact`, `/terms`, `/privacy`,
+`/content-policy`, `/release-notes`, `/offline`
+
+**Admin** — internal, lowest priority for design attention
+`/admin`, `/admin/jobs`, `/admin/users`, `/admin/disputes`,
+`/admin/cancellations`, `/admin/errors`
+
+### What "fits in" currently means
+
+After the 2026-08-21 compliance sweep these pages use the ink scale, the
+three-level elevation and the 14px card. That was a find-and-replace, not a
+design pass. None of them has been judged at 390 against the system's own
+rule that every screen is judged there first.
+
+**If one is worth designing next, it is `/jobs/new`.** Posting a job is where a
+client decides whether this platform is real, and it is currently a wizard in a
+plain card — the only route on the list where a weak screen costs money
+directly.
+

@@ -69,7 +69,15 @@ export function JobHeader({
           <div className="font-display text-3xl tabular-nums text-ink sm:text-4xl">
             {formatMwk(escrow)}
           </div>
-          <div className="shrink-0">
+          {/* ml-auto, not just justify-between: the row wraps at narrow widths,
+              and a single wrapped item is placed at the START of its line, which
+              dropped the stamp to the card's left edge on a phone. ml-auto holds
+              it against the right margin whether or not the row wrapped.
+              items-end so the dated caption below lines up under the stamp
+              rather than pulling it off-centre — the caption is wider than the
+              stamp, so a text-right caption grew the column and left the stamp
+              floating inside it. */}
+          <div className="ml-auto flex shrink-0 flex-col items-end">
             <div className="relative">
               {/* The earlier state, still legible underneath — ink does not
                   lift off paper when the next stamp lands on it. */}

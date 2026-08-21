@@ -3,6 +3,24 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-21 — The stamp's right margin, and a register of what was never designed (v0.9.15)
+
+**The stamp was only right-aligned when the row did not wrap.** `justify-between`
+puts a single wrapped item at the START of its line, so on a phone the stamp
+dropped to the card's left edge — which is where it was in every screenshot
+taken at 390. It is held to the right margin with `ml-auto` now, wrapped or not.
+
+**The dated caption is flush under it.** The caption is wider than the stamp, so
+a right-aligned caption grew the column and left the stamp floating inside it.
+Both now share the card's right edge.
+
+**DESIGN.md §15 records which screens the design system has actually seen.**
+Eight routes were ported against the eight mockups. Thirty-eight were not, and
+they inherit tokens and components without ever having been designed. They fit
+in; they have not been considered — and the register exists so the two are never
+confused again. Of the thirty-eight, `/jobs/new` is the one worth designing
+next: posting a job is where a client decides whether this platform is real.
+
 ## 2026-08-21 — The compliance sweep (v0.9.15)
 
 The screens with mockups were ported first; this is the pass over everything
