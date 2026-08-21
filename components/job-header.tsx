@@ -73,14 +73,11 @@ export function JobHeader({
             <div className="relative">
               {/* The earlier state, still legible underneath — ink does not
                   lift off paper when the next stamp lands on it. */}
-              {history && (
-                <MoneyStamp
-                  state="payment_held"
-                  size="md"
-                  aria-hidden
-                  className="absolute -left-6 top-1 opacity-35 md:hidden"
-                />
-              )}
+              {/* No layering at 390. The offset copy has to sit outside the
+                  stamp's own box to be visible at all, and at phone width that
+                  puts it on top of the figure — the money is the one thing on
+                  this card that must never be obscured. The dated caption below
+                  still says the job was funded first. */}
               {history && (
                 <MoneyStamp
                   state="payment_held"

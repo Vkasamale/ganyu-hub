@@ -160,3 +160,22 @@ p, li, .text-pretty {
     align-self: start;
   }
 }
+
+/* The messages shell is a fixed-height flexbox, so its bottom edge — the
+   composer — has to clear the mobile tab bar itself; the page-level spacer in
+   layout.tsx sits after the shell and cannot help. 3.5rem of bar, plus the
+   safe-area inset for the iPhone home indicator, plus the header. dvh rather
+   than vh so a phone browser's collapsing address bar does not push the
+   composer under the fold.
+
+   Measured, not assumed: the bar renders 54px tall, and at 3.5rem of clearance
+   the composer still sat 7px under it. 4.5rem leaves the field fully tappable
+   with a little room, which a thumb needs anyway. */
+.messages-shell {
+  height: calc(100dvh - 7rem - 4.5rem - env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .messages-shell {
+    height: calc(100vh - 7rem);
+  }
+}

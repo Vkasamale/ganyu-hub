@@ -286,7 +286,7 @@ export function ThreadList({
           />
         </div>
         {/* Item 73: mobile only — the rail owns this above `md`. */}
-        <div className="mt-2 flex flex-wrap gap-1.5 md:hidden">
+        <div className="-mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
           {FILTERS.map((f) => {
             const on = filter === f.key;
             return (
@@ -299,13 +299,15 @@ export function ThreadList({
                   (on
                     ? "border-ink bg-ink text-paper"
                     : "border-ink/15 text-ink/70 hover:bg-wash/60") +
-                  " rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                  " shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors"
                 }
               >
                 {f.label}
-                <span className={on ? "ml-1.5 text-paper/70" : "ml-1.5 text-ink/45"}>
-                  {counts[f.key as keyof typeof counts]}
-                </span>
+                {counts[f.key as keyof typeof counts] > 0 && (
+                  <span className={on ? "ml-1.5 text-paper/70" : "ml-1.5 text-ink/45"}>
+                    {counts[f.key as keyof typeof counts]}
+                  </span>
+                )}
               </button>
             );
           })}

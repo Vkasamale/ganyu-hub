@@ -22,7 +22,7 @@ export default async function MessagesPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
+      <div className="messages-shell grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]">
         <aside className="card-soft flex min-w-0 flex-col overflow-hidden">
           <div className="border-b border-ink/10 p-4">
             <div className="flex items-center gap-2">
@@ -41,7 +41,10 @@ export default async function MessagesPage() {
           <ThreadList threads={rows as any} userId={user.id} />
         </aside>
 
-        <section className="card-soft flex flex-col items-center justify-center overflow-hidden p-8 text-center">
+        {/* Desktop only. On a phone there is no second pane to fill — you pick
+            from the list and the thread replaces it — so this is half a screen
+            of height spent telling someone to do what they were going to do. */}
+        <section className="card-soft hidden flex-col items-center justify-center overflow-hidden p-8 text-center md:flex">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-wash/60 text-ink/55">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />

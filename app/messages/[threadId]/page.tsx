@@ -200,7 +200,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
+      <div className="messages-shell grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]">
         <aside className="card-soft hidden min-w-0 flex-col overflow-hidden md:flex">
           <div className="border-b border-ink/10 p-4">
             <div className="flex items-center gap-2">
