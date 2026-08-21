@@ -3,6 +3,19 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-21 — The last two mockup details (v0.9.15)
+
+The released tile names where the money went — "paid to Airtel Money" rather
+than "paid out to your payout method" — read from the account's default payout
+method. The network, never the number: a phone number on the front door is
+nobody's business but the owner's.
+
+The creative profile says how many jobs are finished beside the star average.
+It is the more load-bearing of the two: a review is one client's opinion, a
+finished job is a fact. Counted as jobs the creative was accepted on whose
+money has been released, which is the same definition the dashboard's released
+tile uses, so the two can never tell different stories about the same work.
+
 ## 2026-08-21 — The rest of the screens, and the data they were waiting on (v0.9.15)
 
 Screens 02, 03, 04 and 08 ported against the mockups, and all four items that

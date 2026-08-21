@@ -162,6 +162,20 @@ export default async function CreativePage({
     ? (reviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount)
     : 0;
 
+  // Screen 03 puts "9 jobs done" beside the star average, and it is the more
+  // load-bearing of the two: a review is one client's opinion, a finished job
+  // is a fact. Counted as jobs this person was accepted on whose money has
+  // actually been released — the same definition the dashboard's released tile
+  // uses, so the two can never tell different stories about the same work.
+  const { data: doneRows } = await supabase
+    .from("proposals")
+    .select("jobs:jobs!proposals_job_id_fkey(escrow_status)")
+    .eq("creative_id", id)
+    .eq("status", "accepted");
+  const jobsDone = (doneRows || []).filter(
+    (r: any) => r.jobs?.escrow_status === "payment_released",
+  ).length;
+
   const portfolioCount = portfolio?.length || 0;
   const serviceCount = services?.length || 0;
   const completeness = checkProfileComplete(profile, portfolioCount, serviceCount);
@@ -348,17 +362,27 @@ export default async function CreativePage({
               the column next to a 128px avatar is too narrow at 390 and
               "1 review" wrapped onto its own line. Omitted entirely at zero
               reviews rather than shown as 0.0. */}
-          {reviewCount > 0 && (
-            <Link
-              href={`/creatives/${profile.id}?tab=reviews`}
-              className="mt-4 inline-flex items-center gap-2 text-sm hover:underline"
-            >
-              <Stars value={avgRating} className="h-4 w-4" />
-              <span className="font-semibold text-ink">{avgRating.toFixed(1)}</span>
-              <span className="whitespace-nowrap text-ink/55">
-                {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
-              </span>
-            </Link>
+          {(reviewCount > 0 || jobsDone > 0) && (
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              {reviewCount > 0 && (
+                <Link
+                  href={`/creatives/${profile.id}?tab=reviews`}
+                  className="inline-flex items-center gap-2 hover:underline"
+                >
+                  <Stars value={avgRating} className="h-4 w-4" />
+                  <span className="font-semibold text-ink">{avgRating.toFixed(1)}</span>
+                  <span className="whitespace-nowrap text-ink/55">
+                    {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+                  </span>
+                </Link>
+              )}
+              {jobsDone > 0 && (
+                <span className="whitespace-nowrap text-ink/55">
+                  {reviewCount > 0 && <span aria-hidden className="mr-3 text-ink/25">·</span>}
+                  {jobsDone} {jobsDone === 1 ? "job" : "jobs"} done
+                </span>
+              )}
+            </div>
           )}
 
           {(profile.categories || []).length > 0 && (

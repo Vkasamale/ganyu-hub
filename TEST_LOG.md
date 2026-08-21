@@ -59,9 +59,13 @@ Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test,
   cache, sign out among them. After clearing it: `/auth/signout` POST returns
   303 to `/`, GET returns 302, `/api/sentry-check` returns its 401. Verified
   with curl against the running dev server.
-- 🕒 **The button itself still has not been clicked.** The route is confirmed
-  end to end at the HTTP level; what is unverified is the round trip from the
-  Log out button in the browser with a real session attached.
+- ✅ **Confirmed by the founder in the browser 2026-08-21:** clicking Log out
+  ends the session and lands on the landing page.
+- ✅ The last two mockup details: the released tile reads "paid to Airtel Money"
+  (the account's real default method, not a guess), and the profile reads
+  "5.0  1 review · 8 jobs done" on one line at both 1440 and 390. The 8 matches
+  the dashboard's lifetime released count, which is the point of counting them
+  the same way.
 - ⬜ **No physical device.** Everything above is the in-app browser at a resized
   viewport, which is not a mid-range Android in sunlight — the exact condition
   the small ground-to-raised step was accepted against.

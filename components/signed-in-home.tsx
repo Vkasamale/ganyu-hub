@@ -183,6 +183,25 @@ export async function SignedInHome({ userId }: { userId: string }) {
       }
     }
   }
+  // Screen 04 names where the money went — "paid to Airtel Money", not "paid
+  // out to your payout method". The network, not the number: a phone number on
+  // the front door is nobody's business but the owner's, and it is the account
+  // they recognise by name anyway.
+  let payoutLabel = "your payout method";
+  if (!isClient) {
+    const { data: method } = await supabase
+      .from("payout_methods")
+      .select("kind, mobile_network")
+      .eq("user_id", userId)
+      .eq("is_default", true)
+      .maybeSingle();
+    if (method?.kind === "mobile") {
+      payoutLabel = method.mobile_network === "airtel" ? "Airtel Money" : "TNM Mpamba";
+    } else if (method?.kind) {
+      payoutLabel = "your bank";
+    }
+  }
+
   const showMonth = releasedMonthMwk > 0;
   const releasedShownMwk = showMonth ? releasedMonthMwk : releasedMwk;
   const releasedShownJobs = showMonth ? releasedMonthJobs : releasedJobs;
@@ -350,7 +369,7 @@ export async function SignedInHome({ userId }: { userId: string }) {
               </p>
               <p className="mt-1.5 text-3xl font-semibold tabular-nums text-ink">{formatMwk(releasedShownMwk)}</p>
               <p className="mt-1 text-xs text-ink/55">
-                {releasedShownJobs} {releasedShownJobs === 1 ? "job" : "jobs"} · paid out to your payout method
+                {releasedShownJobs} {releasedShownJobs === 1 ? "job" : "jobs"} · paid to {payoutLabel}
               </p>
             </div>
           )}
