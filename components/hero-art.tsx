@@ -13,7 +13,7 @@ export function HeroArt() {
       >
         <defs>
           <pattern id="rosette" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
-            <rect width="44" height="44" fill="#DACFB2" />
+            <rect width="44" height="44" fill="#ECECEC" />
             <circle cx="22" cy="22" r="7" fill="none" stroke="#1A1611" strokeWidth="1.1" />
             <circle cx="22" cy="22" r="3" fill="#069494" />
             <path d="M22 10 L25 19 L34 22 L25 25 L22 34 L19 25 L10 22 L19 19 Z" fill="#1A1611" opacity="0.82" />
@@ -66,7 +66,7 @@ export function HeroArt() {
           <defs>
             <path id="badge-arc" d="M 50,50 m -36,0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" />
           </defs>
-          <text fontFamily="var(--font-plex-mono), monospace" fontSize="9" letterSpacing="3" fill="#1A1611">
+          <text fontFamily="var(--font-inter), sans-serif" fontSize="9" letterSpacing="3" fill="#1A1611">
             <textPath href="#badge-arc" startOffset="0">FIND CREATIVES · FIND CREATIVES · </textPath>
           </text>
         </svg>

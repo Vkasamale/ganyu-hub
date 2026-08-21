@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Inter, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
@@ -19,19 +19,9 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
 });
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-mono",
-  display: "swap",
-});
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
-  display: "swap",
-});
+// Inter is the only face (settled 2026-08-14). IBM Plex Mono and Instrument
+// Serif were dropped: figures align via font-variant-numeric, not a second
+// typeface, and one font file is one download on a paid mobile connection.
 
 // Was a second, drifted copy of this resolution that still fell back to the
 // vercel.app host — so with APP_URL unset, every OG/canonical URL Next resolves
@@ -85,7 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const pathname = (await headers()).get("x-pathname") || "";
   const bareLayout = pathname.startsWith("/j/");
   return (
-    <html lang="en" className={`${inter.variable} ${plexMono.variable} ${instrumentSerif.variable}`}>
+    <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-white font-sans text-ink">
         {plausibleDomain && (
           <Script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />

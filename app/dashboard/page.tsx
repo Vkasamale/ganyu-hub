@@ -137,7 +137,7 @@ export default async function DashboardPage() {
         slices: [
           { label: "Accepted", value: proposalsSent.filter((p) => p.status === "accepted").length, color: "#2F5D3B" },
           { label: "Pending", value: proposalsSent.filter((p) => p.status === "pending").length, color: "#069494" },
-          { label: "Declined", value: proposalsSent.filter((p) => p.status === "declined").length, color: "#DACFB2" },
+          { label: "Declined", value: proposalsSent.filter((p) => p.status === "declined").length, color: "#ECECEC" },
         ],
       };
 

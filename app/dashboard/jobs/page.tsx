@@ -116,7 +116,7 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
     { label: "Open", statuses: ["open"], color: "#1A1611" },
     { label: "In progress", statuses: ["scope_pending", "in_progress", "submitted", "revision_requested"], color: "#2F5D3B" },
     { label: "Completed", statuses: ["completed"], color: "#069494" },
-    { label: "Other", statuses: ["disputed", "cancelled"], color: "#DACFB2" },
+    { label: "Other", statuses: ["disputed", "cancelled"], color: "#ECECEC" },
   ];
   const donutSlices = statusGroups
     .map((g) => ({ label: g.label, value: allRows.filter((r) => g.statuses.includes(r.status)).length, color: g.color }))
@@ -124,7 +124,7 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
   const donut = {
     center: String(activeRows.length),
     centerLabel: "Active",
-    slices: donutSlices.length ? donutSlices : [{ label: "—", value: 1, color: "#DACFB2" }],
+    slices: donutSlices.length ? donutSlices : [{ label: "—", value: 1, color: "#ECECEC" }],
   };
 
   return (

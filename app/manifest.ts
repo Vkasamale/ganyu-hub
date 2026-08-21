@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",
-    background_color: "#EFE6CE", // brand.paper
+    background_color: "#FFFFFF", // the page ground; cream was removed 2026-08-14
     theme_color: "#069494", // brand.DEFAULT — the teal token in tailwind.config.ts
     orientation: "portrait",
     icons: [

@@ -2,23 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ported from design-system/tokens/ on 2026-08-21. Cream is gone: the ground is
+   pure white, the raised surface off-white, the accent light grey. The step
+   between them is small on purpose, so shadow and hairline carry separation —
+   the elevation scale below is doing real work. */
 :root {
-  --background: 43 33% 94%;
+  --background: 0 0% 100%;
   --foreground: 0 14% 17%;
   --primary: 180 92% 30%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 43 20% 88%;
+  --secondary: 40 8% 96%;
   --secondary-foreground: 0 14% 17%;
-  --muted: 43 20% 88%;
+  --muted: 40 8% 96%;
   --muted-foreground: 0 5% 45%;
   --accent: 180 92% 30%;
   --accent-foreground: 0 0% 100%;
-  --border: 43 15% 82%;
+  --border: 0 0% 86%;
   --ring: 180 92% 30%;
   --radius: 0.5rem;
-  --font-display: var(--font-instrument-serif), 'Instrument Serif', serif;
+
+  /* Inter is the only face. Both aliases resolve to it. */
+  --font-display: var(--font-inter), 'Inter', sans-serif;
   --font-body: var(--font-inter), 'Inter', sans-serif;
-  --shadow-dashboard: 0 25px 80px -12px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06);
+
+  /* Surfaces */
+  --surface-canvas: #FFFFFF;
+  --surface-card: #F7F6F3;
+  --surface-band: #F2F1EE;
+  --surface-inset: #F1F1F0;
+  --surface-accent: #ECECEC;
+  --border-inset: #DCDCDC;
+  --surface-inverse: #1A1611;
+  --border-hairline: rgba(26, 22, 17, 0.18);
+
+  /* Elevation. Three levels, soft and low-spread, warm ink at 4–12%.
+     Every level pairs its shadow with a hairline. */
+  --elev-1: 0 1px 2px rgba(26, 22, 17, 0.04), 0 4px 12px rgba(26, 22, 17, 0.06);
+  --elev-2: 0 2px 4px rgba(26, 22, 17, 0.04), 0 12px 28px rgba(26, 22, 17, 0.08);
+  --elev-3: 0 4px 8px rgba(26, 22, 17, 0.05), 0 24px 56px rgba(26, 22, 17, 0.12);
+  /* A sheet rising from the bottom edge throws its shadow upward. */
+  --elev-sheet-up: 0 -2px 8px rgba(26, 22, 17, 0.04), 0 -16px 40px rgba(26, 22, 17, 0.10);
+  --shadow-dashboard: var(--elev-3);
+
+  /* Money-state ink, one per state. The stamps themselves are artwork; these
+     exist so anything sitting next to one can match its ink. */
+  --money-none-ink: #8C8C8C;
+  --money-pending-ink: #E9A23B;
+  --money-held-ink: #1D6E9E;
+  --money-released-ink: #1B9455;
+  --money-disputed-ink: #C22A2A;
 }
 
 html {
@@ -56,7 +88,10 @@ p, li, .text-pretty {
   text-wrap: pretty;
 }
 
-img {
+/* Mounting an image is opt-in. A global `img { outline }` draws a hairline box
+   around every transparent PNG — the stamps and the logo included — so only
+   photographs carry it. Do not reinstate the global rule. */
+.gh-mounted {
   outline: 1px solid rgba(26, 22, 17, 0.10);
   outline-offset: -1px;
 }
@@ -65,8 +100,9 @@ img {
   font-variant-numeric: tabular-nums;
 }
 
+/* Money is Inter with tabular figures. The alignment was always the point,
+   not the monospace look. */
 .price {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "ss01";
 }
@@ -79,7 +115,6 @@ img {
 }
 
 .eyebrow {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -93,10 +128,8 @@ img {
 }
 
 .card-soft {
-  background: #FFFFFF;
+  background: var(--surface-card);
   border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 12px 24px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(26, 22, 17, 0.08);
+  box-shadow: var(--elev-1);
 }

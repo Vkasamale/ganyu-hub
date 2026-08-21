@@ -75,7 +75,7 @@ export function StyleSwatch({ slug, className = "" }: { slug: string; className?
               <path d="M0 0h1v1H0zM2 2h1v1H2z" fill="#5C4426" />
             </pattern>
           </defs>
-          <rect width="64" height="64" fill="#DACFB2" />
+          <rect width="64" height="64" fill="#ECECEC" />
           <circle cx="32" cy="32" r="19" fill="none" stroke="#8A6B3D" strokeWidth="2" />
           <circle cx="32" cy="32" r="13" fill="#B8894F" />
           <rect width="64" height="64" fill="url(#swGrain)" opacity="0.25" />
