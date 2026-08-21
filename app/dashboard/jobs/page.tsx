@@ -134,7 +134,7 @@ export default async function DashboardJobsPage({ searchParams: searchParamsP }:
           <p className="eyebrow">Jobs</p>
           <h1 className="mt-2 font-display text-3xl md:text-4xl">
             Your{" "}
-            <em className="text-stamp" >
+            <em className="not-italic text-stamp">
               ledger.
             </em>
           </h1>

@@ -193,10 +193,7 @@ export async function SignedInHome({ userId }: { userId: string }) {
       <header>
         <h1 className="font-display text-3xl md:text-4xl">
           Welcome back,{" "}
-          <em
-            className="text-stamp"
-            
-          >
+          <em className="not-italic text-stamp">
             {firstName}.
           </em>
         </h1>

@@ -87,10 +87,7 @@ export default async function HowMoneyWorksPage() {
         <p className="eyebrow">Transparency</p>
         <h1 className="mt-2 font-display text-3xl md:text-4xl">
           How the{" "}
-          <em
-            className="text-stamp"
-            
-          >
+          <em className="not-italic text-stamp">
             money
           </em>{" "}
           works
