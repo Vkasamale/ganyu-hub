@@ -19,10 +19,19 @@ import Image from "next/image";
  * as they come up, and a phone that never sees slide four never fetches it.
  *
  * The scrim is what keeps type legible over photographs that were never
- * art-directed for it — ink at 86% where the headline sits, easing to 58% at
- * the right. Ink, never pure black: black over a photograph reads as a
- * printing error. One scrim for both audiences: switching between hire and
+ * art-directed for it. Ink, never pure black: black over a photograph reads as
+ * a printing error. One scrim for both audiences — switching between hire and
  * find-work changes the words, not the look.
+ *
+ * It runs a different way at each width, because the type does. On desktop the
+ * copy sits in the left column, so the scrim is horizontal: 86% under the
+ * headline, easing off to the right where the photograph can show through.
+ * It stops at 68% rather than the mockup's 58%, because our right column is
+ * not empty photograph — the skill list lives there, and 58% left it sitting
+ * on shopfront signage.
+ * On a phone every line runs the full width, so a horizontal scrim leaves the
+ * end of each line — and the search field, and the second button — sitting on
+ * its weakest part. There it runs top to bottom and never drops below 72%.
  */
 const SLIDES = [
   "/hero/hero-1.jpeg",
@@ -68,11 +77,7 @@ export function HeroSlideshow() {
         />
       ))}
       <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(26,22,17,.86) 0%, rgba(26,22,17,.58) 100%)",
-        }}
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,22,17,.88)_0%,rgba(26,22,17,.76)_55%,rgba(26,22,17,.72)_100%)] md:bg-[linear-gradient(90deg,rgba(26,22,17,.88)_0%,rgba(26,22,17,.74)_55%,rgba(26,22,17,.68)_100%)]"
       />
     </div>
   );
