@@ -259,9 +259,23 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             {/* §H2, quiet weight: the compose box is directly below, so this
                 needs to say the room is empty and nothing more. */}
             {stream.length === 0 && (
-              <p className="py-10 text-center text-sm text-ink/50">
-                No messages yet — say hello.
-              </p>
+              <div className="py-10 text-center">
+                <p className="text-sm text-ink/60">No messages in this thread yet.</p>
+                <p className="mt-1 text-xs text-ink/45">
+                  Say what you need and when you need it by.
+                </p>
+                {/* Screen 08's quiet weight is one line and at most a link. The
+                    link is only worth offering when there is a job to read —
+                    otherwise there is nowhere quiet to send anyone. */}
+                {threadJob && (
+                  <Link
+                    href={`/jobs/${threadJob.id}`}
+                    className="mt-2 inline-block text-xs font-medium text-brand-dark hover:underline"
+                  >
+                    See the job first
+                  </Link>
+                )}
+              </div>
             )}
             {stream.map((row) => {
               if (row.kind === "event") {
