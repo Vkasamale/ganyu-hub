@@ -12,7 +12,7 @@ export default async function MessagesPage() {
 
   const { data: threads } = await supabase
     .from("message_threads")
-    .select("id, created_at, client_id, creative_id, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name), job:jobs(id, title)")
+    .select("id, created_at, client_id, creative_id, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name), job:jobs(id, title, escrow_status, total_paid_mwk, accepted_bid_mwk)")
     .or(`client_id.eq.${user.id},creative_id.eq.${user.id}`)
     .order("created_at", { ascending: false });
 
@@ -22,8 +22,8 @@ export default async function MessagesPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
-        <aside className="card-soft flex flex-col overflow-hidden">
+      <div className="grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
+        <aside className="card-soft flex min-w-0 flex-col overflow-hidden">
           <div className="border-b border-ink/10 p-4">
             <div className="flex items-center gap-2">
               <Link

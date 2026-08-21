@@ -14,7 +14,21 @@ import { JOB_EVENT_LABELS } from "@/components/job-timeline";
 import { ThreadList } from "@/components/thread-list";
 import { withPreviews, byRecentActivity, unreadByThread } from "@/lib/thread-previews";
 import type { JobEventType } from "@/lib/job-events";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, formatMwk } from "@/lib/utils";
+import { moneyState } from "@/components/money-stamp";
+
+/**
+ * The four events where money moves, keyed to the same ink their stamp uses on
+ * the job page. An escrow line in a thread and the stamp on the job header are
+ * the same fact, so they are the same colour. Every other event stays quiet —
+ * colouring all twelve would make none of them mean anything.
+ */
+const MONEY_EVENT_INK: Record<string, string | undefined> = {
+  escrow_funded: "#1D6E9E",
+  payment_released: "#1B9455",
+  dispute_filed: "#C22A2A",
+  dispute_resolved: "#1B9455",
+};
 
 export default async function ThreadPage({ params: paramsP }: { params: Promise<{ threadId: string }> }) {
   const params = await paramsP;
@@ -95,7 +109,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
 
   const { data: threads } = await supabase
     .from("message_threads")
-    .select("id, created_at, client_id, creative_id, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name), job:jobs(id, title)")
+    .select("id, created_at, client_id, creative_id, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name), job:jobs(id, title, escrow_status, total_paid_mwk, accepted_bid_mwk)")
     .or(`client_id.eq.${user.id},creative_id.eq.${user.id}`)
     .order("created_at", { ascending: false });
 
@@ -104,10 +118,17 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
   // merge into one stream so a question can sit directly under the delivery it
   // is about. Threads without a job_id stay plain direct messages.
   let jobEvents: any[] = [];
-  let threadJob: { id: string; title: string; status: string | null } | null = null;
+  let threadJob: {
+    id: string;
+    title: string;
+    status: string | null;
+    escrow_status: string | null;
+    total_paid_mwk: number | null;
+    accepted_bid_mwk: number | null;
+  } | null = null;
   if (thread.job_id) {
     const [{ data: jrow }, { data: evs }] = await Promise.all([
-      supabase.from("jobs").select("id, title, status").eq("id", thread.job_id).maybeSingle(),
+      supabase.from("jobs").select("id, title, status, escrow_status, total_paid_mwk, accepted_bid_mwk").eq("id", thread.job_id).maybeSingle(),
       supabase.from("job_events")
         .select("id, event_type, note, created_at")
         .eq("job_id", thread.job_id)
@@ -116,6 +137,30 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     threadJob = (jrow as any) || null;
     jobEvents = evs || [];
   }
+
+  // What the money is doing, for the thread header. Same four words the list
+  // row carries, so the two never describe the same job differently. Null when
+  // there is no figure yet — a header reading "MWK 0" says less than one that
+  // says nothing.
+  const threadAmount = threadJob?.total_paid_mwk ?? threadJob?.accepted_bid_mwk ?? null;
+  const threadStatus = threadJob?.escrow_status || "none";
+  const threadMoney =
+    threadStatus === "payment_held"
+      ? threadAmount
+        ? `${formatMwk(threadAmount)} in escrow`
+        : "money in escrow"
+      : threadStatus === "payment_released"
+        ? threadAmount
+          ? `${formatMwk(threadAmount)} released`
+          : "released"
+        : threadStatus === "payment_disputed"
+          ? "in dispute"
+          : threadStatus === "payment_pending"
+            ? "payment pending"
+            : threadAmount
+              ? `${formatMwk(threadAmount)} agreed`
+              : null;
+  const threadMoneyInk = moneyState(threadJob?.escrow_status).ink;
 
   // One stream, ordered by time. Messages and events are different shapes, so
   // tag them rather than forcing a common row type.
@@ -155,8 +200,8 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
-        <aside className="card-soft hidden flex-col overflow-hidden md:flex">
+      <div className="grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]" style={{ height: "calc(100vh - 7rem)" }}>
+        <aside className="card-soft hidden min-w-0 flex-col overflow-hidden md:flex">
           <div className="border-b border-ink/10 p-4">
             <div className="flex items-center gap-2">
               <Link
@@ -182,12 +227,19 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             <div className="min-w-0">
               <p className="truncate font-medium text-ink">{other?.full_name || "Unknown"}</p>
               {threadJob ? (
-                <Link
-                  href={`/jobs/${threadJob.id}`}
-                  className="truncate text-xs text-ink/60 underline-offset-2 hover:text-ink hover:underline"
-                >
-                  {threadJob.title}
-                </Link>
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2 text-xs">
+                  <Link
+                    href={`/jobs/${threadJob.id}`}
+                    className="truncate text-ink/60 underline-offset-2 hover:text-ink hover:underline"
+                  >
+                    {threadJob.title}
+                  </Link>
+                  {threadMoney && (
+                    <span className="shrink-0 font-medium tabular-nums" style={{ color: threadMoneyInk }}>
+                      {threadMoney}
+                    </span>
+                  )}
+                </div>
               ) : (
                 <p className="text-xs text-ink/55">Started {timeAgo(thread.created_at)}</p>
               )}
@@ -216,13 +268,21 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                 const e = row.data;
                 return (
                   <div key={`e-${e.id}`} id={`event-${e.id}`} className="flex scroll-mt-4 justify-center">
-                    <div className="max-w-[85%] rounded-full border border-ink/10 bg-grey px-3.5 py-1.5 text-center">
-                      <p className="text-xs font-medium text-ink/70">
+                    <div
+                      className="max-w-[85%] rounded-[10px] border border-ink/10 bg-grey px-4 py-2 text-center"
+                      style={MONEY_EVENT_INK[e.event_type]
+                        ? { borderColor: `${MONEY_EVENT_INK[e.event_type]}55` }
+                        : undefined}
+                    >
+                      <p
+                        className="text-xs font-semibold uppercase tracking-[0.10em]"
+                        style={{ color: MONEY_EVENT_INK[e.event_type] || "rgba(26,22,17,0.70)" }}
+                      >
                         {JOB_EVENT_LABELS[e.event_type as JobEventType] ?? e.event_type}
-                        <span className="font-normal text-ink/45"> · {timeAgo(e.created_at)}</span>
                       </p>
+                      <p className="mt-0.5 text-[11px] text-ink/50">{timeAgo(e.created_at)}</p>
                       {e.note && (
-                        <p className="mt-0.5 whitespace-pre-wrap break-words text-xs text-ink/60">{e.note}</p>
+                        <p className="mt-1 whitespace-pre-wrap break-words text-xs text-ink/60">{e.note}</p>
                       )}
                     </div>
                   </div>

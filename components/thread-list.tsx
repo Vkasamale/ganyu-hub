@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { formatChatTime } from "@/lib/utils";
+import { formatChatTime, formatMwk } from "@/lib/utils";
 
 export type ThreadRow = {
   id: string;
@@ -12,7 +12,13 @@ export type ThreadRow = {
   job_id: string | null;
   client?: { id: string; full_name: string | null } | null;
   creative?: { id: string; full_name: string | null } | null;
-  job?: { id: string; title: string } | null;
+  job?: {
+    id: string;
+    title: string;
+    escrow_status?: string | null;
+    total_paid_mwk?: number | null;
+    accepted_bid_mwk?: number | null;
+  } | null;
   preview?: { text: string; at: string; kind?: "message" | "event" } | null;
   unread?: number;
 };
@@ -32,6 +38,26 @@ function otherOf(t: ThreadRow, userId: string) {
 
 function jobOf(t: ThreadRow) {
   return Array.isArray(t.job) ? (t.job[0] as any) : t.job;
+}
+
+/**
+ * What the money on this job is doing, in the four words the row can spare.
+ * A conversation on this platform is about a piece of paid work, so the state
+ * of the payment is the second most useful thing on the row after who it is
+ * with — it is why someone opens the thread at all.
+ *
+ * Returns null when there is no job or no figure yet: a row that would read
+ * "MWK 0" or "no payment" says less than a row that says nothing.
+ */
+function moneyLine(job: ReturnType<typeof jobOf>): string | null {
+  if (!job) return null;
+  const amount = job.total_paid_mwk ?? job.accepted_bid_mwk ?? null;
+  const status = job.escrow_status || "none";
+  if (status === "payment_held") return amount ? `${formatMwk(amount)} held` : "money held";
+  if (status === "payment_released") return amount ? `${formatMwk(amount)} released` : "released";
+  if (status === "payment_disputed") return "in dispute";
+  if (status === "payment_pending") return "payment pending";
+  return amount ? `${formatMwk(amount)} agreed` : null;
 }
 
 function Row({
@@ -55,6 +81,7 @@ function Row({
   // person's name — which the row already shows above. Say what is true instead.
   const preview = t.preview?.text || (job ? "No activity yet" : "No messages yet");
   const unread = t.unread || 0;
+  const money = moneyLine(job);
 
   return (
     <li>
@@ -83,6 +110,15 @@ function Row({
               {formatChatTime(t.preview?.at || t.created_at)}
             </span>
           </div>
+          {money && (
+            <p className="truncate text-[11px] text-ink/50">
+              {/* Grouped rows sit under a heading carrying this person's name,
+                  so repeating it here spends the row's narrowest line saying
+                  what is already on screen. */}
+              {!hideAvatar && job?.title && o?.full_name ? `${o.full_name} · ` : ""}
+              {money}
+            </p>
+          )}
           <div className="flex items-center gap-2">
             <p className={`min-w-0 flex-1 truncate text-xs ${unread ? "text-ink/80" : "text-ink/55"}`}>
               {/* Item 71: an event is something that HAPPENED, not something
@@ -112,8 +148,18 @@ function Row({
   );
 }
 
+// The chips answer "what is the money doing", which is the question someone
+// opens this page with. Unread and Money held come first for that reason; the
+// job/direct split stays because it is the other real division in the list.
+//
+// ponytail: no "Needs a reply" chip, though the mockup has one. It needs the
+// sender of the last message, and the preview carries text and kind but not
+// who wrote it. Adding it means widening the preview query — worth doing when
+// someone asks for it, not worth guessing at now.
 const FILTERS = [
   { key: "all", label: "All" },
+  { key: "unread", label: "Unread" },
+  { key: "held", label: "Money held" },
   { key: "jobs", label: "Jobs" },
   { key: "direct", label: "Direct" },
 ] as const;
@@ -137,6 +183,8 @@ export function ThreadList({
   const counts = useMemo(
     () => ({
       all: threads.length,
+      unread: threads.filter((t) => (t.unread || 0) > 0).length,
+      held: threads.filter((t) => jobOf(t)?.escrow_status === "payment_held").length,
       jobs: threads.filter((t) => t.job_id).length,
       direct: threads.filter((t) => !t.job_id).length,
     }),
@@ -157,9 +205,13 @@ export function ThreadList({
     });
   }, [threads, q, userId]);
 
-  const shown = matches.filter((t) =>
-    filter === "jobs" ? !!t.job_id : filter === "direct" ? !t.job_id : true
-  );
+  const shown = matches.filter((t) => {
+    if (filter === "jobs") return !!t.job_id;
+    if (filter === "direct") return !t.job_id;
+    if (filter === "unread") return (t.unread || 0) > 0;
+    if (filter === "held") return jobOf(t)?.escrow_status === "payment_held";
+    return true;
+  });
 
   // Inside the Jobs view, job threads nest under whoever the work was with, so
   // the list reads as "everything I've done with this person". Map preserves
@@ -179,7 +231,7 @@ export function ThreadList({
   const directShown = shown.filter((t) => !t.job_id);
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="flex min-h-0 min-w-0 flex-1">
       {/* Item 73 (§H3) — the desktop icon rail.
           It REPLACES the chip row rather than joining it: the chips below are
           `md:hidden`, so there is one filter control per breakpoint and one
@@ -213,7 +265,10 @@ export function ThreadList({
         })}
       </nav>
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* min-w-0: this column sits next to the rail in a flex row, and without
+          it the list takes its width from its widest thread title — rows ran
+          530px inside a 364px panel and the timestamps fell off the edge. */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-ink/10 px-3 pb-3">
         <div className="relative">
           <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/40">
@@ -257,7 +312,7 @@ export function ThreadList({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-2">
         {shown.length === 0 &&
           (q.trim() ? (
             // A search that found nothing is not an empty inbox — the way out
@@ -385,6 +440,21 @@ function RailIcon({ name }: { name: string }) {
       <svg {...common} aria-hidden>
         <rect x="3" y="7" width="18" height="13" rx="2" />
         <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      </svg>
+    );
+  }
+  if (name === "unread") {
+    return (
+      <svg {...common} aria-hidden>
+        <circle cx="12" cy="12" r="8" />
+      </svg>
+    );
+  }
+  if (name === "held") {
+    return (
+      <svg {...common} aria-hidden>
+        <rect x="3" y="10" width="18" height="10" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
       </svg>
     );
   }
