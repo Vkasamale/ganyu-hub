@@ -171,6 +171,15 @@ Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-
 
 ### 2026-08-21
 
+- **[BUG-026] Sign out landed on a 404 at /auth/signout — and every other route handler was dead too.** — found 2026-08-21, build/auth
+  - Repro: click Log out. The browser stops at `/auth/signout` showing the not-found page instead of returning to the landing page. Reported twice; the first fix (adding a GET handler) did not help, because the problem was never the handler.
+  - Symptom is much wider than sign out. Probed with curl against the dev server: `/` returned 200, but `/api/sentry-check` returned 404 where it should return 401, `/auth/callback` 404, `/auth/signout` 404 on both GET and POST. **No route handler under `app/**/route.ts` was being served at all** — which also means the OAuth callback and the PayChangu webhook would 404 in local dev.
+  - Cause: a stale/corrupt Turbopack dev cache. `.next/dev/types/validator.ts` was truncated mid-file (line 17 began `{ AppRoutes, ... }` with the `import type` prefix missing), and the dev server's route registry was in the same bad state — pages compiled, route handlers did not. Restarting the dev server was NOT enough; the cache survives a restart. Note the app's own code ran on each 404 (`application-code: 1464ms` in the dev log), which is what makes this look like an application bug rather than a build one.
+  - Fix: move `.next` aside and let it regenerate. Immediately after: `/api/sentry-check` 401, `/auth/signout` GET 302, POST 303 to `/`. No source change was needed for the 404 itself.
+  - Also changed, separately: the POST now redirects with **303 See Other** rather than 302. After a POST, 303 is the status that requires the browser to follow with GET; 302 only does so by convention.
+  - **If a route handler 404s in dev and the file is plainly there, delete `.next` before debugging the handler.**
+
+
 Found in one pass: every ported screen viewed at 375x812 in the in-app browser,
 signed in, with element boxes measured rather than judged by eye.
 

@@ -54,9 +54,14 @@ Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test,
   existing `updateAvailability`, which the profile page already uses, but
   toggling it changes whether clients can send this account work, so it was
   left for the founder.
-- 🕒 **Sign out itself was not clicked.** The GET redirect is verified; the POST
-  path that ends the session, and the cache revalidation added with it, are
-  correct by inspection only.
+- ⚠️ **Sign out was broken for a different reason than anyone thought** — see
+  BUG-026. Every route handler in the app was 404ing from a stale Turbopack
+  cache, sign out among them. After clearing it: `/auth/signout` POST returns
+  303 to `/`, GET returns 302, `/api/sentry-check` returns its 401. Verified
+  with curl against the running dev server.
+- 🕒 **The button itself still has not been clicked.** The route is confirmed
+  end to end at the HTTP level; what is unverified is the round trip from the
+  Log out button in the browser with a real session attached.
 - ⬜ **No physical device.** Everything above is the in-app browser at a resized
   viewport, which is not a mid-range Android in sunlight — the exact condition
   the small ground-to-raised step was accepted against.

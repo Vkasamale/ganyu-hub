@@ -10,7 +10,10 @@ export async function POST(request: Request) {
   // otherwise, which reads as "sign out did nothing". Clearing the layout
   // cache makes the landing page render for a signed-out visitor.
   revalidatePath("/", "layout");
-  return NextResponse.redirect(new URL("/", request.url), { status: 302 });
+  // 303, not 302. After a POST, 303 is the status that *requires* the browser
+  // to follow with GET; 302 only does so by convention, and a browser that
+  // took the letter of the spec would re-POST to "/" and get a 405.
+  return NextResponse.redirect(new URL("/", request.url), { status: 303 });
 }
 
 // Signing out stays a POST: a GET that ended a session could be fired by any
