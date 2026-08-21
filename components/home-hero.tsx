@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HeroSlideshow } from "@/components/hero-slideshow";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -30,35 +31,35 @@ const THEME: Record<Mode, {
   cityText: string;
 }> = {
   client: {
-    bg: "#FFFFFF",
-    text: "hsl(0, 14%, 17%)",
-    textMuted: "hsla(0, 14%, 17%, 0.70)",
-    accent: "hsl(180, 92%, 30%)",
-    badgeBorder: "rgba(0,0,0,0.10)",
-    badgeBg: "rgba(255,255,255,0.60)",
-    badgeText: "hsl(0, 14%, 17%)",
-    primaryBg: "hsl(180, 92%, 30%)",
-    primaryText: "#FFFFFF",
-    secondaryBorder: "rgba(0,0,0,0.15)",
-    secondaryText: "hsl(0, 14%, 17%)",
-    searchBorder: "hsla(180, 92%, 30%, 0.30)",
-    searchBg: "#FFFFFF",
-    searchText: "hsl(0, 14%, 17%)",
-    tabBarBg: "rgba(0,0,0,0.05)",
-    catLinkText: "hsl(0, 14%, 17%)",
-    catLinkHover: "hsl(180, 92%, 30%)",
-    cityText: "hsla(0, 14%, 17%, 0.65)",
-  },
-  creative: {
-    bg: "#000000",
+    bg: "#1A1611",
     text: "#F7F6F3",
     textMuted: "rgba(247, 246, 243, 0.70)",
     accent: "hsl(180, 60%, 55%)",
     badgeBorder: "rgba(255,255,255,0.15)",
-    badgeBg: "rgba(255,255,255,0.05)",
+    badgeBg: "rgba(255,255,255,0.08)",
     badgeText: "#F7F6F3",
-    primaryBg: "#F7F6F3",
-    primaryText: "#000000",
+    primaryBg: "hsl(180, 92%, 30%)",
+    primaryText: "#FFFFFF",
+    secondaryBorder: "rgba(255,255,255,0.25)",
+    secondaryText: "#F7F6F3",
+    searchBorder: "rgba(247, 246, 243, 0.30)",
+    searchBg: "rgba(255,255,255,0.06)",
+    searchText: "#F7F6F3",
+    tabBarBg: "rgba(255,255,255,0.06)",
+    catLinkText: "#F7F6F3",
+    catLinkHover: "hsl(180, 60%, 55%)",
+    cityText: "rgba(247, 246, 243, 0.65)",
+  },
+  creative: {
+    bg: "#1A1611",
+    text: "#F7F6F3",
+    textMuted: "rgba(247, 246, 243, 0.70)",
+    accent: "hsl(180, 60%, 55%)",
+    badgeBorder: "rgba(255,255,255,0.15)",
+    badgeBg: "rgba(255,255,255,0.08)",
+    badgeText: "#F7F6F3",
+    primaryBg: "hsl(180, 92%, 30%)",
+    primaryText: "#FFFFFF",
     secondaryBorder: "rgba(255,255,255,0.20)",
     secondaryText: "#F7F6F3",
     searchBorder: "rgba(247, 246, 243, 0.30)",
@@ -137,7 +138,8 @@ export function HomeHero() {
         transition: "background-color 250ms ease-out, color 250ms ease-out",
       }}
     >
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[1.6fr_1fr] md:gap-12 md:px-8 md:py-8">
+      <HeroSlideshow />
+      <div className="relative mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[1.6fr_1fr] md:gap-12 md:px-8 md:py-8">
         <div>
           <AnimatePresence mode="wait">
             <motion.div
