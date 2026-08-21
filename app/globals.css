@@ -133,3 +133,30 @@ p, li, .text-pretty {
   border: 1px solid rgba(26, 22, 17, 0.08);
   box-shadow: var(--elev-1);
 }
+
+/* Job detail, desktop: the money card rides along instead of scrolling away.
+   Done with grid placement rather than by moving the payment block in the JSX —
+   the page is one long column of conditionals, and re-parenting five hundred
+   lines to gain a sidebar is a much bigger risk than two rules. Every child
+   stays in column one; the money card is pulled into column two and pinned.
+   Below lg the grid collapses and reading order is unchanged, which is why the
+   mobile sticky bar is still the phone's answer. */
+@media (min-width: 1024px) {
+  .job-layout:has(> .job-money) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    column-gap: 2rem;
+    align-items: start;
+  }
+  .job-layout:has(> .job-money) > * {
+    grid-column: 1;
+    min-width: 0;
+  }
+  .job-layout:has(> .job-money) > .job-money {
+    grid-column: 2;
+    grid-row: 1 / span 999;
+    position: sticky;
+    top: 5rem;
+    align-self: start;
+  }
+}

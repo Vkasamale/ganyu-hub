@@ -56,6 +56,17 @@ export function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(LOCALE, { timeZone: TZ });
 }
 
+// "21 Aug" — a date the eye takes in beside a figure, for captions where the
+// year is already obvious from context. Pinned to en-GB and Africa/Blantyre
+// like every other formatter here; an unpinned timezone can shift the day.
+export function formatDayMonth(iso: string) {
+  return new Date(iso).toLocaleDateString(LOCALE, {
+    timeZone: TZ,
+    day: "numeric",
+    month: "short",
+  });
+}
+
 // "Member since August 2026". Pinned for the same reason as everything else:
 // an unpinned locale renders the month in the browser's language, and an
 // unpinned timezone can land on the wrong month entirely near a boundary.

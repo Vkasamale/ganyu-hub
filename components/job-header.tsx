@@ -1,5 +1,5 @@
 import { MoneyStamp } from "@/components/money-stamp";
-import { formatMwk } from "@/lib/utils";
+import { formatMwk, formatDayMonth } from "@/lib/utils";
 import { creativeGross, payoutFee, PAYOUT_RATE, PAYOUT_RATES } from "@/lib/fees";
 import { computeJobStage, type JobEventLite, type JobStageInput } from "@/lib/job-stages";
 import { JobProgressBar } from "@/components/job-progress-bar";
@@ -33,6 +33,17 @@ export function JobHeader({
   // the five states are five distinct facts and the artwork keeps them so.
   // ponytail: add a state to MONEY_STATES when partial deposits land.
   const released = job.escrow_status === "payment_released";
+
+  // The money has a past, and the header should show it. A released job was
+  // funded first; the funded stamp stays on the line underneath at low opacity
+  // with the released stamp pressed over it, and the dated caption says which
+  // happened when. Without it the header reads as though the money arrived
+  // already released, which is the one thing escrow is meant to disprove.
+  const fundedAt = events.find((e) => e.event_type === "escrow_funded")?.created_at;
+  const releasedAt = events.find((e) => e.event_type === "payment_released")?.created_at;
+  const history = released && fundedAt
+    ? `Funded ${formatDayMonth(fundedAt)}${releasedAt ? ` · released ${formatDayMonth(releasedAt)}` : ""}`
+    : null;
   const gross = creativeGross(escrow);
   // Both rails, not the worst of the two. A single pessimistic figure meant a
   // MWK 2,000 job advertised 1,260 when the creative would actually receive
@@ -58,8 +69,33 @@ export function JobHeader({
           <div className="font-display text-3xl tabular-nums text-ink sm:text-4xl">
             {formatMwk(escrow)}
           </div>
-          <MoneyStamp state={job.escrow_status} size="md" className="md:hidden" />
-          <MoneyStamp state={job.escrow_status} size="lg" className="hidden md:block" />
+          <div className="shrink-0">
+            <div className="relative">
+              {/* The earlier state, still legible underneath — ink does not
+                  lift off paper when the next stamp lands on it. */}
+              {history && (
+                <MoneyStamp
+                  state="payment_held"
+                  size="md"
+                  aria-hidden
+                  className="absolute -left-6 top-1 opacity-35 md:hidden"
+                />
+              )}
+              {history && (
+                <MoneyStamp
+                  state="payment_held"
+                  size="lg"
+                  aria-hidden
+                  className="absolute -left-9 top-1 hidden opacity-35 md:block"
+                />
+              )}
+              <MoneyStamp state={job.escrow_status} size="md" className="relative md:hidden" />
+              <MoneyStamp state={job.escrow_status} size="lg" className="relative hidden md:block" />
+            </div>
+            {history && (
+              <p className="mt-1 text-right text-[11px] text-ink/50">{history}</p>
+            )}
+          </div>
         </div>
         <div className="mt-2 text-sm text-ink/70">
           <div>{released ? "Creative received, after cash-out fee" : "Creative receives (est., after cash-out fee)"}</div>

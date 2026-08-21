@@ -269,7 +269,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="job-layout mx-auto max-w-4xl px-4 py-10 lg:max-w-6xl">
       {/*
         Google Jobs only. Emitted for OPEN, PUBLIC jobs and nothing else —
         a `JobPosting` left up after the job is filled is the one thing Google
@@ -347,7 +347,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           on the page and it used to be a long scroll down. heldMwk feeds the
           §N4 amount-in-the-button labels, not just the creative's payout note. */}
       {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
-        <div id="payment" className="scroll-mt-24">
+        <div id="payment" className="job-money scroll-mt-24">
         <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
         </div>
       )}
@@ -368,7 +368,9 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
       {user && !isClient && myProposal?.status === "accepted" && (
+        <div className="job-money">
         <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="creative" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
+        </div>
       )}
       {user && !isClient && myProposal?.status === "accepted" && job.escrow_status !== "payment_released" && (
         <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
