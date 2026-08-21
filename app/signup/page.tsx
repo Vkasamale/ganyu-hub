@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/supabase/user";
 import { signUp } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +14,13 @@ const VALID_ROLES: Role[] = ["creative", "client", "agency"];
 
 export default async function SignupPage({ searchParams: searchParamsP }: { searchParams?: Promise<{ role?: string; error?: string }> }) {
   const searchParams = (await searchParamsP) || {};
+  // A signed-in person should never be shown a login form. It is not a data
+  // leak — the navbar above it is showing their own real session — but on a
+  // shared device it reads as "nobody is signed in here", which is the exact
+  // opposite of the truth. Someone who then hesitates or mistypes walks away
+  // believing they were never signed in, leaving the previous account open.
+  if (await getSessionUser()) redirect("/");
+
   const requested = searchParams?.role as Role | undefined;
   const initialRole: Role = requested && VALID_ROLES.includes(requested) ? requested : "creative";
   const error = searchParams?.error;

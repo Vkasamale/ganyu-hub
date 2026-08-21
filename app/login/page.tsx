@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/supabase/user";
 import { signIn } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +12,13 @@ import { PasskeySignIn } from "@/components/passkey";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; info?: string }> }) {
   const { error, info } = await searchParams;
+  // A signed-in person should never be shown a login form. It is not a data
+  // leak — the navbar above it is showing their own real session — but on a
+  // shared device it reads as "nobody is signed in here", which is the exact
+  // opposite of the truth. Someone who then hesitates or mistypes walks away
+  // believing they were never signed in, leaving the previous account open.
+  if (await getSessionUser()) redirect("/");
+
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <Card>

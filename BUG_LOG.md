@@ -169,6 +169,15 @@ _(none currently open — see In Progress above)_
 
 Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-to-fix arc are included; pure feature ships aren't bugs.
 
+### 2026-08-22
+
+- **[BUG-027] /login and /signup showed a login form to someone already signed in.** — found 2026-08-22, auth
+  - Repro: sign in, then visit `/login`. The login form renders with your own account still shown in the navbar beside it.
+  - **Not a data leak.** The navbar was showing the viewer's own real session, correctly; nothing about another account was exposed and the auth code was not at fault. Neither page simply checked for an existing session.
+  - Why it still matters: on a shared device — an internet café, a borrowed phone, both normal here — a login form reads as "nobody is signed in on this machine". Someone who then hesitates, mistypes, or gives up walks away believing they were never signed in as anyone, leaving the previous account open behind them.
+  - Fix: both pages call `getSessionUser()` and redirect to `/` when there is a session. `/forgot-password` and `/reset-password` deliberately keep working while signed in — changing your own password from inside your account is a legitimate thing to do.
+  - Verified: signed in, `/login` lands on `/`; signed out, `/login` and `/signup` both still return 200.
+
 ### 2026-08-21
 
 - **[BUG-026] Sign out landed on a 404 at /auth/signout — and every other route handler was dead too.** — found 2026-08-21, build/auth
