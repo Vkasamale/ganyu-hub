@@ -88,7 +88,7 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
     <Card className="mt-6">
       <CardContent className="p-5">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-neutral-500">Payment</p>
+          <p className="text-sm text-ink/55">Payment</p>
           {/* The stamp in the job header already names the money state, and two
               labels for one fact ("Released" above, "Payment released" here)
               read as two different facts. The badge survives only for payout
@@ -96,7 +96,7 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
               show. */}
           {payoutPending && <Badge className="bg-white">Payout processing</Badge>}
         </div>
-        <p className="mt-2 text-sm text-neutral-600">
+        <p className="mt-2 text-sm text-ink/65">
           {payoutPending
             ? "Payout to the creative is processing. This page will update as soon as it's confirmed."
             : (testMode && TEST_HINTS[escrowStatus]) || HINTS[escrowStatus]}
@@ -121,21 +121,21 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
           </div>
         )}
         {role === "client" && (escrowStatus === "payment_held" || escrowStatus === "payment_disputed") && (
-          <p className="mt-3 text-xs text-neutral-500">
+          <p className="mt-3 text-xs text-ink/55">
             We recommend releasing once you're satisfied with the work. Releasing is your call and
             you can do it at any time — but the funds can't be pulled back afterwards.
           </p>
         )}
         {holdActive && paymentHeldAt && (
-          <p className="mt-3 text-xs text-neutral-500">
+          <p className="mt-3 text-xs text-ink/55">
             Funds settle the next business day after payment. <HoldCountdown paymentHeldAt={paymentHeldAt} holdMs={HOLD_MS} />
           </p>
         )}
         {role === "creative" && escrowStatus === "none" && (
-          <p className="mt-2 text-xs text-neutral-500">Waiting for the client to send funds to escrow.</p>
+          <p className="mt-2 text-xs text-ink/55">Waiting for the client to send funds to escrow.</p>
         )}
         {role === "creative" && escrowStatus === "payment_held" && heldMwk != null && heldMwk > 0 && (
-          <p className="mt-3 text-xs text-neutral-500">
+          <p className="mt-3 text-xs text-ink/55">
             {BETA_ZERO_COMMISSION
               ? <>You'll receive ~{formatMwk(creativeAmount(heldMwk))} — no platform fee during beta. Your payout provider may deduct a small transfer charge on top.</>
               : <>You'll receive ~{formatMwk(creativeAmount(heldMwk))} after Ganyu's {Math.round((1 - CREATIVE_SHARE) * 100)}% fee. Your payout provider may deduct a small transfer charge on top.</>}

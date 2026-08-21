@@ -317,7 +317,7 @@ export default async function CreativePage({
           {/* z-10 keeps the avatar above the banner it overlaps. */}
           <div className="relative z-10">
             <div className="flex items-end gap-4">
-              <div className="-mt-16 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-lg ring-4 ring-white md:-mt-20 md:h-36 md:w-36 md:text-4xl">
+              <div className="-mt-16 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-elev-2 ring-4 ring-white md:-mt-20 md:h-36 md:w-36 md:text-4xl">
                 {profile.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.avatar_url} alt={profile.full_name || "Avatar"} className="h-full w-full object-cover" />
@@ -537,7 +537,7 @@ export default async function CreativePage({
                     <Link
                       key={p.id}
                       href={`/creatives/${profile.id}/portfolio/${p.id}`}
-                      className="group overflow-hidden rounded-lg border border-ink/10 bg-paper transition-shadow hover:shadow-md"
+                      className="group overflow-hidden rounded-lg border border-ink/10 bg-paper transition-shadow hover:shadow-elev-2"
                     >
                       {p.cover_url && (
                         <div className="relative aspect-video w-full overflow-hidden">

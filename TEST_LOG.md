@@ -61,6 +61,13 @@ Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test,
   with curl against the running dev server.
 - ✅ **Confirmed by the founder in the browser 2026-08-21:** clicking Log out
   ends the session and lands on the landing page.
+- ✅ Compliance sweep verified by eye at 390 on the home, browse and job-detail
+  pages after a 36-file find-and-replace: nothing lost its contrast, and the
+  progress bar reads as one teal thread beside the green RELEASED stamp instead
+  of a five-colour rainbow.
+- ⬜ **The sweep touched 36 files and only three pages were looked at.** Admin,
+  cancellations, the dispute panel, auth forms and the portfolio pages were
+  changed but not opened.
 - ✅ The last two mockup details: the released tile reads "paid to Airtel Money"
   (the account's real default method, not a guess), and the profile reads
   "5.0  1 review · 8 jobs done" on one line at both 1440 and 390. The 8 matches

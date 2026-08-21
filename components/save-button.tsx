@@ -23,7 +23,7 @@ export function SaveButton({ targetType, targetId, saved }: { targetType: "job" 
         aria-label={optimistic ? "Unsave" : "Save"}
         disabled={pending}
         className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-sm transition ${
-          optimistic ? "border-brand bg-brand text-white" : "border-neutral-300 bg-white text-neutral-500 hover:border-brand hover:text-brand"
+          optimistic ? "border-brand bg-brand text-white" : "border-ink/15 bg-white text-ink/55 hover:border-brand hover:text-brand"
         }`}
       >
         <PopScale active={bump > 0} key={bump}>

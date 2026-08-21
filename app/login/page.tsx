@@ -29,8 +29,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <GoogleSignin />
             <PasskeySignIn />
           </div>
-          <div className="my-4 flex items-center gap-3 text-xs text-neutral-400">
-            <span className="h-px flex-1 bg-neutral-200" />or<span className="h-px flex-1 bg-neutral-200" />
+          <div className="my-4 flex items-center gap-3 text-xs text-ink/45">
+            <span className="h-px flex-1 bg-grey" />or<span className="h-px flex-1 bg-grey" />
           </div>
           <form action={signIn} className="space-y-4">
             <div className="space-y-1.5">
@@ -46,7 +46,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p className="text-center text-sm">
               <Link href="/forgot-password" className="text-brand-dark hover:underline">Forgot password?</Link>
             </p>
-            <p className="text-center text-sm text-neutral-500">
+            <p className="text-center text-sm text-ink/55">
               No account? <Link href="/signup" className="text-brand-dark hover:underline">Sign up</Link>
             </p>
           </form>

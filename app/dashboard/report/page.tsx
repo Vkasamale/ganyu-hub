@@ -21,7 +21,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
       <Card>
         <CardHeader>
           <CardTitle>Report an issue</CardTitle>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-ink/55">
             Saw an error message? Paste the reference (e.g. ERR-00042) and describe what happened. An admin will follow up.
           </p>
         </CardHeader>

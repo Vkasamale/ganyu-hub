@@ -16,7 +16,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
     <div className="mx-auto flex max-w-md flex-col items-center px-4 py-24 text-center">
       <p className="text-6xl text-ink/30">oops</p>
       <h1 className="mt-4 text-2xl font-semibold">Something went sideways.</h1>
-      <p className="mt-2 text-sm text-neutral-600">
+      <p className="mt-2 text-sm text-ink/65">
         We hit an unexpected error. Try again — if it keeps happening, drop us a note.
       </p>
       <Button onClick={reset} className="mt-6">Try again</Button>

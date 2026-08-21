@@ -289,7 +289,7 @@ export default async function PortfolioItemPage({
               <Link
                 key={m.id}
                 href={`/creatives/${id}/portfolio/${m.id}`}
-                className="group overflow-hidden rounded-lg border border-ink/10 bg-paper transition-shadow hover:shadow-md"
+                className="group overflow-hidden rounded-lg border border-ink/10 bg-paper transition-shadow hover:shadow-elev-2"
               >
                 {m.cover_url ? (
                   <div className="relative aspect-video w-full overflow-hidden bg-ink/5">

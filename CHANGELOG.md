@@ -3,6 +3,40 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-21 — The compliance sweep (v0.9.15)
+
+The screens with mockups were ported first; this is the pass over everything
+that never had one, where drift hides.
+
+**Shadows.** Twelve surfaces were still on Tailwind's defaults — hard,
+near-black. On a near-white ground that reads as grime rather than depth, which
+is exactly why the system specifies warm ink at 4–12%. Menus, popovers and the
+notification panel now sit on elevation 2 and 3; cards lift to 2 on hover;
+chips and buttons rest on 1. No `shadow-sm/md/lg/xl` remains in the app.
+
+**Ink.** 140 uses of Tailwind's `neutral` scale across 36 files — a cold grey
+where the system's ink is warm `#1A1611`. Text hierarchy is ink at a
+percentage, not a second grey, so they are now `text-ink/55` and friends.
+
+**The progress bar was a rainbow.** Sky, indigo, violet, amber, emerald — a
+colour invented per stage, which made a job look like it was changing category
+as it moved. Teal is the only chromatic accent; progress is one idea, and the
+stage number under each dot already tells them apart. Deliberately not the
+money-state inks: four of the five stages are not money events.
+
+**Money ink where it belongs, and only there.** The payment-pending banners and
+the pending top-up now carry the pending ink; a dispute overlay carries the
+disputed ink. Going the other way, the availability dot on a creative card
+stopped borrowing money amber — a person's calendar is not a payment state —
+and now uses the accent and ink tints.
+
+**Still open, and it is a design-system question rather than a code one.** 117
+raw palette colours remain, almost all of them improvising an error / warning /
+success set that the system does not define. It specifies teal, ink tints, one
+reserved green and five money-state inks — and money ink names money, so form
+errors and deadline chips cannot borrow it. Those surfaces need a status
+palette decided upstream before the sweep can finish.
+
 ## 2026-08-21 — The last two mockup details (v0.9.15)
 
 The released tile names where the money went — "paid to Airtel Money" rather

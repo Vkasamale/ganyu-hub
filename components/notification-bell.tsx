@@ -135,7 +135,7 @@ export function NotificationBell({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-band"
         aria-label="Notifications"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -150,15 +150,15 @@ export function NotificationBell({
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="fixed inset-x-2 top-16 z-40 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-[440px] sm:max-w-[calc(100vw-2rem)]">
+          <div className="fixed inset-x-2 top-16 z-40 overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-elev-3 sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-[440px] sm:max-w-[calc(100vw-2rem)]">
             <div className="flex items-center justify-between px-5 pt-4 pb-3">
               <p className="text-base font-semibold">Notifications</p>
-              <div className="flex items-center gap-1 text-neutral-500">
+              <div className="flex items-center gap-1 text-ink/55">
                 <button
                   onClick={handleMarkAll}
                   disabled={unread === 0}
                   aria-label="Mark all read"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100 disabled:opacity-40"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-band disabled:opacity-40"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M1.5 12.5 6 17l7-9" />
@@ -169,7 +169,7 @@ export function NotificationBell({
                   href="/dashboard/account"
                   aria-label="Notification settings"
                   onClick={() => setOpen(false)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-band"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="3" />
@@ -188,12 +188,12 @@ export function NotificationBell({
                     key={t.key}
                     onClick={() => setTab(t.key)}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
-                      active ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"
+                      active ? "bg-ink text-white" : "text-ink/65 hover:bg-band"
                     }`}
                   >
                     {t.label}
                     {count > 0 && (
-                      <span className={`text-[10px] ${active ? "text-white/70" : "text-neutral-400"}`}>{count}</span>
+                      <span className={`text-[10px] ${active ? "text-white/70" : "text-ink/45"}`}>{count}</span>
                     )}
                   </button>
                 );
@@ -202,14 +202,14 @@ export function NotificationBell({
 
             <div className="max-h-[28rem] overflow-y-auto px-2 pb-2">
               {visible.length === 0 && (
-                <p className="px-3 py-10 text-center text-sm text-neutral-500">No notifications here.</p>
+                <p className="px-3 py-10 text-center text-sm text-ink/55">No notifications here.</p>
               )}
               {visible.map((n, i) => {
                 const isUnread = !n.read_at;
                 const row = (
-                  <div className={`flex gap-3 rounded-lg px-3 py-3 transition ${isUnread ? "bg-brand/[0.04]" : ""} hover:bg-neutral-50`}>
+                  <div className={`flex gap-3 rounded-lg px-3 py-3 transition ${isUnread ? "bg-brand/[0.04]" : ""} hover:bg-raised`}>
                     <div className="relative shrink-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-200 text-xs font-semibold text-neutral-700">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-grey text-xs font-semibold text-ink/80">
                         {initials(n.title)}
                       </div>
                       {isUnread && (
@@ -218,18 +218,18 @@ export function NotificationBell({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-medium leading-tight text-neutral-900">{n.title}</p>
-                        <p className="shrink-0 text-[11px] text-neutral-400">{timeAgo(n.created_at)}</p>
+                        <p className="text-sm font-medium leading-tight text-ink">{n.title}</p>
+                        <p className="shrink-0 text-[11px] text-ink/45">{timeAgo(n.created_at)}</p>
                       </div>
                       {n.body && (
-                        <p className="mt-1 line-clamp-2 rounded-md bg-neutral-50 px-2.5 py-1.5 text-xs text-neutral-600">
+                        <p className="mt-1 line-clamp-2 rounded-md bg-raised px-2.5 py-1.5 text-xs text-ink/65">
                           {n.body}
                         </p>
                       )}
                     </div>
                   </div>
                 );
-                const separator = i < visible.length - 1 ? "border-b border-dashed border-neutral-200" : "";
+                const separator = i < visible.length - 1 ? "border-b border-dashed border-ink/10" : "";
                 return (
                   <div key={n.id} className={separator}>
                     {n.link ? (

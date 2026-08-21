@@ -62,7 +62,7 @@ export default async function JobsPage({ searchParams: searchParamsP }: {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-3xl font-bold">Open jobs</h1>
-      <p className="mt-1 text-neutral-600">{count} {count === 1 ? "job" : "jobs"} found</p>
+      <p className="mt-1 text-ink/65">{count} {count === 1 ? "job" : "jobs"} found</p>
       <div className="mt-6">
         <SearchScope current="jobs" q={searchParams.q} />
       </div>

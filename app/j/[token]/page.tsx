@@ -56,7 +56,7 @@ export default async function ClientLinkPage({ params }: { params: Promise<{ tok
         </CardHeader>
         <CardContent className="space-y-4">
           {creative && (
-            <div className="flex items-center gap-3 rounded-md border border-ink/10 bg-neutral-50 p-3">
+            <div className="flex items-center gap-3 rounded-md border border-ink/10 bg-raised p-3">
               {creative.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={creative.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />

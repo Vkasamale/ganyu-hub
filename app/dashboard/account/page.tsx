@@ -19,7 +19,7 @@ export default async function AccountPage() {
       <Card>
         <CardHeader>
           <CardTitle>Account</CardTitle>
-          <p className="text-sm text-neutral-500">Your name, email, and contact number. Used for sign-in and notifications.</p>
+          <p className="text-sm text-ink/55">Your name, email, and contact number. Used for sign-in and notifications.</p>
         </CardHeader>
         <CardContent>
           <SavingForm action={updateAccount} successText="Account saved." className="space-y-4">
@@ -30,7 +30,7 @@ export default async function AccountPage() {
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" defaultValue={user.email || ""} required />
-              <p className="text-xs text-neutral-500">Changing your email sends a confirmation link to the new address.</p>
+              <p className="text-xs text-ink/55">Changing your email sends a confirmation link to the new address.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="phone">Phone number</Label>
@@ -44,14 +44,14 @@ export default async function AccountPage() {
       <Card>
         <CardHeader>
           <CardTitle>Security</CardTitle>
-          <p className="text-sm text-neutral-500">Change your password.</p>
+          <p className="text-sm text-ink/55">Change your password.</p>
         </CardHeader>
         <CardContent>
           <SavingForm action={updatePassword} successText="Password updated." resetOnSuccess className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="password">New password</Label>
               <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
-              <p className="text-xs text-neutral-500">At least 8 characters.</p>
+              <p className="text-xs text-ink/55">At least 8 characters.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="confirm">Confirm new password</Label>
@@ -65,7 +65,7 @@ export default async function AccountPage() {
       <Card>
         <CardHeader>
           <CardTitle>Passkeys</CardTitle>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-ink/55">
             Sign in with your fingerprint, face or screen lock instead of typing a password. The passkey stays on your
             device — we never see it, and it cannot be phished.
           </p>

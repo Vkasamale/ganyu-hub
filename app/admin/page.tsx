@@ -232,7 +232,7 @@ function StatTile({
   return (
     <Link
       href={href}
-      className={`card-soft group block p-4 transition-all hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-md ${alert ? "ring-1 ring-stamp/40" : ""}`}
+      className={`card-soft group block p-4 transition-all hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-elev-2 ${alert ? "ring-1 ring-stamp/40" : ""}`}
     >
       <p className="text-[10px] font-medium uppercase tracking-wider text-ink/55">{label}</p>
       <p className={`mt-1 font-display text-2xl font-semibold ${alert ? "text-stamp-dark" : "text-ink"}`}>

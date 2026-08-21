@@ -31,7 +31,7 @@ export default async function ServicesPage() {
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-10">
       <div>
         <h1 className="text-2xl font-bold">Your rate card</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink/65">
           List the services you offer with a price (or price range). Clients see this on your public profile and can also request quotes for anything not on the list.
         </p>
       </div>
@@ -99,11 +99,11 @@ export default async function ServicesPage() {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{s.title}</p>
-                    {s.description && <p className="mt-1 text-sm text-neutral-600 whitespace-pre-wrap">{s.description}</p>}
+                    {s.description && <p className="mt-1 text-sm text-ink/65 whitespace-pre-wrap">{s.description}</p>}
                     <p className="mt-2 text-sm">
                       <span className="font-medium">{formatMwk(s.price_mwk)}</span>
                       {s.price_mwk_max && <span> &ndash; {formatMwk(s.price_mwk_max)}</span>}
-                      {s.delivery_days && <span className="text-neutral-500"> &middot; ~{s.delivery_days} day{s.delivery_days === 1 ? "" : "s"}</span>}
+                      {s.delivery_days && <span className="text-ink/55"> &middot; ~{s.delivery_days} day{s.delivery_days === 1 ? "" : "s"}</span>}
                     </p>
                   </div>
                   <SavingForm action={deleteService} silent>

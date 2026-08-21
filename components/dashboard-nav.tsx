@@ -19,7 +19,7 @@ export function DashboardNav({ items }: { items: NavItem[] }) {
           <span>{current?.label ?? "Menu"}</span>
           <span aria-hidden className="ml-2 transition-transform group-open:rotate-180">▾</span>
         </summary>
-        <div className="mt-1 flex flex-col rounded-md border border-ink/15 bg-paper p-1 shadow-sm">
+        <div className="mt-1 flex flex-col rounded-md border border-ink/15 bg-paper p-1 shadow-elev-1">
           {items.map((n) => {
             const active = isActive(n.href);
             return (

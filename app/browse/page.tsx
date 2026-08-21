@@ -131,7 +131,7 @@ export default async function BrowsePage({ searchParams: searchParamsP, title, i
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-3xl font-bold">{title || "Browse Malawian creatives"}</h1>
-      <p className="mt-1 text-neutral-600">{visibleCount} {visibleCount === 1 ? "creative" : "creatives"} found</p>
+      <p className="mt-1 text-ink/65">{visibleCount} {visibleCount === 1 ? "creative" : "creatives"} found</p>
       {intro}
       {/* Item 53. Not on the /c/<slug> landing pages: switching scope there
           would silently drop the category the page exists for. */}

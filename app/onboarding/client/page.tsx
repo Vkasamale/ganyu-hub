@@ -27,14 +27,14 @@ export default async function ClientOnboardingPage() {
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
       <div>
         <h1 className="text-3xl font-bold">Welcome to Ganyu Hub</h1>
-        <p className="mt-2 text-neutral-600">A couple of quick questions so creatives know who they&apos;re working with, then you&apos;re in.</p>
+        <p className="mt-2 text-ink/65">A couple of quick questions so creatives know who they&apos;re working with, then you&apos;re in.</p>
       </div>
 
       <SavingForm action={completeClientOnboarding} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>1. Who are you?</CardTitle>
-            <p className="text-sm text-neutral-500">Your name or your company name.</p>
+            <p className="text-sm text-ink/55">Your name or your company name.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
@@ -44,7 +44,7 @@ export default async function ClientOnboardingPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} readOnly disabled className="bg-neutral-50 text-neutral-500" />
+                <Input id="email" type="email" value={email} readOnly disabled className="bg-raised text-ink/55" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone / WhatsApp</Label>
@@ -65,7 +65,7 @@ export default async function ClientOnboardingPage() {
         <Card>
           <CardHeader>
             <CardTitle>2. What do you typically hire for?</CardTitle>
-            <p className="text-sm text-neutral-500">We&apos;ll use this to recommend creatives in &ldquo;For you&rdquo;.</p>
+            <p className="text-sm text-ink/55">We&apos;ll use this to recommend creatives in &ldquo;For you&rdquo;.</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-1.5">
@@ -78,7 +78,7 @@ export default async function ClientOnboardingPage() {
         <Card>
           <CardHeader>
             <CardTitle>3. Post your first job?</CardTitle>
-            <p className="text-sm text-neutral-500">Optional. We can drop you on the job-posting form right after this.</p>
+            <p className="text-sm text-ink/55">Optional. We can drop you on the job-posting form right after this.</p>
           </CardHeader>
           <CardContent className="space-y-3">
             <label className="flex items-center gap-2 text-sm">

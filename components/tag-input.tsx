@@ -33,7 +33,7 @@ export function TagInput({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2 rounded-md border border-neutral-300 bg-white p-1.5 focus-within:ring-2 focus-within:ring-brand">
+      <div className="flex flex-wrap items-center gap-2 rounded-md border border-ink/15 bg-white p-1.5 focus-within:ring-2 focus-within:ring-brand">
         {tags.map((t, i) => (
           <span
             key={t}
@@ -63,13 +63,13 @@ export function TagInput({
           }}
           onBlur={() => add(draft)}
           placeholder={tags.length ? "" : placeholder}
-          className="min-w-[8rem] flex-1 bg-transparent px-1 py-1 text-sm text-ink placeholder:text-neutral-400 focus:outline-none"
+          className="min-w-[8rem] flex-1 bg-transparent px-1 py-1 text-sm text-ink placeholder:text-ink/45 focus:outline-none"
         />
       </div>
       {tags.map((t) => (
         <input key={`h-${t}`} type="hidden" name={name} value={t} />
       ))}
-      <p className="mt-1 text-[11px] text-neutral-500">Type and press Enter to add each one.</p>
+      <p className="mt-1 text-[11px] text-ink/55">Type and press Enter to add each one.</p>
     </div>
   );
 }

@@ -73,7 +73,7 @@ export function CreativeCard({
             </div>
           )}
           {primaryCategory && (
-            <span className="absolute bottom-3 left-3 rounded-full bg-paper/95 px-3 py-1 text-[11px] font-medium text-ink shadow-sm backdrop-blur">
+            <span className="absolute bottom-3 left-3 rounded-full bg-paper/95 px-3 py-1 text-[11px] font-medium text-ink shadow-elev-1 backdrop-blur">
               {primaryCategory}
             </span>
           )}
@@ -90,12 +90,15 @@ export function CreativeCard({
               <span
                 title={profile.availability === "busy" ? "Busy" : "Not taking work"}
                 className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-white ${
-                  profile.availability === "busy" ? "bg-yellow-400" : "bg-neutral-400"
+                  // Not the money ink: those five colours name what a job's
+                  // money is doing, and borrowing amber for "busy" would make
+                  // a person's calendar look like a payment state.
+                  profile.availability === "busy" ? "bg-ink/45" : "bg-ink/25"
                 }`}
               />
             )}
             {profile.availability === "available" && (
-              <span title="Available" className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
+              <span title="Available" className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-stamp ring-2 ring-white" />
             )}
           </div>
           <div className="min-w-0">

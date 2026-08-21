@@ -82,7 +82,7 @@ export function RegisterPasskey() {
   const [error, setError] = useState<string | null>(null);
 
   if (!supported) {
-    return <p className="text-sm text-neutral-500">This browser cannot store passkeys. You can still sign in with your email and password.</p>;
+    return <p className="text-sm text-ink/55">This browser cannot store passkeys. You can still sign in with your email and password.</p>;
   }
 
   async function register() {

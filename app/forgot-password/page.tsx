@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
               <Button type="submit" className="w-full" disabled={pending}>
                 {pending ? "Sending…" : "Send reset link"}
               </Button>
-              <p className="text-center text-sm text-neutral-500">
+              <p className="text-center text-sm text-ink/55">
                 Remembered it? <Link href="/login" className="text-brand-dark hover:underline">Log in</Link>
               </p>
             </form>

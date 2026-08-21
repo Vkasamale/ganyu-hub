@@ -50,7 +50,7 @@ export function MessageJobPicker({ jobs }: { jobs: Job[] }) {
             </svg>
             Job
           </summary>
-          <div className="absolute bottom-full left-0 z-20 mb-2 max-h-72 w-72 overflow-y-auto rounded-lg border border-ink/15 bg-white p-1 shadow-lg">
+          <div className="absolute bottom-full left-0 z-20 mb-2 max-h-72 w-72 overflow-y-auto rounded-lg border border-ink/15 bg-white p-1 shadow-elev-2">
             {jobs.map((j) => (
               <button
                 key={j.id}

@@ -7,7 +7,7 @@ type Item = { href: string; label: string; icon: React.ReactNode };
 
 const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.75, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 const I = (path: React.ReactNode) => (
-  <svg viewBox="0 0 24 24" className="h-4 w-4 text-neutral-500" {...stroke}>{path}</svg>
+  <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/55" {...stroke}>{path}</svg>
 );
 
 const ICONS = {
@@ -72,7 +72,7 @@ export function UserMenu({ name, email, userId, isAdmin }: { name: string | null
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white py-1 pl-1 pr-3 text-sm transition-colors hover:border-neutral-300"
+        className="flex items-center gap-2 rounded-full border border-ink/10 bg-white py-1 pl-1 pr-3 text-sm transition-colors hover:border-ink/15"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -85,8 +85,8 @@ export function UserMenu({ name, email, userId, isAdmin }: { name: string | null
           <div className="flex items-center gap-3 px-4 py-3.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-stamp text-sm font-semibold text-white">{initial}</span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-neutral-900">{name || "Unnamed"}</p>
-              <p className="truncate text-xs text-neutral-500">{email}</p>
+              <p className="truncate text-sm font-semibold text-ink">{name || "Unnamed"}</p>
+              <p className="truncate text-xs text-ink/55">{email}</p>
             </div>
           </div>
 
@@ -101,7 +101,7 @@ export function UserMenu({ name, email, userId, isAdmin }: { name: string | null
             />
           )}
 
-          <div className="border-t border-neutral-100">
+          <div className="border-t border-ink/[0.06]">
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
@@ -120,13 +120,13 @@ export function UserMenu({ name, email, userId, isAdmin }: { name: string | null
 
 function Section({ items, onPick }: { items: Item[]; onPick: () => void }) {
   return (
-    <nav className="border-t border-neutral-100 py-1.5">
+    <nav className="border-t border-ink/[0.06] py-1.5">
       {items.map((it) => (
         <Link
           key={it.href + it.label}
           href={it.href}
           onClick={onPick}
-          className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+          className="flex items-center gap-3 px-4 py-2 text-sm text-ink/80 hover:bg-raised"
         >
           {it.icon}
           <span>{it.label}</span>

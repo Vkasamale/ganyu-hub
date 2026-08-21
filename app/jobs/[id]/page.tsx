@@ -303,7 +303,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         />
       )}
       {user && <JobRealtime jobId={job.id} />}
-      <Link href="/jobs" className="text-sm text-neutral-500 hover:underline">
+      <Link href="/jobs" className="text-sm text-ink/55 hover:underline">
         All jobs
       </Link>
       {showClientLink && (
@@ -323,7 +323,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             </>
           }
         />
-        <p className="mt-2 px-1 text-sm text-neutral-500">
+        <p className="mt-2 px-1 text-sm text-ink/55">
           Posted by{" "}
           {job.client_id ? (
             <Link
@@ -400,16 +400,16 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </div>
       )}
       {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
-        <Card className="mt-6 border-amber-200 bg-amber-50">
-          <CardContent className="p-5 text-sm text-amber-900">
+        <Card className="mt-6 border-money-pending/30 bg-money-pending/[0.08]">
+          <CardContent className="p-5 text-sm text-ink/80">
             <p className="font-medium">Payment pending — this creative isn't locked in yet.</p>
             <p className="mt-1">Complete the checkout to finalise acceptance. Until then this job stays open and other proposals can still come in. Use "Cancel pending payment" above to release the hold.</p>
           </CardContent>
         </Card>
       )}
       {user && !isClient && myProposal && job.pending_accept_proposal_id === myProposal.id && job.escrow_status === "payment_pending" && (
-        <Card className="mt-6 border-amber-200 bg-amber-50">
-          <CardContent className="p-5 text-sm text-amber-900">
+        <Card className="mt-6 border-money-pending/30 bg-money-pending/[0.08]">
+          <CardContent className="p-5 text-sm text-ink/80">
             <p className="font-medium">The client started payment for your proposal.</p>
             <p className="mt-1">Nothing is locked in until the payment confirms. You'll be notified when it clears.</p>
           </CardContent>
@@ -632,20 +632,20 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>Payment top-ups</CardTitle>
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-ink/55">
               Original bid: {formatMwk(job.accepted_bid_mwk)}. Total in escrow: {formatMwk(job.total_paid_mwk ?? job.accepted_bid_mwk)}.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             {pendingTopup && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="rounded-lg border border-money-pending/30 bg-money-pending/[0.08] p-4">
                 <p className="text-sm font-semibold text-amber-900">
                   Pending: {formatMwk(pendingTopup.amount_mwk)}
                 </p>
                 {/* Marker-carrying rows are filtered out above, so `reason`
                     here is always the creative's own words. */}
                 {String(pendingTopup.reason || "").trim() && (
-                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-amber-900/80">
+                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink/80/80">
                     &ldquo;{String(pendingTopup.reason).trim()}&rdquo;
                   </p>
                 )}
@@ -703,14 +703,14 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
             {(topups || []).filter((t: any) => t.status !== "pending").length > 0 && (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">History</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-ink/55">History</p>
                 <ul className="mt-2 space-y-1 text-sm">
                   {(topups || []).filter((t: any) => t.status !== "pending").map((t: any) => (
                     <li key={t.id} className="flex flex-wrap items-center gap-2 rounded-md border border-ink/10 bg-paper px-3 py-2">
                       <span className="font-medium">{formatMwk(t.amount_mwk)}</span>
-                      <span className="text-xs text-neutral-500">·</span>
-                      <span className="text-xs capitalize text-neutral-600">{t.status}</span>
-                      <span className="text-xs text-neutral-500">· {timeAgo(t.created_at)}</span>
+                      <span className="text-xs text-ink/55">·</span>
+                      <span className="text-xs capitalize text-ink/65">{t.status}</span>
+                      <span className="text-xs text-ink/55">· {timeAgo(t.created_at)}</span>
                     </li>
                   ))}
                 </ul>
@@ -722,7 +722,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
       {job.status === "cancellation_requested" && (
         <Card className="mt-4 border-amber-300 bg-amber-50">
-          <CardContent className="p-4 text-sm text-amber-900">
+          <CardContent className="p-4 text-sm text-ink/80">
             <p className="font-medium">Cancellation requested — awaiting admin review.</p>
             {job.cancellation_reason && (
               <p className="mt-1 text-amber-900/80">Reason: {job.cancellation_reason}</p>
@@ -735,7 +735,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>{myReview ? "Your review" : `Rate ${isClient ? "the creative" : "the client"}`}</CardTitle>
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-ink/55">
               {myReview
                 ? "Thanks for the feedback — it helps others on Ganyu Hub."
                 : "How was working together? Your review appears on their profile and builds trust for future jobs."}
@@ -746,7 +746,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               <div>
                 <Stars value={myReview.rating} className="h-5 w-5" />
                 {myReview.comment && (
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{myReview.comment}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-ink/80">{myReview.comment}</p>
                 )}
               </div>
             ) : (
@@ -774,7 +774,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Add this work to your portfolio</CardTitle>
-            <p className="text-sm text-neutral-500">Great work deserves to be shown. Upload a cover image, link the project, and let future clients see what you can do.</p>
+            <p className="text-sm text-ink/55">Great work deserves to be shown. Upload a cover image, link the project, and let future clients see what you can do.</p>
           </CardHeader>
           <CardContent>
             <SavingForm action={addPortfolioItem} successText="Added to your portfolio." resetOnSuccess className="space-y-4">
@@ -809,10 +809,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
 
       {user && !isClient && !myActiveProposal && isFull && myRejectedCount === 0 && (
-        <Card className="mt-6 border-neutral-300 bg-neutral-50">
+        <Card className="mt-6 border-ink/15 bg-raised">
           <CardContent className="p-6">
             <p className="text-sm font-semibold">This job is full.</p>
-            <p className="mt-1 text-sm text-neutral-600">
+            <p className="mt-1 text-sm text-ink/65">
               It has reached its cap of {proposalLimit} proposals. Try another job.
             </p>
           </CardContent>
@@ -820,10 +820,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
 
       {user && !isClient && !myActiveProposal && myRejectedCount >= 3 && !myInvite && (
-        <Card className="mt-6 border-neutral-300 bg-neutral-50">
+        <Card className="mt-6 border-ink/15 bg-raised">
           <CardContent className="p-6">
             <p className="text-sm font-semibold">You've used all 3 attempts on this job.</p>
-            <p className="mt-1 text-sm text-neutral-600">
+            <p className="mt-1 text-sm text-ink/65">
               Only a direct invite from the client can reopen it.
             </p>
           </CardContent>
@@ -849,12 +849,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               <CardTitle>
                 {myRejectedCount > 0 ? `Send another proposal (attempt ${myRejectedCount + 1} of 3)` : "Send a proposal"}
               </CardTitle>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-ink/55">
                 {proposalCount ?? 0} of {proposalLimit} proposals
               </p>
             </div>
             {myRejectedCount > 0 && (
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-ink/55">
                 Your previous {myRejectedCount === 1 ? "proposal was" : `${myRejectedCount} proposals were`} rejected. You have {3 - myRejectedCount} {3 - myRejectedCount === 1 ? "attempt" : "attempts"} left.
               </p>
             )}
@@ -898,9 +898,9 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           <CardContent className="p-6">
             <p className="font-semibold">
               You have sent a proposal &middot;{" "}
-              <span className="text-neutral-500 font-normal">{myActiveProposal.status}</span>
+              <span className="text-ink/55 font-normal">{myActiveProposal.status}</span>
             </p>
-            <p className="mt-2 text-sm text-neutral-700 whitespace-pre-wrap">{myActiveProposal.cover_letter}</p>
+            <p className="mt-2 text-sm text-ink/80 whitespace-pre-wrap">{myActiveProposal.cover_letter}</p>
             <p className="mt-2 text-sm">Bid: {formatMwk(myActiveProposal.bid_mwk)}</p>
             <SpecTable proposal={myActiveProposal} category={job.category} className="mt-3" />
           </CardContent>
@@ -933,8 +933,8 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                     </Link>
                     <Badge>{p.status}</Badge>
                   </div>
-                  <p className="text-sm text-neutral-500">{p.creative?.headline}</p>
-                  <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-700">{p.cover_letter}</p>
+                  <p className="text-sm text-ink/55">{p.creative?.headline}</p>
+                  <p className="mt-3 whitespace-pre-wrap text-sm text-ink/80">{p.cover_letter}</p>
                   <p className="mt-2 text-sm font-medium">Bid: {formatMwk(p.bid_mwk)}</p>
                   {/* Item 39: what they are actually promising, as a table. */}
                   <SpecTable proposal={p} category={job.category} className="mt-3" />
@@ -946,7 +946,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 </CardContent>
               </Card>
             ))}
-            {(!proposals || proposals.length === 0) && <p className="text-neutral-500">No proposals yet.</p>}
+            {(!proposals || proposals.length === 0) && <p className="text-ink/55">No proposals yet.</p>}
           </div>
         </section>
       )}

@@ -40,7 +40,7 @@ export default async function NewJobForClientPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="category">Category</Label>
-              <select id="category" name="category" required className="h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm">
+              <select id="category" name="category" required className="h-10 w-full rounded-md border border-ink/15 bg-white px-3 text-sm">
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>

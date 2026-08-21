@@ -118,7 +118,7 @@ export default async function AdminCancellationsPage({ searchParams }: { searchP
               <CardTitle>
                 <Link href={`/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
               </CardTitle>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-ink/55">
                 Requested {job.cancellation_requested_at} · phase {phase} · gross {formatMwk(gross)}
                 {hasTopup && ` (original ${formatMwk(job.accepted_bid_mwk)} + top-ups ${formatMwk(gross - job.accepted_bid_mwk)})`}
               </p>

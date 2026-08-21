@@ -29,8 +29,8 @@ export default async function SignupPage({ searchParams: searchParamsP }: { sear
             </p>
           )}
           <GoogleSignin label="Sign up with Google" />
-          <div className="my-4 flex items-center gap-3 text-xs text-neutral-400">
-            <span className="h-px flex-1 bg-neutral-200" />or<span className="h-px flex-1 bg-neutral-200" />
+          <div className="my-4 flex items-center gap-3 text-xs text-ink/45">
+            <span className="h-px flex-1 bg-grey" />or<span className="h-px flex-1 bg-grey" />
           </div>
           <form action={signUp} className="space-y-4">
             <div className="space-y-1.5">
@@ -61,13 +61,13 @@ export default async function SignupPage({ searchParams: searchParamsP }: { sear
             </div>
             <Turnstile />
             <Button type="submit" className="w-full">Create account</Button>
-            <p className="text-center text-xs text-neutral-500">
+            <p className="text-center text-xs text-ink/55">
               By signing up you agree to our{" "}
               <Link href="/terms" className="underline hover:text-ink">Terms</Link>{" "}
               and{" "}
               <Link href="/privacy" className="underline hover:text-ink">Privacy Policy</Link>.
             </p>
-            <p className="text-center text-sm text-neutral-500">
+            <p className="text-center text-sm text-ink/55">
               Have an account? <Link href="/login" className="text-brand-dark hover:underline">Log in</Link>
             </p>
           </form>

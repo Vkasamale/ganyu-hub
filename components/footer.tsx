@@ -132,7 +132,7 @@ function WhatsNewBadge() {
       <summary className="cursor-pointer list-none rounded-full border border-ink/15 px-2.5 py-0.5 text-xs text-ink/60 hover:text-ink [&::-webkit-details-marker]:hidden">
         v{VERSION}
       </summary>
-      <div className="absolute bottom-full right-0 z-20 mb-2 w-72 rounded-[14px] border border-ink/10 bg-white p-4 text-left shadow-lg">
+      <div className="absolute bottom-full right-0 z-20 mb-2 w-72 rounded-[14px] border border-ink/10 bg-white p-4 text-left shadow-elev-2">
         <div className="mb-2 text-sm font-semibold text-ink">What&apos;s new</div>
         <div className="max-h-72 space-y-3 overflow-y-auto">
           {RELEASES.map((r) => (

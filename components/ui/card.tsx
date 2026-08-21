@@ -15,7 +15,7 @@ export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHead
   return <h3 className={cn("font-semibold leading-none tracking-tight", className)} {...props} />;
 }
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-sm text-neutral-500", className)} {...props} />;
+  return <p className={cn("text-sm text-ink/55", className)} {...props} />;
 }
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   // min-w-0 + break-words: keep long unbroken text (URLs, emails, names) wrapping

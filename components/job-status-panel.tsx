@@ -41,7 +41,7 @@ export function JobStatusPanel({ jobId, status, role, escrowStatus }: { jobId: s
   return (
     <Card className="mt-6">
       <CardContent className="p-5">
-        <p className="text-sm text-neutral-500">Current status</p>
+        <p className="text-sm text-ink/55">Current status</p>
         <p className="font-semibold">{LABELS[status] || status}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {actions.map((a) => (

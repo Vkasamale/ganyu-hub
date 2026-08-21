@@ -73,7 +73,7 @@ export function MediaCarousel({ images, alt }: { images: string[]; alt: string }
             onClick={() => go(index - 1)}
             disabled={index === 0}
             aria-label="Previous image"
-            className="absolute left-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-paper/90 p-2 text-ink shadow-sm transition-opacity hover:bg-paper disabled:opacity-0 md:block"
+            className="absolute left-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-paper/90 p-2 text-ink shadow-elev-1 transition-opacity hover:bg-paper disabled:opacity-0 md:block"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
               <polyline points="15 18 9 12 15 6" />
@@ -84,7 +84,7 @@ export function MediaCarousel({ images, alt }: { images: string[]; alt: string }
             onClick={() => go(index + 1)}
             disabled={index === images.length - 1}
             aria-label="Next image"
-            className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-paper/90 p-2 text-ink shadow-sm transition-opacity hover:bg-paper disabled:opacity-0 md:block"
+            className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-paper/90 p-2 text-ink shadow-elev-1 transition-opacity hover:bg-paper disabled:opacity-0 md:block"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
               <polyline points="9 18 15 12 9 6" />

@@ -30,14 +30,14 @@ export default async function CreativeOnboardingPage() {
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
       <div>
         <h1 className="text-3xl font-bold">Welcome to Ganyu Hub</h1>
-        <p className="mt-2 text-neutral-600">Three quick steps and your profile is live. Clients can&apos;t find a blank profile, so let&apos;s fix that.</p>
+        <p className="mt-2 text-ink/65">Three quick steps and your profile is live. Clients can&apos;t find a blank profile, so let&apos;s fix that.</p>
       </div>
 
       <SavingForm action={completeCreativeOnboarding} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>1. Tell clients who you are</CardTitle>
-            <p className="text-sm text-neutral-500">A one-line headline and a short bio.</p>
+            <p className="text-sm text-ink/55">A one-line headline and a short bio.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
@@ -47,7 +47,7 @@ export default async function CreativeOnboardingPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} readOnly disabled className="bg-neutral-50 text-neutral-500" />
+                <Input id="email" type="email" value={email} readOnly disabled className="bg-raised text-ink/55" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone / WhatsApp</Label>
@@ -76,7 +76,7 @@ export default async function CreativeOnboardingPage() {
         <Card>
           <CardHeader>
             <CardTitle>2. Add one example of your work</CardTitle>
-            <p className="text-sm text-neutral-500">A project, a gig, an event, a set — whatever shows what you do. Even one beats a blank profile. Add more later.</p>
+            <p className="text-sm text-ink/55">A project, a gig, an event, a set — whatever shows what you do. Even one beats a blank profile. Add more later.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
@@ -101,7 +101,7 @@ export default async function CreativeOnboardingPage() {
         <Card>
           <CardHeader>
             <CardTitle>3. Add your first service</CardTitle>
-            <p className="text-sm text-neutral-500">A specific service you offer, with a starting price. You can add more on your rate card later.</p>
+            <p className="text-sm text-ink/55">A specific service you offer, with a starting price. You can add more on your rate card later.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">

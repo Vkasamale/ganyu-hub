@@ -204,7 +204,7 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
               setCategory(e.target.value);
               setCategoryTouched(true);
             }}
-            className="h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm"
+            className="h-10 w-full rounded-md border border-ink/15 bg-white px-3 text-sm"
           >
             <option value="" disabled>
               Choose a category
@@ -236,7 +236,7 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
             placeholder="We are opening a bakery in Zomba. We need a logo for the shopfront, our boxes and Facebook. Warm and homely rather than modern — our customers are families."
-            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
+            className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm"
           />
           <Counter value={brief.length} min={200} max={4000} unit="characters" />
           {/* Item 69: the syntax people already use in WhatsApp, said once.
@@ -263,7 +263,7 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
             value={deliverables}
             onChange={(e) => setDeliverables(e.target.value)}
             placeholder={"- The logo as PNG and PDF\n- A version that works on a dark background\n- The original file so we can edit it later"}
-            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
+            className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm"
           />
           <Counter value={deliverables.length} min={50} max={1500} unit="characters" />
         </Field>

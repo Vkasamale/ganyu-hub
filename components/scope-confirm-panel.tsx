@@ -24,15 +24,15 @@ export function ScopeConfirmPanel({
     <Card className="mt-6 border-amber-200 bg-amber-50/40">
       <CardContent className="p-5">
         <p className="text-sm font-semibold text-amber-900">Scope confirmation</p>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink/65">
           Both sides agree on what's being delivered before work starts. Once both confirm, the job moves to <strong>In progress</strong>.
         </p>
 
         <div className="mt-3 flex flex-wrap gap-3 text-sm">
-          <span className={clientConfirmedAt ? "text-green-700" : "text-neutral-500"}>
+          <span className={clientConfirmedAt ? "text-green-700" : "text-ink/55"}>
             {clientConfirmedAt ? "✓" : "○"} Client confirmed
           </span>
-          <span className={creativeConfirmedAt ? "text-green-700" : "text-neutral-500"}>
+          <span className={creativeConfirmedAt ? "text-green-700" : "text-ink/55"}>
             {creativeConfirmedAt ? "✓" : "○"} Creative confirmed
           </span>
         </div>
@@ -52,17 +52,17 @@ export function ScopeConfirmPanel({
                 rows={4}
                 required
                 placeholder="What's being delivered, by when, for how much. Be specific."
-                className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-ink/10 bg-white px-3 py-2 text-sm"
               />
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-1 text-xs text-ink/55">
                 Editing the summary after the creative confirmed will require them to re-confirm.
               </p>
             </>
           ) : (
             <>
               <label className="block text-sm font-medium">Agreed scope summary</label>
-              <div className="mt-1 whitespace-pre-wrap rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800">
-                {summary || <span className="text-neutral-400">Client hasn't written a summary yet.</span>}
+              <div className="mt-1 whitespace-pre-wrap rounded-md border border-ink/10 bg-white px-3 py-2 text-sm text-ink/90">
+                {summary || <span className="text-ink/45">Client hasn't written a summary yet.</span>}
               </div>
             </>
           )}
@@ -80,7 +80,7 @@ export function ScopeConfirmPanel({
         </SavingForm>
 
         {youConfirmed && !otherConfirmed && (
-          <p className="mt-3 text-xs text-neutral-500">Waiting on the other side to confirm.</p>
+          <p className="mt-3 text-xs text-ink/55">Waiting on the other side to confirm.</p>
         )}
       </CardContent>
     </Card>
