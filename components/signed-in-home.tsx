@@ -8,6 +8,8 @@ import { WelcomeChecklist, type ChecklistStep } from "@/components/welcome-check
 import { PushBanner } from "@/components/push-banner";
 import { getForYouCreatives, getForYouJobs, getRecentlyViewed, getSavedIds } from "@/lib/feed";
 import { clearBrowsingHistory } from "@/app/actions";
+import { creativeGross } from "@/lib/fees";
+import { formatMwk } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
 
 /**
@@ -117,6 +119,39 @@ export async function SignedInHome({ userId }: { userId: string }) {
       .filter((j: any) => j && ACTIVE.includes(j.status));
   }
 
+  // Money first, for a creative. Screen 04's argument, and it is a good one:
+  // the two questions someone opens this page with are "what is being held for
+  // me" and "what has actually landed". Both are facts about their own money,
+  // not a stats surface — the decision at the top of this file rules out vanity
+  // totals, not the money the product exists to move.
+  //
+  // Rendered only when there is something to say. A creative with nothing held
+  // and nothing released gets no tiles at all, per the never-render-a-zero rule.
+  let heldMwk = 0;
+  let heldJobs = 0;
+  let releasedMwk = 0;
+  let releasedJobs = 0;
+  if (!isClient) {
+    const { data: paid } = await supabase
+      .from("proposals")
+      .select("jobs:jobs!proposals_job_id_fkey(id, escrow_status, total_paid_mwk, accepted_bid_mwk)")
+      .eq("creative_id", userId)
+      .eq("status", "accepted");
+    for (const row of (paid || []) as any[]) {
+      const j = row.jobs;
+      if (!j) continue;
+      const amount = j.total_paid_mwk ?? j.accepted_bid_mwk ?? 0;
+      if (!amount) continue;
+      if (j.escrow_status === "payment_held") {
+        heldMwk += creativeGross(amount);
+        heldJobs += 1;
+      } else if (j.escrow_status === "payment_released") {
+        releasedMwk += creativeGross(amount);
+        releasedJobs += 1;
+      }
+    }
+  }
+
   // One head-count. Unread thread notifications ARE unread messages — see
   // lib/thread-previews.ts for why that needs no migration.
   const { count: unreadMessages } = await supabase
@@ -198,6 +233,34 @@ export async function SignedInHome({ userId }: { userId: string }) {
           </em>
         </h1>
       </header>
+
+      {/* The two money facts, before anything else. "Held for you" is the one
+          that answers "is this real" — a creative who can see the client's money
+          already sitting in escrow is being told the job is funded, which is the
+          whole reason escrow exists. Neither tile renders at zero: a creative
+          who has not been paid yet is not shown MWK 0. */}
+      {!isClient && (heldMwk > 0 || releasedMwk > 0) && (
+        <section className="grid gap-3 sm:grid-cols-2">
+          {heldMwk > 0 && (
+            <div className="card-soft p-5">
+              <p className="eyebrow text-ink/55">Held for you in escrow</p>
+              <p className="mt-1.5 text-3xl font-semibold tabular-nums text-ink">{formatMwk(heldMwk)}</p>
+              <p className="mt-1 text-xs text-ink/55">
+                Across {heldJobs} {heldJobs === 1 ? "job" : "jobs"} · released when the client approves
+              </p>
+            </div>
+          )}
+          {releasedMwk > 0 && (
+            <div className="card-soft p-5">
+              <p className="eyebrow text-ink/55">Released to you</p>
+              <p className="mt-1.5 text-3xl font-semibold tabular-nums text-ink">{formatMwk(releasedMwk)}</p>
+              <p className="mt-1 text-xs text-ink/55">
+                {releasedJobs} {releasedJobs === 1 ? "job" : "jobs"} · paid out to your payout method
+              </p>
+            </div>
+          )}
+        </section>
+      )}
 
       {(activeJobs.length > 0 || (unreadMessages ?? 0) > 0 || news.length > 0) && (
         <section className="card-soft p-5">
