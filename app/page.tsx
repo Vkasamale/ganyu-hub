@@ -205,7 +205,7 @@ function score(c: FeaturedCreative): number {
 
 function ProofRow({ gmv, jobsCompleted, creativesLive }: { gmv: number; jobsCompleted: number; creativesLive: number }) {
   return (
-    <section className="border-y border-ink/10 bg-wash/40 py-10">
+    <section className="border-y border-ink/10 bg-band py-10">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <p className="text-xs font-medium uppercase tracking-[0.22em] text-ink/55">Real numbers · Ganyu Hub to date</p>
         <div className="mt-4 grid gap-6 sm:grid-cols-3">

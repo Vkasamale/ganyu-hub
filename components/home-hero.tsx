@@ -30,7 +30,7 @@ const THEME: Record<Mode, {
   cityText: string;
 }> = {
   client: {
-    bg: "hsl(43, 33%, 94%)",
+    bg: "#FFFFFF",
     text: "hsl(0, 14%, 17%)",
     textMuted: "hsla(0, 14%, 17%, 0.70)",
     accent: "hsl(180, 92%, 30%)",
@@ -51,23 +51,23 @@ const THEME: Record<Mode, {
   },
   creative: {
     bg: "#000000",
-    text: "hsl(43, 33%, 94%)",
-    textMuted: "hsla(43, 33%, 94%, 0.70)",
+    text: "#F7F6F3",
+    textMuted: "rgba(247, 246, 243, 0.70)",
     accent: "hsl(180, 60%, 55%)",
     badgeBorder: "rgba(255,255,255,0.15)",
     badgeBg: "rgba(255,255,255,0.05)",
-    badgeText: "hsl(43, 33%, 94%)",
-    primaryBg: "hsl(43, 33%, 94%)",
+    badgeText: "#F7F6F3",
+    primaryBg: "#F7F6F3",
     primaryText: "#000000",
     secondaryBorder: "rgba(255,255,255,0.20)",
-    secondaryText: "hsl(43, 33%, 94%)",
-    searchBorder: "hsla(43, 33%, 94%, 0.30)",
+    secondaryText: "#F7F6F3",
+    searchBorder: "rgba(247, 246, 243, 0.30)",
     searchBg: "rgba(255,255,255,0.05)",
-    searchText: "hsl(43, 33%, 94%)",
+    searchText: "#F7F6F3",
     tabBarBg: "rgba(255,255,255,0.06)",
-    catLinkText: "hsl(43, 33%, 94%)",
+    catLinkText: "#F7F6F3",
     catLinkHover: "hsl(180, 60%, 55%)",
-    cityText: "hsla(43, 33%, 94%, 0.50)",
+    cityText: "rgba(247, 246, 243, 0.50)",
   },
 };
 

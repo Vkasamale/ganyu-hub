@@ -159,7 +159,7 @@ export function SuccessStory() {
   // quote is not.
   if (!s) {
     return (
-      <section className="border-y border-ink/10 bg-wash/40 py-12 md:py-16">
+      <section className="border-y border-ink/10 bg-band py-12 md:py-16">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <p className="eyebrow text-ink/55">How one job went</p>
           <p className="mt-3 max-w-xl text-lg font-medium text-ink/70 md:text-xl">
@@ -175,7 +175,7 @@ export function SuccessStory() {
   }
 
   return (
-    <section className="border-y border-ink/10 bg-wash/40 py-14 md:py-20">
+    <section className="border-y border-ink/10 bg-band py-14 md:py-20">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <p className="eyebrow text-ink/55">How one job went</p>
         <div className="mt-6 grid gap-10 md:grid-cols-[1.4fr_1fr] md:gap-14">
