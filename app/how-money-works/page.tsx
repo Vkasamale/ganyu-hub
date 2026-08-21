@@ -89,7 +89,7 @@ export default async function HowMoneyWorksPage() {
           How the{" "}
           <em
             className="text-stamp"
-            style={{ fontStyle: "italic", fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
+            
           >
             money
           </em>{" "}

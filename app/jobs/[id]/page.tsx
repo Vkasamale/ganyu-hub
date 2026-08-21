@@ -385,7 +385,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             {/* Item 69: markdown text in, sanitised elements out. Existing
                 plain-text briefs render unchanged — line breaks and dashes
                 are already valid markdown. */}
-            <RichText className="break-words font-serif text-lg leading-relaxed text-ink/85 sm:text-xl">
+            <RichText className="break-words text-lg leading-relaxed text-ink/85 sm:text-xl">
               {job.brief}
             </RichText>
 

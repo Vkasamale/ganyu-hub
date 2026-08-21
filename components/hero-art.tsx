@@ -48,11 +48,11 @@ export function HeroArt() {
         />
       </div>
 
-      {/* press-mark watermark — italic Fraunces k in top corner */}
+      {/* press-mark watermark — Fraunces k in top corner */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-2 top-2 select-none font-display text-7xl italic leading-none text-paper md:top-4 md:text-8xl"
-        style={{ fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
+        className="pointer-events-none absolute -right-2 top-2 select-none font-display text-7xl leading-none text-paper md:top-4 md:text-8xl"
+        style={{ }}
       >
         k
       </span>
@@ -70,7 +70,7 @@ export function HeroArt() {
             <textPath href="#badge-arc" startOffset="0">FIND CREATIVES · FIND CREATIVES · </textPath>
           </text>
         </svg>
-        <span className="font-display text-3xl italic text-stamp" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}>
+        <span className="font-display text-3xl text-stamp" style={{ }}>
           →
         </span>
       </a>

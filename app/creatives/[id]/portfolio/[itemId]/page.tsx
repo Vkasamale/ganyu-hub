@@ -171,7 +171,7 @@ export default async function PortfolioItemPage({
                 {item.description}
               </p>
             ) : (
-              <p className="mt-3 text-sm italic text-ink/50">
+              <p className="mt-3 text-sm text-ink/50">
                 No description added yet.
               </p>
             )}

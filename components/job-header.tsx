@@ -1,3 +1,4 @@
+import { MoneyStamp } from "@/components/money-stamp";
 import { formatMwk } from "@/lib/utils";
 import { creativeGross, payoutFee, PAYOUT_RATE, PAYOUT_RATES } from "@/lib/fees";
 import { computeJobStage, type JobEventLite, type JobStageInput } from "@/lib/job-stages";
@@ -28,18 +29,9 @@ export function JobHeader({
   const stage = computeJobStage(job, events);
   const escrow = job.total_paid_mwk ?? job.collection_amount_mwk ?? job.accepted_bid_mwk ?? 0;
   // The label used to be hardcoded "Money in escrow", so a released job still
-  // claimed the client's money was being held (BUG-014). Derive it instead.
-  // Held / released / disputed are three distinct financial states, so they get
-  // three distinct colours — as grey text they read as no change at all.
-  // ponytail: add a key here when partial deposits land ("x deposited").
-  const MONEY_STATE: Record<string, { label: string; tone: string }> = {
-    none: { label: "Not funded yet", tone: "border-ink/25 bg-paper text-ink/60" },
-    payment_pending: { label: "Payment pending", tone: "border-amber-400 bg-amber-50 text-amber-900" },
-    payment_held: { label: "Held in escrow", tone: "border-sky-400 bg-sky-50 text-sky-900" },
-    payment_released: { label: "Released to creative", tone: "border-emerald-500 bg-emerald-50 text-emerald-900" },
-    payment_disputed: { label: "In dispute", tone: "border-red-400 bg-red-50 text-red-900" },
-  };
-  const money = MONEY_STATE[job.escrow_status || "none"] ?? MONEY_STATE.none;
+  // claimed the client's money was being held (BUG-014). Derive it instead —
+  // the five states are five distinct facts and the artwork keeps them so.
+  // ponytail: add a state to MONEY_STATES when partial deposits land.
   const released = job.escrow_status === "payment_released";
   const gross = creativeGross(escrow);
   // Both rails, not the worst of the two. A single pessimistic figure meant a
@@ -59,25 +51,15 @@ export function JobHeader({
       </div>
 
       <div className="mt-4">
-        {/* Stamp sits on the money's baseline, pushed to the card's right margin
-            — it reads as something pressed onto the page rather than a chip
-            stacked above the figure. Double ring + flanking rules is what makes
-            it read as ink; the tilt keeps it from looking machine-placed. */}
+        {/* Stamp sits on the money's line, pushed to the card's right margin —
+            pressed onto the page rather than stacked above the figure as a
+            chip. The artwork carries its own tilt and wear. */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="font-display text-3xl tabular-nums text-ink sm:text-4xl">
             {formatMwk(escrow)}
           </div>
-          <div
-            className={`shrink-0 -rotate-6 rounded-full border-[3px] px-4 py-1.5 ring-2 ring-inset ring-current/20 sm:px-5 sm:py-2 ${money.tone}`}
-          >
-            <span className="flex items-center gap-2">
-              <span aria-hidden className="h-px w-3 bg-current opacity-40 sm:w-4" />
-              <span className="text-xs font-bold uppercase tracking-[0.16em] sm:text-sm">
-                {money.label}
-              </span>
-              <span aria-hidden className="h-px w-3 bg-current opacity-40 sm:w-4" />
-            </span>
-          </div>
+          <MoneyStamp state={job.escrow_status} size="md" className="md:hidden" />
+          <MoneyStamp state={job.escrow_status} size="lg" className="hidden md:block" />
         </div>
         <div className="mt-2 text-sm text-ink/70">
           <div>{released ? "Creative received, after cash-out fee" : "Creative receives (est., after cash-out fee)"}</div>

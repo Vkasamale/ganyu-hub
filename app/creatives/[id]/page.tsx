@@ -275,7 +275,7 @@ export default async function CreativePage({
             <span
               aria-hidden
               className="pointer-events-none absolute bottom-4 right-6 font-display text-4xl font-semibold tracking-tight text-paper/20 md:text-5xl"
-              style={{ fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
+              style={{ }}
             >
               Ganyu Hub
             </span>
@@ -334,7 +334,7 @@ export default async function CreativePage({
                 {/* Item 10: the tagline sits under the headline, not instead of
                     it — headline is the job, tagline is the angle. */}
                 {profile.tagline && (
-                  <p className="mt-1.5 font-serif text-base italic text-ink/60">{profile.tagline}</p>
+                  <p className="mt-1.5 text-base text-ink/60">{profile.tagline}</p>
                 )}
                 <p className="mt-0.5 text-xs text-ink/55">{profile.location || "Malawi"}</p>
               </div>

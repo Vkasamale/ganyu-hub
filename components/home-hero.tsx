@@ -166,8 +166,7 @@ export function HomeHero() {
                 <em
                   className="mt-1 block cursor-default transition-[letter-spacing,transform] duration-300 ease-out hover:tracking-wide hover:-translate-y-0.5"
                   style={{
-                    fontStyle: "italic",
-                    color: t.accent,
+                                        color: t.accent,
                     transition: "color 250ms ease-out, letter-spacing 250ms ease-out, transform 250ms ease-out",
                   }}
                 >

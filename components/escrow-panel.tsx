@@ -10,14 +10,6 @@ import { HoldCountdown } from "@/components/hold-countdown";
 type Role = "client" | "creative";
 type Escrow = "none" | "payment_pending" | "payment_held" | "payment_released" | "payment_disputed";
 
-const LABELS: Record<Escrow, string> = {
-  none: "No payment yet",
-  payment_pending: "Payment pending",
-  payment_held: "Payment held in escrow",
-  payment_released: "Payment released",
-  payment_disputed: "Payment disputed",
-};
-
 const HINTS: Record<Escrow, string> = {
   none: "Pay the agreed amount into escrow to secure the work. You'll be redirected to our secure checkout. Once paid, funds settle and become releasable the next business day.",
   payment_pending: "Waiting for the payment to confirm. This page updates as soon as it clears.",
@@ -97,7 +89,12 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
       <CardContent className="p-5">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-neutral-500">Payment</p>
-          <Badge className="bg-white">{payoutPending ? "Payout processing" : LABELS[escrowStatus]}</Badge>
+          {/* The stamp in the job header already names the money state, and two
+              labels for one fact ("Released" above, "Payment released" here)
+              read as two different facts. The badge survives only for payout
+              processing, which is a step past release that the stamp cannot
+              show. */}
+          {payoutPending && <Badge className="bg-white">Payout processing</Badge>}
         </div>
         <p className="mt-2 text-sm text-neutral-600">
           {payoutPending

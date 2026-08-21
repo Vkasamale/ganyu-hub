@@ -121,8 +121,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <p className="eyebrow">Reminders</p>
           {reminders.length > 0 && (
             <span
-              className="font-display text-xs italic text-stamp-dark"
-              style={{ fontStyle: "italic", fontVariationSettings: '"opsz" 144, "SOFT" 100, "WONK" 1' }}
+              className="font-display text-xs text-stamp-dark"
+              
             >
               {reminders.length}
             </span>
