@@ -4,6 +4,38 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-22 — Porting the twenty screens
+
+Tested by Claude in the preview server as a CREATIVE account (Adam Creative).
+No client account, no physical device, no human eyes on any of it yet.
+
+- ✅ `tsc --noEmit` clean after every change.
+- ✅ **Dashboard at 1440:** two columns measured with `getBoundingClientRect()` —
+  main 628px, rail 340px at x=868. Greeting reads "Good morning, Adam", the
+  availability switch sits beside it, money tiles, "Needs you" cards with stage
+  pill and "Deliver files →", "Proposals sent" with status pills.
+- ✅ **Dashboard at 390:** single column in the screenshot's order, no
+  horizontal overflow (`scrollWidth` equals `innerWidth`).
+- ✅ **Messages list at 390:** full screen — no navbar, no tab bar, no footer.
+  Back arrow, compose "+", title, search, filter chips.
+- ✅ **Thread at 390 and 1440:** date divider, CSS stamp rings behind the
+  stream, teal outgoing bubbles, money events with their amount, job bar with
+  the escrow pill, composer with its own text row on a phone. The fourth info
+  column renders past 1200px.
+- ✅ **Job detail at 1440:** sticky money rail, People on this job, ticked
+  deliverables, "What happened" dated, Delivered files, facts and dispute
+  footer.
+- ✅ **Creative profile at 1440 and 390:** no tab strip, sections stacked, hire
+  card at the head of the 340px rail, pinned "Hire DJ →" bar on the phone.
+- 🕒 **Post a job** — cannot be opened by the test account (creative), and the
+  two new columns are not on the database yet. Untested end to end.
+- 🕒 **"Price sent" in a thread** — the composer control and the card are built,
+  but `messages.offer_*` does not exist on production yet, so sending one has
+  never been run.
+- ⬜ **Every client-side view** — the new dashboard, "What you paid", the
+  released-state job rail, "Leave a review" from the phone bar.
+- ⬜ **Any physical device.**
+
 ## 2026-08-21 — The design port
 
 - ✅ `tsc --noEmit` clean and `npx next build` green.

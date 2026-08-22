@@ -11,16 +11,20 @@ export function MessageAttachment({
   type,
   size,
   mine,
+  delivered,
 }: {
   url: string;
   name: string | null;
   type: string | null;
   size: number | null;
   mine: boolean;
+  /** Screen 08 marks a file that IS the work — "5.1 MB · delivered file" —
+   *  so a draft sent in passing is not mistaken for the delivery. */
+  delivered?: boolean;
 }) {
   const isImage = (type || "").startsWith("image/");
   const label = name || "Attachment";
-  const meta = formatSize(size);
+  const meta = [formatSize(size), delivered ? "delivered file" : null].filter(Boolean).join(" · ");
 
   if (isImage) {
     return (

@@ -150,7 +150,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     const [{ data: jrow }, { data: evs }] = await Promise.all([
       supabase.from("jobs").select("id, title, status, escrow_status, total_paid_mwk, accepted_bid_mwk, deadline").eq("id", thread.job_id).maybeSingle(),
       supabase.from("job_events")
-        .select("id, event_type, note, created_at")
+        .select("id, event_type, note, metadata, created_at")
         .eq("job_id", thread.job_id)
         .order("created_at", { ascending: true }),
     ]);
@@ -212,6 +212,14 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
 
   // Every file that has passed through the thread, newest first. No new query:
   // the messages and their signed URLs are already loaded above.
+  // A file is "the delivery" when the job's own events say a file by that name
+  // was delivered. Nothing else can tell a draft from the thing being paid for.
+  const deliveredNames = new Set(
+    (jobEvents || [])
+      .map((e: any) => e?.metadata?.file_name)
+      .filter((n: any): n is string => typeof n === "string" && n.length > 0),
+  );
+
   const sharedFiles = [...(messages || [])]
     .filter((m: any) => m.attachment_url)
     .reverse()
@@ -300,15 +308,30 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                 {theirLastRead ? `Last read ${timeAgo(theirLastRead)}` : `Started ${timeAgo(thread.created_at)}`}
               </p>
             </div>
-            {latestEvent && (
-              <a
-                href={`#event-${latestEvent.id}`}
-                className="ml-auto shrink-0 rounded-full border border-ink/15 px-3 py-1.5 text-xs text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
-              >
-                <span className="hidden sm:inline">Latest event: </span>
-                {JOB_EVENT_LABELS[latestEvent.event_type as JobEventType] ?? latestEvent.event_type}
-              </a>
-            )}
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              {latestEvent && (
+                <a
+                  href={`#event-${latestEvent.id}`}
+                  className="rounded-full border border-ink/15 px-3 py-1.5 text-xs text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink"
+                >
+                  <span className="hidden sm:inline">Latest event: </span>
+                  {JOB_EVENT_LABELS[latestEvent.event_type as JobEventType] ?? latestEvent.event_type}
+                </a>
+              )}
+              {threadJob && (
+                <Link
+                  href={`/jobs/${threadJob.id}`}
+                  aria-label="Open the job"
+                  title="Open the job"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink/60 transition-colors hover:bg-wash/60 hover:text-ink"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="h-4 w-4">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4M12 8h.01" />
+                  </svg>
+                </Link>
+              )}
+            </div>
           </header>
 
           {/* Screen 07's job bar: what this conversation is about and what the
@@ -487,6 +510,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         type={m.attachment_type}
                         size={m.attachment_size}
                         mine={mine}
+                        delivered={!!m.attachment_name && deliveredNames.has(m.attachment_name)}
                       />
                     )}
                     <p className={`mt-1 text-[10px] ${mine ? "text-paper/70" : "text-ink/50"}`}>
