@@ -199,7 +199,9 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     .toUpperCase();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
+    // Full bleed on a phone — the thread is the screen. The centred, padded
+    // column returns from md up, where the site chrome is back.
+    <div className="mx-auto max-w-6xl md:px-4 md:py-6">
       <div className="messages-shell grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]">
         <aside className="card-soft hidden min-w-0 flex-col overflow-hidden md:flex">
           <div className="border-b border-ink/10 p-4">
@@ -221,6 +223,20 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
 
         <section className="card-soft flex flex-col overflow-hidden">
           <header className="flex items-center gap-3 border-b border-ink/10 px-5 py-4">
+            {/* Screen 07 puts a back arrow at the head of the thread, and on a
+                phone it is now the ONLY way out: the site nav and the tab bar
+                are not rendered on this route. Hidden from md up, where the
+                thread list is sitting right beside this and the nav is back. */}
+            <Link
+              href="/messages"
+              aria-label="Back to messages"
+              className="-ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink/70 transition-colors hover:bg-wash/60 hover:text-ink md:hidden"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <path d="M19 12H5" />
+                <path d="m12 19-7-7 7-7" />
+              </svg>
+            </Link>
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
               {otherInitials}
             </div>

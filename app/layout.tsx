@@ -74,6 +74,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { headers } = await import("next/headers");
   const pathname = (await headers()).get("x-pathname") || "";
   const bareLayout = pathname.startsWith("/j/");
+  // An open thread is a full screen on a phone, not a panel inside the site
+  // chrome. Screen 07 draws it with its own header — back arrow, the other
+  // person, their status — and no site nav or tab bar at all, which is how
+  // every messaging app on the device behaves. Desktop keeps the shell,
+  // because there the rail and the list are the point.
+  const threadView = /^\/messages\/[^/]+$/.test(pathname);
+  const chromeClass = threadView ? "hidden md:block" : undefined;
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-white font-sans text-ink">
@@ -86,19 +93,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             on top: it is founder-set and time-limited, so it outranks a
             standing install prompt. They only ever stack when ANNOUNCEMENT is
             non-null, which is a deliberate choice made in one place. */}
-        {!bareLayout && <AnnouncementBar />}
-        {!bareLayout && <InstallBanner />}
-        {!bareLayout && <Navbar />}
+        {!bareLayout && (
+          <div className={chromeClass}>
+            <AnnouncementBar />
+            <InstallBanner />
+            <Navbar />
+          </div>
+        )}
         <main>{children}</main>
         {/* Items 62 + 63: a way back in, then the reason to trust us — the two
             things the bottom of a page was missing. */}
-        {!bareLayout && <PreFooter />}
-        {!bareLayout && <Footer />}
+        {!bareLayout && (
+          <div className={chromeClass}>
+            <PreFooter />
+            <Footer />
+          </div>
+        )}
         {/* Phase 7 item 56: the tab bar is fixed, so the last thing on every
             page would sit underneath it. Height of the bar plus the iOS home
             indicator; collapses to zero from `md` up, where no bar renders. */}
-        {!bareLayout && (
-          <div aria-hidden className="h-[calc(3.5rem+env(safe-area-inset-bottom))] md:hidden" />
+        {!bareLayout && !threadView && (
+          <div aria-hidden className="h-[calc(var(--tabbar-height)+var(--safe-bottom))] md:hidden" />
         )}
         <Toaster position="bottom-right" richColors closeButton />
       </body>

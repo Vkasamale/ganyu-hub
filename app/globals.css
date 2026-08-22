@@ -177,36 +177,29 @@ p, li, .text-pretty {
   }
 }
 
-/* The messages shell is a fixed-height flexbox, so its bottom edge — the
-   composer — has to clear the mobile tab bar itself; the page-level spacer in
-   layout.tsx sits after the shell and cannot help. 3.5rem of bar, plus the
-   safe-area inset for the iPhone home indicator, plus the header. dvh rather
-   than vh so a phone browser's collapsing address bar does not push the
-   composer under the fold.
+/* Screen 07: on a phone an open thread is the whole screen. The site chrome is
+   not rendered there at all — see the threadView switch in app/layout.tsx — so
+   the shell is simply the viewport.
 
-   The bottom clearance is the design system's --tabbar-clearance (3.5rem plus
-   the safe-area inset), not a hand-measured number.
+   This replaces two rounds of arithmetic against the header. Subtracting a
+   fixed height could never be right: the beta banner is dismissible, so the
+   shell started at 138px with it and 89px without, and both times the composer
+   ended up under the tab bar. There is nothing to subtract now. dvh so a
+   collapsing address bar cannot reopen it.
 
-   The 8.75rem above it is the chrome over the shell, and it is deliberately
-   the WORST case. Measured at 390: the shell starts at 138px with the beta
-   banner showing and at 89px once it is dismissed. The old 7rem (112px) was
-   neither — a guess that happened to nearly work, and with the banner present
-   it put the composer 23px underneath the tab bar.
-
-   Because the banner is dismissible the offset is genuinely variable, and a
-   single subtraction is only safe if it assumes the taller header. The cost is
-   54px of dead space under the composer once the banner is gone. That is ugly
-   and it is not nothing, but it is the right way round: too much space is a
-   blemish, too little hides the send button.
-
-   The real fix is a flex column that fills the space instead of arithmetic
-   against a header whose height is not constant. That is a layout change to
-   app/layout.tsx and has not been done. */
+   The thread LIST at /messages keeps the chrome, so it keeps a subtraction —
+   but it scrolls the page rather than pinning a composer to the bottom edge,
+   so being a little short there costs nothing. */
 .messages-shell {
-  height: calc(100dvh - 8.75rem - var(--tabbar-clearance));
+  height: 100dvh;
+}
+.messages-list-shell {
+  min-height: calc(100dvh - 8.75rem - var(--tabbar-clearance));
 }
 @media (min-width: 768px) {
-  .messages-shell {
+  .messages-shell,
+  .messages-list-shell {
     height: calc(100vh - 7rem);
+    min-height: 0;
   }
 }
