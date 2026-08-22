@@ -535,7 +535,14 @@ export default async function CreativePage({
 
           {(portfolioCount > 0 || isOwner) && (
             <section id="section-portfolio" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("portfolio")}>
-              <p className="eyebrow">Portfolio</p>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="eyebrow">Work</p>
+                {portfolioCount > 0 && (
+                  <span className="text-xs text-ink/55">
+                    {portfolioCount} piece{portfolioCount === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(portfolio || []).map((p) => {
                   const extra = Array.isArray(p.images) ? p.images.length : 0;
@@ -555,7 +562,7 @@ export default async function CreativePage({
                           )}
                         </div>
                       )}
-                      <div className="p-4">
+                      <div className="border-t border-ink/10 bg-wash/40 p-4">
                         <p className="font-medium text-ink group-hover:underline">{p.title}</p>
                         {p.description && <p className="mt-1 line-clamp-3 text-xs text-ink/65">{p.description}</p>}
                         <CaseStudyFacts item={p} />
@@ -563,9 +570,12 @@ export default async function CreativePage({
                     </Link>
                   );
                 })}
-                {portfolioCount === 0 && isOwner && (
-                  <Link href="/dashboard/portfolio" className="rounded-lg border border-dashed border-ink/25 p-6 text-center text-sm text-ink/60 hover:border-ink/45 hover:text-ink">
-                    + Add your first portfolio item
+                {/* Screen 03 leaves an empty slot at the end of the owner's
+                    grid, not only on an empty profile. It is a link to the
+                    portfolio editor, not a drop target: nothing here uploads. */}
+                {isOwner && (
+                  <Link href="/dashboard/portfolio" className="flex min-h-[7rem] items-center justify-center rounded-lg border border-dashed border-ink/25 p-6 text-center text-sm text-ink/60 hover:border-ink/45 hover:text-ink">
+                    {portfolioCount === 0 ? "+ Add your first portfolio item" : "+ Add a piece"}
                   </Link>
                 )}
               </div>
