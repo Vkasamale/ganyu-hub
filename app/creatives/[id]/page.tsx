@@ -455,6 +455,41 @@ export default async function CreativePage({
             </div>
           )}
 
+          {/* Screen 03 on a phone: the money column has fallen to the foot of
+              the page, so the two facts a visitor decides on come up here as
+              tiles. Desktop has them in the rail and does not repeat them. */}
+          {!isOwner && (services?.length || replyMins != null || turnaround) && (
+            <div className="mt-5 grid grid-cols-2 gap-3 md:hidden">
+              {!!services?.length && (
+                <div className="rounded-lg border border-ink/10 p-3">
+                  <p className="eyebrow text-ink/55">Starts from</p>
+                  <p className="mt-1 font-display text-lg tabular-nums text-ink">
+                    {formatMwk(services[0].price_mwk)}
+                  </p>
+                </div>
+              )}
+              {replyMins != null ? (
+                <div className="rounded-lg border border-ink/10 p-3">
+                  <p className="eyebrow text-ink/55">Replies in</p>
+                  <p className="mt-1 text-sm font-medium text-ink">{formatReplyTime(replyMins)}</p>
+                </div>
+              ) : turnaround ? (
+                <div className="rounded-lg border border-ink/10 p-3">
+                  <p className="eyebrow text-ink/55">Turnaround</p>
+                  <p className="mt-1 text-sm font-medium text-ink">{turnaround}</p>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* On a phone the reviews are a long way down; on desktop they are
+              one scroll away and the link would be noise. */}
+          {reviewCount > 0 && (
+            <a href="#section-reviews" className="mt-3 inline-block text-sm text-stamp-dark underline underline-offset-4 md:hidden">
+              All {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+            </a>
+          )}
+
           {(profile.categories || []).length > 0 && (
             <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {(profile.categories || []).map((c: string) => (
