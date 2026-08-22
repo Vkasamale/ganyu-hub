@@ -4,6 +4,38 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-22 — The slow pass, tested on a real client account
+
+Tested by Claude in the preview server. Unlike every earlier entry, this one
+was run **signed in as a CLIENT** (EQ Admin Client) — the founder signed in
+after the local Turnstile block was cleared — so the client-side money views
+were seen rather than reasoned about.
+
+- ✅ `tsc --noEmit` clean after every change; `next build` clean before the push.
+- ✅ **Creative profile at 1440:** identity flat, money column level with the
+  name (aside y=169 against h1 y=241), sections carry no card background, no
+  element wider than its box.
+- ✅ **Creative profile at 390:** single column, "Starts from / Turnaround"
+  tiles under the chips, no overflow. Tiles confirmed `display:none` at 1188.
+- ✅ **Reviews header** reads "5.0 average across 1"; the reviewer's location
+  shows under their name; the duplicate date line is gone.
+- ✅ **Job detail as the client:** "What you paid" and "People on this job"
+  measured side by side (x=26 and x=408, 366px each); the money column is one
+  card; the brief renders at 16px.
+- ✅ **Dashboard as the client:** "CLIENT WORKSPACE" first, flat figures,
+  compact "Needs you" in the rail under Messages, active-jobs titles wrapping
+  over two lines. Overflow scan returns an empty list where it previously
+  named five elements.
+- 🕒 **"Replies in" on a profile** — never rendered in testing: no account has
+  three replies on record. The formatter is the one `/clients/[id]` already
+  uses, but the row itself has not been seen with data.
+- 🕒 **"Price sent" in a thread** — the columns now exist in production, but
+  sending one has still never been run.
+- ⬜ **Creative-side job detail** since the money column was merged into one
+  card. `bare` defaults to false and that call site is untouched, but it was
+  not opened as a creative.
+- ⬜ **Any physical device.**
+
 ## 2026-08-22 — Porting the twenty screens
 
 Tested by Claude in the preview server as a CREATIVE account (Adam Creative).

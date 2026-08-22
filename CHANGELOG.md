@@ -3,6 +3,39 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-22 — The screens, read one at a time
+
+**The creative profile is not a card any more.** Screen 03 opens flat: the
+name, then "DJ · Malawi · Joined August 2026" on one line, the verified badge
+beside the name, the score, the description with no "About" over it, and what
+they do as bare chips with no "Skills" over it. The money column now starts
+level with the name instead of below a full-width band — starts-from price,
+the escrow sentence, Hire, Message first, then availability, how fast they
+reply and their typical turnaround. Sections below are headings on white
+divided by hairlines. The starting price is stated once, in the money column.
+
+"Replies in" is the median reply time already defined for clients, reused
+rather than redefined, and hidden below three replies. "Typical turnaround" is
+the range of delivery times across their services. On a phone both come up as
+tiles under the name, since the money column has fallen to the foot of the
+page.
+
+**The job page pairs its receipts.** "What you paid" moved out of the money
+column to sit beside "People on this job" under the title — it is history, and
+the column is for what happens next. The three cards in that column are one
+card now, divided by rules. The brief is no longer boxed or collapsible, and
+its text dropped a step: it had been the largest running text on the page.
+
+**The dashboard stops repeating the home page.** "Client workspace" is the
+first line. "Your numbers" as a heading is gone and its figures are flat.
+"Needs you" and "Since you were last here" left the body — both already live
+on `/` — and "Needs you" returns in the rail, compact, under Messages.
+
+**Wrapping.** The active-jobs table held a 480px floor, which is why long job
+titles forced a horizontal scroll instead of wrapping. It sets its own column
+widths now, drops the empty client column for a client reading their own jobs,
+and nothing on the dashboard overflows its box at 1188px.
+
 ## 2026-08-22 — The dashboard is the dashboard, and messaging is the screen
 
 **The designed dashboard moved to `/dashboard`, where the screenshots said it
