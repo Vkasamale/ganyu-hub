@@ -51,7 +51,7 @@ function greeting(): string {
  * thing, so the same status reads differently depending on who is looking —
  * "submitted" is a to-do for the client and a please-wait for the creative.
  */
-function nextStep(status: string, isClient: boolean): { label: string; onYou: boolean } {
+export function nextStep(status: string, isClient: boolean): { label: string; onYou: boolean } {
   switch (status) {
     case "scope_pending":
       return { label: "Confirm the scope", onYou: true };
@@ -73,7 +73,7 @@ function nextStep(status: string, isClient: boolean): { label: string; onYou: bo
  * "In progress · Deliver files →" and "Delivered · Nudge the client" — the
  * state and the move, never one without the other.
  */
-function jobStage(status: string, isClient: boolean): {
+export function jobStage(status: string, isClient: boolean): {
   pill: string;
   pillTone: "live" | "quiet";
   action: string;
@@ -102,7 +102,7 @@ function jobStage(status: string, isClient: boolean): {
 }
 
 /** "due 9 September". Blank when there is no deadline — not "due —". */
-function dueLabel(date?: string | null): string | null {
+export function dueLabel(date?: string | null): string | null {
   if (!date) return null;
   const d = new Date(date);
   if (isNaN(d.getTime())) return null;
@@ -453,136 +453,13 @@ export async function DashboardHome({ userId }: { userId: string }) {
         </section>
       )}
 
-      {((unreadMessages ?? 0) > 0 || news.length > 0) && (
-        <section className="card-soft p-5">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="eyebrow text-ink/55">Since you were last here</p>
-            {(unreadMessages ?? 0) > 0 && (
-              <Link
-                href="/messages"
-                className="text-sm font-medium text-brand-dark hover:underline"
-              >
-                {unreadMessages} unread message{unreadMessages === 1 ? "" : "s"}
-              </Link>
-            )}
-          </div>
+      {/* "Since you were last here" now lives on the home page only. The
+          dashboard is the workspace; the news feed was the same list twice
+          for anyone who had just come through `/`. */}
 
-          {news.length > 0 && (
-            <ul className="mt-3 space-y-2">
-              {news.map((n: any) => (
-                <li key={n.id}>
-                  <Link
-                    href={n.link || "/"}
-                    className="group flex items-start gap-2.5 rounded-md py-1 text-sm hover:bg-wash/50"
-                  >
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
-                    <span className="min-w-0">
-                      <span className="font-medium text-ink group-hover:underline">{n.title}</span>
-                      {n.body && <span className="text-ink/65"> — {n.body}</span>}
-                      <span className="ml-1 whitespace-nowrap text-xs text-ink/45">
-                        {sinceLabel(n.created_at)}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-
-        </section>
-      )}
-
-      {/* Screen 04's "Needs you": each live job as a card carrying its stage,
-          what is held for it, and the one button that moves it on. Ordered so
-          the jobs waiting on you sit above the ones that can wait. */}
-      {activeJobs.length > 0 && (
-        <section>
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-display text-xl">Needs you</h2>
-            <p className="text-xs text-ink/50">
-              {activeJobs.length} {activeJobs.length === 1 ? "job" : "jobs"}
-            </p>
-          </div>
-          <ul className="mt-3 space-y-3">
-            {[...activeJobs]
-              .sort(
-                (a, b) =>
-                  Number(nextStep(b.status, isClient).onYou) -
-                  Number(nextStep(a.status, isClient).onYou),
-              )
-              .map((j) => {
-                const stage = jobStage(j.status, isClient);
-                const onYou = nextStep(j.status, isClient).onYou || stage.primary;
-                const amount = j.total_paid_mwk ?? j.accepted_bid_mwk ?? 0;
-                const held =
-                  j.escrow_status === "payment_held" && amount
-                    ? isClient
-                      ? amount
-                      : creativeGross(amount)
-                    : 0;
-                const due = dueLabel(j.deadline);
-                return (
-                  <li
-                    key={j.id}
-                    className={
-                      "card-soft p-4 " + (onYou ? "border-stamp/30 bg-stamp/[0.04]" : "")
-                    }
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <Link
-                        href={`/jobs/${j.id}`}
-                        className="min-w-0 font-medium text-ink hover:underline"
-                      >
-                        {j.title}
-                      </Link>
-                      <span
-                        className={
-                          "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium " +
-                          (stage.pillTone === "live"
-                            ? "bg-stamp text-paper"
-                            : "bg-ink/[0.07] text-ink/70")
-                        }
-                      >
-                        {stage.pill}
-                      </span>
-                    </div>
-                    {(j.counterparty || due) && (
-                      <p className="mt-1 text-xs text-ink/55">
-                        {[j.counterparty, due].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                      {held > 0 && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-wash px-3 py-1 text-xs font-medium text-ink/75">
-                          <span aria-hidden>💸</span>
-                          {formatMwk(held)} held
-                        </span>
-                      )}
-                      <Link
-                        href={`/jobs/${j.id}`}
-                        className={
-                          stage.primary
-                            ? "rounded-lg bg-ink px-3.5 py-2 text-xs font-medium text-paper hover:bg-ink/90"
-                            : "text-xs font-medium text-stamp-dark underline decoration-stamp/40 underline-offset-4"
-                        }
-                      >
-                        {stage.action} {stage.primary ? "→" : ""}
-                      </Link>
-                      {stage.primary && (
-                        <Link
-                          href={`/jobs/${j.id}`}
-                          className="text-xs text-ink/55 underline decoration-ink/20 underline-offset-4 hover:text-ink"
-                        >
-                          Open the job
-                        </Link>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-          </ul>
-        </section>
-      )}
+      {/* "Needs you" moved to the rail beside this column, in its compact
+          form, and to the home page in full. Two copies of the same list on
+          one screen was the reason the page never ended. */}
 
       {/* Screen 04's "Proposals sent": what you bid, when, and where it stands.
           A creative's other half of the working day — the jobs above are the

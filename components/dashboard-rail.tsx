@@ -4,6 +4,7 @@ import { getForYouJobs } from "@/lib/feed";
 import { checkProfileComplete } from "@/lib/profile-complete";
 import { withPreviews, byRecentActivity, unreadByThread } from "@/lib/thread-previews";
 import { formatMwk } from "@/lib/utils";
+import { jobStage, nextStep, dueLabel } from "@/components/dashboard-home";
 
 /**
  * Screen 04's rail, beside the working day: the three most recent
@@ -60,6 +61,33 @@ export async function DashboardRail({ userId }: { userId: string }) {
   );
   const unreadTotal = Array.from(unread.values()).reduce((n, c) => n + c, 0);
 
+  // "Needs you", compact. The full cards live on the home page; here it is a
+  // list of what is waiting and one word for what stage it is at, ordered so
+  // the jobs waiting on THIS person sit at the top.
+  const ACTIVE = ["scope_pending", "in_progress", "submitted", "revision_requested"];
+  const JOB_COLS = "id, title, status, deadline, escrow_status, total_paid_mwk, accepted_bid_mwk";
+  let activeJobs: any[] = [];
+  if (isClient) {
+    const { data } = await supabase
+      .from("jobs")
+      .select(JOB_COLS)
+      .eq("client_id", userId)
+      .in("status", ACTIVE)
+      .order("created_at", { ascending: false });
+    activeJobs = data || [];
+  } else {
+    const { data } = await supabase
+      .from("proposals")
+      .select(`jobs:jobs!proposals_job_id_fkey(${JOB_COLS})`)
+      .eq("creative_id", userId)
+      .eq("status", "accepted");
+    activeJobs = (data || []).map((r: any) => r.jobs).filter((j: any) => j && ACTIVE.includes(j.status));
+  }
+  activeJobs.sort(
+    (a: any, b: any) =>
+      Number(nextStep(b.status, isClient).onYou) - Number(nextStep(a.status, isClient).onYou),
+  );
+
   const feedJobs = !isClient ? await getForYouJobs(supabase as any, userId, 3) : [];
 
   // Profile completeness, from the same check that decides whether a creative
@@ -81,7 +109,7 @@ export async function DashboardRail({ userId }: { userId: string }) {
     }
   }
 
-  if (threads.length === 0 && feedJobs.length === 0 && !progress) return null;
+  if (threads.length === 0 && feedJobs.length === 0 && !progress && activeJobs.length === 0) return null;
 
   return (
     <div className="space-y-4">
@@ -136,6 +164,54 @@ export async function DashboardRail({ userId }: { userId: string }) {
           >
             Open messages
           </Link>
+        </section>
+      )}
+
+      {activeJobs.length > 0 && (
+        <section className="card-soft p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-medium text-ink">Needs you</p>
+            <span className="text-xs text-ink/50">
+              {activeJobs.length} {activeJobs.length === 1 ? "job" : "jobs"}
+            </span>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {activeJobs.slice(0, 4).map((j: any) => {
+              const stage = jobStage(j.status, isClient);
+              const onYou = nextStep(j.status, isClient).onYou;
+              const due = dueLabel(j.deadline);
+              return (
+                <li key={j.id}>
+                  <Link
+                    href={`/jobs/${j.id}`}
+                    className="flex items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-wash/60"
+                  >
+                    <span
+                      aria-hidden
+                      className={
+                        "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full " +
+                        (onYou ? "bg-stamp" : "bg-ink/20")
+                      }
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-ink">{j.title}</span>
+                      <span className="block truncate text-xs text-ink/55">
+                        {[stage.pill, due].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          {activeJobs.length > 4 && (
+            <Link
+              href="/dashboard/jobs"
+              className="mt-3 inline-block text-xs text-stamp-dark underline underline-offset-4"
+            >
+              All {activeJobs.length} jobs
+            </Link>
+          )}
         </section>
       )}
 
