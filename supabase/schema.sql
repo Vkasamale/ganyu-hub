@@ -1132,3 +1132,18 @@ alter table proposals add column if not exists source_files boolean;
 alter table proposals add column if not exists addons jsonb not null default '[]'::jsonb;
 alter table proposals add column if not exists ai_disclosure text;
 alter table services add column if not exists faqs jsonb not null default '[]'::jsonb;
+
+-- Post-a-job, ported to the Claude Design screens: step 1 asks for the skills
+-- the client is looking for, step 2 asks where the work is. Both are new to
+-- the jobs table; both are optional.
+alter table jobs add column if not exists skills text[];
+alter table jobs add column if not exists location text;
+
+-- Screen 08's "Price sent": a message can carry a price for a piece of work
+-- that is not a job yet — the delivery van, the second colour, the extra hour.
+-- Three nullable columns on the message rather than an offers table: an offer
+-- IS a message, it is read in the thread, and it has no lifecycle of its own
+-- beyond expiring.
+alter table messages add column if not exists offer_mwk integer;
+alter table messages add column if not exists offer_note text;
+alter table messages add column if not exists offer_valid_days integer;

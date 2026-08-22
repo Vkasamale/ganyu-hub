@@ -26,6 +26,8 @@ export function SellerSheet({
   rating,
   actionHref,
   actionLabel,
+  hireHref,
+  hireLabel,
   children,
 }: {
   name: string;
@@ -33,6 +35,9 @@ export function SellerSheet({
   rating: { avg: number; count: number } | null;
   actionHref: string;
   actionLabel: string;
+  /** The primary tap on the phone bar. Falls back to the sheet's own action. */
+  hireHref?: string;
+  hireLabel?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -72,24 +77,25 @@ export function SellerSheet({
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-paper/95 pb-[calc(env(safe-area-inset-bottom)+3.5rem)] backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/10 bg-paper/95 px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+3.5rem)] backdrop-blur md:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-expanded={open}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+          aria-label={`Details about ${name}`}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 text-ink/70"
         >
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-medium text-ink">{name}</span>
-            <span className="block text-xs text-ink/60">
-              {fromPrice ? `From ${fromPrice}` : "Prices on request"}
-              {rating && ` · ${rating.avg.toFixed(1)}★ (${rating.count})`}
-            </span>
-          </span>
-          <span className="shrink-0 rounded-lg bg-ink px-4 py-2 text-xs font-medium text-paper">
-            Details
-          </span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
         </button>
+        <a
+          href={hireHref || actionHref}
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-stamp px-5 py-3 text-sm font-medium text-paper"
+        >
+          <span className="truncate">{hireLabel || actionLabel}</span>
+          <span aria-hidden>&rarr;</span>
+        </a>
       </div>
     </>
   );

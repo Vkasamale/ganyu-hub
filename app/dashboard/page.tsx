@@ -6,6 +6,7 @@ import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { CountUp } from "@/components/animated";
 import { formatMwk } from "@/lib/utils";
 import { getReleasedSpend } from "@/lib/money";
+import { DashboardHome } from "@/components/dashboard-home";
 
 type Role = "client" | "creative" | "agency";
 
@@ -155,27 +156,26 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="eyebrow">{role} workspace</p>
-        <h1 className="mt-2 font-display text-3xl md:text-4xl">Your numbers</h1>
-        <p className="mt-2 max-w-xl text-sm text-ink/65">
-          How your work is going. The day-to-day — what to do next, jobs and creatives worth a
-          look — lives on{" "}
-          <Link href="/" className="text-stamp-dark underline underline-offset-4">
-            your home page
-          </Link>
-          .
-        </p>
-      </header>
+      {/* Screen 04 IS this route: the working day — money held and released,
+          the jobs that need you, the proposals still out, and the rail. The
+          numbers that used to open this page follow underneath, where someone
+          who came to study them will still find them. */}
+      {/* The workspace names itself first — it is the label for everything
+          under it, greeting included. */}
+      <p className="eyebrow">{role} workspace</p>
 
-      <section className="grid grid-cols-2 gap-5 md:grid-cols-4">
+      <DashboardHome userId={user.id} />
+
+      {/* No "Your numbers" heading: the numbers are plainly numbers, and the
+          rule above them already says a new section has started. */}
+      <section className="grid grid-cols-2 gap-5 border-t border-ink/10 pt-8 md:grid-cols-4">
         {stats.map((s) => {
           const n = parseInt(String(s.value).replace(/[^\d]/g, ""), 10);
           const canCount = !isNaN(n) && n > 0;
           return (
-            <div key={s.label} className="card-soft p-6">
+            <div key={s.label} className="min-w-0">
               <p className="text-xs uppercase tracking-wider text-ink/55">{s.label}</p>
-              <p className={`mt-2 font-display text-2xl text-ink ${s.mono ? "tabular-nums" : ""}`}>
+              <p className={`mt-2 break-words font-display text-2xl text-ink ${s.mono ? "tabular-nums" : ""}`}>
                 {canCount ? <CountUp value={n} format={s.mono ? "mwk" : "number"} /> : s.value}
               </p>
             </div>
@@ -228,10 +228,12 @@ export default async function DashboardPage() {
       )}
 
       <section className="grid gap-5 md:grid-cols-[1.5fr_1fr]">
-        <div className="card-soft p-7">
-          <div className="flex items-baseline justify-between">
+        <div className="card-soft min-w-0 p-7">
+          {/* flex-wrap, or the title and the total fight over one line at the
+              width this column actually gets. */}
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <p className="font-display text-lg">{isClient ? "Released, last 6 months" : "Earned, last 6 months"}</p>
-            <p className="font-mono text-sm tabular-nums text-ink/70">
+            <p className="shrink-0 font-mono text-sm tabular-nums text-ink/70">
               {(() => {
                 const total = isClient ? releasedSpend6mo : months.reduce((s, m) => s + m.value, 0);
                 return total ? `MWK ${total.toLocaleString()}` : "—";
@@ -242,17 +244,19 @@ export default async function DashboardPage() {
             <PeriodBarChart data={months} format="mwk" />
           </div>
         </div>
-        <div className="card-soft p-7">
+        <div className="card-soft min-w-0 p-7">
           <p className="font-display text-lg">{isClient ? "Escrow status" : "Proposal outcomes"}</p>
-          <div className="mt-4 flex items-center gap-5">
-            <div className="h-40 w-40 shrink-0">
+          {/* Wraps rather than pushing the legend off the card: this column is
+              narrow once the sidebar and the rail have taken their share. */}
+          <div className="mt-4 flex flex-wrap items-center gap-5">
+            <div className="h-40 w-40 max-w-full shrink-0">
               <OutcomeDonutChart
                 data={donut.slices.map((s) => ({ label: s.label, value: s.value, color: s.color }))}
                 centerValue={donut.center}
                 centerLabel={donut.centerLabel}
               />
             </div>
-            <ul className="flex-1 space-y-1.5 text-xs">
+            <ul className="min-w-[7rem] flex-1 space-y-1.5 text-xs">
               {donut.slices.map((s) => (
                 <li key={s.label} className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2">
@@ -283,21 +287,24 @@ export default async function DashboardPage() {
             .
           </p>
         ) : (
-          <div className="overflow-x-auto">
-          <table className="w-full min-w-[480px] text-sm">
+          <div>
+          <table className="w-full table-fixed text-sm">
             <thead>
+              {/* Widths are set here, not left to the browser: table-fixed with
+                  four equal columns squeezed a job title into a ribbon. A
+                  client's own jobs have no counterparty column at all. */}
               <tr className="text-left text-xs uppercase tracking-wider text-ink/55">
-                <th className="px-6 py-3 font-medium">Job</th>
-                <th className="px-6 py-3 font-medium">{isClient ? "" : "Client"}</th>
-                <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium" />
+                <th className={"px-6 py-3 font-medium " + (isClient ? "w-[58%]" : "w-[38%]")}>Job</th>
+                {!isClient && <th className="w-[22%] px-6 py-3 font-medium">Client</th>}
+                <th className="w-[25%] px-6 py-3 font-medium">Status</th>
+                <th className="w-[17%] px-6 py-3 font-medium" />
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/[0.06]">
               {projects.map((p) => (
                 <tr key={p.id}>
-                  <td className="px-6 py-4 font-medium">{p.title}</td>
-                  <td className="px-6 py-4 text-ink/70">{isClient ? "" : p.counterparty}</td>
+                  <td className="break-words px-6 py-4 font-medium">{p.title}</td>
+                  {!isClient && <td className="break-words px-6 py-4 text-ink/70">{p.counterparty}</td>}
                   <td className="px-6 py-4"><StatusBadge status={p.status} /></td>
                   <td className="px-6 py-4 text-right">
                     <Link href={`/jobs/${p.id}`} className="text-xs text-stamp-dark underline underline-offset-4 hover:text-stamp-dark">
@@ -327,5 +334,5 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: { bg: "bg-ink/10", fg: "text-ink/55", label: "Cancelled" },
   };
   const s = map[status] || map.open;
-  return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${s.bg} ${s.fg}`}>{s.label}</span>;
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${s.bg} ${s.fg}`}>{s.label}</span>;
 }

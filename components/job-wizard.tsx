@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Pencil } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/money-input";
+import { TagInput } from "@/components/tag-input";
+import { PricingExplainer } from "@/components/pricing-explainer";
 import { SubmitButton } from "@/components/saving-form";
 import { CATEGORIES } from "@/lib/types";
 import { inferCategory } from "@/lib/infer-category";
@@ -11,24 +13,23 @@ import { RichText } from "@/components/rich-text";
 import { formatMwk } from "@/lib/utils";
 
 /**
- * Phase 8 items 64-68 (§I1-§I6) — posting a job in three steps.
+ * Posting a job in three steps, ported to the Claude Design screens
+ * (`pwa job 3.png`, `PWA job 2.png`, `PWA Job 4.png`).
  *
- * It was one page of eight fields, two of which silently demanded 200 and 50
- * characters before they would submit. §I1's complaint is that a wall of
- * inputs reads as an exam, and the people we most need to post — a shop owner
- * who has never commissioned design — are exactly the ones who abandon it.
+ *  - **What you need** — title, category, describe the work, skills.
+ *  - **Budget & deadline** — budget, deadline, where the work is, and the
+ *    money explainer as a collapsed panel.
+ *  - **Review** — the job as one card, then the line that answers the only
+ *    question that stops people posting: nothing leaves your account yet.
  *
- *  - **Three steps, not six (§I1).** Need → Deliver → Budget.
- *  - **A pencil on completed steps, never a lock (§I6).** Any finished step is
- *    clickable. Locking someone out of step 1 because they reached step 3
- *    treats a form like a queue at a bank.
- *  - **Field pattern (§I2):** heading, one plain line under it, the input,
- *    then a counter stating BOTH ends — "40 more characters needed" while
- *    short, "220 / 2000" once satisfied. The old form had a minimum you could
- *    only discover by failing.
- *  - **Reassurance (§I5)** kept permanently in view, because "is this final?"
- *    is the unasked question that stops people typing.
- *  - **Preview (§I1)** before posting: the job as a creative will read it.
+ * The rail of clickable step buttons is gone. The design heads each step with
+ * "STEP n OF 3", the step name, and a three-segment bar — the bar is the
+ * progress, and Back is the way backwards.
+ *
+ * `deliverables` stays on step 1 under the description because the server
+ * action requires 50+ characters of it. `revisions_included` and `format_spec`
+ * are not in the design and are no longer asked for; both columns are
+ * nullable and postJob already handles their absence.
  *
  * ponytail: ONE native form, steps hidden with `hidden`. Hidden inputs still
  * submit, so there is no cross-step state to marshal and the server action is
@@ -37,9 +38,10 @@ import { formatMwk } from "@/lib/utils";
 
 const DRAFT_KEY = "gh_job_draft_v1";
 
+const STEPS = ["What you need", "Budget & deadline", "Review"];
+
 export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
   const [step, setStep] = useState(0);
-  const [furthest, setFurthest] = useState(0);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState(defaultCategory || "");
   const [categoryTouched, setCategoryTouched] = useState(false);
@@ -48,12 +50,12 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
   const [budget, setBudget] = useState("");
   const [deadline, setDeadline] = useState("");
   const [restored, setRestored] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const guess = inferCategory(title);
   const effectiveCategory = categoryTouched ? category : category || guess || "";
 
-  // §I5 as mechanism rather than copy: leaving does not lose the work.
+  // Leaving does not lose the work.
   // ponytail: localStorage, not a drafts table. `job_status` is a Postgres
   // enum with no 'draft' value, so persisting server-side means a migration
   // plus a lifecycle (who deletes drafts? do they expire?) for something that
@@ -110,16 +112,12 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
   function next() {
     if (!stepIsValid()) return;
     saveDraft();
-    const n = Math.min(step + 1, 2);
-    setStep(n);
-    setFurthest((f) => Math.max(f, n));
+    setStep((s) => Math.min(s + 1, 2));
   }
-
-  const STEPS = ["What you need", "What you'll get", "Budget"];
 
   return (
     <div
-      ref={formRef as unknown as React.RefObject<HTMLDivElement>}
+      ref={formRef}
       className="space-y-6"
       onSubmitCapture={() => {
         try {
@@ -127,42 +125,22 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
         } catch {}
       }}
     >
-      {/* Step rail. Completed steps carry a pencil and stay clickable (§I6). */}
-      <ol className="flex items-center gap-2">
-        {STEPS.map((label, i) => {
-          const done = i < furthest || i < step;
-          const current = i === step;
-          const reachable = i <= furthest;
-          return (
-            <li key={label} className="flex flex-1 items-center gap-2">
-              <button
-                type="button"
-                disabled={!reachable}
-                onClick={() => reachable && setStep(i)}
-                className={
-                  "flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors " +
-                  (current
-                    ? "border-brand bg-brand/[0.06] font-medium text-ink"
-                    : reachable
-                      ? "border-ink/15 text-ink/70 hover:border-ink/30"
-                      : "border-ink/10 text-ink/35")
-                }
-              >
-                <span
-                  className={
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold " +
-                    (done ? "bg-brand text-paper" : current ? "bg-ink text-paper" : "bg-ink/10 text-ink/50")
-                  }
-                >
-                  {done ? <Check className="h-3 w-3" /> : i + 1}
-                </span>
-                <span className="truncate">{label}</span>
-                {done && !current && <Pencil className="ml-auto h-3.5 w-3.5 shrink-0 text-ink/35" />}
-              </button>
+      {/* Step heading and the three-segment bar. */}
+      <div className="space-y-3">
+        <p className="eyebrow text-ink/55">Step {step + 1} of 3</p>
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">{STEPS[step]}</h2>
+        <ol className="flex gap-2" aria-label={`Step ${step + 1} of 3`}>
+          {STEPS.map((label, i) => (
+            <li
+              key={label}
+              aria-current={i === step ? "step" : undefined}
+              className={"h-[3px] flex-1 rounded-full " + (i <= step ? "bg-stamp" : "bg-ink/12")}
+            >
+              <span className="sr-only">{label}</span>
             </li>
-          );
-        })}
-      </ol>
+          ))}
+        </ol>
+      </div>
 
       {restored && step === 0 && (
         <p className="rounded-lg border border-brand/30 bg-brand/[0.05] px-4 py-2.5 text-sm text-ink/75">
@@ -172,30 +150,20 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
 
       {/* ---------------------------------------------------------- step 1 -- */}
       <div data-step="0" hidden={step !== 0} className="space-y-5">
-        <Field
-          label="What do you need done?"
-          help="Say it the way you would say it to a friend. No need for technical words."
-        >
+        <Field label="What do you need done?">
           <Input
             name="title"
             required
             maxLength={120}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Logo for my bakery"
+            placeholder="e.g. Logo and signage for a new bakery"
           />
           <Counter value={title.length} min={8} max={120} unit="characters" />
         </Field>
 
-        {/* Item 67: the guess is shown, never applied silently. */}
-        <Field
-          label="What kind of work is this?"
-          help={
-            guess && !categoryTouched
-              ? "We had a guess from your title. Change it if we are wrong."
-              : "Pick the closest one. It only decides who sees your job."
-          }
-        >
+        {/* The guess is shown, never applied silently. */}
+        <Field label="Category">
           <select
             name="category"
             required
@@ -218,14 +186,14 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
           {guess && !categoryTouched && (
             <p className="text-xs text-ink/60">
               Sounds like <strong className="font-medium text-ink">{guess}</strong> — we have filled
-              that in.
+              that in. Change it if we are wrong.
             </p>
           )}
         </Field>
 
         <Field
-          label="Tell them more about it"
-          help="What it is for, who will see it, and anything they need to know before starting. The more you say now, the fewer surprises later."
+          label="Describe the work"
+          help="The more specific you are, the fewer questions you will get back."
         >
           <textarea
             name="brief"
@@ -235,31 +203,28 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
             rows={7}
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
-            placeholder="We are opening a bakery in Zomba. We need a logo for the shopfront, our boxes and Facebook. Warm and homely rather than modern — our customers are families."
+            placeholder="We open in Limbe next month and need a logo we can put on the shopfront, plus a simple sign layout the printer can work from. Two colours if possible, the sign painter charges by colour."
             className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm"
           />
           <Counter value={brief.length} min={200} max={4000} unit="characters" />
-          {/* Item 69: the syntax people already use in WhatsApp, said once.
-              No toolbar — the preview on the last step is the feedback. */}
+          {/* The syntax people already use in WhatsApp, said once. No toolbar —
+              the review step is the feedback. */}
           <p className="text-xs text-ink/45">
             Start a line with <code className="rounded bg-ink/[0.06] px-1">-</code> for a bullet, or
             wrap words in <code className="rounded bg-ink/[0.06] px-1">**</code> to make them bold.
           </p>
         </Field>
-      </div>
 
-      {/* ---------------------------------------------------------- step 2 -- */}
-      <div data-step="1" hidden={step !== 1} className="space-y-5">
         <Field
           label="What should they hand over?"
-          help="The actual files or items you expect at the end. This is what 'finished' means, so be specific."
+          help="The actual files or items you expect at the end. This is what 'finished' means."
         >
           <textarea
             name="deliverables"
             required
             minLength={50}
             maxLength={1500}
-            rows={5}
+            rows={4}
             value={deliverables}
             onChange={(e) => setDeliverables(e.target.value)}
             placeholder={"- The logo as PNG and PDF\n- A version that works on a dark background\n- The original file so we can edit it later"}
@@ -268,66 +233,56 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
           <Counter value={deliverables.length} min={50} max={1500} unit="characters" />
         </Field>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="When do you need it?" help="Leave blank if you are flexible.">
-            <Input
-              name="deadline"
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-            />
-          </Field>
-          <Field
-            label="How many rounds of changes?"
-            help="How many times they will adjust it before extra changes cost more."
-          >
-            <Input name="revisions_included" type="number" min={0} max={10} defaultValue={2} />
-          </Field>
-        </div>
-
-        <Field
-          label="Any size or format requirements?"
-          help="Optional. Only if you already know — otherwise leave it and agree later."
-        >
-          <Input name="format_spec" placeholder="e.g. 1080×1920 video, under 60 seconds" />
+        <Field label="Skills you are looking for" help="Type and press Enter to add each one.">
+          <TagInput name="skills" placeholder="e.g. Logo design" />
         </Field>
+      </div>
+
+      {/* ---------------------------------------------------------- step 2 -- */}
+      <div data-step="1" hidden={step !== 1} className="space-y-5">
+        <Field
+          label="Your budget"
+          help="You can leave this open, but jobs with a budget get about twice as many proposals."
+        >
+          <MoneyInput name="budget_mwk" placeholder="e.g. 120,000" onValueChange={setBudget} />
+        </Field>
+
+        <Field label="Deadline" help="Leave blank if you are flexible.">
+          <Input
+            name="deadline"
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+          />
+        </Field>
+
+        <Field label="Where is the work?" help="Optional. Say remote if it does not matter.">
+          <Input name="location" maxLength={120} placeholder="e.g. Limbe, Blantyre" />
+        </Field>
+
+        <PricingExplainer audience="client" />
       </div>
 
       {/* ---------------------------------------------------------- step 3 -- */}
       <div data-step="2" hidden={step !== 2} className="space-y-5">
-        <Field
-          label="What is your budget?"
-          help="A number gets far more replies than leaving it open — creatives skip jobs they cannot price. You can still negotiate."
-        >
-          <MoneyInput name="budget_mwk" placeholder="e.g. 150,000" onValueChange={setBudget} />
-        </Field>
-
-        {/* Item 65: the job as a creative will actually read it. */}
-        <section className="rounded-xl border border-ink/12 bg-wash/40 p-5">
-          <p className="eyebrow text-ink/55">How creatives will see it</p>
-          <h3 className="mt-2 text-lg font-semibold text-ink">{title || "Your title goes here"}</h3>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink/60">
-            <span className="rounded-full bg-paper px-2.5 py-0.5 font-medium text-ink/75">
-              {effectiveCategory || "No category yet"}
-            </span>
-            <span aria-hidden>·</span>
-            <span>Budget: {budget && Number(budget) > 0 ? formatMwk(Number(budget)) : "not given"}</span>
-            {deadline && (
-              <>
-                <span aria-hidden>·</span>
-                <span>by {deadline}</span>
-              </>
-            )}
-          </div>
+        {/* The job as a creative will actually read it. */}
+        <section className="rounded-2xl border border-ink/12 bg-paper p-5 shadow-e1">
+          <h3 className="text-xl font-semibold leading-snug text-ink">
+            {title || "Your title goes here"}
+          </h3>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-wash px-3 py-1.5 text-sm font-medium text-ink/80">
+            <span aria-hidden>💸</span>
+            Budget: {budget && Number(budget) > 0 ? formatMwk(Number(budget)) : "not given"}
+          </p>
           {brief ? (
-            <RichText className="mt-3">{brief}</RichText>
+            <RichText className="mt-4">{brief}</RichText>
           ) : (
-            <p className="mt-3 text-sm leading-relaxed text-ink/45">
+            <p className="mt-4 text-sm leading-relaxed text-ink/45">
               Your description will appear here.
             </p>
           )}
           {deliverables && (
-            <div className="mt-3 border-t border-ink/10 pt-3">
+            <div className="mt-4 border-t border-ink/10 pt-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-ink/55">
                 They will hand over
               </p>
@@ -335,15 +290,20 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
             </div>
           )}
         </section>
+
+        <p className="flex items-start gap-3 rounded-xl bg-wash px-4 py-3 text-sm leading-relaxed text-ink/75">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-stamp" aria-hidden />
+          Posting is free. Nothing leaves your account until you pick someone and fund the job.
+        </p>
       </div>
 
-      {/* Nav. §I5: the reassurance is permanent, not one line on step 1. */}
-      <div className="flex flex-wrap items-center gap-3 border-t border-ink/10 pt-5">
+      {/* Nav. */}
+      <div className="flex flex-wrap items-center gap-3">
         {step > 0 && (
           <button
             type="button"
             onClick={() => setStep(step - 1)}
-            className="rounded-lg border border-ink/20 px-4 py-2 text-sm font-medium text-ink/75 hover:border-ink/40"
+            className="flex-1 rounded-lg border border-ink/20 px-4 py-3 text-sm font-medium text-ink/75 hover:border-ink/40"
           >
             Back
           </button>
@@ -353,14 +313,16 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
           <button
             type="button"
             onClick={next}
-            className="rounded-lg bg-stamp px-5 py-2 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
+            className="flex-1 rounded-lg bg-stamp px-5 py-3 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
           >
             Continue
           </button>
         ) : (
-          <SubmitButton pendingText="Posting…">Post this job</SubmitButton>
+          <SubmitButton pendingText="Posting…">Post the job</SubmitButton>
         )}
+      </div>
 
+      {step < 2 && (
         <button
           type="button"
           onClick={saveDraft}
@@ -368,11 +330,11 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
         >
           Save and finish later
         </button>
-      </div>
+      )}
 
       <p className="text-xs text-ink/55">
-        You can always come back and change your job later — posting it does not commit you to
-        anything, and nobody is paid until you approve the work.{" "}
+        You can always come back and change your job later, and nobody is paid until you approve the
+        work.{" "}
         <a href="/content-policy" className="underline hover:text-ink">
           Content policy
         </a>
@@ -382,19 +344,27 @@ export function JobWizard({ defaultCategory }: { defaultCategory?: string }) {
   );
 }
 
-/** §I2's field pattern: heading, one plain line, the input. */
-function Field({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
+/** Heading, one plain line when it earns its place, then the input. */
+function Field({
+  label,
+  help,
+  children,
+}: {
+  label: string;
+  help?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <p className="text-sm font-semibold text-ink">{label}</p>
-      <p className="text-xs leading-relaxed text-ink/60">{help}</p>
+      {help && <p className="text-xs leading-relaxed text-ink/60">{help}</p>}
       <div className="space-y-1.5 pt-0.5">{children}</div>
     </div>
   );
 }
 
 /**
- * §I2's counter, stating BOTH ends. While short it says what is still needed;
+ * The counter states BOTH ends. While short it says what is still needed;
  * once satisfied it switches to a ceiling. A bare "12/200" reads as failure.
  */
 function Counter({ value, min, max, unit }: { value: number; min: number; max: number; unit: string }) {

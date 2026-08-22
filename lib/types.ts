@@ -47,6 +47,8 @@ export type Job = {
   category: string;
   status: JobStatus;
   proposal_limit?: number | null;
+  skills?: string[] | null;
+  location?: string | null;
   created_at: string;
 };
 

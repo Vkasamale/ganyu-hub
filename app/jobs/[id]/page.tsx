@@ -73,7 +73,7 @@ import { submitProposal, decideProposal, recordView, addPortfolioItem, submitRev
 import { collectionFee } from "@/lib/fees";
 import { ReviewAxes } from "@/components/review-axes";
 import { Stars } from "@/components/stars";
-import { formatMwk, timeAgo, formatDeadline, daysUntil } from "@/lib/utils";
+import { formatMwk, timeAgo, formatDeadline, daysUntil, formatDayMonth } from "@/lib/utils";
 
 export default async function JobDetailPage({ params: paramsP }: { params: Promise<{ id: string }> }) {
   const params = await paramsP;
@@ -203,6 +203,20 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     }
   }
 
+  // Screens 05/06 give the delivered files a section of their own — "Delivered",
+  // one card per file with its size and the day it arrived. They are the point
+  // of the job, and inside the history they read as one more thing that
+  // happened. Same events, same signed URLs, listed newest last.
+  const deliveredFiles = (jobEvents || [])
+    .filter((e: any) => typeof e?.metadata?.file_url === "string")
+    .map((e: any) => ({
+      id: e.id as string,
+      name: (e.metadata.file_name as string) || "Delivered file",
+      size: typeof e.metadata.file_size === "number" ? (e.metadata.file_size as number) : null,
+      at: e.created_at as string,
+      url: signedUrls[e.metadata.file_url as string] || "",
+    }));
+
   // Delivery form is creative-only, visible while the job is active enough
   // to be delivered. Same status set the server action enforces.
   const DELIVERY_ACTIVE = new Set(["in_progress", "revision_requested", "submitted"]);
@@ -213,6 +227,28 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const { data: jobThread } = user
     ? await supabase.from("message_threads").select("id").eq("job_id", job.id).maybeSingle()
     : { data: null };
+
+  // Screens 05/06 show the conversation ON the job: the last thing each side
+  // said, then a link into the thread. Two rows, newest last, so it reads the
+  // way the thread does.
+  const { data: lastMessagesDesc } = jobThread
+    ? await supabase
+        .from("messages")
+        .select("id, body, sender_id, created_at, attachment_name")
+        .eq("thread_id", jobThread.id)
+        .order("created_at", { ascending: false })
+        .limit(2)
+    : { data: null };
+  const threadPreviewMessages = [...(lastMessagesDesc || [])].reverse();
+
+  const acceptedProposalCount = (proposals || []).filter((p: any) => p.status === "accepted").length;
+  const moneyReleased = job.escrow_status === "payment_released";
+  const releasedAt: string | null =
+    (jobEvents || []).find((e: any) => e.event_type === "payment_released")?.created_at ?? null;
+
+  const otherPartyName: string | null = isClient
+    ? (proposals || []).find((p: any) => p.status === "accepted")?.creative?.full_name ?? null
+    : client?.full_name ?? null;
 
   const CANCELLABLE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
   const canRequestCancel = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
@@ -257,6 +293,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   // someone decide whether to bid, and a client does not need telling how many
   // jobs they have posted. Skipped entirely for unclaimed creative-made jobs,
   // where client_id is still null.
+  // Screens 05/06 name both sides on the job: who is doing the work and who is
+  // paying for it. The creative comes from the accepted proposal, which the
+  // client view has already loaded — no extra query.
+  const acceptedCreative: { id: string; full_name: string | null; headline: string | null } | null =
+    (proposals || []).find((p: any) => p.status === "accepted")?.creative ?? null;
+
   const clientTrust = user && !isClient && job.client_id ? await getClientTrust(supabase, job.client_id) : null;
 
   // Mobile sticky bar: only when the payment card is actually on the page and
@@ -267,6 +309,58 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   const stickyLabel = paymentCardShown
     ? primaryClientAction(job.escrow_status || "none", job.total_paid_mwk ?? job.accepted_bid_mwk ?? null)
     : null;
+
+  // Screens 05/06 put this card under the title beside "People on this
+  // job", not in the money column: it is a receipt, and the column is for
+  // what happens next.
+  const whatYouPaidCard = (() => {
+  /* Screens 05 and 06: "What you paid", broken out. The client agreed a
+      price and was charged more than it, and until now the difference
+      was only ever visible on the checkout page they have long since
+      left. Three lines and the sentence that stops the obvious worry —
+      the 3% is charged once, on the way in, not again on release.
+
+      Real numbers where we have them: collection_fee_mwk is what
+      PayChangu actually charged, written on verify. The estimate is only
+      a fallback, and it is labelled as one. Renders only once money has
+      actually gone in. */
+    const principal = job.total_paid_mwk ?? job.accepted_bid_mwk ?? null;
+    if (!principal) return null;
+    if (job.escrow_status !== "payment_held" && job.escrow_status !== "payment_released") return null;
+    const realFee = job.collection_fee_mwk as number | null | undefined;
+    const fee = realFee ?? collectionFee(principal, "mobile_money");
+    const paidOn = job.payment_held_at
+      ? new Date(job.payment_held_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" })
+      : null;
+    return (
+      <Card className="h-full">
+        <CardContent className="p-5">
+    <p className="eyebrow">What you paid</p>
+    <dl className="mt-3 space-y-2 text-sm">
+      <div className="flex items-baseline justify-between gap-3">
+        <dt className="text-ink/60">Agreed price</dt>
+        <dd className="font-medium tabular-nums text-ink">{formatMwk(principal)}</dd>
+      </div>
+      <div className="flex items-baseline justify-between gap-3">
+        <dt className="text-ink/60">
+          Processing fee (3%){realFee == null && <span className="text-ink/40"> · estimate</span>}
+        </dt>
+        <dd className="font-medium tabular-nums text-ink">{formatMwk(fee)}</dd>
+      </div>
+      <div className="flex items-baseline justify-between gap-3 border-t border-ink/10 pt-2">
+        <dt className="font-medium text-ink">You paid</dt>
+        <dd className="font-display text-base font-semibold tabular-nums text-ink">
+          {formatMwk(principal + fee)}
+        </dd>
+      </div>
+    </dl>
+    <p className="mt-3 text-xs text-ink/55">
+      {paidOn ? `Paid ${paidOn}. ` : ""}The 3% is charged once, when money comes in.
+    </p>
+        </CardContent>
+      </Card>
+    );
+  })();
 
   return (
     <div className="job-layout mx-auto max-w-4xl px-4 py-10 lg:max-w-6xl">
@@ -334,9 +428,82 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             </Link>
           ) : (
             client?.full_name || "a client"
-          )}{" "}
-          &middot; {timeAgo(job.created_at)}
+          )}
+          {/* The posted date and the proposal count live in the terms row
+              under the brief. Saying them here as well was the same line
+              twice on one screen. */}
         </p>
+      </div>
+
+      {/* Screens 05/06 pair the two summary cards under the title: what the
+          money did on the left, who is on the job on the right. Both are
+          history, not actions — every action lives in the money column. */}
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      {whatYouPaidCard}
+
+      {/* People on this job. Both rows are facts the reader already has a
+          relationship with — the person they are paying, and themselves. */}
+      {(acceptedCreative || client) && (
+        <Card className="h-full">
+          <CardContent className="p-5">
+            <p className="eyebrow">People on this job</p>
+            <ul className="mt-3 space-y-3">
+              {acceptedCreative && (
+                <li className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stamp text-xs font-medium text-paper">
+                    {(acceptedCreative.full_name || "?")
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((w: string) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink">
+                      {acceptedCreative.full_name || "The creative"}
+                      {!isClient && user?.id === acceptedCreative.id && (
+                        <span className="ml-1 font-normal text-ink/50">(you)</span>
+                      )}
+                    </span>
+                    {acceptedCreative.headline && (
+                      <span className="block truncate text-xs text-ink/55">{acceptedCreative.headline}</span>
+                    )}
+                  </span>
+                  <Link
+                    href={`/creatives/${acceptedCreative.id}`}
+                    className="shrink-0 text-xs text-stamp-dark underline underline-offset-4"
+                  >
+                    Profile
+                  </Link>
+                </li>
+              )}
+              {client && (
+                <li className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
+                    {(client.full_name || "?")
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((w: string) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink">
+                      {client.full_name || "The client"}
+                      {isClient && <span className="ml-1 font-normal text-ink/50">(you)</span>}
+                    </span>
+                    <span className="block truncate text-xs text-ink/55">
+                      {job.escrow_status === "payment_held" || job.escrow_status === "payment_released"
+                        ? "Has paid into escrow"
+                        : "Posted this job"}
+                    </span>
+                  </span>
+                </li>
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
       </div>
 
       {clientTrust && (
@@ -348,55 +515,72 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           §N4 amount-in-the-button labels, not just the creative's payout note. */}
       {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
         <div id="payment" className="job-money scroll-mt-24">
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
-        {/* Screens 05 and 06: "What you paid", broken out. The client agreed a
-            price and was charged more than it, and until now the difference
-            was only ever visible on the checkout page they have long since
-            left. Three lines and the sentence that stops the obvious worry —
-            the 3% is charged once, on the way in, not again on release.
+        {/* Screens 05/06 run the money column as ONE card: the payment state,
+            then what to do next, then the figures and the dispute sentence,
+            divided by rules rather than by gaps. Three boxes read as three
+            separate concerns; they are one. */}
+        <Card className="mt-6">
+          <CardContent className="space-y-4 p-5">
+            <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} bare />
 
-            Real numbers where we have them: collection_fee_mwk is what
-            PayChangu actually charged, written on verify. The estimate is only
-            a fallback, and it is labelled as one. Renders only once money has
-            actually gone in. */}
-        {(() => {
-          const principal = job.total_paid_mwk ?? job.accepted_bid_mwk ?? null;
-          if (!principal) return null;
-          if (job.escrow_status !== "payment_held" && job.escrow_status !== "payment_released") return null;
-          const realFee = job.collection_fee_mwk as number | null | undefined;
-          const fee = realFee ?? collectionFee(principal, "mobile_money");
-          const paidOn = job.payment_held_at
-            ? new Date(job.payment_held_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" })
-            : null;
-          return (
-            <Card className="mt-4">
-              <CardContent className="p-5">
-                <p className="eyebrow">What you paid</p>
-                <dl className="mt-3 space-y-2 text-sm">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-ink/60">Agreed price</dt>
-                    <dd className="font-medium tabular-nums text-ink">{formatMwk(principal)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-ink/60">
-                      Processing fee (3%){realFee == null && <span className="text-ink/40"> · estimate</span>}
-                    </dt>
-                    <dd className="font-medium tabular-nums text-ink">{formatMwk(fee)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3 border-t border-ink/10 pt-2">
-                    <dt className="font-medium text-ink">You paid</dt>
-                    <dd className="font-display text-base font-semibold tabular-nums text-ink">
-                      {formatMwk(principal + fee)}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="mt-3 text-xs text-ink/55">
-                  {paidOn ? `Paid ${paidOn}. ` : ""}The 3% is charged once, when money comes in.
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })()}
+        {/* Once the money has gone, the column stops asking for money and
+            starts asking for the two things that come after it. */}
+        {moneyReleased && (
+          <div className="space-y-2 border-t border-ink/10 pt-4">
+              {!myReview && (
+                <a
+                  href="#review"
+                  className="flex w-full items-center justify-center rounded-lg bg-stamp px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
+                >
+                  Leave a review
+                </a>
+              )}
+              {acceptedCreative && (
+                <Link
+                  href={`/creatives/${acceptedCreative.id}/invite`}
+                  className="flex w-full items-center justify-center rounded-lg border border-ink/15 px-4 py-2.5 text-sm font-medium text-ink/80 transition-colors hover:border-ink/30"
+                >
+                  Hire {(acceptedCreative.full_name || "them").split(" ")[0]} again
+                </Link>
+              )}
+          </div>
+        )}
+
+            <dl className="space-y-2 border-t border-ink/10 pt-4 text-xs">
+              {job.accepted_bid_mwk != null && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Agreed price</dt>
+                  <dd className="font-medium tabular-nums text-ink">{formatMwk(job.accepted_bid_mwk)}</dd>
+                </div>
+              )}
+              {job.payment_held_at && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Funded</dt>
+                  <dd className="text-ink">{formatDayMonth(job.payment_held_at)}</dd>
+                </div>
+              )}
+              {releasedAt && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Released</dt>
+                  <dd className="text-ink">{formatDayMonth(releasedAt)}</dd>
+                </div>
+              )}
+              {job.deadline && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Deadline</dt>
+                  <dd className="text-ink">{formatDeadline(job.deadline)}</dd>
+                </div>
+              )}
+            </dl>
+            <p className="mt-3 border-t border-ink/10 pt-3 text-xs leading-relaxed text-ink/55">
+              If something goes wrong, a person at Ganyu Hub reads both sides before any money
+              moves.{" "}
+              <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
+                How disputes work
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
         </div>
       )}
       {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
@@ -424,18 +608,19 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
       )}
 
-      <Card className="mt-4">
-        <CardContent className="p-5 sm:p-6">
-          {/* Brief collapses to a teaser; the terms below stay visible, since
-              budget and deadline are what people come back to check. */}
-          <Collapsible
-            title="Project brief"
-            summary={String(job.brief || "").slice(0, 110) + (String(job.brief || "").length > 110 ? "…" : "")}
-          >
+      {/* Screens 05/06 do not put the brief in a box. It is the body of the
+          page: a heading, a rule, and the text — with the terms under it, since
+          budget and deadline are what people come back to check. */}
+      <section className="mt-8">
+        <div>
+          <h2 className="border-b border-ink/10 pb-3 text-lg font-semibold text-ink">The brief</h2>
+          <div className="pt-4">
             {/* Item 69: markdown text in, sanitised elements out. Existing
                 plain-text briefs render unchanged — line breaks and dashes
                 are already valid markdown. */}
-            <RichText className="break-words text-lg leading-relaxed text-ink/85 sm:text-xl">
+            {/* Down a step from the old text-lg/text-xl: the brief was setting
+                the type scale for the whole page and shouting over the title. */}
+            <RichText className="break-words text-base leading-relaxed text-ink/85 sm:text-lg">
               {job.brief}
             </RichText>
 
@@ -444,12 +629,25 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
                   Deliverables
                 </div>
-                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/80">
-                  {job.deliverables}
-                </p>
+                {/* Screens 05/06 tick each deliverable. They are the definition
+                    of finished, so they read as a list of things, not as a
+                    paragraph about things. Lines that are already bulleted lose
+                    their dash — the tick is the bullet now. */}
+                <ul className="mt-2 space-y-1.5">
+                  {String(job.deliverables)
+                    .split(/\r?\n/)
+                    .map((line: string) => line.replace(/^\s*[-*•]\s*/, "").trim())
+                    .filter(Boolean)
+                    .map((line: string, i: number) => (
+                      <li key={i} className="flex gap-2 text-sm leading-relaxed text-ink/80">
+                        <span aria-hidden className="mt-0.5 shrink-0 text-stamp">✓</span>
+                        <span className="break-words">{line}</span>
+                      </li>
+                    ))}
+                </ul>
               </div>
             )}
-          </Collapsible>
+          </div>
 
           <dl className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ink/10 pt-4 text-sm">
             {(() => {
@@ -521,6 +719,11 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <dd className="font-medium text-ink">1 accepted of {proposalCount}</dd>
               </div>
             )}
+            {/* Posted date lives here now, with the other terms. */}
+            <div className="flex items-baseline gap-2">
+              <dt className="text-xs uppercase tracking-wide text-ink/50">Posted</dt>
+              <dd className="font-medium text-ink">{formatDayMonth(job.created_at)}</dd>
+            </div>
             {job.format_spec && (
               <div className="flex items-baseline gap-2">
                 <dt className="text-xs uppercase tracking-wide text-ink/50">Format</dt>
@@ -541,8 +744,8 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {user && job.status === "scope_pending" && isClient && (
         <ScopeConfirmPanel
@@ -568,15 +771,92 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
 
       {isPartyForEvents && jobThread && (
-        <Link
-          href={`/messages/${jobThread.id}`}
-          className="mt-4 inline-flex items-center gap-2 text-sm text-ink/70 underline-offset-2 hover:text-ink hover:underline"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          Open conversation
-        </Link>
+        <Card className="mt-4">
+          <CardContent className="p-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-medium text-ink">
+                Messages{otherPartyName ? ` with ${otherPartyName.split(" ")[0]}` : ""}
+              </p>
+              <Link
+                href={`/messages/${jobThread.id}`}
+                className="shrink-0 text-xs text-stamp-dark underline underline-offset-4"
+              >
+                Open thread &rarr;
+              </Link>
+            </div>
+            {threadPreviewMessages.length === 0 ? (
+              /* The quiet weight: an empty region on a page that is otherwise
+                 full gets a line of text and nothing else. */
+              <p className="mt-3 text-xs text-ink/50">No messages on this job yet.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {threadPreviewMessages.map((m: any) => {
+                  const mine = m.sender_id === user?.id;
+                  const text =
+                    String(m.body || "").replace(/\[\[job:[0-9a-f-]+\]\]/gi, "").trim() ||
+                    (m.attachment_name ? `\u{1F4CE} ${m.attachment_name}` : "Shared a job");
+                  return (
+                    <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <span
+                        className={
+                          mine
+                            ? "max-w-[80%] rounded-[12px] rounded-br-sm bg-stamp px-3 py-2 text-xs text-paper"
+                            : "max-w-[80%] rounded-[12px] rounded-bl-sm border border-ink/[0.08] bg-raised px-3 py-2 text-xs text-ink"
+                        }
+                      >
+                        {text}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {isPartyForEvents && deliveredFiles.length > 0 && (
+        <section className="mt-6">
+          <h2 className="font-display text-xl">Delivered</h2>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {deliveredFiles.map((f) => (
+              <li
+                key={f.id}
+                className="flex items-center gap-3 rounded-xl border border-ink/[0.08] bg-raised p-4 shadow-elev-1"
+              >
+                <span aria-hidden className="shrink-0 text-ink/45">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-mono text-xs text-ink">{f.name}</span>
+                  <span className="block text-[11px] text-ink/50">
+                    {[
+                      f.size ? `${(f.size / 1024 / 1024).toFixed(1)} MB` : null,
+                      formatDayMonth(f.at),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </span>
+                {f.url ? (
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 text-xs text-stamp-dark underline underline-offset-4"
+                  >
+                    Download
+                  </a>
+                ) : (
+                  <span className="shrink-0 text-[11px] text-ink/45">Link expired — reload</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {isPartyForEvents && jobEvents && jobEvents.length > 0 && (
@@ -733,7 +1013,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
       {user && isParty && job.status === "completed" && (
         <Card className="mt-6">
-          <CardHeader>
+          <CardHeader id="review" className="scroll-mt-24">
             <CardTitle>{myReview ? "Your review" : `Rate ${isClient ? "the creative" : "the client"}`}</CardTitle>
             <p className="text-sm text-ink/55">
               {myReview
@@ -953,7 +1233,21 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
       {/* §G1: on a phone the payment card scrolls away immediately. The bar
           names the amount and jumps back to the real button. */}
-      {stickyLabel && <StickyActionBar href="#payment" label={stickyLabel} hint={job.title} />}
+      {moneyReleased && isClient && !myReview ? (
+        <StickyActionBar
+          href="#review"
+          label="Leave a review"
+          hint={
+            releasedAt
+              ? `${formatMwk(job.total_paid_mwk ?? job.accepted_bid_mwk ?? 0)} reached ${
+                  (acceptedCreative?.full_name || "the creative").split(" ")[0]
+                } on ${formatDayMonth(releasedAt)}`
+              : job.title
+          }
+        />
+      ) : (
+        stickyLabel && <StickyActionBar href="#payment" label={stickyLabel} hint={job.title} />
+      )}
     </div>
   );
 }

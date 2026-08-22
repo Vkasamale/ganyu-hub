@@ -4,6 +4,29 @@ Things that work but could be better. Not urgent, not blocking. Pull from here w
 
 ---
 
+## Headings should be in Title Case, everywhere (added 2026-08-22)
+
+**Founder's call, and it applies site-wide.** Headings currently render in
+sentence case — "The brief", "What you paid", "People on this job", "At a
+glance", "Jobs worth a look". The founder finds the lowercase second word odd
+and wants Title Case: "The Brief", "What You Paid", "People On This Job".
+
+This is a preference, not a bug, and it is deliberately not being applied
+piecemeal during the screen port — a half-converted site reads worse than
+either convention. Do it as one sweep:
+
+- Card eyebrows (`.eyebrow`), section `<h2>`s, rail card titles, table column
+  headings, empty-state headings, dashboard section titles.
+- Not: body copy, button labels, sentences, or the small helper lines under a
+  heading. Those stay sentence case.
+- Decide the rule for short words first (a/an/the/of/on/in/to). Standard title
+  case lowercases them unless they start the heading — "People on This Job",
+  not "People On This Job". Confirm which the founder wants before sweeping.
+
+Grep starting points: `className="eyebrow"`, `<CardTitle`, `text-xs uppercase
+tracking-wide` (already visually uppercase — those need no change), and the
+`<h2>`/`<h3>` headings across `app/`.
+
 ## ▶ NEXT SESSION STARTS HERE — the design feedback loop (updated 2026-08-19)
 
 **Where we stopped:** all 79 plan items (Phases 0–9) are shipped and merged to

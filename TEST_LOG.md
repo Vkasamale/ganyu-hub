@@ -4,6 +4,70 @@ Tracks what's been hands-on tested vs. what's been built but not yet confirmed w
 
 Legend: ✅ verified · ⚠️ tested with known issue · 🕒 prompted to test, awaiting confirmation · ⬜ never tested
 
+## 2026-08-22 — The slow pass, tested on a real client account
+
+Tested by Claude in the preview server. Unlike every earlier entry, this one
+was run **signed in as a CLIENT** (EQ Admin Client) — the founder signed in
+after the local Turnstile block was cleared — so the client-side money views
+were seen rather than reasoned about.
+
+- ✅ `tsc --noEmit` clean after every change; `next build` clean before the push.
+- ✅ **Creative profile at 1440:** identity flat, money column level with the
+  name (aside y=169 against h1 y=241), sections carry no card background, no
+  element wider than its box.
+- ✅ **Creative profile at 390:** single column, "Starts from / Turnaround"
+  tiles under the chips, no overflow. Tiles confirmed `display:none` at 1188.
+- ✅ **Reviews header** reads "5.0 average across 1"; the reviewer's location
+  shows under their name; the duplicate date line is gone.
+- ✅ **Job detail as the client:** "What you paid" and "People on this job"
+  measured side by side (x=26 and x=408, 366px each); the money column is one
+  card; the brief renders at 16px.
+- ✅ **Dashboard as the client:** "CLIENT WORKSPACE" first, flat figures,
+  compact "Needs you" in the rail under Messages, active-jobs titles wrapping
+  over two lines. Overflow scan returns an empty list where it previously
+  named five elements.
+- 🕒 **"Replies in" on a profile** — never rendered in testing: no account has
+  three replies on record. The formatter is the one `/clients/[id]` already
+  uses, but the row itself has not been seen with data.
+- 🕒 **"Price sent" in a thread** — the columns now exist in production, but
+  sending one has still never been run.
+- ⬜ **Creative-side job detail** since the money column was merged into one
+  card. `bare` defaults to false and that call site is untouched, but it was
+  not opened as a creative.
+- ⬜ **Any physical device.**
+
+## 2026-08-22 — Porting the twenty screens
+
+Tested by Claude in the preview server as a CREATIVE account (Adam Creative).
+No client account, no physical device, no human eyes on any of it yet.
+
+- ✅ `tsc --noEmit` clean after every change.
+- ✅ **Dashboard at 1440:** two columns measured with `getBoundingClientRect()` —
+  main 628px, rail 340px at x=868. Greeting reads "Good morning, Adam", the
+  availability switch sits beside it, money tiles, "Needs you" cards with stage
+  pill and "Deliver files →", "Proposals sent" with status pills.
+- ✅ **Dashboard at 390:** single column in the screenshot's order, no
+  horizontal overflow (`scrollWidth` equals `innerWidth`).
+- ✅ **Messages list at 390:** full screen — no navbar, no tab bar, no footer.
+  Back arrow, compose "+", title, search, filter chips.
+- ✅ **Thread at 390 and 1440:** date divider, CSS stamp rings behind the
+  stream, teal outgoing bubbles, money events with their amount, job bar with
+  the escrow pill, composer with its own text row on a phone. The fourth info
+  column renders past 1200px.
+- ✅ **Job detail at 1440:** sticky money rail, People on this job, ticked
+  deliverables, "What happened" dated, Delivered files, facts and dispute
+  footer.
+- ✅ **Creative profile at 1440 and 390:** no tab strip, sections stacked, hire
+  card at the head of the 340px rail, pinned "Hire DJ →" bar on the phone.
+- 🕒 **Post a job** — cannot be opened by the test account (creative), and the
+  two new columns are not on the database yet. Untested end to end.
+- 🕒 **"Price sent" in a thread** — the composer control and the card are built,
+  but `messages.offer_*` does not exist on production yet, so sending one has
+  never been run.
+- ⬜ **Every client-side view** — the new dashboard, "What you paid", the
+  released-state job rail, "Leave a review" from the phone bar.
+- ⬜ **Any physical device.**
+
 ## 2026-08-21 — The design port
 
 - ✅ `tsc --noEmit` clean and `npx next build` green.

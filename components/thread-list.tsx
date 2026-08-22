@@ -97,7 +97,15 @@ function Row({
           // is noise. Keep the width so rows stay aligned with ungrouped ones.
           <span aria-hidden className="w-10 shrink-0" />
         ) : (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
+          /* Blueprint §1B: the avatar carries the unread state as a ring, so
+             the row reads as unread from the left edge too, not only from the
+             badge on the right. */
+          <div
+            className={
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper " +
+              (unread ? "ring-2 ring-brand ring-offset-2 ring-offset-paper" : "")
+            }
+          >
             {initialsOf(o?.full_name)}
           </div>
         )}

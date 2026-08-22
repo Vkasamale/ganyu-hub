@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible } from "@/components/collapsible";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, formatDayMonth } from "@/lib/utils";
 import type { JobEventType } from "@/lib/job-events";
 
 export type JobEventRow = {
@@ -142,8 +142,12 @@ export function JobTimeline({
   return (
     <Card className="mt-6">
       <CardContent className="p-5">
+        {/* Screens 05/06 call this "What happened" and leave it open — the
+            dated history of the job is not an accessory to the page, it is the
+            record of it. */}
         <Collapsible
-          title="Activity"
+          title="What happened"
+          defaultOpen
           summary={currentStage}
           right={
             hasRevisions ? (
@@ -169,7 +173,7 @@ export function JobTimeline({
                   <p className="text-sm text-ink">{label}</p>
                   {e.note && <p className="mt-0.5 text-xs text-ink/60">{e.note}</p>}
                   <DeliveryAttachment metadata={e.metadata} signedUrls={signedUrls} />
-                  <p className="mt-0.5 text-xs text-ink/50">{timeAgo(e.created_at)}</p>
+                  <p className="mt-0.5 text-xs text-ink/50">{formatDayMonth(e.created_at)} · {timeAgo(e.created_at)}</p>
                 </div>
               </li>
             );

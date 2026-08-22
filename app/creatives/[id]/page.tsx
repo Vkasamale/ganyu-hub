@@ -60,6 +60,7 @@ import { startThread, recordView, requestCustomService, inviteCreative, respondT
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo, formatMonthYear } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
+import { getCreativeReplyMins, formatReplyTime } from "@/lib/client-trust";
 import { ShareButtons } from "@/components/share-buttons";
 import { absUrl } from "@/lib/site-url";
 import { JsonLd } from "@/components/json-ld";
@@ -67,18 +68,11 @@ import { JsonLd } from "@/components/json-ld";
 /**
  * Item 15 (§F4): About · Services · Portfolio · Reviews.
  *
- * ponytail: the tab lives in the URL and the panes are shown/hidden with a
- * class, so this stays a server component — no client state, no hydration, and
- * /creatives/x?tab=reviews is a link someone can send. Hiding rather than
- * unmounting also keeps every section in the HTML for search engines, which a
- * client-side tab widget would have thrown away.
+ * Screen 03 has no tabs: About, Work and Reviews run one under the other down
+ * the left column, with the hire card in the rail beside them. Sections keep
+ * their ids, so /creatives/x?tab=reviews — a link people have already sent —
+ * still resolves to a page containing that section rather than a 404 view.
  */
-const TABS = [
-  { key: "about", label: "About" },
-  { key: "services", label: "Services" },
-  { key: "portfolio", label: "Portfolio" },
-  { key: "reviews", label: "Reviews" },
-] as const;
 
 export default async function CreativePage({
   params,
@@ -89,8 +83,10 @@ export default async function CreativePage({
 }) {
   const { id } = await params;
   const sp = (await searchParams) || {};
-  const tab = TABS.some((t) => t.key === sp.tab) ? (sp.tab as string) : "about";
-  const pane = (key: string) => (tab === key ? "" : " hidden");
+  // Screen 03 shows About, Work and Reviews one under the other — the reader
+  // decides how far down to go, not which tab hides the rest. The section nav
+  // stays as a jump list, so a shared ?tab= link still lands somewhere true.
+  const pane = (_key: string) => " scroll-mt-24";
   const supabase = createClient();
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", id).single();
   if (!profile) notFound();
@@ -101,6 +97,19 @@ export default async function CreativePage({
   if (profile.role === "client") redirect(`/clients/${id}`);
   const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", id).order("created_at", { ascending: false });
   const { data: services } = await supabase.from("services").select("*").eq("profile_id", id).order("price_mwk", { ascending: true });
+  // Screen 03's rail answers "how do they work", not "what is on file". Both
+  // numbers are derived from rows we already hold; each is null when there is
+  // too little to say, and a null row does not render.
+  const replyMins = await getCreativeReplyMins(supabase, id);
+  const deliveryDays = (services || [])
+    .map((s: any) => s.delivery_days)
+    .filter((d: any) => typeof d === "number" && d > 0);
+  const turnaround = deliveryDays.length
+    ? Math.min(...deliveryDays) === Math.max(...deliveryDays)
+      ? `${Math.min(...deliveryDays)} days`
+      : `${Math.min(...deliveryDays)}–${Math.max(...deliveryDays)} days`
+    : null;
+
   const user = await getSessionUser();
   const isOwner = !!user && user.id === id;
   if (user && !isOwner) await recordView("creative", id);
@@ -129,7 +138,7 @@ export default async function CreativePage({
 
   const { data: reviews } = await supabase
     .from("reviews")
-    .select("id, job_id, rating, comment, created_at, response, responded_at, rating_communication, rating_quality, rating_deadline, rating_brief_clarity, rating_paid_on_time, rating_fair_revisions, reviewer:profiles!reviews_reviewer_id_fkey(full_name)")
+    .select("id, job_id, rating, comment, created_at, response, responded_at, rating_communication, rating_quality, rating_deadline, rating_brief_clarity, rating_paid_on_time, rating_fair_revisions, reviewer:profiles!reviews_reviewer_id_fkey(full_name, headline, location)")
     .eq("reviewee_id", id)
     .order("created_at", { ascending: false });
   // Item 28: published testimonials only. RLS enforces the same filter, but
@@ -266,9 +275,36 @@ export default async function CreativePage({
         </div>
       )}
 
-      <section className="card-soft mt-6 overflow-hidden">
+      {/* Screen 03 opens with the trail that got you here: the browse page, the
+          category, this person. Desktop only — a phone has the back arrow in
+          its own header and no room for three links of chrome. */}
+      <nav aria-label="Breadcrumb" className="mt-6 hidden text-xs text-ink/50 md:block">
+        <Link href="/browse" className="hover:text-ink hover:underline">
+          Browse creatives
+        </Link>
+        {primaryCat && (
+          <>
+            <span aria-hidden className="px-1.5">/</span>
+            <Link href={`/browse?category=${encodeURIComponent(primaryCat)}`} className="hover:text-ink hover:underline">
+              {primaryCat}
+            </Link>
+          </>
+        )}
+        <span aria-hidden className="px-1.5">/</span>
+        <span className="text-ink/70">{profile.full_name || "This creative"}</span>
+      </nav>
+
+      {/* Screen 03's identity block is not a card. It is the name, who they
+          are, the badge, the score and what they do — flat on the page, with
+          the money column beside it. */}
+      {/* Two columns from the top of the page: screen 03 runs the money column
+          alongside the name, not below the identity band. */}
+      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-6">
+      <section className="overflow-hidden">
+        {profile.cover_url && (
         <div
-          className="relative h-44 md:h-56"
+          className={profile.cover_url ? "relative h-44 md:h-56" : "relative h-16"}
           style={
             profile.cover_url
               ? { backgroundImage: `url(${profile.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -295,10 +331,12 @@ export default async function CreativePage({
             </span>
           )}
           {/* Bottom scrim so name/headline stay legible over any cover image */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/55 to-transparent"
-          />
+          {profile.cover_url && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/55 to-transparent"
+            />
+          )}
           {isOwner && (
             <Link
               href="/dashboard/profile"
@@ -312,12 +350,18 @@ export default async function CreativePage({
             </Link>
           )}
         </div>
+        )}
 
-        <div className="px-6 pb-6 pt-8 md:pt-10">
+        <div className={profile.cover_url ? "pt-8 md:pt-10" : ""}>
           {/* z-10 keeps the avatar above the banner it overlaps. */}
           <div className="relative z-10">
             <div className="flex items-end gap-4">
-              <div className="-mt-16 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-elev-2 ring-4 ring-white md:-mt-20 md:h-36 md:w-36 md:text-4xl">
+              <div
+                className={
+                  "flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-elev-2 ring-4 ring-white md:h-36 md:w-36 md:text-4xl " +
+                  (profile.cover_url ? "-mt-16 md:-mt-20" : "")
+                }
+              >
                 {profile.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.avatar_url} alt={profile.full_name || "Avatar"} className="h-full w-full object-cover" />
@@ -338,19 +382,25 @@ export default async function CreativePage({
                     </span>
                   )}
                 </div>
-                {profile.headline ? (
-                  <p className="mt-1 text-sm text-ink/70 md:text-base">{profile.headline}</p>
-                ) : isOwner ? (
+                {/* Screen 03 states who they are, where, and since when on one
+                    line — "Designer · Lilongwe · Joined March 2026". Joining is
+                    a fact about trust, so it belongs beside the name rather
+                    than in a list further down. */}
+                <p className="mt-1 text-sm text-ink/70 md:text-base">
+                  {[profile.headline, profile.location || "Malawi", memberSince ? `Joined ${memberSince}` : null]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+                {!profile.headline && isOwner && (
                   <Link href="/dashboard/account" className="mt-1 inline-block text-sm text-stamp-dark underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp md:text-base">
                     No headline yet — Add one
                   </Link>
-                ) : null}
+                )}
                 {/* Item 10: the tagline sits under the headline, not instead of
                     it — headline is the job, tagline is the angle. */}
                 {profile.tagline && (
                   <p className="mt-1.5 text-base text-ink/60">{profile.tagline}</p>
                 )}
-                <p className="mt-0.5 text-xs text-ink/55">{profile.location || "Malawi"}</p>
               </div>
             </div>
           </div>
@@ -385,21 +435,68 @@ export default async function CreativePage({
             </div>
           )}
 
+          {/* Screen 03 runs the description straight under the score, with no
+              "About" heading over it, and lists what they do as bare chips —
+              the word "Skills" is not on the screen. "Self-reported" stays: the
+              platform verifies none of these, and saying so is one small line
+              against a list that otherwise reads like a credential. */}
+          {profile.bio && (
+            <p id="section-about" className="mt-4 max-w-2xl scroll-mt-24 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">
+              {profile.bio}
+            </p>
+          )}
+
+          {(profile.skills || []).length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {profile.skills!.map((s: string) => (
+                <span key={s} className="rounded-full bg-ink/5 px-3 py-1 text-xs text-ink/80">{s}</span>
+              ))}
+              <span className="text-[11px] text-ink/45">Self-reported</span>
+            </div>
+          )}
+
+          {/* Screen 03 on a phone: the money column has fallen to the foot of
+              the page, so the two facts a visitor decides on come up here as
+              tiles. Desktop has them in the rail and does not repeat them. */}
+          {!isOwner && (services?.length || replyMins != null || turnaround) && (
+            <div className="mt-5 grid grid-cols-2 gap-3 md:hidden">
+              {!!services?.length && (
+                <div className="rounded-lg border border-ink/10 p-3">
+                  <p className="eyebrow text-ink/55">Starts from</p>
+                  <p className="mt-1 font-display text-lg tabular-nums text-ink">
+                    {formatMwk(services[0].price_mwk)}
+                  </p>
+                </div>
+              )}
+              {replyMins != null ? (
+                <div className="rounded-lg border border-ink/10 p-3">
+                  <p className="eyebrow text-ink/55">Replies in</p>
+                  <p className="mt-1 text-sm font-medium text-ink">{formatReplyTime(replyMins)}</p>
+                </div>
+              ) : turnaround ? (
+                <div className="rounded-lg border border-ink/10 p-3">
+                  <p className="eyebrow text-ink/55">Turnaround</p>
+                  <p className="mt-1 text-sm font-medium text-ink">{turnaround}</p>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* On a phone the reviews are a long way down; on desktop they are
+              one scroll away and the link would be noise. */}
+          {reviewCount > 0 && (
+            <a href="#section-reviews" className="mt-3 inline-block text-sm text-stamp-dark underline underline-offset-4 md:hidden">
+              All {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+            </a>
+          )}
+
           {(profile.categories || []).length > 0 && (
             <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {(profile.categories || []).map((c: string) => (
                 <span key={c} className="rounded-full bg-wash/70 px-3 py-1 text-xs text-ink/75">{c}</span>
               ))}
-              {serviceCount > 0 && (
-                <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-ink">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-ink/70">
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
-                  </svg>
-                  Services from {formatMwk(services![0].price_mwk)}
-                </span>
-              )}
+              {/* No starting price here: the money column says it, and one
+                  page saying it twice invites the two to disagree. */}
             </div>
           )}
 
@@ -433,62 +530,16 @@ export default async function CreativePage({
         </div>
       </section>
 
-      {/* Plain links, so a tab is shareable and the back button works. */}
-      <nav aria-label="Profile sections" className="mt-6 flex gap-1 overflow-x-auto border-b border-ink/10">
-        {TABS.map((t) => {
-          const on = tab === t.key;
-          const count =
-            t.key === "portfolio" ? portfolioCount : t.key === "services" ? serviceCount : t.key === "reviews" ? reviewCount : 0;
-          return (
-            <Link
-              key={t.key}
-              href={`/creatives/${profile.id}?tab=${t.key}`}
-              scroll={false}
-              aria-current={on ? "page" : undefined}
-              className={
-                (on ? "border-brand text-ink" : "border-transparent text-ink/55 hover:text-ink") +
-                " -mb-px shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors"
-              }
-            >
-              {t.label}
-              {/* A count only when there is one — never "Reviews 0". */}
-              {count > 0 && <span className="ml-1.5 text-xs text-ink/45">{count}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="space-y-6">
-          {profile.bio && (
-            <section className={"card-soft p-6" + pane("about")}>
-              <p className="eyebrow">About</p>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{profile.bio}</p>
-            </section>
-          )}
-
-          {(profile.skills || []).length > 0 && (
-            <section className={"card-soft p-6" + pane("about")}>
-              {/* §M3: skills are typed by the creative and verified by nobody.
-                  Saying so costs one line and stops the list reading like a
-                  credential the platform stands behind. */}
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="eyebrow">Skills</p>
-                <span className="text-[11px] text-ink/45">Self-reported</span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profile.skills!.map((s: string) => (
-                  <span key={s} className="rounded-full bg-ink/5 px-3 py-1 text-xs text-ink/80">{s}</span>
-                ))}
-              </div>
-            </section>
-          )}
+      {/* No section nav: screen 03 has none. The sections keep their ids so a
+          shared ?tab= link and any in-page anchor still land on one. */}
+          {/* About and Skills moved into the identity block above: screen 03
+              reads name, badge, score, description, chips as one run of text. */}
 
           {/* Item 42 (§G4): questions this creative has already answered,
               shown before anyone has to ask again. Renders nothing when none
               were written. */}
           {(services || []).some((s: any) => Array.isArray(s.faqs) && s.faqs.length > 0) && (
-            <section className={"card-soft p-6" + pane("services")}>
+            <section id="section-services" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("services")}>
               <p className="eyebrow">Common questions</p>
               <dl className="mt-4 space-y-4">
                 {(services || []).flatMap((s: any) =>
@@ -505,7 +556,7 @@ export default async function CreativePage({
             </section>
           )}
 
-          <section className={"card-soft p-6" + pane("services")}>
+          <section id="section-services" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("services")}>
             <div className="flex items-baseline justify-between">
               <p className="eyebrow">Rate card</p>
               <span className="text-xs text-ink/55">Starting prices</span>
@@ -528,8 +579,15 @@ export default async function CreativePage({
           </section>
 
           {(portfolioCount > 0 || isOwner) && (
-            <section className={"card-soft p-6" + pane("portfolio")}>
-              <p className="eyebrow">Portfolio</p>
+            <section id="section-portfolio" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("portfolio")}>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="eyebrow">Work</p>
+                {portfolioCount > 0 && (
+                  <span className="text-xs text-ink/55">
+                    {portfolioCount} piece{portfolioCount === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(portfolio || []).map((p) => {
                   const extra = Array.isArray(p.images) ? p.images.length : 0;
@@ -549,7 +607,7 @@ export default async function CreativePage({
                           )}
                         </div>
                       )}
-                      <div className="p-4">
+                      <div className="border-t border-ink/10 bg-wash/40 p-4">
                         <p className="font-medium text-ink group-hover:underline">{p.title}</p>
                         {p.description && <p className="mt-1 line-clamp-3 text-xs text-ink/65">{p.description}</p>}
                         <CaseStudyFacts item={p} />
@@ -557,9 +615,12 @@ export default async function CreativePage({
                     </Link>
                   );
                 })}
-                {portfolioCount === 0 && isOwner && (
-                  <Link href="/dashboard/portfolio" className="rounded-lg border border-dashed border-ink/25 p-6 text-center text-sm text-ink/60 hover:border-ink/45 hover:text-ink">
-                    + Add your first portfolio item
+                {/* Screen 03 leaves an empty slot at the end of the owner's
+                    grid, not only on an empty profile. It is a link to the
+                    portfolio editor, not a drop target: nothing here uploads. */}
+                {isOwner && (
+                  <Link href="/dashboard/portfolio" className="flex min-h-[7rem] items-center justify-center rounded-lg border border-dashed border-ink/25 p-6 text-center text-sm text-ink/60 hover:border-ink/45 hover:text-ink">
+                    {portfolioCount === 0 ? "+ Add your first portfolio item" : "+ Add a piece"}
                   </Link>
                 )}
               </div>
@@ -574,7 +635,7 @@ export default async function CreativePage({
               thing would let the weaker signal borrow the stronger one's
               credibility. */}
           {testimonials.length > 0 && (
-            <section className={"card-soft p-6" + pane("reviews")}>
+            <section id="section-reviews" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("reviews")}>
               <p className="eyebrow">Vouched for, off Ganyu Hub</p>
               <p className="mt-1.5 text-xs text-ink/55">
                 Clients {profile.full_name?.split(" ")[0] || "they"} worked with before joining, who
@@ -596,13 +657,16 @@ export default async function CreativePage({
           )}
 
           {reviewCount > 0 && (
-            <section className={"card-soft p-6" + pane("reviews")}>
+            <section id="section-reviews" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("reviews")}>
               <div className="flex items-center justify-between">
                 <p className="eyebrow">Reviews</p>
+                {/* Screen 03 says the number in words — "4.8 average across
+                    12" — rather than leaving a bare "4.8 · 12" to be decoded.
+                    The stars stay: they are how the score reads at a glance. */}
                 <span className="inline-flex items-center gap-1.5 text-sm">
                   <Stars value={avgRating} className="h-4 w-4" />
                   <span className="font-semibold text-ink">{avgRating.toFixed(1)}</span>
-                  <span className="text-ink/55">· {reviewCount}</span>
+                  <span className="text-ink/55">average across {reviewCount}</span>
                 </span>
               </div>
               {/* Item 34 (§N5): a swipeable row on a phone, a plain list on
@@ -620,17 +684,31 @@ export default async function CreativePage({
                       <p className="text-sm font-medium text-ink">{r.reviewer?.full_name || "A client"}</p>
                       <Stars value={r.rating} className="h-3.5 w-3.5" />
                     </div>
+                    {/* Screen 03 says who the reviewer is under their name —
+                        what they do and where. There is no business field on a
+                        profile, so this is their own headline; both halves are
+                        dropped when they wrote neither. */}
+                    {(r.reviewer?.headline || r.reviewer?.location) && (
+                      <p className="text-xs text-ink/55">
+                        {[r.reviewer?.headline, r.reviewer?.location].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
                     {/* Item 33: what the review was actually for. */}
                     {jobById.get(r.job_id) && (
                       <p className="mt-0.5 text-xs text-ink/50">
                         {jobById.get(r.job_id)!.title}
+                        {` · ${new Date(r.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`}
                         {jobById.get(r.job_id)!.paid ? ` · ${formatMwk(jobById.get(r.job_id)!.paid!)}` : ""}
                       </p>
                     )}
                     {r.comment && <p className="mt-1.5 whitespace-pre-wrap text-sm text-ink/75">{r.comment}</p>}
                     {/* Item 29: the axes that produced the star count. */}
                     <ReviewAxisBreakdown review={r} />
-                    <p className="mt-1 text-xs text-ink/45">{timeAgo(r.created_at)}</p>
+                    {/* The job line above already carries the month. Only a
+                        review with no job attached needs its own date. */}
+                    {!jobById.get(r.job_id) && (
+                      <p className="mt-1 text-xs text-ink/45">{timeAgo(r.created_at)}</p>
+                    )}
 
                     {/* Item 30 (§F1): the reply, threaded under the review it
                         answers. A one-sided bad review with nothing beneath it
@@ -660,11 +738,19 @@ export default async function CreativePage({
                   </li>
                 ))}
               </ul>
+              {/* Screen 03 closes the list by naming the total, so a page
+                  showing three of twelve never reads as a creative with three
+                  reviews. */}
+              {reviewCount > (reviews || []).length && (
+                <p className="mt-4 text-xs text-ink/55">
+                  Showing {(reviews || []).length} of {reviewCount} reviews.
+                </p>
+              )}
             </section>
           )}
 
           {user && !isOwner && (
-            <section className={"card-soft p-6" + pane("services")}>
+            <section id="section-services" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("services")}>
               <p className="eyebrow">Custom quote</p>
               <p className="mt-1 text-sm text-ink/65">
                 Don&apos;t see what you need? Describe it and {profile.full_name?.split(" ")[0] || "this creative"} will reply with a price.
@@ -697,9 +783,100 @@ export default async function CreativePage({
             is what makes sticky work inside a grid track — without it the aside
             stretches to full row height and never has room to stick. */}
         <aside className="space-y-6 md:sticky md:top-24 md:self-start">
+          {/* Screen 03's hire card, at the head of the rail: the price you are
+              starting from, the two ways in, and the sentence that says where
+              the money sits until the work is approved. Owners get none of it —
+              there is nothing to hire yourself for. */}
+          {!isOwner && (
+            <section className="card-soft p-5">
+              <p className="eyebrow text-ink/55">Starts from</p>
+              <p className="mt-1 font-display text-3xl tabular-nums text-ink">
+                {services?.length ? formatMwk(services[0].price_mwk) : "Ask for a price"}
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-ink/60">
+                Final price is agreed per job. You pay into escrow;{" "}
+                {(profile.full_name || "the creative").split(" ")[0]} is paid when you approve the
+                work.
+              </p>
+              {user ? (
+                <div className="mt-4 space-y-2">
+                  <Link
+                    href={`/creatives/${profile.id}/invite`}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-stamp px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
+                  >
+                    Hire {(profile.full_name || "this creative").split(" ")[0]} &rarr;
+                  </Link>
+                  <SavingForm action={startThread} silent>
+                    <input type="hidden" name="creative_id" value={profile.id} />
+                    <button
+                      type="submit"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-ink/15 px-4 py-2.5 text-sm font-medium text-ink/80 transition-colors hover:border-ink/30"
+                    >
+                      Message first
+                    </button>
+                  </SavingForm>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="mt-4 flex w-full items-center justify-center rounded-lg bg-stamp px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
+                >
+                  Sign in to hire
+                </Link>
+              )}
+              <p className="mt-3 text-[11px] leading-relaxed text-ink/50">
+                <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
+                  How the money works
+                </Link>
+              </p>
+            </section>
+          )}
+
+          {/* No separate escrow card: the money card above already says where
+              the money sits, and saying it twice in one column read as a
+              warning rather than a reassurance. */}
+
           <section className="card-soft p-5">
             <p className="eyebrow">At a glance</p>
             <dl className="mt-3 space-y-2 text-sm">
+              {/* Availability, then how fast they answer, then how long the
+                  work takes — the three questions asked before any of the
+                  counts below matter. */}
+              {profile.availability && (
+                <div className="flex items-center justify-between">
+                  <dt className="text-ink/60">Availability</dt>
+                  <dd className="inline-flex items-center gap-1.5 text-ink">
+                    <span
+                      aria-hidden
+                      className={
+                        "h-1.5 w-1.5 rounded-full " +
+                        (profile.availability === "available"
+                          ? "bg-status-available"
+                          : profile.availability === "busy"
+                            ? "bg-status-busy"
+                            : "bg-status-away")
+                      }
+                    />
+                    {profile.availability === "available"
+                      ? "Taking work"
+                      : profile.availability === "busy"
+                        ? "Busy"
+                        : "Away"}
+                  </dd>
+                </div>
+              )}
+              {replyMins != null && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink/60">Replies in</dt>
+                  <dd className="text-right text-ink">{formatReplyTime(replyMins)}</dd>
+                </div>
+              )}
+              {turnaround && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink/60">Typical turnaround</dt>
+                  <dd className="text-right text-ink">{turnaround}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-ink/60">Location</dt>
                 <dd className="text-ink">{profile.location || "Malawi"}</dd>
@@ -720,7 +897,8 @@ export default async function CreativePage({
               )}
               {profile.hours_per_week != null && (
                 <div className="flex justify-between">
-                  <dt className="text-ink/60">Availability</dt>
+                  {/* "Availability" above is the status; this is the load. */}
+                  <dt className="text-ink/60">Hours</dt>
                   <dd className="text-ink">{profile.hours_per_week} hrs/week</dd>
                 </div>
               )}
@@ -742,12 +920,8 @@ export default async function CreativePage({
                   <dd className="text-ink">{portfolioCount}</dd>
                 </div>
               )}
-              {memberSince && (
-                <div className="flex justify-between">
-                  <dt className="text-ink/60">Member since</dt>
-                  <dd className="text-ink">{memberSince}</dd>
-                </div>
-              )}
+              {/* No "Member since" row: the line under their name already
+                  says when they joined. */}
             </dl>
           </section>
 
@@ -802,6 +976,8 @@ export default async function CreativePage({
           rating={reviewCount > 0 ? { avg: avgRating, count: reviewCount } : null}
           actionHref="#actions"
           actionLabel="Message"
+          hireHref={`/creatives/${profile.id}/invite`}
+          hireLabel={`Hire ${(profile.full_name || "this creative").split(" ")[0]}`}
         >
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-3">

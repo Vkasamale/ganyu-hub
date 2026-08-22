@@ -171,6 +171,19 @@ Back-populated from `CHANGELOG.md`. Newest first. Only entries with a clear bug-
 
 ### 2026-08-22
 
+- **[BUG-028] Long job titles forced a horizontal scroll on the dashboard.** — found 2026-08-22, layout
+  - Repro: open `/dashboard` as a client with a job whose title runs past a few words ("BUG-017 VERIFY - payment_released event (throwaway)"). The Active jobs table pushes wider than its card and the page scrolls sideways.
+  - Cause: the table carried `min-w-[480px]` inside an `overflow-x-auto` wrapper. That combination does not wrap long text — it guarantees a scrollbar instead. A measuring pass found five elements wider than their containers, including the four-up figures grid and the charts row.
+  - Fix: the table sets its own column widths and lets titles wrap over two lines; the empty "Client" column is dropped when a client is reading their own jobs; the six-month header wraps away from its total; the escrow donut sits above its legend when the column is narrow.
+  - Verified: the overflow scan (`scrollWidth > clientWidth` across every element) returns an empty list at 1188px where it previously named five.
+
+- **[BUG-029] Local sign-in was impossible: Cloudflare Turnstile rejected localhost.** — found 2026-08-22, auth/dev-only
+  - Repro: run the dev server on any localhost port, try to sign in. The form is rejected. Not reproducible in production.
+  - Cause: `TURNSTILE_SECRET_KEY` is set locally, so `verifyTurnstile()` enforces the check, but the site key is registered to real hostnames and issues no token on localhost. `lib/turnstile.ts` fails open only when the secret is **unset**, so a half-configured local environment fails closed.
+  - Fix: **local only.** `.env.local` now uses Cloudflare's official always-pass test pair, with the real keys preserved as commented lines directly above them. Nothing was changed in the Cloudflare dashboard and nothing was deployed — `.env.local` is git-ignored.
+  - Note for whoever deploys from this machine: restore the two commented keys before building anything intended for production from local env.
+
+
 - **[BUG-027] /login and /signup showed a login form to someone already signed in.** — found 2026-08-22, auth
   - Repro: sign in, then visit `/login`. The login form renders with your own account still shown in the navbar beside it.
   - **Not a data leak.** The navbar was showing the viewer's own real session, correctly; nothing about another account was exposed and the auth code was not at fault. Neither page simply checked for an existing session.

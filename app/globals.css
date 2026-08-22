@@ -187,14 +187,12 @@ p, li, .text-pretty {
    ended up under the tab bar. There is nothing to subtract now. dvh so a
    collapsing address bar cannot reopen it.
 
-   The thread LIST at /messages keeps the chrome, so it keeps a subtraction —
-   but it scrolls the page rather than pinning a composer to the bottom edge,
-   so being a little short there costs nothing. */
-.messages-shell {
-  height: 100dvh;
-}
+   The LIST is the whole screen too. It used to keep the chrome and subtract a
+   header height from the viewport; now nothing is rendered above it on a
+   phone, so there is nothing to subtract. */
+.messages-shell,
 .messages-list-shell {
-  min-height: calc(100dvh - 8.75rem - var(--tabbar-clearance));
+  height: 100dvh;
 }
 @media (min-width: 768px) {
   .messages-shell,

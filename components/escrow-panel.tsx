@@ -64,7 +64,10 @@ export function primaryClientAction(status: Escrow, amount: number | null): stri
   return first.next === "payment_held" || first.next === "payment_released" ? first.label : null;
 }
 
-export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, paymentHeldAt, testMode = false }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null; paymentHeldAt?: string | null; testMode?: boolean }) {
+// `bare` drops the card chrome so a caller can fold this into a card of its
+// own — screens 05/06 run the payment state, the actions and the figures down
+// one card, not three.
+export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, paymentHeldAt, testMode = false, bare = false }: { jobId: string; escrowStatus: Escrow; role: Role; payoutStatus?: string | null; heldMwk?: number | null; paymentHeldAt?: string | null; testMode?: boolean; bare?: boolean }) {
   const payoutPending = payoutStatus === "pending";
   // Funds only settle to main balance the next business day. Server enforces
   // the 24h gate too; here we only surface it in the UI.
@@ -84,9 +87,8 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
     disabled: (payoutPending || holdActive) && a.next === "payment_released",
   }));
 
-  return (
-    <Card className="mt-6">
-      <CardContent className="p-5">
+  const body = (
+    <>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-ink/55">Payment</p>
           {/* The stamp in the job header already names the money state, and two
@@ -141,7 +143,13 @@ export function EscrowPanel({ jobId, escrowStatus, role, payoutStatus, heldMwk, 
               : <>You'll receive ~{formatMwk(creativeAmount(heldMwk))} after Ganyu's {Math.round((1 - CREATIVE_SHARE) * 100)}% fee. Your payout provider may deduct a small transfer charge on top.</>}
           </p>
         )}
-      </CardContent>
+    </>
+  );
+
+  if (bare) return body;
+  return (
+    <Card className="mt-6">
+      <CardContent className="p-5">{body}</CardContent>
     </Card>
   );
 }
