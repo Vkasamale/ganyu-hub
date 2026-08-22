@@ -164,6 +164,22 @@ async function medianReply(supabase: any, threadIds: string[], userId: string): 
   return gaps.length % 2 ? gaps[mid] : (gaps[mid - 1] + gaps[mid]) / 2;
 }
 
+/**
+ * The same median, for the other side of the table.
+ *
+ * A creative's profile wants to say how fast they answer, and the definition
+ * must be the one already used for clients — two answers to "how quickly do
+ * they reply" is worse than either. Same MIN_REPLIES floor, so a creative with
+ * two fast replies shows no row at all.
+ */
+export async function getCreativeReplyMins(supabase: any, creativeId: string): Promise<number | null> {
+  const { data: threads } = await supabase
+    .from("message_threads")
+    .select("id")
+    .eq("creative_id", creativeId);
+  return medianReply(supabase, (threads || []).map((t: any) => t.id), creativeId);
+}
+
 /** "under an hour" / "about 3 hours" / "about 2 days" — never "127 minutes". */
 /**
  * Item 54 — the trust row on a job card, for a whole list at once.

@@ -60,6 +60,7 @@ import { startThread, recordView, requestCustomService, inviteCreative, respondT
 import { Stars } from "@/components/stars";
 import { formatMwk, timeAgo, formatMonthYear } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
+import { getCreativeReplyMins, formatReplyTime } from "@/lib/client-trust";
 import { ShareButtons } from "@/components/share-buttons";
 import { absUrl } from "@/lib/site-url";
 import { JsonLd } from "@/components/json-ld";
@@ -96,6 +97,19 @@ export default async function CreativePage({
   if (profile.role === "client") redirect(`/clients/${id}`);
   const { data: portfolio } = await supabase.from("portfolio_items").select("*").eq("profile_id", id).order("created_at", { ascending: false });
   const { data: services } = await supabase.from("services").select("*").eq("profile_id", id).order("price_mwk", { ascending: true });
+  // Screen 03's rail answers "how do they work", not "what is on file". Both
+  // numbers are derived from rows we already hold; each is null when there is
+  // too little to say, and a null row does not render.
+  const replyMins = await getCreativeReplyMins(supabase, id);
+  const deliveryDays = (services || [])
+    .map((s: any) => s.delivery_days)
+    .filter((d: any) => typeof d === "number" && d > 0);
+  const turnaround = deliveryDays.length
+    ? Math.min(...deliveryDays) === Math.max(...deliveryDays)
+      ? `${Math.min(...deliveryDays)} days`
+      : `${Math.min(...deliveryDays)}–${Math.max(...deliveryDays)} days`
+    : null;
+
   const user = await getSessionUser();
   const isOwner = !!user && user.id === id;
   if (user && !isOwner) await recordView("creative", id);
@@ -779,18 +793,69 @@ export default async function CreativePage({
                   Sign in to hire
                 </Link>
               )}
-              <p className="mt-3 border-t border-ink/10 pt-3 text-xs leading-relaxed text-ink/55">
-                Your money is held in escrow until you approve the work.{" "}
-                <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
-                  How the money works
-                </Link>
-              </p>
             </section>
+          )}
+
+          {/* Screen 03 gives the escrow promise its own card. It is a statement
+              about the platform, not about this creative, and reading it inside
+              their hire card made it sound like their terms. Owners never see
+              it: it addresses the person about to pay. */}
+          {!isOwner && (
+          <section className="card-soft flex gap-3 p-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-stamp">
+              <path d="M12 3l7 3v6c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6l7-3z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+            <p className="text-xs leading-relaxed text-ink/70">
+              Your money is held in escrow until you approve the work.{" "}
+              <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
+                How the money works
+              </Link>
+            </p>
+          </section>
           )}
 
           <section className="card-soft p-5">
             <p className="eyebrow">At a glance</p>
             <dl className="mt-3 space-y-2 text-sm">
+              {/* Availability, then how fast they answer, then how long the
+                  work takes — the three questions asked before any of the
+                  counts below matter. */}
+              {profile.availability && (
+                <div className="flex items-center justify-between">
+                  <dt className="text-ink/60">Availability</dt>
+                  <dd className="inline-flex items-center gap-1.5 text-ink">
+                    <span
+                      aria-hidden
+                      className={
+                        "h-1.5 w-1.5 rounded-full " +
+                        (profile.availability === "available"
+                          ? "bg-status-available"
+                          : profile.availability === "busy"
+                            ? "bg-status-busy"
+                            : "bg-status-away")
+                      }
+                    />
+                    {profile.availability === "available"
+                      ? "Taking work"
+                      : profile.availability === "busy"
+                        ? "Busy"
+                        : "Away"}
+                  </dd>
+                </div>
+              )}
+              {replyMins != null && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink/60">Replies in</dt>
+                  <dd className="text-right text-ink">{formatReplyTime(replyMins)}</dd>
+                </div>
+              )}
+              {turnaround && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink/60">Typical turnaround</dt>
+                  <dd className="text-right text-ink">{turnaround}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-ink/60">Location</dt>
                 <dd className="text-ink">{profile.location || "Malawi"}</dd>
@@ -811,7 +876,8 @@ export default async function CreativePage({
               )}
               {profile.hours_per_week != null && (
                 <div className="flex justify-between">
-                  <dt className="text-ink/60">Availability</dt>
+                  {/* "Availability" above is the status; this is the load. */}
+                  <dt className="text-ink/60">Hours</dt>
                   <dd className="text-ink">{profile.hours_per_week} hrs/week</dd>
                 </div>
               )}
@@ -833,12 +899,8 @@ export default async function CreativePage({
                   <dd className="text-ink">{portfolioCount}</dd>
                 </div>
               )}
-              {memberSince && (
-                <div className="flex justify-between">
-                  <dt className="text-ink/60">Member since</dt>
-                  <dd className="text-ink">{memberSince}</dd>
-                </div>
-              )}
+              {/* No "Member since" row: the line under their name already
+                  says when they joined. */}
             </dl>
           </section>
 
