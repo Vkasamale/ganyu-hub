@@ -615,10 +615,13 @@ export default async function CreativePage({
             <section id="section-reviews" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("reviews")}>
               <div className="flex items-center justify-between">
                 <p className="eyebrow">Reviews</p>
+                {/* Screen 03 says the number in words — "4.8 average across
+                    12" — rather than leaving a bare "4.8 · 12" to be decoded.
+                    The stars stay: they are how the score reads at a glance. */}
                 <span className="inline-flex items-center gap-1.5 text-sm">
                   <Stars value={avgRating} className="h-4 w-4" />
                   <span className="font-semibold text-ink">{avgRating.toFixed(1)}</span>
-                  <span className="text-ink/55">· {reviewCount}</span>
+                  <span className="text-ink/55">average across {reviewCount}</span>
                 </span>
               </div>
               {/* Item 34 (§N5): a swipeable row on a phone, a plain list on
