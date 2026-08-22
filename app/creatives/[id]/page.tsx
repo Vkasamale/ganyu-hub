@@ -124,7 +124,7 @@ export default async function CreativePage({
 
   const { data: reviews } = await supabase
     .from("reviews")
-    .select("id, job_id, rating, comment, created_at, response, responded_at, rating_communication, rating_quality, rating_deadline, rating_brief_clarity, rating_paid_on_time, rating_fair_revisions, reviewer:profiles!reviews_reviewer_id_fkey(full_name)")
+    .select("id, job_id, rating, comment, created_at, response, responded_at, rating_communication, rating_quality, rating_deadline, rating_brief_clarity, rating_paid_on_time, rating_fair_revisions, reviewer:profiles!reviews_reviewer_id_fkey(full_name, headline, location)")
     .eq("reviewee_id", id)
     .order("created_at", { ascending: false });
   // Item 28: published testimonials only. RLS enforces the same filter, but
@@ -639,6 +639,15 @@ export default async function CreativePage({
                       <p className="text-sm font-medium text-ink">{r.reviewer?.full_name || "A client"}</p>
                       <Stars value={r.rating} className="h-3.5 w-3.5" />
                     </div>
+                    {/* Screen 03 says who the reviewer is under their name —
+                        what they do and where. There is no business field on a
+                        profile, so this is their own headline; both halves are
+                        dropped when they wrote neither. */}
+                    {(r.reviewer?.headline || r.reviewer?.location) && (
+                      <p className="text-xs text-ink/55">
+                        {[r.reviewer?.headline, r.reviewer?.location].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
                     {/* Item 33: what the review was actually for. */}
                     {jobById.get(r.job_id) && (
                       <p className="mt-0.5 text-xs text-ink/50">
@@ -650,7 +659,11 @@ export default async function CreativePage({
                     {r.comment && <p className="mt-1.5 whitespace-pre-wrap text-sm text-ink/75">{r.comment}</p>}
                     {/* Item 29: the axes that produced the star count. */}
                     <ReviewAxisBreakdown review={r} />
-                    <p className="mt-1 text-xs text-ink/45">{timeAgo(r.created_at)}</p>
+                    {/* The job line above already carries the month. Only a
+                        review with no job attached needs its own date. */}
+                    {!jobById.get(r.job_id) && (
+                      <p className="mt-1 text-xs text-ink/45">{timeAgo(r.created_at)}</p>
+                    )}
 
                     {/* Item 30 (§F1): the reply, threaded under the review it
                         answers. A one-sided bad review with nothing beneath it
