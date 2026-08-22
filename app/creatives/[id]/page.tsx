@@ -460,16 +460,8 @@ export default async function CreativePage({
               {(profile.categories || []).map((c: string) => (
                 <span key={c} className="rounded-full bg-wash/70 px-3 py-1 text-xs text-ink/75">{c}</span>
               ))}
-              {serviceCount > 0 && (
-                <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-ink">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-ink/70">
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
-                  </svg>
-                  Services from {formatMwk(services![0].price_mwk)}
-                </span>
-              )}
+              {/* No starting price here: the money column says it, and one
+                  page saying it twice invites the two to disagree. */}
             </div>
           )}
 
