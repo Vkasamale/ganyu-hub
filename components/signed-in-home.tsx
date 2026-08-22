@@ -12,6 +12,7 @@ import { clearBrowsingHistory, updateAvailability } from "@/app/actions";
 import { creativeGross } from "@/lib/fees";
 import { formatMwk } from "@/lib/utils";
 import { checkProfileComplete } from "@/lib/profile-complete";
+import { withPreviews, byRecentActivity, unreadByThread } from "@/lib/thread-previews";
 
 /**
  * The signed-in home — what `/` becomes once you are logged in.
@@ -39,6 +40,19 @@ function sinceLabel(iso: string): string {
 }
 
 /**
+ * Screen 04 greets by the time of day. "Welcome back" is the same sentence at
+ * 06:00 and at 23:00, which is how you can tell nobody is really being greeted.
+ * Server-rendered from the server's clock — close enough in a one-timezone
+ * product, and the alternative is a client component for a salutation.
+ */
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+/**
  * Whose move it is. The two sides of a job are never waiting on the same
  * thing, so the same status reads differently depending on who is looking —
  * "submitted" is a to-do for the client and a please-wait for the creative.
@@ -60,6 +74,55 @@ function nextStep(status: string, isClient: boolean): { label: string; onYou: bo
   }
 }
 
+/**
+ * The pill on a job card, and the one button under it. Screen 04's cards say
+ * "In progress · Deliver files →" and "Delivered · Nudge the client" — the
+ * state and the move, never one without the other.
+ */
+function jobStage(status: string, isClient: boolean): {
+  pill: string;
+  pillTone: "live" | "quiet";
+  action: string;
+  primary: boolean;
+} {
+  switch (status) {
+    case "scope_pending":
+      return isClient
+        ? { pill: "Scope", pillTone: "live", action: "Confirm the scope", primary: true }
+        : { pill: "Scope", pillTone: "live", action: "Confirm the scope", primary: true };
+    case "in_progress":
+      return isClient
+        ? { pill: "In progress", pillTone: "live", action: "Open the job", primary: false }
+        : { pill: "In progress", pillTone: "live", action: "Deliver files", primary: true };
+    case "submitted":
+      return isClient
+        ? { pill: "Delivered", pillTone: "quiet", action: "Review the delivery", primary: true }
+        : { pill: "Delivered", pillTone: "quiet", action: "Nudge the client", primary: false };
+    case "revision_requested":
+      return isClient
+        ? { pill: "Revisions asked for", pillTone: "quiet", action: "Open the job", primary: false }
+        : { pill: "Revisions asked for", pillTone: "live", action: "Make the revisions", primary: true };
+    default:
+      return { pill: "In progress", pillTone: "live", action: "Open the job", primary: false };
+  }
+}
+
+/** "due 9 September". Blank when there is no deadline — not "due —". */
+function dueLabel(date?: string | null): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return null;
+  return `due ${d.toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`;
+}
+
+/** What a proposal's status is called on screen 04's "Proposals sent" list. */
+const PROPOSAL_LABELS: Record<string, string> = {
+  pending: "Under review",
+  accepted: "Accepted",
+  declined: "Not chosen",
+  withdrawn: "Withdrawn",
+};
+
 export async function SignedInHome({ userId }: { userId: string }) {
   const supabase = createClient();
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
@@ -71,6 +134,7 @@ export async function SignedInHome({ userId }: { userId: string }) {
   let jobsPosted = 0;
   let proposalsWaiting = 0;
   let proposalsSent = 0;
+  let proposalRows: any[] = [];
   let portfolioCount = 0;
   let serviceCount = 0;
 
@@ -86,25 +150,47 @@ export async function SignedInHome({ userId }: { userId: string }) {
       proposalsWaiting = count || 0;
     }
   } else {
-    const [{ count: pc }, { count: sc }, { count: sent }] = await Promise.all([
+    // Screen 04 lists the proposals themselves, so the rows are fetched rather
+    // than counted: the count is just their length.
+    const [{ count: pc }, { count: sc }, { data: sent }] = await Promise.all([
       supabase.from("portfolio_items").select("*", { count: "exact", head: true }).eq("profile_id", userId),
       supabase.from("services").select("*", { count: "exact", head: true }).eq("profile_id", userId),
-      supabase.from("proposals").select("*", { count: "exact", head: true }).eq("creative_id", userId),
+      supabase
+        .from("proposals")
+        .select("id, status, bid_mwk, created_at, jobs:jobs!proposals_job_id_fkey(id, title)")
+        .eq("creative_id", userId)
+        .order("created_at", { ascending: false }),
     ]);
     portfolioCount = pc || 0;
     serviceCount = sc || 0;
-    proposalsSent = sent || 0;
+    proposalRows = (sent || []) as any[];
+    proposalsSent = proposalRows.length;
   }
 
   // Work in progress, above everything else. A user with a live job has one
   // question — "what is happening with my job" — and recommendations are not
   // an answer to it. Upwork and Fiverr both put active work above discovery.
+  // Screen 04 turns these into cards: who it is with, when it is due, how much
+  // is held, and the one button that moves the job on. That needs more than the
+  // title and the status, so the select carries the money and the counterparty.
   const ACTIVE = ["scope_pending", "in_progress", "submitted", "revision_requested"];
-  let activeJobs: { id: string; title: string; status: string }[] = [];
+  type ActiveJob = {
+    id: string;
+    title: string;
+    status: string;
+    deadline?: string | null;
+    escrow_status?: string | null;
+    total_paid_mwk?: number | null;
+    accepted_bid_mwk?: number | null;
+    counterparty?: string | null;
+  };
+  let activeJobs: ActiveJob[] = [];
+  const JOB_CARD_COLS =
+    "id, title, status, deadline, escrow_status, total_paid_mwk, accepted_bid_mwk";
   if (isClient) {
     const { data } = await supabase
       .from("jobs")
-      .select("id, title, status")
+      .select(JOB_CARD_COLS)
       .eq("client_id", userId)
       .in("status", ACTIVE)
       .order("created_at", { ascending: false });
@@ -112,12 +198,15 @@ export async function SignedInHome({ userId }: { userId: string }) {
   } else {
     const { data } = await supabase
       .from("proposals")
-      .select("jobs:jobs!proposals_job_id_fkey(id, title, status)")
+      .select(
+        `jobs:jobs!proposals_job_id_fkey(${JOB_CARD_COLS}, profiles:profiles!jobs_client_id_fkey(full_name))`,
+      )
       .eq("creative_id", userId)
       .eq("status", "accepted");
     activeJobs = (data || [])
       .map((p: any) => p.jobs)
-      .filter((j: any) => j && ACTIVE.includes(j.status));
+      .filter((j: any) => j && ACTIVE.includes(j.status))
+      .map((j: any) => ({ ...j, counterparty: j.profiles?.full_name || null }));
   }
 
   // Money first, for a creative. Screen 04's argument, and it is a good one:
@@ -215,6 +304,26 @@ export async function SignedInHome({ userId }: { userId: string }) {
     .eq("target_type", "thread")
     .is("read_at", null);
 
+  // Screen 04's right rail opens with the three most recent conversations, each
+  // with who it is with, the last line, and its unread count. Reuses the same
+  // two helpers the messages list is built on rather than a second definition
+  // of "last thing that happened".
+  const { data: threadRows } = await supabase
+    .from("message_threads")
+    .select(
+      "id, created_at, job_id, client:profiles!message_threads_client_id_fkey(id, full_name), creative:profiles!message_threads_creative_id_fkey(id, full_name)",
+    )
+    .or(`client_id.eq.${userId},creative_id.eq.${userId}`)
+    .order("created_at", { ascending: false });
+  const threadPreviews = byRecentActivity(
+    await withPreviews(supabase as any, (threadRows || []) as any, userId),
+  ).slice(0, 3);
+  const threadUnread = await unreadByThread(
+    supabase as any,
+    userId,
+    threadPreviews.map((t: any) => t.id),
+  );
+
   // What you missed. These were previously reachable ONLY through the bell in
   // the corner — which is the same as not existing for anyone who does not
   // think to look there. The home is where someone lands, so this is where
@@ -285,11 +394,20 @@ export async function SignedInHome({ userId }: { userId: string }) {
       <WelcomeChecklist steps={checklistSteps} dismissed={!!profile?.welcome_dismissed_at} />
       <PushBanner />
 
+      {/* Screen 04 at 1440: the working day down the middle, and a rail beside
+          it for the things you glance at — messages, jobs worth a look, and how
+          finished your profile is. One column on a phone, same order. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div className="space-y-6">
+      {/* On a wide screen the greeting and the switch share one line, the way
+          screen 04 has them: the sentence on the left, the one control that
+          changes whether any of it matters on the right. */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
       <header>
         <h1 className="font-display text-3xl md:text-4xl">
-          Welcome back,{" "}
+          {greeting()},{" "}
           <em className="not-italic text-stamp">
-            {firstName}.
+            {firstName}
           </em>
         </h1>
         {/* Screen 04 leads with a sentence, not just a greeting — "Two jobs
@@ -312,7 +430,7 @@ export async function SignedInHome({ userId }: { userId: string }) {
         <SavingForm
           action={updateAvailability}
           successText={isAvailable ? "You are no longer taking new work." : "You are available for work."}
-          className="card-soft flex items-center justify-between gap-4 p-4"
+          className="card-soft flex w-full items-center justify-between gap-4 p-4 sm:w-auto sm:min-w-[280px]"
         >
           <input type="hidden" name="availability" value={isAvailable ? "unavailable" : "available"} />
           <span>
@@ -345,6 +463,7 @@ export async function SignedInHome({ userId }: { userId: string }) {
           </button>
         </SavingForm>
       )}
+      </div>
 
       {/* The two money facts, before anything else. "Held for you" is the one
           that answers "is this real" — a creative who can see the client's money
@@ -376,12 +495,10 @@ export async function SignedInHome({ userId }: { userId: string }) {
         </section>
       )}
 
-      {(activeJobs.length > 0 || (unreadMessages ?? 0) > 0 || news.length > 0) && (
+      {((unreadMessages ?? 0) > 0 || news.length > 0) && (
         <section className="card-soft p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="eyebrow text-ink/55">
-              {news.length > 0 ? "Since you were last here" : "Your work right now"}
-            </p>
+            <p className="eyebrow text-ink/55">Since you were last here</p>
             {(unreadMessages ?? 0) > 0 && (
               <Link
                 href="/messages"
@@ -414,43 +531,255 @@ export async function SignedInHome({ userId }: { userId: string }) {
             </ul>
           )}
 
-          {activeJobs.length > 0 && news.length > 0 && (
-            <p className="mt-4 text-xs uppercase tracking-wider text-ink/45">Your work right now</p>
-          )}
+        </section>
+      )}
 
-          {activeJobs.length > 0 && (
-            <ul className="mt-3 divide-y divide-ink/[0.06]">
-              {/* Screen 04 puts the jobs that need something from you above
-                  everything that can wait. Same list, ordered by whose move it
-                  is — the label already says which, the order makes it the
-                  first thing read. */}
-              {[...activeJobs]
-                .sort(
-                  (a, b) =>
-                    Number(nextStep(b.status, isClient).onYou) -
-                    Number(nextStep(a.status, isClient).onYou),
-                )
-                .map((j) => {
-                const next = nextStep(j.status, isClient);
+      {/* Screen 04's "Needs you": each live job as a card carrying its stage,
+          what is held for it, and the one button that moves it on. Ordered so
+          the jobs waiting on you sit above the ones that can wait. */}
+      {activeJobs.length > 0 && (
+        <section>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-xl">Needs you</h2>
+            <p className="text-xs text-ink/50">
+              {activeJobs.length} {activeJobs.length === 1 ? "job" : "jobs"}
+            </p>
+          </div>
+          <ul className="mt-3 space-y-3">
+            {[...activeJobs]
+              .sort(
+                (a, b) =>
+                  Number(nextStep(b.status, isClient).onYou) -
+                  Number(nextStep(a.status, isClient).onYou),
+              )
+              .map((j) => {
+                const stage = jobStage(j.status, isClient);
+                const onYou = nextStep(j.status, isClient).onYou || stage.primary;
+                const amount = j.total_paid_mwk ?? j.accepted_bid_mwk ?? 0;
+                const held =
+                  j.escrow_status === "payment_held" && amount
+                    ? isClient
+                      ? amount
+                      : creativeGross(amount)
+                    : 0;
+                const due = dueLabel(j.deadline);
                 return (
-                  <li key={j.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">
-                    <Link href={`/jobs/${j.id}`} className="min-w-0 font-medium text-ink hover:underline">
-                      {j.title}
-                    </Link>
-                    <span
-                      className={
-                        "text-sm " + (next.onYou ? "font-medium text-brand-dark" : "text-ink/55")
-                      }
+                  <li
+                    key={j.id}
+                    className={
+                      "card-soft p-4 " + (onYou ? "border-stamp/30 bg-stamp/[0.04]" : "")
+                    }
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <Link
+                        href={`/jobs/${j.id}`}
+                        className="min-w-0 font-medium text-ink hover:underline"
+                      >
+                        {j.title}
+                      </Link>
+                      <span
+                        className={
+                          "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium " +
+                          (stage.pillTone === "live"
+                            ? "bg-stamp text-paper"
+                            : "bg-ink/[0.07] text-ink/70")
+                        }
+                      >
+                        {stage.pill}
+                      </span>
+                    </div>
+                    {(j.counterparty || due) && (
+                      <p className="mt-1 text-xs text-ink/55">
+                        {[j.counterparty, due].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      {held > 0 && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-wash px-3 py-1 text-xs font-medium text-ink/75">
+                          <span aria-hidden>💸</span>
+                          {formatMwk(held)} held
+                        </span>
+                      )}
+                      <Link
+                        href={`/jobs/${j.id}`}
+                        className={
+                          stage.primary
+                            ? "rounded-lg bg-ink px-3.5 py-2 text-xs font-medium text-paper hover:bg-ink/90"
+                            : "text-xs font-medium text-stamp-dark underline decoration-stamp/40 underline-offset-4"
+                        }
+                      >
+                        {stage.action} {stage.primary ? "→" : ""}
+                      </Link>
+                      {stage.primary && (
+                        <Link
+                          href={`/jobs/${j.id}`}
+                          className="text-xs text-ink/55 underline decoration-ink/20 underline-offset-4 hover:text-ink"
+                        >
+                          Open the job
+                        </Link>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+        </section>
+      )}
+
+      {/* Screen 04's "Proposals sent": what you bid, when, and where it stands.
+          A creative's other half of the working day — the jobs above are the
+          ones that landed, these are the ones still out. */}
+      {!isClient && proposalRows.length > 0 && (
+        <section className="card-soft overflow-hidden">
+          <div className="flex items-baseline justify-between gap-3 px-4 py-3">
+            <h2 className="font-display text-xl">Proposals sent</h2>
+            <Link
+              href="/dashboard/proposals"
+              className="text-xs text-stamp-dark underline underline-offset-4"
+            >
+              All {proposalRows.length}
+            </Link>
+          </div>
+          <ul className="divide-y divide-ink/[0.06]">
+            {proposalRows.slice(0, 4).map((p: any) => (
+              <li
+                key={p.id}
+                className={
+                  "flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm " +
+                  (p.status === "declined" || p.status === "withdrawn" ? "text-ink/45" : "")
+                }
+              >
+                <Link
+                  href={p.jobs?.id ? `/jobs/${p.jobs.id}` : "/dashboard/proposals"}
+                  className="min-w-0 flex-1 truncate font-medium hover:underline"
+                >
+                  {p.jobs?.title || "A job"}
+                </Link>
+                <span className="tabular-nums text-ink/70">{formatMwk(p.bid_mwk || 0)}</span>
+                <span className="text-xs text-ink/45">{sinceLabel(p.created_at)}</span>
+                <span className="rounded-full bg-ink/[0.07] px-2.5 py-0.5 text-xs font-medium text-ink/70">
+                  {PROPOSAL_LABELS[p.status] || p.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      </div>
+
+      <aside className="space-y-4 lg:sticky lg:top-6">
+        {threadPreviews.length > 0 && (
+          <section className="card-soft p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-medium text-ink">Messages</p>
+              {(unreadMessages ?? 0) > 0 && (
+                <span className="rounded-full bg-stamp px-2.5 py-0.5 text-xs font-medium text-paper">
+                  {unreadMessages} new
+                </span>
+              )}
+            </div>
+            <ul className="mt-3 space-y-2">
+              {threadPreviews.map((t: any) => {
+                const other = t.client?.id === userId ? t.creative : t.client;
+                const count = threadUnread.get(t.id) || 0;
+                return (
+                  <li key={t.id}>
+                    <Link
+                      href={`/messages/${t.id}`}
+                      className="flex items-center gap-3 rounded-lg px-1 py-1.5 hover:bg-wash/60"
                     >
-                      {next.label}
-                    </span>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink/85 text-[11px] font-medium text-paper">
+                        {(other?.full_name || "?")
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((w: string) => w[0])
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-ink">
+                          {other?.full_name || "Unknown"}
+                        </span>
+                        <span className="block truncate text-xs text-ink/55">
+                          {t.preview?.text || "No messages yet"}
+                        </span>
+                      </span>
+                      {count > 0 ? (
+                        <span className="shrink-0 rounded-full bg-stamp px-2 py-0.5 text-[11px] font-medium text-paper">
+                          {count}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[11px] text-ink/40">
+                          {sinceLabel(t.preview?.at || t.created_at)}
+                        </span>
+                      )}
+                    </Link>
                   </li>
                 );
               })}
             </ul>
-          )}
-        </section>
-      )}
+            <Link
+              href="/messages"
+              className="mt-3 inline-block text-xs text-stamp-dark underline underline-offset-4"
+            >
+              Open messages
+            </Link>
+          </section>
+        )}
+
+        {!isClient && feedJobs.length > 0 && (
+          <section className="card-soft p-4">
+            <p className="font-medium text-ink">Jobs worth a look</p>
+            <p className="text-xs text-ink/55">Matched to your categories</p>
+            <ul className="mt-3 space-y-3">
+              {feedJobs.slice(0, 3).map((j: any) => (
+                <li key={j.id}>
+                  <Link href={`/jobs/${j.id}`} className="group block">
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="min-w-0 text-sm font-medium text-ink group-hover:underline">
+                        {j.title}
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-mark">
+                        {j.budget_mwk ? formatMwk(j.budget_mwk) : "Open budget"}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block text-xs text-ink/50">
+                      {[j.category, j.created_at ? `posted ${sinceLabel(j.created_at)}` : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/jobs"
+              className="mt-3 inline-block text-xs text-stamp-dark underline underline-offset-4"
+            >
+              Browse all open jobs
+            </Link>
+          </section>
+        )}
+
+        {progress && (
+          <section className="card-soft border-dashed p-4">
+            <p className="font-medium text-ink">
+              Your profile is {Math.round((progress.done / progress.total) * 100)}% done
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-ink/60">
+              {progress.nextLabel} — profiles that finish this get more messages.
+            </p>
+            <Link
+              href={progress.nextHref}
+              className="mt-2 inline-block text-xs text-stamp-dark underline underline-offset-4"
+            >
+              {progress.nextLabel}
+            </Link>
+          </section>
+        )}
+      </aside>
+      </div>
 
       <HomeActionCards
         isClient={isClient}

@@ -63,8 +63,10 @@ export function JobProgressBar({ stage }: { stage: JobStageResult }) {
           const rightColor = color.bar;
           const delay = `${i * 180}ms`;
 
-          // Completed: check only. Current: nothing (ring signals it). Otherwise: number.
-          const dotContent = showOverlay ? "!" : done ? "✓" : current ? "" : i + 1;
+          // Completed: check only. Current: nothing (the ring signals it).
+          // Not yet reached: nothing either — screens 05/06 carry no numerals,
+          // and a stage's name is what identifies it, not its position.
+          const dotContent = showOverlay ? "!" : done ? "✓" : "";
 
           return (
             <li key={s.key} className="flex flex-1 flex-col items-center gap-1.5 text-center">
@@ -97,7 +99,6 @@ export function JobProgressBar({ stage }: { stage: JobStageResult }) {
                   </div>
                 )}
               </div>
-              <div className="mt-0.5 text-[10px] font-mono tabular-nums text-ink/45">{i + 1}</div>
             </li>
           );
         })}

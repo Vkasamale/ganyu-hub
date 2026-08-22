@@ -3,7 +3,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/supabase/user";
 import { sendMessage, markThreadRead } from "@/app/actions";
-import { Input } from "@/components/ui/input";
 import { SavingForm, SubmitButton } from "@/components/saving-form";
 import { AttachmentPicker } from "@/components/attachment-picker";
 import { MessageAttachment } from "@/components/message-attachment";
@@ -29,6 +28,25 @@ const MONEY_EVENT_INK: Record<string, string | undefined> = {
   dispute_filed: "#C22A2A",
   dispute_resolved: "#1B9455",
 };
+
+/** "THURSDAY 20 AUGUST", "YESTERDAY", "TODAY" — screen 07's divider chips. */
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  const midnight = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((midnight(new Date()) - midnight(d)) / 86_400_000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return d.toLocaleDateString("en-GB", {
+    weekday: days < 7 ? "long" : undefined,
+    day: "numeric",
+    month: "long",
+  });
+}
+
+/** "09:14". The clock time, which is what a receipt in a chat is read for. */
+function clockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
 
 export default async function ThreadPage({ params: paramsP }: { params: Promise<{ threadId: string }> }) {
   const params = await paramsP;
@@ -125,10 +143,11 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     escrow_status: string | null;
     total_paid_mwk: number | null;
     accepted_bid_mwk: number | null;
+    deadline?: string | null;
   } | null = null;
   if (thread.job_id) {
     const [{ data: jrow }, { data: evs }] = await Promise.all([
-      supabase.from("jobs").select("id, title, status, escrow_status, total_paid_mwk, accepted_bid_mwk").eq("id", thread.job_id).maybeSingle(),
+      supabase.from("jobs").select("id, title, status, escrow_status, total_paid_mwk, accepted_bid_mwk, deadline").eq("id", thread.job_id).maybeSingle(),
       supabase.from("job_events")
         .select("id, event_type, note, created_at")
         .eq("job_id", thread.job_id)
@@ -190,6 +209,21 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
   // usual anchor — "what happened last" — so it gets a jump link in the header.
   const latestEvent = jobEvents.length ? jobEvents[jobEvents.length - 1] : null;
 
+  // Every file that has passed through the thread, newest first. No new query:
+  // the messages and their signed URLs are already loaded above.
+  const sharedFiles = [...(messages || [])]
+    .filter((m: any) => m.attachment_url)
+    .reverse()
+    .map((m: any) => ({
+      id: m.id as string,
+      name: (m.attachment_name as string) || "Attachment",
+      at: m.created_at as string,
+      url: (m.attachment_url as string).startsWith("http")
+        ? (m.attachment_url as string)
+        : signedMap.get(m.attachment_url as string) || "",
+    }))
+    .filter((f) => f.url);
+
   const other: any = thread.client_id === user.id ? thread.creative : thread.client;
   const otherInitials = ((other?.full_name as string) || "?")
     .split(" ")
@@ -198,11 +232,14 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
     .join("")
     .toUpperCase();
 
+  // Where "+" sends you: the place this side of the market finds the other.
+  const NEW_THREAD_HREF = iAmClient ? "/browse" : "/jobs";
+
   return (
     // Full bleed on a phone — the thread is the screen. The centred, padded
     // column returns from md up, where the site chrome is back.
     <div className="mx-auto max-w-6xl md:px-4 md:py-6">
-      <div className="messages-shell grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]">
+      <div className="messages-shell grid gap-4 md:grid-cols-[364px_minmax(0,1fr)] xl:grid-cols-[364px_minmax(0,1fr)_340px]">
         <aside className="card-soft hidden min-w-0 flex-col overflow-hidden md:flex">
           <div className="border-b border-ink/10 p-4">
             <div className="flex items-center gap-2">
@@ -216,6 +253,19 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                 </svg>
               </Link>
               <p className="eyebrow">Messages</p>
+              {/* Screen 07's "+" on the list. A conversation always starts from
+                  a person or a job — there is no blank compose screen — so it
+                  goes where you pick one. */}
+              <Link
+                href={NEW_THREAD_HREF}
+                aria-label="Start a conversation"
+                title="Start a conversation"
+                className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full bg-stamp text-paper transition-colors hover:bg-stamp-dark"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-4 w-4">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </Link>
             </div>
           </div>
           <ThreadList threads={sidebarRows as any} userId={user.id} activeId={thread.id} />
@@ -242,23 +292,12 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             </div>
             <div className="min-w-0">
               <p className="truncate font-medium text-ink">{other?.full_name || "Unknown"}</p>
-              {threadJob ? (
-                <div className="flex min-w-0 flex-wrap items-center gap-x-2 text-xs">
-                  <Link
-                    href={`/jobs/${threadJob.id}`}
-                    className="truncate text-ink/60 underline-offset-2 hover:text-ink hover:underline"
-                  >
-                    {threadJob.title}
-                  </Link>
-                  {threadMoney && (
-                    <span className="shrink-0 font-medium tabular-nums" style={{ color: threadMoneyInk }}>
-                      {threadMoney}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-ink/55">Started {timeAgo(thread.created_at)}</p>
-              )}
+              <p className="text-xs text-ink/55">
+                {/* Screen 07 shows "Online" here. There is no presence channel
+                    yet, so this says the true thing we do know: when they last
+                    opened the thread. */}
+                {theirLastRead ? `Last read ${timeAgo(theirLastRead)}` : `Started ${timeAgo(thread.created_at)}`}
+              </p>
             </div>
             {latestEvent && (
               <a
@@ -271,7 +310,46 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             )}
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-ground px-5 py-5">
+          {/* Screen 07's job bar: what this conversation is about and what the
+              money is doing, on one line between the name and the stream. */}
+          {threadJob && (
+            <div className="flex items-center justify-between gap-3 border-b border-ink/10 bg-raised px-5 py-2.5">
+              <Link
+                href={`/jobs/${threadJob.id}`}
+                className="min-w-0 truncate text-xs text-ink/70 underline-offset-2 hover:text-ink hover:underline"
+              >
+                {threadJob.title}
+                {threadJob.deadline &&
+                  ` · due ${new Date(threadJob.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
+              </Link>
+              {threadMoney && (
+                <span
+                  className="shrink-0 rounded-full border px-3 py-1 text-xs font-medium tabular-nums"
+                  style={{ color: threadMoneyInk, borderColor: `${threadMoneyInk}55` }}
+                >
+                  {threadMoney}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Screen 07 puts the stamp ring behind the stream at 3% rather than
+              a wallpaper: the room the money moves through, barely there.
+              A ring drawn in CSS, NOT one of the money stamps — those name a
+              stage this thread's job may not be at, and a wallpaper that says
+              IN ESCROW behind an unfunded job is a lie told quietly. */}
+          <div className="relative flex-1 overflow-y-auto bg-ground">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.03]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at center, transparent 0 44px, var(--gh-teal, #069494) 44px 47px, transparent 47px)",
+                backgroundSize: "150px 150px",
+                backgroundRepeat: "repeat",
+              }}
+            />
+          <div className="relative space-y-3 px-5 py-5">
             {/* §H2, quiet weight: the compose box is directly below, so this
                 needs to say the room is empty and nothing more. */}
             {stream.length === 0 && (
@@ -293,13 +371,30 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                 )}
               </div>
             )}
-            {stream.map((row) => {
+            {stream.map((row, rowIndex) => {
+              const prev = rowIndex > 0 ? stream[rowIndex - 1] : null;
+              const newDay = !prev || dayLabel(prev.at) !== dayLabel(row.at);
+              const divider = newDay ? (
+                <div key={`d-${row.at}`} className="flex justify-center py-1">
+                  <span className="rounded-full bg-grey px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/55">
+                    {dayLabel(row.at)}
+                  </span>
+                </div>
+              ) : null;
               if (row.kind === "event") {
                 const e = row.data;
+                // Screen 07 writes a money event as its own stamped line with
+                // the figure in it — "Escrow funded · MWK 85,000" — because
+                // neither person said it and the amount is the whole point.
+                const money = MONEY_EVENT_INK[e.event_type] && threadAmount
+                  ? formatMwk(threadAmount)
+                  : null;
                 return (
-                  <div key={`e-${e.id}`} id={`event-${e.id}`} className="flex scroll-mt-4 justify-center">
+                  <div key={`e-${e.id}`}>
+                    {divider}
+                    <div id={`event-${e.id}`} className="flex scroll-mt-4 justify-center">
                     <div
-                      className="max-w-[85%] rounded-[10px] border border-ink/10 bg-grey px-4 py-2 text-center"
+                      className="max-w-[85%] rounded-[10px] border border-ink/10 bg-raised px-4 py-2.5 text-center shadow-elev-1"
                       style={MONEY_EVENT_INK[e.event_type]
                         ? { borderColor: `${MONEY_EVENT_INK[e.event_type]}55` }
                         : undefined}
@@ -309,11 +404,15 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         style={{ color: MONEY_EVENT_INK[e.event_type] || "rgba(26,22,17,0.70)" }}
                       >
                         {JOB_EVENT_LABELS[e.event_type as JobEventType] ?? e.event_type}
+                        {money && <span className="tabular-nums"> · {money}</span>}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-ink/50">{timeAgo(e.created_at)}</p>
+                      <p className="mt-0.5 text-[11px] text-ink/50">
+                        {clockTime(e.created_at)} · {timeAgo(e.created_at)}
+                      </p>
                       {e.note && (
                         <p className="mt-1 whitespace-pre-wrap break-words text-xs text-ink/60">{e.note}</p>
                       )}
+                    </div>
                     </div>
                   </div>
                 );
@@ -321,11 +420,16 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
               const m = row.data;
               const mine = m.sender_id === user.id;
               return (
-                <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                <div key={m.id}>
+                  {divider}
+                  <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                  {/* Screen 07: mine are teal, theirs are raised white. The
+                      colour is the only thing telling the two sides apart at a
+                      glance, so it is the accent, not the ink. */}
                   <div
                     className={
                       mine
-                        ? "max-w-[75%] rounded-[14px] rounded-br-sm bg-ink px-4 py-2.5 text-sm text-paper shadow-elev-1"
+                        ? "max-w-[75%] rounded-[14px] rounded-br-sm bg-stamp px-4 py-2.5 text-sm text-paper shadow-elev-1"
                         : "max-w-[75%] rounded-[14px] rounded-bl-sm border border-ink/[0.08] bg-raised px-4 py-2.5 text-sm text-ink shadow-elev-1"
                     }
                   >
@@ -343,8 +447,8 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         mine={mine}
                       />
                     )}
-                    <p className={`mt-1 text-[10px] ${mine ? "text-paper/60" : "text-ink/50"}`}>
-                      {timeAgo(m.created_at)}
+                    <p className={`mt-1 text-[10px] ${mine ? "text-paper/70" : "text-ink/50"}`}>
+                      {clockTime(m.created_at)}
                       {/* Item 72: null edited_at means never edited — the
                           honest default for every row written before the
                           column existed, which is why it is not backfilled. */}
@@ -355,11 +459,12 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         <span className="ml-1.5">
                           ·{" "}
                           {theirLastRead && new Date(theirLastRead) >= new Date(m.created_at)
-                            ? "Seen"
+                            ? `Read ${clockTime(theirLastRead)}`
                             : "Sent"}
                         </span>
                       )}
                     </p>
+                  </div>
                   </div>
                 </div>
               );
@@ -368,15 +473,100 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
               <p className="py-8 text-center text-sm text-ink/55">Say hello.</p>
             )}
           </div>
+          </div>
 
-          <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex flex-wrap items-center gap-2 border-t border-ink/10 bg-raised px-5 py-4">
+          {/* Screen 07's composer: the two attach controls, a pill to type in,
+              and a round teal send. The mic is not here — there are no voice
+              notes to record yet, and a button that does nothing is worse than
+              a missing one. */}
+          <SavingForm action={sendMessage} resetOnSuccess successText="Sent." className="flex flex-wrap items-center gap-2 border-t border-ink/10 bg-raised px-4 py-3">
             <input type="hidden" name="thread_id" value={thread.id} />
             <AttachmentPicker />
             <MessageJobPicker jobs={attachableJobs} />
-            <Input name="body" placeholder="Type a message, attach a file, or link a job" className="min-w-0 flex-1" />
-            <SubmitButton pendingText="Sending…">Send</SubmitButton>
+            {/* Blueprint §2C: the input grows with the message instead of
+                scrolling one line. ponytail: CSS `field-sizing: content` does
+                it natively — no client component, no resize handler. Ceiling:
+                Firefox has not shipped it, where this stays a two-row box. */}
+            <textarea
+              name="body"
+              rows={1}
+              placeholder="Write a message"
+              style={{ fieldSizing: "content" } as React.CSSProperties}
+              className="max-h-32 min-h-[40px] min-w-0 flex-1 resize-none rounded-2xl border border-ink/15 bg-ground px-4 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink/30 focus:outline-none"
+            />
+            <SubmitButton
+              pendingText=""
+              aria-label="Send"
+              className="h-10 w-10 shrink-0 rounded-full bg-stamp p-0 text-paper hover:bg-stamp-dark"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="m22 2-7 20-4-9-9-4Z" />
+                <path d="M22 2 11 13" />
+              </svg>
+            </SubmitButton>
           </SavingForm>
         </section>
+
+        {/* Blueprint §4.3: past ~1200px the info panel opens as a fourth column
+            rather than a drawer over the chat. What it holds is what a thread
+            is actually asked about — the job, the money, and every file that
+            has passed through. */}
+        <aside className="card-soft hidden min-w-0 flex-col gap-4 overflow-y-auto p-4 xl:flex">
+          <div className="text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink/85 text-sm font-medium text-paper">
+              {otherInitials}
+            </div>
+            <p className="mt-2 font-medium text-ink">{other?.full_name || "Unknown"}</p>
+            <p className="text-xs text-ink/55">
+              {theirLastRead ? `Last read ${timeAgo(theirLastRead)}` : `Started ${timeAgo(thread.created_at)}`}
+            </p>
+          </div>
+
+          {threadJob && (
+            <div className="rounded-xl border border-ink/10 p-3">
+              <p className="eyebrow text-ink/55">The job</p>
+              <Link
+                href={`/jobs/${threadJob.id}`}
+                className="mt-1 block text-sm font-medium text-ink hover:underline"
+              >
+                {threadJob.title}
+              </Link>
+              <p className="mt-1 text-xs text-ink/60">
+                {[
+                  threadMoney,
+                  threadJob.deadline
+                    ? `due ${new Date(threadJob.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <p className="eyebrow text-ink/55">Shared files</p>
+            {sharedFiles.length === 0 ? (
+              <p className="mt-2 text-xs text-ink/50">Nothing has been sent yet.</p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {sharedFiles.map((f) => (
+                  <li key={f.id}>
+                    <a
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block truncate text-xs text-ink/75 underline decoration-ink/20 underline-offset-4 hover:text-ink"
+                    >
+                      {f.name}
+                    </a>
+                    <p className="text-[11px] text-ink/45">{timeAgo(f.at)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

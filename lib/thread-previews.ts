@@ -96,8 +96,16 @@ export async function withPreviews<T extends MinimalThread>(
   for (const m of (msgs || []) as any[]) {
     if (lastMsg.has(m.thread_id)) continue;
     const text = (m.body || "").replace(/\[\[job:[0-9a-f-]+\]\]/gi, "").trim();
+    // Blueprint §1B: a preview says what KIND of thing arrived when no words
+    // came with it — a photo reads as a photo, not as a filename.
+    const isImage = /\.(jpe?g|png|gif|webp|heic|avif)$/i.test(m.attachment_name || "");
+    const attachmentLabel = m.attachment_name
+      ? isImage
+        ? "📷 Photo"
+        : `📎 ${m.attachment_name}`
+      : null;
     lastMsg.set(m.thread_id, {
-      text: text || (m.attachment_name ? `📎 ${m.attachment_name}` : "Shared a job"),
+      text: text || attachmentLabel || "Shared a job",
       at: m.created_at,
       kind: "message",
       fromMe: viewerId ? m.sender_id === viewerId : undefined,

@@ -73,7 +73,7 @@ import { submitProposal, decideProposal, recordView, addPortfolioItem, submitRev
 import { collectionFee } from "@/lib/fees";
 import { ReviewAxes } from "@/components/review-axes";
 import { Stars } from "@/components/stars";
-import { formatMwk, timeAgo, formatDeadline, daysUntil } from "@/lib/utils";
+import { formatMwk, timeAgo, formatDeadline, daysUntil, formatDayMonth } from "@/lib/utils";
 
 export default async function JobDetailPage({ params: paramsP }: { params: Promise<{ id: string }> }) {
   const params = await paramsP;
@@ -214,6 +214,26 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     ? await supabase.from("message_threads").select("id").eq("job_id", job.id).maybeSingle()
     : { data: null };
 
+  // Screens 05/06 show the conversation ON the job: the last thing each side
+  // said, then a link into the thread. Two rows, newest last, so it reads the
+  // way the thread does.
+  const { data: lastMessagesDesc } = jobThread
+    ? await supabase
+        .from("messages")
+        .select("id, body, sender_id, created_at, attachment_name")
+        .eq("thread_id", jobThread.id)
+        .order("created_at", { ascending: false })
+        .limit(2)
+    : { data: null };
+  const threadPreviewMessages = [...(lastMessagesDesc || [])].reverse();
+
+  const releasedAt: string | null =
+    (jobEvents || []).find((e: any) => e.event_type === "payment_released")?.created_at ?? null;
+
+  const otherPartyName: string | null = isClient
+    ? (proposals || []).find((p: any) => p.status === "accepted")?.creative?.full_name ?? null
+    : client?.full_name ?? null;
+
   const CANCELLABLE_JOB_STATUSES = new Set(["in_progress", "submitted", "revision_requested"]);
   const canRequestCancel = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
   const canProposeExtension = isParty && CANCELLABLE_JOB_STATUSES.has(job.status);
@@ -257,6 +277,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
   // someone decide whether to bid, and a client does not need telling how many
   // jobs they have posted. Skipped entirely for unclaimed creative-made jobs,
   // where client_id is still null.
+  // Screens 05/06 name both sides on the job: who is doing the work and who is
+  // paying for it. The creative comes from the accepted proposal, which the
+  // client view has already loaded — no extra query.
+  const acceptedCreative: { id: string; full_name: string | null; headline: string | null } | null =
+    (proposals || []).find((p: any) => p.status === "accepted")?.creative ?? null;
+
   const clientTrust = user && !isClient && job.client_id ? await getClientTrust(supabase, job.client_id) : null;
 
   // Mobile sticky bar: only when the payment card is actually on the page and
@@ -339,6 +365,70 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </p>
       </div>
 
+      {/* People on this job. Both rows are facts the reader already has a
+          relationship with — the person they are paying, and themselves. */}
+      {(acceptedCreative || client) && (
+        <Card className="mt-4">
+          <CardContent className="p-5">
+            <p className="eyebrow">People on this job</p>
+            <ul className="mt-3 space-y-3">
+              {acceptedCreative && (
+                <li className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stamp text-xs font-medium text-paper">
+                    {(acceptedCreative.full_name || "?")
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((w: string) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink">
+                      {acceptedCreative.full_name || "The creative"}
+                      {!isClient && user?.id === acceptedCreative.id && (
+                        <span className="ml-1 font-normal text-ink/50">(you)</span>
+                      )}
+                    </span>
+                    {acceptedCreative.headline && (
+                      <span className="block truncate text-xs text-ink/55">{acceptedCreative.headline}</span>
+                    )}
+                  </span>
+                  <Link
+                    href={`/creatives/${acceptedCreative.id}`}
+                    className="shrink-0 text-xs text-stamp-dark underline underline-offset-4"
+                  >
+                    Profile
+                  </Link>
+                </li>
+              )}
+              {client && (
+                <li className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink/85 text-xs font-medium text-paper">
+                    {(client.full_name || "?")
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((w: string) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink">
+                      {client.full_name || "The client"}
+                      {isClient && <span className="ml-1 font-normal text-ink/50">(you)</span>}
+                    </span>
+                    <span className="block truncate text-xs text-ink/55">
+                      {job.escrow_status === "payment_held" || job.escrow_status === "payment_released"
+                        ? "Has paid into escrow"
+                        : "Posted this job"}
+                    </span>
+                  </span>
+                </li>
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {clientTrust && (
         <AboutClient trust={clientTrust} clientId={job.client_id} clientName={client?.full_name || null} />
       )}
@@ -397,6 +487,47 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             </Card>
           );
         })()}
+
+        {/* Screens 05/06 close the rail with the four dates and figures the
+            client comes back to check, then the sentence that says a person
+            reads a dispute before any money moves. */}
+        <Card className="mt-4">
+          <CardContent className="p-5">
+            <dl className="space-y-2 text-xs">
+              {job.accepted_bid_mwk != null && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Agreed price</dt>
+                  <dd className="font-medium tabular-nums text-ink">{formatMwk(job.accepted_bid_mwk)}</dd>
+                </div>
+              )}
+              {job.payment_held_at && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Funded</dt>
+                  <dd className="text-ink">{formatDayMonth(job.payment_held_at)}</dd>
+                </div>
+              )}
+              {releasedAt && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Released</dt>
+                  <dd className="text-ink">{formatDayMonth(releasedAt)}</dd>
+                </div>
+              )}
+              {job.deadline && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-ink/55">Deadline</dt>
+                  <dd className="text-ink">{formatDeadline(job.deadline)}</dd>
+                </div>
+              )}
+            </dl>
+            <p className="mt-3 border-t border-ink/10 pt-3 text-xs leading-relaxed text-ink/55">
+              If something goes wrong, a person at Ganyu Hub reads both sides before any money
+              moves.{" "}
+              <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
+                How disputes work
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
         </div>
       )}
       {user && isClient && job.pending_accept_proposal_id && job.escrow_status === "payment_pending" && (
@@ -428,8 +559,12 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <CardContent className="p-5 sm:p-6">
           {/* Brief collapses to a teaser; the terms below stay visible, since
               budget and deadline are what people come back to check. */}
+          {/* Screens 05/06 head this "The brief" and leave it open: the brief
+              is what the page is about, and a teaser makes the reader ask for
+              it before they can start. */}
           <Collapsible
-            title="Project brief"
+            title="The brief"
+            defaultOpen
             summary={String(job.brief || "").slice(0, 110) + (String(job.brief || "").length > 110 ? "…" : "")}
           >
             {/* Item 69: markdown text in, sanitised elements out. Existing
@@ -444,9 +579,22 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
                   Deliverables
                 </div>
-                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/80">
-                  {job.deliverables}
-                </p>
+                {/* Screens 05/06 tick each deliverable. They are the definition
+                    of finished, so they read as a list of things, not as a
+                    paragraph about things. Lines that are already bulleted lose
+                    their dash — the tick is the bullet now. */}
+                <ul className="mt-2 space-y-1.5">
+                  {String(job.deliverables)
+                    .split(/\r?\n/)
+                    .map((line: string) => line.replace(/^\s*[-*•]\s*/, "").trim())
+                    .filter(Boolean)
+                    .map((line: string, i: number) => (
+                      <li key={i} className="flex gap-2 text-sm leading-relaxed text-ink/80">
+                        <span aria-hidden className="mt-0.5 shrink-0 text-stamp">✓</span>
+                        <span className="break-words">{line}</span>
+                      </li>
+                    ))}
+                </ul>
               </div>
             )}
           </Collapsible>
@@ -568,15 +716,48 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       )}
 
       {isPartyForEvents && jobThread && (
-        <Link
-          href={`/messages/${jobThread.id}`}
-          className="mt-4 inline-flex items-center gap-2 text-sm text-ink/70 underline-offset-2 hover:text-ink hover:underline"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          Open conversation
-        </Link>
+        <Card className="mt-4">
+          <CardContent className="p-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-medium text-ink">
+                Messages{otherPartyName ? ` with ${otherPartyName.split(" ")[0]}` : ""}
+              </p>
+              <Link
+                href={`/messages/${jobThread.id}`}
+                className="shrink-0 text-xs text-stamp-dark underline underline-offset-4"
+              >
+                Open thread &rarr;
+              </Link>
+            </div>
+            {threadPreviewMessages.length === 0 ? (
+              /* The quiet weight: an empty region on a page that is otherwise
+                 full gets a line of text and nothing else. */
+              <p className="mt-3 text-xs text-ink/50">No messages on this job yet.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {threadPreviewMessages.map((m: any) => {
+                  const mine = m.sender_id === user?.id;
+                  const text =
+                    String(m.body || "").replace(/\[\[job:[0-9a-f-]+\]\]/gi, "").trim() ||
+                    (m.attachment_name ? `\u{1F4CE} ${m.attachment_name}` : "Shared a job");
+                  return (
+                    <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <span
+                        className={
+                          mine
+                            ? "max-w-[80%] rounded-[12px] rounded-br-sm bg-stamp px-3 py-2 text-xs text-paper"
+                            : "max-w-[80%] rounded-[12px] rounded-bl-sm border border-ink/[0.08] bg-raised px-3 py-2 text-xs text-ink"
+                        }
+                      >
+                        {text}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {isPartyForEvents && jobEvents && jobEvents.length > 0 && (

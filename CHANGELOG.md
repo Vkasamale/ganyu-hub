@@ -3,6 +3,49 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-22 — Twenty screens read, and the app moved to match them
+
+**Post a job is the design's three steps.** "What you need", "Budget & deadline",
+"Review". The clickable step rail is gone; each step is headed "Step n of 3" with
+its name and a three-segment bar. Two fields the design asks for and the form
+never had: the skills a client is looking for, and where the work is. Both are
+new, nullable columns on `jobs` — run the two `alter table` statements at the
+foot of `supabase/schema.sql` before posting a job. `revisions_included` and
+`format_spec` are no longer asked for; `deliverables` moved to step 1, where the
+server's 50-character rule still holds.
+
+**The signed-in home is the dashboard the screens describe.** It greets by the
+time of day rather than saying "Welcome back" at every hour. "Needs you" is a
+list of job cards carrying a stage pill, what is held in escrow, and the one
+button that moves the job on. "Proposals sent" is new. On a wide screen a rail
+opens beside the work with the three most recent conversations, jobs worth a
+look, and how finished the profile is.
+
+**The message thread.** Date dividers, outgoing bubbles in teal instead of ink,
+money events written as their own stamped line with the amount in them, read
+receipts that give the time, a job bar under the name, and an auto-growing
+composer with a round send. The ring behind the stream is drawn in CSS, not one
+of the money stamps — a wallpaper reading IN ESCROW behind an unfunded job would
+be a lie told quietly. Past ~1200px an info column opens with the job, the money,
+and every file that has passed through the thread.
+
+**The list.** A header stack of its own: overflow, compose, the view title, then
+search and the filter chips. Unread now shows as a ring on the avatar as well as
+a badge, and a preview says what kind of thing arrived when no words came with it.
+
+**Job detail.** People on this job, deliverables ticked one per line, the brief
+open and called "The brief", the activity list renamed "What happened" and dated,
+a conversation card carrying the last two messages, and a rail that closes with
+the agreed price, the dates, and the sentence about a person reading both sides
+of a dispute. The stage bar lost its numerals — the screens carry none.
+
+**The creative profile has the same shape as the job page.** Content column,
+340px sticky rail, and the rail opens with the hire card: what the work starts
+from, Hire, Message first, and where the money sits until the work is approved.
+The tab strip is gone — About, Work and Reviews run one under the other, as the
+screens show them. The invented teal cover band no longer renders for creatives
+who never uploaded one. Every ported screen now uses the same 340px rail.
+
 ## 2026-08-21 — The stamp's right margin, and a register of what was never designed (v0.9.15)
 
 **The stamp was only right-aligned when the row did not wrap.** `justify-between`

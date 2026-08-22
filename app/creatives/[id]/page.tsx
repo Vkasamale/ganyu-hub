@@ -67,18 +67,11 @@ import { JsonLd } from "@/components/json-ld";
 /**
  * Item 15 (§F4): About · Services · Portfolio · Reviews.
  *
- * ponytail: the tab lives in the URL and the panes are shown/hidden with a
- * class, so this stays a server component — no client state, no hydration, and
- * /creatives/x?tab=reviews is a link someone can send. Hiding rather than
- * unmounting also keeps every section in the HTML for search engines, which a
- * client-side tab widget would have thrown away.
+ * Screen 03 has no tabs: About, Work and Reviews run one under the other down
+ * the left column, with the hire card in the rail beside them. Sections keep
+ * their ids, so /creatives/x?tab=reviews — a link people have already sent —
+ * still resolves to a page containing that section rather than a 404 view.
  */
-const TABS = [
-  { key: "about", label: "About" },
-  { key: "services", label: "Services" },
-  { key: "portfolio", label: "Portfolio" },
-  { key: "reviews", label: "Reviews" },
-] as const;
 
 export default async function CreativePage({
   params,
@@ -89,8 +82,10 @@ export default async function CreativePage({
 }) {
   const { id } = await params;
   const sp = (await searchParams) || {};
-  const tab = TABS.some((t) => t.key === sp.tab) ? (sp.tab as string) : "about";
-  const pane = (key: string) => (tab === key ? "" : " hidden");
+  // Screen 03 shows About, Work and Reviews one under the other — the reader
+  // decides how far down to go, not which tab hides the rest. The section nav
+  // stays as a jump list, so a shared ?tab= link still lands somewhere true.
+  const pane = (_key: string) => " scroll-mt-24";
   const supabase = createClient();
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", id).single();
   if (!profile) notFound();
@@ -267,8 +262,9 @@ export default async function CreativePage({
       )}
 
       <section className="card-soft mt-6 overflow-hidden">
+        {(profile.cover_url || isOwner) && (
         <div
-          className="relative h-44 md:h-56"
+          className={profile.cover_url ? "relative h-44 md:h-56" : "relative h-16"}
           style={
             profile.cover_url
               ? { backgroundImage: `url(${profile.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -295,10 +291,12 @@ export default async function CreativePage({
             </span>
           )}
           {/* Bottom scrim so name/headline stay legible over any cover image */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/55 to-transparent"
-          />
+          {profile.cover_url && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/55 to-transparent"
+            />
+          )}
           {isOwner && (
             <Link
               href="/dashboard/profile"
@@ -312,12 +310,18 @@ export default async function CreativePage({
             </Link>
           )}
         </div>
+        )}
 
-        <div className="px-6 pb-6 pt-8 md:pt-10">
+        <div className={(profile.cover_url || isOwner) ? "px-6 pb-6 pt-8 md:pt-10" : "px-6 pb-6 pt-6"}>
           {/* z-10 keeps the avatar above the banner it overlaps. */}
           <div className="relative z-10">
             <div className="flex items-end gap-4">
-              <div className="-mt-16 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-elev-2 ring-4 ring-white md:-mt-20 md:h-36 md:w-36 md:text-4xl">
+              <div
+                className={
+                  "flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-elev-2 ring-4 ring-white md:h-36 md:w-36 md:text-4xl " +
+                  (profile.cover_url ? "-mt-16 md:-mt-20" : isOwner ? "-mt-10" : "")
+                }
+              >
                 {profile.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.avatar_url} alt={profile.full_name || "Avatar"} className="h-full w-full object-cover" />
@@ -433,42 +437,19 @@ export default async function CreativePage({
         </div>
       </section>
 
-      {/* Plain links, so a tab is shareable and the back button works. */}
-      <nav aria-label="Profile sections" className="mt-6 flex gap-1 overflow-x-auto border-b border-ink/10">
-        {TABS.map((t) => {
-          const on = tab === t.key;
-          const count =
-            t.key === "portfolio" ? portfolioCount : t.key === "services" ? serviceCount : t.key === "reviews" ? reviewCount : 0;
-          return (
-            <Link
-              key={t.key}
-              href={`/creatives/${profile.id}?tab=${t.key}`}
-              scroll={false}
-              aria-current={on ? "page" : undefined}
-              className={
-                (on ? "border-brand text-ink" : "border-transparent text-ink/55 hover:text-ink") +
-                " -mb-px shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors"
-              }
-            >
-              {t.label}
-              {/* A count only when there is one — never "Reviews 0". */}
-              {count > 0 && <span className="ml-1.5 text-xs text-ink/45">{count}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
+      {/* No section nav: screen 03 has none. The sections keep their ids so a
+          shared ?tab= link and any in-page anchor still land on one. */}
+      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
           {profile.bio && (
-            <section className={"card-soft p-6" + pane("about")}>
+            <section id="section-about" className={"card-soft p-6" + pane("about")}>
               <p className="eyebrow">About</p>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{profile.bio}</p>
             </section>
           )}
 
           {(profile.skills || []).length > 0 && (
-            <section className={"card-soft p-6" + pane("about")}>
+            <section id="section-about" className={"card-soft p-6" + pane("about")}>
               {/* §M3: skills are typed by the creative and verified by nobody.
                   Saying so costs one line and stops the list reading like a
                   credential the platform stands behind. */}
@@ -488,7 +469,7 @@ export default async function CreativePage({
               shown before anyone has to ask again. Renders nothing when none
               were written. */}
           {(services || []).some((s: any) => Array.isArray(s.faqs) && s.faqs.length > 0) && (
-            <section className={"card-soft p-6" + pane("services")}>
+            <section id="section-services" className={"card-soft p-6" + pane("services")}>
               <p className="eyebrow">Common questions</p>
               <dl className="mt-4 space-y-4">
                 {(services || []).flatMap((s: any) =>
@@ -505,7 +486,7 @@ export default async function CreativePage({
             </section>
           )}
 
-          <section className={"card-soft p-6" + pane("services")}>
+          <section id="section-services" className={"card-soft p-6" + pane("services")}>
             <div className="flex items-baseline justify-between">
               <p className="eyebrow">Rate card</p>
               <span className="text-xs text-ink/55">Starting prices</span>
@@ -528,7 +509,7 @@ export default async function CreativePage({
           </section>
 
           {(portfolioCount > 0 || isOwner) && (
-            <section className={"card-soft p-6" + pane("portfolio")}>
+            <section id="section-portfolio" className={"card-soft p-6" + pane("portfolio")}>
               <p className="eyebrow">Portfolio</p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(portfolio || []).map((p) => {
@@ -574,7 +555,7 @@ export default async function CreativePage({
               thing would let the weaker signal borrow the stronger one's
               credibility. */}
           {testimonials.length > 0 && (
-            <section className={"card-soft p-6" + pane("reviews")}>
+            <section id="section-reviews" className={"card-soft p-6" + pane("reviews")}>
               <p className="eyebrow">Vouched for, off Ganyu Hub</p>
               <p className="mt-1.5 text-xs text-ink/55">
                 Clients {profile.full_name?.split(" ")[0] || "they"} worked with before joining, who
@@ -596,7 +577,7 @@ export default async function CreativePage({
           )}
 
           {reviewCount > 0 && (
-            <section className={"card-soft p-6" + pane("reviews")}>
+            <section id="section-reviews" className={"card-soft p-6" + pane("reviews")}>
               <div className="flex items-center justify-between">
                 <p className="eyebrow">Reviews</p>
                 <span className="inline-flex items-center gap-1.5 text-sm">
@@ -664,7 +645,7 @@ export default async function CreativePage({
           )}
 
           {user && !isOwner && (
-            <section className={"card-soft p-6" + pane("services")}>
+            <section id="section-services" className={"card-soft p-6" + pane("services")}>
               <p className="eyebrow">Custom quote</p>
               <p className="mt-1 text-sm text-ink/65">
                 Don&apos;t see what you need? Describe it and {profile.full_name?.split(" ")[0] || "this creative"} will reply with a price.
@@ -697,6 +678,56 @@ export default async function CreativePage({
             is what makes sticky work inside a grid track — without it the aside
             stretches to full row height and never has room to stick. */}
         <aside className="space-y-6 md:sticky md:top-24 md:self-start">
+          {/* Screen 03's hire card, at the head of the rail: the price you are
+              starting from, the two ways in, and the sentence that says where
+              the money sits until the work is approved. Owners get none of it —
+              there is nothing to hire yourself for. */}
+          {!isOwner && (
+            <section className="card-soft p-5">
+              <p className="eyebrow text-ink/55">Starts from</p>
+              <p className="mt-1 font-display text-3xl tabular-nums text-ink">
+                {services?.length ? formatMwk(services[0].price_mwk) : "Ask for a price"}
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-ink/60">
+                Final price is agreed per job. You pay into escrow;{" "}
+                {(profile.full_name || "the creative").split(" ")[0]} is paid when you approve the
+                work.
+              </p>
+              {user ? (
+                <div className="mt-4 space-y-2">
+                  <Link
+                    href={`/creatives/${profile.id}/invite`}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-stamp px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
+                  >
+                    Hire {(profile.full_name || "this creative").split(" ")[0]} &rarr;
+                  </Link>
+                  <SavingForm action={startThread} silent>
+                    <input type="hidden" name="creative_id" value={profile.id} />
+                    <button
+                      type="submit"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-ink/15 px-4 py-2.5 text-sm font-medium text-ink/80 transition-colors hover:border-ink/30"
+                    >
+                      Message first
+                    </button>
+                  </SavingForm>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="mt-4 flex w-full items-center justify-center rounded-lg bg-stamp px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
+                >
+                  Sign in to hire
+                </Link>
+              )}
+              <p className="mt-3 border-t border-ink/10 pt-3 text-xs leading-relaxed text-ink/55">
+                Your money is held in escrow until you approve the work.{" "}
+                <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
+                  How the money works
+                </Link>
+              </p>
+            </section>
+          )}
+
           <section className="card-soft p-5">
             <p className="eyebrow">At a glance</p>
             <dl className="mt-3 space-y-2 text-sm">

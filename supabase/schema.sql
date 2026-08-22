@@ -1132,3 +1132,9 @@ alter table proposals add column if not exists source_files boolean;
 alter table proposals add column if not exists addons jsonb not null default '[]'::jsonb;
 alter table proposals add column if not exists ai_disclosure text;
 alter table services add column if not exists faqs jsonb not null default '[]'::jsonb;
+
+-- Post-a-job, ported to the Claude Design screens: step 1 asks for the skills
+-- the client is looking for, step 2 asks where the work is. Both are new to
+-- the jobs table; both are optional.
+alter table jobs add column if not exists skills text[];
+alter table jobs add column if not exists location text;

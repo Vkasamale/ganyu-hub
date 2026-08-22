@@ -935,6 +935,8 @@ export async function postJob(formData: FormData) {
   const deadline = String(formData.get("deadline") || "").trim() || null;
   const revisionsRaw = Number(formData.get("revisions_included"));
   const format_spec = String(formData.get("format_spec") || "").trim() || null;
+  const location = String(formData.get("location") || "").trim() || null;
+  const skills = formData.getAll("skills").map((s) => String(s).trim()).filter(Boolean).slice(0, 12);
 
   // Structured brief so acceptance = real contract. Cheap validation up front.
   if (brief.length < 200) return { error: "Brief must be at least 200 characters — spell out what the job actually is." };
@@ -953,6 +955,8 @@ export async function postJob(formData: FormData) {
     deadline,
     revisions_included,
     format_spec,
+    location,
+    skills: skills.length ? skills : null,
   }).select("id").single();
   if (error) return { error: error.message };
   revalidatePath("/dashboard/jobs");

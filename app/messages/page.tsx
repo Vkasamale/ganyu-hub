@@ -20,23 +20,45 @@ export default async function MessagesPage() {
   const unread = await unreadByThread(supabase, user.id, withPreview.map((t) => t.id));
   const rows = byRecentActivity(withPreview.map((t) => ({ ...t, unread: unread.get(t.id) || 0 })));
 
+  // Where "+" sends you: the place this side of the market finds the other.
+  const isClientViewer = (rows as any[]).some((t) => t.client_id === user.id);
+  const NEW_THREAD_HREF = isClientViewer ? "/browse" : "/jobs";
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       <div className="messages-list-shell grid gap-4 md:grid-cols-[364px_minmax(0,1fr)]">
         <aside className="card-soft flex min-w-0 flex-col overflow-hidden">
-          <div className="border-b border-ink/10 p-4">
-            <div className="flex items-center gap-2">
+          {/* Blueprint §1A — the header stack: a utility row, then the view
+              title, then (inside ThreadList) search and the filter chips.
+              Sticky on a phone, where the list is the whole screen. */}
+          <div className="sticky top-0 z-10 border-b border-ink/10 bg-paper p-4 md:static">
+            <div className="flex items-center justify-between">
               <Link
-                href="/dashboard"
-                aria-label="Back to dashboard"
-                className="-ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-ink/60 transition-colors hover:bg-wash/60 hover:text-ink"
+                href="/dashboard/account"
+                aria-label="Settings"
+                title="Settings"
+                className="-ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink/60 transition-colors hover:bg-wash/60 hover:text-ink"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                  <polyline points="15 18 9 12 15 6" />
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-5 w-5">
+                  <circle cx="5" cy="12" r="1.6" />
+                  <circle cx="12" cy="12" r="1.6" />
+                  <circle cx="19" cy="12" r="1.6" />
                 </svg>
               </Link>
-              <p className="eyebrow">Messages</p>
+              {/* A conversation always starts from a person or a job — there is
+                  no blank compose screen — so "+" goes where you pick one. */}
+              <Link
+                href={NEW_THREAD_HREF}
+                aria-label="Start a conversation"
+                title="Start a conversation"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-stamp text-paper transition-colors hover:bg-stamp-dark"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden className="h-4 w-4">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </Link>
             </div>
+            <h1 className="mt-2 font-display text-3xl tracking-tight text-ink">Messages</h1>
           </div>
           <ThreadList threads={rows as any} userId={user.id} />
         </aside>
