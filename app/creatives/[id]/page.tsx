@@ -294,8 +294,15 @@ export default async function CreativePage({
         <span className="text-ink/70">{profile.full_name || "This creative"}</span>
       </nav>
 
-      <section className="card-soft mt-6 overflow-hidden">
-        {(profile.cover_url || isOwner) && (
+      {/* Screen 03's identity block is not a card. It is the name, who they
+          are, the badge, the score and what they do — flat on the page, with
+          the money column beside it. */}
+      {/* Two columns from the top of the page: screen 03 runs the money column
+          alongside the name, not below the identity band. */}
+      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-6">
+      <section className="overflow-hidden">
+        {profile.cover_url && (
         <div
           className={profile.cover_url ? "relative h-44 md:h-56" : "relative h-16"}
           style={
@@ -345,14 +352,14 @@ export default async function CreativePage({
         </div>
         )}
 
-        <div className={(profile.cover_url || isOwner) ? "px-6 pb-6 pt-8 md:pt-10" : "px-6 pb-6 pt-6"}>
+        <div className={profile.cover_url ? "pt-8 md:pt-10" : ""}>
           {/* z-10 keeps the avatar above the banner it overlaps. */}
           <div className="relative z-10">
             <div className="flex items-end gap-4">
               <div
                 className={
                   "flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-3xl font-display font-semibold text-paper shadow-elev-2 ring-4 ring-white md:h-36 md:w-36 md:text-4xl " +
-                  (profile.cover_url ? "-mt-16 md:-mt-20" : isOwner ? "-mt-10" : "")
+                  (profile.cover_url ? "-mt-16 md:-mt-20" : "")
                 }
               >
                 {profile.avatar_url ? (
@@ -428,6 +435,26 @@ export default async function CreativePage({
             </div>
           )}
 
+          {/* Screen 03 runs the description straight under the score, with no
+              "About" heading over it, and lists what they do as bare chips —
+              the word "Skills" is not on the screen. "Self-reported" stays: the
+              platform verifies none of these, and saying so is one small line
+              against a list that otherwise reads like a credential. */}
+          {profile.bio && (
+            <p id="section-about" className="mt-4 max-w-2xl scroll-mt-24 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">
+              {profile.bio}
+            </p>
+          )}
+
+          {(profile.skills || []).length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {profile.skills!.map((s: string) => (
+                <span key={s} className="rounded-full bg-ink/5 px-3 py-1 text-xs text-ink/80">{s}</span>
+              ))}
+              <span className="text-[11px] text-ink/45">Self-reported</span>
+            </div>
+          )}
+
           {(profile.categories || []).length > 0 && (
             <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {(profile.categories || []).map((c: string) => (
@@ -478,31 +505,8 @@ export default async function CreativePage({
 
       {/* No section nav: screen 03 has none. The sections keep their ids so a
           shared ?tab= link and any in-page anchor still land on one. */}
-      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-6">
-          {profile.bio && (
-            <section id="section-about" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("about")}>
-              <p className="eyebrow">About</p>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{profile.bio}</p>
-            </section>
-          )}
-
-          {(profile.skills || []).length > 0 && (
-            <section id="section-about" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("about")}>
-              {/* §M3: skills are typed by the creative and verified by nobody.
-                  Saying so costs one line and stops the list reading like a
-                  credential the platform stands behind. */}
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="eyebrow">Skills</p>
-                <span className="text-[11px] text-ink/45">Self-reported</span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profile.skills!.map((s: string) => (
-                  <span key={s} className="rounded-full bg-ink/5 px-3 py-1 text-xs text-ink/80">{s}</span>
-                ))}
-              </div>
-            </section>
-          )}
+          {/* About and Skills moved into the identity block above: screen 03
+              reads name, badge, score, description, chips as one run of text. */}
 
           {/* Item 42 (§G4): questions this creative has already answered,
               shown before anyone has to ask again. Renders nothing when none
@@ -793,27 +797,17 @@ export default async function CreativePage({
                   Sign in to hire
                 </Link>
               )}
+              <p className="mt-3 text-[11px] leading-relaxed text-ink/50">
+                <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
+                  How the money works
+                </Link>
+              </p>
             </section>
           )}
 
-          {/* Screen 03 gives the escrow promise its own card. It is a statement
-              about the platform, not about this creative, and reading it inside
-              their hire card made it sound like their terms. Owners never see
-              it: it addresses the person about to pay. */}
-          {!isOwner && (
-          <section className="card-soft flex gap-3 p-5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-stamp">
-              <path d="M12 3l7 3v6c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6l7-3z" />
-              <path d="M9 12l2 2 4-4" />
-            </svg>
-            <p className="text-xs leading-relaxed text-ink/70">
-              Your money is held in escrow until you approve the work.{" "}
-              <Link href="/how-money-works" className="text-stamp-dark underline underline-offset-4">
-                How the money works
-              </Link>
-            </p>
-          </section>
-          )}
+          {/* No separate escrow card: the money card above already says where
+              the money sits, and saying it twice in one column read as a
+              warning rather than a reassurance. */}
 
           <section className="card-soft p-5">
             <p className="eyebrow">At a glance</p>
