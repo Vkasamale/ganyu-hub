@@ -261,6 +261,25 @@ export default async function CreativePage({
         </div>
       )}
 
+      {/* Screen 03 opens with the trail that got you here: the browse page, the
+          category, this person. Desktop only — a phone has the back arrow in
+          its own header and no room for three links of chrome. */}
+      <nav aria-label="Breadcrumb" className="mt-6 hidden text-xs text-ink/50 md:block">
+        <Link href="/browse" className="hover:text-ink hover:underline">
+          Browse creatives
+        </Link>
+        {primaryCat && (
+          <>
+            <span aria-hidden className="px-1.5">/</span>
+            <Link href={`/browse?category=${encodeURIComponent(primaryCat)}`} className="hover:text-ink hover:underline">
+              {primaryCat}
+            </Link>
+          </>
+        )}
+        <span aria-hidden className="px-1.5">/</span>
+        <span className="text-ink/70">{profile.full_name || "This creative"}</span>
+      </nav>
+
       <section className="card-soft mt-6 overflow-hidden">
         {(profile.cover_url || isOwner) && (
         <div
@@ -342,19 +361,25 @@ export default async function CreativePage({
                     </span>
                   )}
                 </div>
-                {profile.headline ? (
-                  <p className="mt-1 text-sm text-ink/70 md:text-base">{profile.headline}</p>
-                ) : isOwner ? (
+                {/* Screen 03 states who they are, where, and since when on one
+                    line — "Designer · Lilongwe · Joined March 2026". Joining is
+                    a fact about trust, so it belongs beside the name rather
+                    than in a list further down. */}
+                <p className="mt-1 text-sm text-ink/70 md:text-base">
+                  {[profile.headline, profile.location || "Malawi", memberSince ? `Joined ${memberSince}` : null]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+                {!profile.headline && isOwner && (
                   <Link href="/dashboard/account" className="mt-1 inline-block text-sm text-stamp-dark underline decoration-stamp/40 underline-offset-4 hover:decoration-stamp md:text-base">
                     No headline yet — Add one
                   </Link>
-                ) : null}
+                )}
                 {/* Item 10: the tagline sits under the headline, not instead of
                     it — headline is the job, tagline is the angle. */}
                 {profile.tagline && (
                   <p className="mt-1.5 text-base text-ink/60">{profile.tagline}</p>
                 )}
-                <p className="mt-0.5 text-xs text-ink/55">{profile.location || "Malawi"}</p>
               </div>
             </div>
           </div>
@@ -442,14 +467,14 @@ export default async function CreativePage({
       <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
           {profile.bio && (
-            <section id="section-about" className={"card-soft p-6" + pane("about")}>
+            <section id="section-about" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("about")}>
               <p className="eyebrow">About</p>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{profile.bio}</p>
             </section>
           )}
 
           {(profile.skills || []).length > 0 && (
-            <section id="section-about" className={"card-soft p-6" + pane("about")}>
+            <section id="section-about" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("about")}>
               {/* §M3: skills are typed by the creative and verified by nobody.
                   Saying so costs one line and stops the list reading like a
                   credential the platform stands behind. */}
@@ -469,7 +494,7 @@ export default async function CreativePage({
               shown before anyone has to ask again. Renders nothing when none
               were written. */}
           {(services || []).some((s: any) => Array.isArray(s.faqs) && s.faqs.length > 0) && (
-            <section id="section-services" className={"card-soft p-6" + pane("services")}>
+            <section id="section-services" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("services")}>
               <p className="eyebrow">Common questions</p>
               <dl className="mt-4 space-y-4">
                 {(services || []).flatMap((s: any) =>
@@ -486,7 +511,7 @@ export default async function CreativePage({
             </section>
           )}
 
-          <section id="section-services" className={"card-soft p-6" + pane("services")}>
+          <section id="section-services" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("services")}>
             <div className="flex items-baseline justify-between">
               <p className="eyebrow">Rate card</p>
               <span className="text-xs text-ink/55">Starting prices</span>
@@ -509,7 +534,7 @@ export default async function CreativePage({
           </section>
 
           {(portfolioCount > 0 || isOwner) && (
-            <section id="section-portfolio" className={"card-soft p-6" + pane("portfolio")}>
+            <section id="section-portfolio" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("portfolio")}>
               <p className="eyebrow">Portfolio</p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(portfolio || []).map((p) => {
@@ -555,7 +580,7 @@ export default async function CreativePage({
               thing would let the weaker signal borrow the stronger one's
               credibility. */}
           {testimonials.length > 0 && (
-            <section id="section-reviews" className={"card-soft p-6" + pane("reviews")}>
+            <section id="section-reviews" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("reviews")}>
               <p className="eyebrow">Vouched for, off Ganyu Hub</p>
               <p className="mt-1.5 text-xs text-ink/55">
                 Clients {profile.full_name?.split(" ")[0] || "they"} worked with before joining, who
@@ -577,7 +602,7 @@ export default async function CreativePage({
           )}
 
           {reviewCount > 0 && (
-            <section id="section-reviews" className={"card-soft p-6" + pane("reviews")}>
+            <section id="section-reviews" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("reviews")}>
               <div className="flex items-center justify-between">
                 <p className="eyebrow">Reviews</p>
                 <span className="inline-flex items-center gap-1.5 text-sm">
@@ -654,7 +679,7 @@ export default async function CreativePage({
           )}
 
           {user && !isOwner && (
-            <section id="section-services" className={"card-soft p-6" + pane("services")}>
+            <section id="section-services" className={"border-t border-ink/10 pt-6 first:border-0 first:pt-0" + pane("services")}>
               <p className="eyebrow">Custom quote</p>
               <p className="mt-1 text-sm text-ink/65">
                 Don&apos;t see what you need? Describe it and {profile.full_name?.split(" ")[0] || "this creative"} will reply with a price.
