@@ -428,11 +428,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             </Link>
           ) : (
             client?.full_name || "a client"
-          )}{" "}
-          &middot; posted {formatDayMonth(job.created_at)}
-          {acceptedProposalCount > 0 && proposalCount != null && (
-            <> &middot; {acceptedProposalCount} proposal accepted of {proposalCount}</>
           )}
+          {/* The posted date and the proposal count live in the terms row
+              under the brief. Saying them here as well was the same line
+              twice on one screen. */}
         </p>
       </div>
 
@@ -516,16 +515,18 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           §N4 amount-in-the-button labels, not just the creative's payout note. */}
       {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
         <div id="payment" className="job-money scroll-mt-24">
-        <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
+        {/* Screens 05/06 run the money column as ONE card: the payment state,
+            then what to do next, then the figures and the dispute sentence,
+            divided by rules rather than by gaps. Three boxes read as three
+            separate concerns; they are one. */}
+        <Card className="mt-6">
+          <CardContent className="space-y-4 p-5">
+            <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} bare />
 
-        {/* Screens 05/06 close the rail with the four dates and figures the
-            client comes back to check, then the sentence that says a person
-            reads a dispute before any money moves. */}
-        {/* Screens 05/06: once the money has gone, the rail stops asking for
-            money and starts asking for the two things that come after it. */}
+        {/* Once the money has gone, the column stops asking for money and
+            starts asking for the two things that come after it. */}
         {moneyReleased && (
-          <Card className="mt-4">
-            <CardContent className="space-y-2 p-5">
+          <div className="space-y-2 border-t border-ink/10 pt-4">
               {!myReview && (
                 <a
                   href="#review"
@@ -542,13 +543,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                   Hire {(acceptedCreative.full_name || "them").split(" ")[0]} again
                 </Link>
               )}
-            </CardContent>
-          </Card>
+          </div>
         )}
 
-        <Card className="mt-4">
-          <CardContent className="p-5">
-            <dl className="space-y-2 text-xs">
+            <dl className="space-y-2 border-t border-ink/10 pt-4 text-xs">
               {job.accepted_bid_mwk != null && (
                 <div className="flex items-baseline justify-between gap-3">
                   <dt className="text-ink/55">Agreed price</dt>
@@ -620,7 +618,9 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
             {/* Item 69: markdown text in, sanitised elements out. Existing
                 plain-text briefs render unchanged — line breaks and dashes
                 are already valid markdown. */}
-            <RichText className="break-words text-lg leading-relaxed text-ink/85 sm:text-xl">
+            {/* Down a step from the old text-lg/text-xl: the brief was setting
+                the type scale for the whole page and shouting over the title. */}
+            <RichText className="break-words text-base leading-relaxed text-ink/85 sm:text-lg">
               {job.brief}
             </RichText>
 
@@ -719,6 +719,11 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 <dd className="font-medium text-ink">1 accepted of {proposalCount}</dd>
               </div>
             )}
+            {/* Posted date lives here now, with the other terms. */}
+            <div className="flex items-baseline gap-2">
+              <dt className="text-xs uppercase tracking-wide text-ink/50">Posted</dt>
+              <dd className="font-medium text-ink">{formatDayMonth(job.created_at)}</dd>
+            </div>
             {job.format_spec && (
               <div className="flex items-baseline gap-2">
                 <dt className="text-xs uppercase tracking-wide text-ink/50">Format</dt>
