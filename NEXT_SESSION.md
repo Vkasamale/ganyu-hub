@@ -1,279 +1,147 @@
-# Next session
+# Next session — port the app to the screenshots
 
 Paste this whole file into a new session as the opening message.
 
-> **Next session is the DESIGN FEEDBACK LOOP. Not feature work.**
->
-> All 79 plan items (Phases 0–9) are shipped and merged to `main`. The Claude
-> Design **system** run is done, the **template** prompt has been written and
-> run, and the founder has made adjustments inside Claude Design.
->
-> **Read [`CLAUDE_DESIGN_WORKFLOW.md`](CLAUDE_DESIGN_WORKFLOW.md) first.** The
-> YouTube tutorial is written up there in full, so it never needs re-supplying
-> again. It also carries the ground decisions of 2026-08-19, the seven answers
-> given to Claude Design, and the exact next prompt.
->
-> **Two things to know before touching anything:**
->
-> 1. The **`CLAUDE.md` step has not been done.** Until that request is sent,
->    no correction carries forward and every session repeats itself. It is the
->    whole point of the method.
-> 2. The **paper-vs-white decision is settled and the docs now agree with it.**
->    Off-white `#F7F6F3` is the ground, pure white is the raised surface,
->    cream `#EFE6CE` survives as an accent only. `DESIGN.md`, `DESIGN_BRIEF.md`
->    and `DESIGN_BRIEF_MOBILE.md` were reconciled on 2026-08-19; **the code was
->    not repainted** and still ships the cream palette. The `font-display`
->    question is *partly* settled — serif for page titles only — but whether
->    the serif survives on white is still open.
->
-> Then read **`BACKLOG.md` → "▶ NEXT SESSION STARTS HERE"** for the prepared
-> inputs and the handoff folder on the Desktop.
->
-> Everything below this line is older context, kept for reference. It is **not**
-> a queue to clear, and its "headline task" is long finished.
+> **This session has one job: make the app match the Claude Design screens.**
+> Not feature work, not refactoring. The design system is settled and the port
+> is roughly half done.
 
 ---
 
-## Setup
+## The screenshots are the specification
 
-- **Chrome** — signed in as **EQ Admin Client** (client + admin). Keep Vercel and
-  Supabase open here; Claude can't see those tabs and will ask you to read them.
-- **In-app Browser pane** — signed in as **Adam Creative**. Must be *visible on
-  screen*; collapsed, it stops compositing and every click lands at (0,0), and
-  screenshots time out with "the page is not compositing frames".
+`C:\Users\vinny\Desktop\Inspo 3\` — 20 PNGs of the Claude Design screens.
 
-**Branches: `main` only.** `redesign/job-page` and `sandbox-test` were deleted
-locally and on the remote on 2026-08-12 — all three were at the same commit, so
-nothing was lost. `test/paychangu-sandbox` and three `vercel/*` branches still
-exist on the remote and were deliberately left alone.
+**Read each screenshot immediately before porting that screen, not all at the
+start.** The previous session read five of twenty and then ran out of room to
+act on them. One image, one screen, one commit.
 
-`main` is production with live keys. Before any money moves, confirm
-Vercel → Settings → Environment Variables → **Preview** →
-`PAYCHANGU_SECRET_KEY` starts with `sec-test-`. See `PAYCHANGU_TESTING.md` for
-test numbers (leading zero required).
+| File | Screen |
+|---|---|
+| `pwa job 3.png`, `PWA job 2.png`, `PWA Job 4.png` | Post a job, steps 1, 2, 3 |
+| `Dashboard.png`, `dashboard 2.png` | Dashboard home |
+| `job detail.png`, `job details 2.png`, `Job.png`, `job 2.png`, `job 3.png` | Job detail |
+| `messages.png`, `messages (2).png`, `messages (3).png`, `messages 3.png` | Messages |
+| `profile.png`, `profile (2).png` | Creative profile |
+| `creatives.png`, `creatives 2.png` | Browse |
+| `empty ststes.png`, `eplty state.png` | Empty states |
 
-Local dev: `npm run dev` in `C:\Users\vinny\GANYU HUB`. Note the OneDrive path
-is *not* the live repo — `.claude/launch.json` there is attach-only and points
-at `http://localhost:3000`.
-
-Ground rules that have held throughout: the founder performs all logins and
-clicks anything that moves money. Supabase is `select`-only without asking.
-Update CHANGELOG, TEST_LOG, BUG_LOG and the roadmap on every push.
+Fifteen of these have never been opened by any session.
 
 ---
 
-## 0. Read these three first
+## Read this before touching colour — it cost a whole afternoon
 
-`IMPLEMENTATION_PLAN.md` is the spine — the 79 findings in
-`DESIGN_GAP_AUDIT.md` turned into phased work, with the landing page (L1–L11)
-sitting *before* Phase 0. `DESIGN.md` §4 (judge from a screenshot), §7 (14px
-cards, `rounded-md` controls) and §10 (imagery) are the rules that caught every
-defect this session.
+**`design-system/CLAUDE.md` is a 212-line SUMMARY. It is not the system.**
 
-**The split rule, which decides what we do and what Claude Design does:** we
-build anything needing a table, a column, a query, a route or a form field.
-Claude Design polishes spacing, type, colour, motion, card composition, the
-stamp. Design can only design what exists, so structure ships first.
+The real values are in `design-system/tokens/*.css` (382 lines across seven
+files) and are explained in `design-system/guidelines/*.card.html`. Both have
+been in the repo since the export. `app/globals.css` now `@import`s the token
+files directly, so they resolve in the browser — do not go back to
+transcribing them.
 
-## 1. L8–L11 — build the sections, leave them dark
+**And the tokens file itself mixes two things.** Its header says every value was
+"extracted from tailwind.config.ts, app/globals.css, job-header.tsx and
+job-progress-bar.tsx" — so some tokens are just this repo's *old code* lifted
+out, never designed.
 
-This is the headline task. Four sections, each rendering **nothing at all**
-below its threshold.
+> **The test that settles any colour question: grep `design-screens/GanyuHubScreens.dc.html`.**
+> That file is the design. If a hex appears there, it is real.
 
-| # | Section | Turns on at |
-|---|---|---|
-| L8 | Testimonials carousel | ≥3 testimonials |
-| L9 | Featured creatives | ≥6 profiles with a portfolio item |
-| L10 | Success story | 1 completed job written up |
-| L11 | Trusted-by row | ≥4 named clients with permission |
+Worked example, which flip-flopped three times in one day before this rule:
 
-**The pattern already exists — copy it, don't invent it.** `app/page.tsx:30` is
-`const showProof = jobsCompleted >= 3;` and the proof row simply isn't rendered
-below that. Audit §Q7 generalises it: *never a zero, never a placeholder, never
-`★ — (0 reviews)`.* An empty testimonial carousel says "nobody uses this"; a
-hidden one says nothing, which is accurate.
-
-Two things to settle while building:
-
-- **L8 has no data source yet.** Testimonials come from Phase 3, which uses the
-  existing `/j/[token]` share-link machinery to collect them from a creative's
-  *offline* clients. Closed beta produces zero review rows until on-platform
-  jobs complete, which is exactly why Phase 3 is sequenced before Phase 4.
-  Decide whether L8 reads `reviews` or a new testimonials source *before*
-  writing the query.
-- **Carousels must peek** (§Q8) — the next card deliberately half-visible at
-  the right edge is the only affordance saying the row swipes. A row ending
-  flush at the viewport edge reads as a static grid.
-
-## 2. Phase 0 — eight items, no migrations, ~1 session
-
-| # | Item | Where | § |
-|---|---|---|---|
-| 1 | Price in the CTA — `Fund escrow (MWK 20,000)` | escrow panel, every money button | N4 |
-| 2 | Sticky action bar (mobile) + sticky money card (desktop) | job detail, profile | G1, M8 |
-| 3 | Verify briefs render `whitespace-pre-line` | job detail | G6 |
-| 4 | Persuasive empty states with a real CTA | ~12 surfaces | E, F8 |
-| 5 | Two empty-state weights — button for an empty inbox, quiet link for an empty thread | messages | H2 |
-| 6 | `+N` overflow on chip lists | skills, tags | M9 |
-| 7 | Unread count pills | thread list | H3 |
-| 8 | Weighted checklist — `Portfolio (+20%)` + "4.5x more likely to get hired" | `WelcomeChecklist` | L3 |
-
-Items 1 and 2 are the visible wins. Item 7 also closes a standing Messages gap
-(§5 below).
-
-## 3. Landing page — what shipped 2026-08-12, and what's untested
-
-Eight of eleven items. `main` at `4f38fb0`, badge `v0.9.1.2`.
-
-Shipped: L1 mobile hero (flat band — *finished*, not waiting), L1b install
-banner, L1c announcement bar, L2 value props, L3 category grid, L4 how it
-works, L5 real footer, L6 CTA band. L7 proof row pre-existed and is live on
-real numbers (MWK 1.6M, 19 jobs, 59 creatives).
-
-**Nothing here has been opened on a physical phone.** Three items need a real
-device and one needs a login:
-
-- **The install banner's iOS branch has never run.** It is the entire reason
-  the component exists — Safari implements no `beforeinstallprompt`, so the
-  Add-to-Home-Screen hint is the only install path an iPhone user has. On a
-  real iPhone the bar should read "Tap ⧉ then Add to Home Screen" with **no**
-  Install button. Desktop testing used a synthetic event.
-- **A real `beforeinstallprompt` on Android Chrome**, and whether `prompt()`
-  actually opens the install sheet.
-- **Install-banner suppression on `/dashboard`** — needs a signed-in session.
-- **The footer accordion is a touch control** and no thumb has tested the tap
-  targets. Keyboard traversal also unchecked.
-
-Also unexercised: setting `ANNOUNCEMENT = null` in
-`components/announcement-bar.tsx` to retire the beta bar. Correct by
-inspection; worth ten seconds the first time you use it.
-
-**Editing the announcement:** one constant at the top of
-`components/announcement-bar.tsx`. **Bump its `id` whenever the text changes** —
-dismissal is keyed on the id, so a visitor who closed the beta notice would
-otherwise never see the launch notice.
-
-## 4. Hero photography — waiting on assets
-
-Beta creatives are sending photographs; none have arrived. `DESIGN.md` §10 is
-the checklist to judge them against: no eye contact, face partial or absent,
-real space, mid-action, already dark, dead space left for type. Forbidden:
-posed, NGO grammar, chitenje-as-shorthand, and above all **the wrong country**.
-
-Budget is **≤160 KB desktop, 0 KB mobile**. Mobile ships no hero image at all
-and that is finished, not pending — Fiverr ships none either (§Q8). Do not
-art-direct a mobile crop; replace the element. Full arrival procedure in
-`BACKLOG.md`.
-
-## 5. Messages — the pieces deliberately left out
-
-- **Message-body search.** Search covers job titles, names and preview text,
-  all client-side. Searching message *history* needs a server query against
-  `messages.body` plus a Postgres text index. Deferred until thread volume
-  justifies the index — say so rather than quietly skipping it.
-- **Unread state.** No unread bolding or per-thread count yet. Phase 0 item 7
-  covers the count pill.
-- **Empty-thread preview reads oddly**: a job thread with no messages and no
-  events falls back to the other person's name, which is already the group
-  header. Should read "No activity yet".
-- **Tab split for direct vs job conversations.** `All / Jobs / Direct` filter
-  chips already ship in `components/thread-list.tsx`. The founder had not seen
-  them when the request was made, so the real question is whether chips are the
-  right weight or whether this wants true tabs — **not** whether the split
-  exists. Ask before building; do not rebuild what is there.
-
-## 6. The money-state stamp needs another pass
-
-Position is settled and confirmed live — on the money's line, at the card's
-right margin, bigger. The *texture* isn't. The flanking rules read as a
-strike-through and the double ring is too subtle; it's a rounder chip, not ink.
-
-Next attempt: rules **above and below** the text rather than beside it (the
-layout real stamps use), heavier outer ring visibly separated from the inner
-one, wider tracking, possibly a dashed outer ring for ink bleed. **Judge it
-from a screenshot** — that was the mistake last time.
-
-Still open: the header stamp says "Released to creative" while the Payment card
-beneath says "Payment released". Two labels for one fact. Probably drop the
-card's badge.
-
-## 7. Deposits — design settled, two decisions open
-
-Creatives needing materials money upfront. Settled: an *early partial release*,
-not a second collection, capped as a percentage set at proposal stage as a
-structured field. Still open:
-
-- Who absorbs the doubled payout fee (`2% + MWK 700` charged twice)?
-- Cancellation maths once deposit money is already out.
-
-`MONEY_STATE` in `components/job-header.tsx` is a keyed map, so "x deposited"
-is one added key.
-
-## 8. Claude Design — a fresh run, and when
-
-The in-flight run was **terminated deliberately** on 2026-08-12: it was
-designing against a product about to change on nearly every surface, and
-feeding it corrections mid-run would have contradicted its own inputs.
-
-`IMPLEMENTATION_PLAN.md` puts the next run **after Phase 2**, once derived
-trust numbers exist, and a second one after Phase 6. Don't start one before
-then — the same problem recurs.
-
-The cheap version of the design-critic loop is worth using in the meantime and
-is already `DESIGN.md` §4: build → screenshot → critique against `DESIGN.md` →
-fix. It caught every defect this session, none of which were visible in code.
+- `--stage-1..5` (sky, indigo, violet, amber, emerald) — **0 occurrences** in
+  the screens, which use `#069494` teal 151 times. Legacy. The stage bar is teal.
+- `--status-*` (`#22c55e`, `#facc15`, `#fbbf24`) — **present** in the screens.
+  Real. Used for availability dots and stars.
 
 ---
 
-## Outstanding — founder actions
+## What is done
 
-Nothing here is Claude's to do.
+All eight exported screens are ported to some degree, plus:
 
-- **Production config, still not done** (carried from the PWA session):
-  Vercel **Production** env vars — `APP_URL`, `NEXT_PUBLIC_SITE_URL`,
-  `EMAIL_FROM`, and the three VAPID vars — then redeploy. Supabase Auth URL
-  Configuration. The production `push_subscriptions` table. PayChangu webhook
-  repointed at production.
-- **Flip the repo back to private.** It was opened for the Claude Design run;
-  the founder's call is to close it once design work is done.
-- **Buy `ganyuhub.com`** — gates working notification email.
-- **Clean up throwaway rows** — jobs `849eb4c9…`, `99e8569b…`, `d2a9aea7…`,
-  `0ba49618…`, and the three deadline extensions on `changu`. These now have
-  conversations attached, so deleting jobs should cascade or the threads go
-  stale.
+- Tokens, elevation, money stamps, empty-state weights
+- Hero photography slideshow, the money tiles, "Needs a reply" filter,
+  "What you paid", "N jobs done", month-framed released tile
+- **An open thread is full-screen on a phone** (`12cfac3`) — `app/layout.tsx`
+  drops all site chrome on `/messages/<id>` below `md`
 
-## Known-stale data — don't be confused by it
+## What is NOT done — the actual work
 
-- **Four jobs at status `open` carrying an accepted proposal** (`testign2`,
-  `email testing`, `poster`, `logo`). Legacy seed data; anything assuming
-  "accepted ⇒ in progress" is wrong about them.
-- A client who releases early and goes quiet leaves the job open until the
-  creative closes it — stale `in_progress` rows can accumulate.
+From the five screenshots that were read:
 
-## Closed — do not re-open
+**Post a job** (`/jobs/new`) — the design has three steps: "What you need",
+"Budget & deadline", "Review". Ours has "What you need", "What you'll get",
+"Budget". Missing entirely: **"Skills you are looking for"** (tag input) and
+**"Where is the work?"** (location). Step 3 should be a Review step showing the
+job as a card, with "Posting is free. Nothing leaves your account until you pick
+someone and fund the job." Ours has no Review step.
 
-- **Reviews exist.** `DESIGN_GAP_AUDIT.md` §C, §F and §G2 claim we have none;
-  they were written from screenshots without reading the schema. `reviews`
-  shipped 2026-07-03 (`supabase/schema.sql:211`) with role-neutral
-  `reviewer_id`/`reviewee_id`, so §G3's bidirectional requirement is already
-  satisfied structurally, and star averages already render on `/creatives/[id]`
-  and `/browse`. **Phase 4 is "extend and surface", not "build reviews".**
-- **Rotate the exposed PayChangu keys** — closed 2026-08-07, no action needed.
-  Those are `sec-test-` sandbox keys and cannot move real money. Do not
-  re-raise.
-- **BUG-018, BUG-012, BUG-017, BUG-016** — all verified closed 2026-08-07.
-- **Job conversation backfill** — run, 42 threads, 0 missing. Idempotent, but
-  no reason to run again.
-- **Who closes a job** — releasing payment does NOT imply the work is done (a
-  client may pay a friend early), so completion is never inferred from payment.
-  Closing is the creative's action, gated on `payment_released`.
+**Dashboard** — ours is roughly half. Missing: "Needs you" as job cards with a
+status pill, a money pill and an action button ("Deliver files →" / "Nudge the
+client"); "Proposals sent" with Shortlisted / Under review / Not chosen pills;
+and the entire desktop right rail (messages panel with avatars and unread
+counts, "Jobs worth a look", profile-completeness card). Greeting should be
+time-of-day ("Good morning, Chikondi"), not "Welcome back".
 
-## Where things live
+**Messages thread** — full-screen is done, the contents are not. Missing: the
+stamp-ring watermark at 3% behind the stream, date divider chips (THURSDAY 20
+AUGUST / YESTERDAY / TODAY), escrow events as their own stamped centred line
+("Escrow funded · MWK 85,000 / Thoko paid 21 Aug · held until you deliver"),
+teal outgoing bubbles vs raised incoming, file-attachment bubbles with size and
+"delivered file", read receipts ("Read 09:14"), "Online" / "typing…" status,
+and the `+` compose button on the list.
 
-- `IMPLEMENTATION_PLAN.md` — the build order. Start here.
-- `DESIGN_GAP_AUDIT.md` — 79 findings, §A–§Q. §Q is the landing pages, §Q8 is
-  mobile and corrects several desktop conclusions.
-- `DESIGN.md` — the rules. §4 screenshots, §7 radii, §10 imagery.
-- `BACKLOG.md` — known issues and waiting-on-assets.
-- `CHANGELOG.md` / `TEST_LOG.md` / `BUG_LOG.md` / `GanyuHub_DevRoadmap.md` —
-  updated on every push. The roadmap carries the L1–L11 status table.
+**Not yet examined at all:** browse, profile, empty states, and the remaining
+job-detail and messages variants.
+
+## Screens that genuinely do not exist yet
+
+Only these four need generating in Claude Design. **Everything else already
+exists** — a previous session wrongly asked for Post a job, which was already
+drawn.
+
+1. The share link signed out (`/j/[token]`) — first thing a person with no
+   account ever sees, and it asks them to fund escrow
+2. Money (`/dashboard/payments`)
+3. Settings and profile editing (nine routes share one shape)
+4. Sign in / sign up / onboarding
+
+Briefs for all four are in `CLAUDE_DESIGN_WORKFLOW.md`. **Export as HTML, never
+Print to PDF** — the PDFs contain zero extractable text, no renderer here can
+open them, and the capture clipped a 27-artboard document down to two pages.
+
+The one real colour gap: the system has no **messaging** palette (error,
+warning, success, information banners). `--status-danger` exists but the
+guideline reserves red-600 for log out and destructive actions only. Roughly a
+hundred raw Tailwind colours across the app are improvising it.
+
+---
+
+## Ground rules that do not change
+
+- **The founder performs all logins and anything that moves money.** Ask.
+- **Supabase is `select`-only** without asking first.
+- **`main` is production with live keys.** Update `CHANGELOG.md`, `TEST_LOG.md`,
+  `BUG_LOG.md` and the roadmap on every push.
+- **Node is capped at 6GB** in `.claude/launch.json`. Above ~8GB the machine
+  crashes. Never run `next build` while the dev server is running.
+- **Judge every screen at 390 first**, then 1440. Measure with
+  `getBoundingClientRect()` rather than trusting a screenshot — every real
+  defect this week was found by measuring, not by looking.
+
+## Two traps that will waste an hour each
+
+1. **Route handlers 404 with a stale `.next`.** If `/auth/signout`,
+   `/auth/callback` or any `app/**/route.ts` returns 404 while pages work,
+   delete `.next` before debugging the handler. Restarting the dev server is
+   NOT enough. The dev log blames your application code. See BUG-026.
+2. **The design PDFs on the Desktop are unreadable.** Do not retry them.
+
+## Still unverified by a human
+
+- "What you paid" on job detail has never been seen — it is client-only and the
+  test account is a creative
+- The availability switch has never been clicked
+- No physical device has ever loaded this app
