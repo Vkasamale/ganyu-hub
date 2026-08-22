@@ -3,6 +3,36 @@
 A running log of what has actually shipped, newest first. For the product
 vision and unresolved decisions, see [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md).
 
+## 2026-08-22 — The dashboard is the dashboard, and messaging is the screen
+
+**The designed dashboard moved to `/dashboard`, where the screenshots said it
+belonged.** `/` keeps the home page it already had. The dashboard's Reminders
+column is gone — everything it nagged about is already a card in "Needs you"
+beside it — and the right column is now the designed rail: the three most recent
+conversations, jobs worth a look, and how finished the profile is. One rail
+width, 340px, on every screen that has one. "Your numbers" follows underneath.
+
+**Messaging is the whole phone screen.** The list, not only an open thread, now
+renders with no site nav, no tab bar and no footer below `md`. The list's
+top-left control became a back arrow, because without a tab bar there was no way
+out of it. The composer gives the text field its own row on a phone: four
+controls and an input on one 390px line left nowhere to type.
+
+**A price can be sent in a thread.** Screen 08's "Price sent" card — what it is
+for, the figure, how long it stands. Three nullable columns on `messages`
+(`offer_mwk`, `offer_note`, `offer_valid_days`), appended to
+`supabase/schema.sql` and NOT yet run. No money moves on a price: it is a quote,
+and the client acts on it by funding a job.
+
+**Job detail after the money has gone.** The rail stops asking for money and
+offers "Leave a review" and "Hire them again"; the phone bar names the payout it
+follows ("MWK 83,300 reached Chikondi on 28 August"); delivered files have their
+own section with size, date and Download; and the posted line carries the date
+and how many proposals were accepted of how many.
+
+**Profile reviews** say which month the job was for, and a list showing three of
+twelve now says so.
+
 ## 2026-08-22 — Twenty screens read, and the app moved to match them
 
 **Post a job is the design's three steps.** "What you need", "Budget & deadline",

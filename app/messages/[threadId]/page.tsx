@@ -8,6 +8,7 @@ import { AttachmentPicker } from "@/components/attachment-picker";
 import { MessageAttachment } from "@/components/message-attachment";
 import { MessageBody, type EmbeddedJob } from "@/components/message-body";
 import { MessageJobPicker } from "@/components/message-job-picker";
+import { MessagePrice } from "@/components/message-price";
 import { extractJobIds } from "@/lib/message-markers";
 import { JOB_EVENT_LABELS } from "@/components/job-timeline";
 import { ThreadList } from "@/components/thread-list";
@@ -433,6 +434,47 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
                         : "max-w-[75%] rounded-[14px] rounded-bl-sm border border-ink/[0.08] bg-raised px-4 py-2.5 text-sm text-ink shadow-elev-1"
                     }
                   >
+                    {/* Screen 08's price card. It is part of the bubble, not a
+                        separate row: someone sent it, and the thread should
+                        never look like the platform quoted anybody. */}
+                    {m.offer_mwk && (
+                      <div
+                        className={
+                          "mb-1.5 rounded-[10px] border px-3 py-2 " +
+                          (mine ? "border-paper/25 bg-paper/10" : "border-stamp/30 bg-stamp/[0.05]")
+                        }
+                      >
+                        <p
+                          className={
+                            "text-[10px] font-semibold uppercase tracking-[0.12em] " +
+                            (mine ? "text-paper/75" : "text-stamp-dark")
+                          }
+                        >
+                          Price sent
+                        </p>
+                        {m.offer_note && (
+                          <p className={"mt-0.5 text-xs " + (mine ? "text-paper/85" : "text-ink/75")}>
+                            {m.offer_note}
+                          </p>
+                        )}
+                        <div className="mt-1 flex items-baseline justify-between gap-3">
+                          <span
+                            className={
+                              "font-display text-lg tabular-nums " + (mine ? "text-paper" : "text-ink")
+                            }
+                          >
+                            {formatMwk(m.offer_mwk)}
+                          </span>
+                          {m.offer_valid_days && (
+                            <span
+                              className={"text-[10px] " + (mine ? "text-paper/60" : "text-ink/50")}
+                            >
+                              Valid {m.offer_valid_days} day{m.offer_valid_days === 1 ? "" : "s"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {m.body && (
                       <div className="text-sm">
                         <MessageBody body={m.body} jobs={embeddedJobs} mine={mine} />
@@ -483,6 +525,7 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
             <input type="hidden" name="thread_id" value={thread.id} />
             <AttachmentPicker />
             <MessageJobPicker jobs={attachableJobs} />
+            <MessagePrice />
             {/* Blueprint §2C: the input grows with the message instead of
                 scrolling one line. ponytail: CSS `field-sizing: content` does
                 it natively — no client component, no resize handler. Ceiling:
@@ -492,7 +535,10 @@ export default async function ThreadPage({ params: paramsP }: { params: Promise<
               rows={1}
               placeholder="Write a message"
               style={{ fieldSizing: "content" } as React.CSSProperties}
-              className="max-h-32 min-h-[40px] min-w-0 flex-1 resize-none rounded-2xl border border-ink/15 bg-ground px-4 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink/30 focus:outline-none"
+              /* On a phone the field takes its own row above the controls —
+                 four buttons and an input on one 390px line leaves nowhere to
+                 type. One row again from sm up. */
+              className="order-first max-h-32 min-h-[40px] w-full min-w-0 resize-none rounded-2xl border border-ink/15 bg-ground px-4 py-2 text-sm text-ink placeholder:text-ink/40 focus:border-ink/30 focus:outline-none sm:order-none sm:w-auto sm:flex-1"
             />
             <SubmitButton
               pendingText=""

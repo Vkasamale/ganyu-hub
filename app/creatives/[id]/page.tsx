@@ -605,6 +605,7 @@ export default async function CreativePage({
                     {jobById.get(r.job_id) && (
                       <p className="mt-0.5 text-xs text-ink/50">
                         {jobById.get(r.job_id)!.title}
+                        {` · ${new Date(r.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`}
                         {jobById.get(r.job_id)!.paid ? ` · ${formatMwk(jobById.get(r.job_id)!.paid!)}` : ""}
                       </p>
                     )}
@@ -641,6 +642,14 @@ export default async function CreativePage({
                   </li>
                 ))}
               </ul>
+              {/* Screen 03 closes the list by naming the total, so a page
+                  showing three of twelve never reads as a creative with three
+                  reviews. */}
+              {reviewCount > (reviews || []).length && (
+                <p className="mt-4 text-xs text-ink/55">
+                  Showing {(reviews || []).length} of {reviewCount} reviews.
+                </p>
+              )}
             </section>
           )}
 
@@ -833,6 +842,8 @@ export default async function CreativePage({
           rating={reviewCount > 0 ? { avg: avgRating, count: reviewCount } : null}
           actionHref="#actions"
           actionLabel="Message"
+          hireHref={`/creatives/${profile.id}/invite`}
+          hireLabel={`Hire ${(profile.full_name || "this creative").split(" ")[0]}`}
         >
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-3">

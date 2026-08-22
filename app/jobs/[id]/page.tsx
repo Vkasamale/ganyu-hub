@@ -203,6 +203,20 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     }
   }
 
+  // Screens 05/06 give the delivered files a section of their own — "Delivered",
+  // one card per file with its size and the day it arrived. They are the point
+  // of the job, and inside the history they read as one more thing that
+  // happened. Same events, same signed URLs, listed newest last.
+  const deliveredFiles = (jobEvents || [])
+    .filter((e: any) => typeof e?.metadata?.file_url === "string")
+    .map((e: any) => ({
+      id: e.id as string,
+      name: (e.metadata.file_name as string) || "Delivered file",
+      size: typeof e.metadata.file_size === "number" ? (e.metadata.file_size as number) : null,
+      at: e.created_at as string,
+      url: signedUrls[e.metadata.file_url as string] || "",
+    }));
+
   // Delivery form is creative-only, visible while the job is active enough
   // to be delivered. Same status set the server action enforces.
   const DELIVERY_ACTIVE = new Set(["in_progress", "revision_requested", "submitted"]);
@@ -227,6 +241,8 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     : { data: null };
   const threadPreviewMessages = [...(lastMessagesDesc || [])].reverse();
 
+  const acceptedProposalCount = (proposals || []).filter((p: any) => p.status === "accepted").length;
+  const moneyReleased = job.escrow_status === "payment_released";
   const releasedAt: string | null =
     (jobEvents || []).find((e: any) => e.event_type === "payment_released")?.created_at ?? null;
 
@@ -361,7 +377,10 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           ) : (
             client?.full_name || "a client"
           )}{" "}
-          &middot; {timeAgo(job.created_at)}
+          &middot; posted {formatDayMonth(job.created_at)}
+          {acceptedProposalCount > 0 && proposalCount != null && (
+            <> &middot; {acceptedProposalCount} proposal accepted of {proposalCount}</>
+          )}
         </p>
       </div>
 
@@ -491,6 +510,31 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         {/* Screens 05/06 close the rail with the four dates and figures the
             client comes back to check, then the sentence that says a person
             reads a dispute before any money moves. */}
+        {/* Screens 05/06: once the money has gone, the rail stops asking for
+            money and starts asking for the two things that come after it. */}
+        {moneyReleased && (
+          <Card className="mt-4">
+            <CardContent className="space-y-2 p-5">
+              {!myReview && (
+                <a
+                  href="#review"
+                  className="flex w-full items-center justify-center rounded-lg bg-stamp px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-stamp-dark"
+                >
+                  Leave a review
+                </a>
+              )}
+              {acceptedCreative && (
+                <Link
+                  href={`/creatives/${acceptedCreative.id}/invite`}
+                  className="flex w-full items-center justify-center rounded-lg border border-ink/15 px-4 py-2.5 text-sm font-medium text-ink/80 transition-colors hover:border-ink/30"
+                >
+                  Hire {(acceptedCreative.full_name || "them").split(" ")[0]} again
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="mt-4">
           <CardContent className="p-5">
             <dl className="space-y-2 text-xs">
@@ -760,6 +804,50 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </Card>
       )}
 
+      {isPartyForEvents && deliveredFiles.length > 0 && (
+        <section className="mt-6">
+          <h2 className="font-display text-xl">Delivered</h2>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {deliveredFiles.map((f) => (
+              <li
+                key={f.id}
+                className="flex items-center gap-3 rounded-xl border border-ink/[0.08] bg-raised p-4 shadow-elev-1"
+              >
+                <span aria-hidden className="shrink-0 text-ink/45">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-mono text-xs text-ink">{f.name}</span>
+                  <span className="block text-[11px] text-ink/50">
+                    {[
+                      f.size ? `${(f.size / 1024 / 1024).toFixed(1)} MB` : null,
+                      formatDayMonth(f.at),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </span>
+                {f.url ? (
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 text-xs text-stamp-dark underline underline-offset-4"
+                  >
+                    Download
+                  </a>
+                ) : (
+                  <span className="shrink-0 text-[11px] text-ink/45">Link expired — reload</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {isPartyForEvents && jobEvents && jobEvents.length > 0 && (
         <JobTimeline
           events={jobEvents as JobEventRow[]}
@@ -914,7 +1002,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
       {user && isParty && job.status === "completed" && (
         <Card className="mt-6">
-          <CardHeader>
+          <CardHeader id="review" className="scroll-mt-24">
             <CardTitle>{myReview ? "Your review" : `Rate ${isClient ? "the creative" : "the client"}`}</CardTitle>
             <p className="text-sm text-ink/55">
               {myReview
@@ -1134,7 +1222,21 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
 
       {/* §G1: on a phone the payment card scrolls away immediately. The bar
           names the amount and jumps back to the real button. */}
-      {stickyLabel && <StickyActionBar href="#payment" label={stickyLabel} hint={job.title} />}
+      {moneyReleased && isClient && !myReview ? (
+        <StickyActionBar
+          href="#review"
+          label="Leave a review"
+          hint={
+            releasedAt
+              ? `${formatMwk(job.total_paid_mwk ?? job.accepted_bid_mwk ?? 0)} reached ${
+                  (acceptedCreative?.full_name || "the creative").split(" ")[0]
+                } on ${formatDayMonth(releasedAt)}`
+              : job.title
+          }
+        />
+      ) : (
+        stickyLabel && <StickyActionBar href="#payment" label={stickyLabel} hint={job.title} />
+      )}
     </div>
   );
 }

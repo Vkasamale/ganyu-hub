@@ -6,6 +6,7 @@ import { PeriodBarChart, OutcomeDonutChart } from "@/components/admin-charts";
 import { CountUp } from "@/components/animated";
 import { formatMwk } from "@/lib/utils";
 import { getReleasedSpend } from "@/lib/money";
+import { DashboardHome } from "@/components/dashboard-home";
 
 type Role = "client" | "creative" | "agency";
 
@@ -155,7 +156,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <header>
+      {/* Screen 04 IS this route: the working day — money held and released,
+          the jobs that need you, the proposals still out, and the rail. The
+          numbers that used to open this page follow underneath, where someone
+          who came to study them will still find them. */}
+      <DashboardHome userId={user.id} />
+
+      <header className="border-t border-ink/10 pt-8">
         <p className="eyebrow">{role} workspace</p>
         <h1 className="mt-2 font-display text-3xl md:text-4xl">Your numbers</h1>
         <p className="mt-2 max-w-xl text-sm text-ink/65">

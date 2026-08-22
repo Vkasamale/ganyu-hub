@@ -1877,7 +1877,19 @@ export async function sendMessage(formData: FormData) {
     attachment_size = file.size;
   }
 
-  if (!body && !attachment_url) return { error: "Type a message or attach a file." };
+  // Screen 08: a price sent in the thread. Nothing is charged and nothing is
+  // held — it is a quote the other person reads, and acts on by funding a job.
+  const offerRaw = Number(String(formData.get("offer_mwk") || "").replace(/[^\d]/g, ""));
+  const offer_mwk = Number.isFinite(offerRaw) && offerRaw > 0 ? Math.floor(offerRaw) : null;
+  const offer_note = offer_mwk ? String(formData.get("offer_note") || "").trim() || null : null;
+  const validRaw = Number(formData.get("offer_valid_days"));
+  const offer_valid_days =
+    offer_mwk && Number.isFinite(validRaw) && validRaw > 0 && validRaw <= 90
+      ? Math.floor(validRaw)
+      : null;
+
+  if (!body && !attachment_url && !offer_mwk)
+    return { error: "Type a message, attach a file, or send a price." };
 
   const { error } = await supabase.from("messages").insert({
     thread_id,
@@ -1887,6 +1899,9 @@ export async function sendMessage(formData: FormData) {
     attachment_name,
     attachment_type,
     attachment_size,
+    offer_mwk,
+    offer_note,
+    offer_valid_days,
   });
   if (error) return { error: error.message };
 
@@ -1898,7 +1913,10 @@ export async function sendMessage(formData: FormData) {
   if (thread) {
     const recipient = thread.client_id === user.id ? thread.creative_id : thread.client_id;
     const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
-    const previewSource = body || (attachment_name ? `📎 ${attachment_name}` : "");
+    const previewSource =
+      body ||
+      (offer_mwk ? `Price sent: MWK ${offer_mwk.toLocaleString()}` : "") ||
+      (attachment_name ? `📎 ${attachment_name}` : "");
     const preview = previewSource.length > 80 ? previewSource.slice(0, 80) + "…" : previewSource;
     await supabase.from("notifications").insert({
       user_id: recipient,
