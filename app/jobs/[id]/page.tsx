@@ -310,6 +310,58 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
     ? primaryClientAction(job.escrow_status || "none", job.total_paid_mwk ?? job.accepted_bid_mwk ?? null)
     : null;
 
+  // Screens 05/06 put this card under the title beside "People on this
+  // job", not in the money column: it is a receipt, and the column is for
+  // what happens next.
+  const whatYouPaidCard = (() => {
+  /* Screens 05 and 06: "What you paid", broken out. The client agreed a
+      price and was charged more than it, and until now the difference
+      was only ever visible on the checkout page they have long since
+      left. Three lines and the sentence that stops the obvious worry —
+      the 3% is charged once, on the way in, not again on release.
+
+      Real numbers where we have them: collection_fee_mwk is what
+      PayChangu actually charged, written on verify. The estimate is only
+      a fallback, and it is labelled as one. Renders only once money has
+      actually gone in. */
+    const principal = job.total_paid_mwk ?? job.accepted_bid_mwk ?? null;
+    if (!principal) return null;
+    if (job.escrow_status !== "payment_held" && job.escrow_status !== "payment_released") return null;
+    const realFee = job.collection_fee_mwk as number | null | undefined;
+    const fee = realFee ?? collectionFee(principal, "mobile_money");
+    const paidOn = job.payment_held_at
+      ? new Date(job.payment_held_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" })
+      : null;
+    return (
+      <Card className="h-full">
+        <CardContent className="p-5">
+    <p className="eyebrow">What you paid</p>
+    <dl className="mt-3 space-y-2 text-sm">
+      <div className="flex items-baseline justify-between gap-3">
+        <dt className="text-ink/60">Agreed price</dt>
+        <dd className="font-medium tabular-nums text-ink">{formatMwk(principal)}</dd>
+      </div>
+      <div className="flex items-baseline justify-between gap-3">
+        <dt className="text-ink/60">
+          Processing fee (3%){realFee == null && <span className="text-ink/40"> · estimate</span>}
+        </dt>
+        <dd className="font-medium tabular-nums text-ink">{formatMwk(fee)}</dd>
+      </div>
+      <div className="flex items-baseline justify-between gap-3 border-t border-ink/10 pt-2">
+        <dt className="font-medium text-ink">You paid</dt>
+        <dd className="font-display text-base font-semibold tabular-nums text-ink">
+          {formatMwk(principal + fee)}
+        </dd>
+      </div>
+    </dl>
+    <p className="mt-3 text-xs text-ink/55">
+      {paidOn ? `Paid ${paidOn}. ` : ""}The 3% is charged once, when money comes in.
+    </p>
+        </CardContent>
+      </Card>
+    );
+  })();
+
   return (
     <div className="job-layout mx-auto max-w-4xl px-4 py-10 lg:max-w-6xl">
       {/*
@@ -384,10 +436,16 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         </p>
       </div>
 
+      {/* Screens 05/06 pair the two summary cards under the title: what the
+          money did on the left, who is on the job on the right. Both are
+          history, not actions — every action lives in the money column. */}
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      {whatYouPaidCard}
+
       {/* People on this job. Both rows are facts the reader already has a
           relationship with — the person they are paying, and themselves. */}
       {(acceptedCreative || client) && (
-        <Card className="mt-4">
+        <Card className="h-full">
           <CardContent className="p-5">
             <p className="eyebrow">People on this job</p>
             <ul className="mt-3 space-y-3">
@@ -447,6 +505,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
           </CardContent>
         </Card>
       )}
+      </div>
 
       {clientTrust && (
         <AboutClient trust={clientTrust} clientId={job.client_id} clientName={client?.full_name || null} />
@@ -458,54 +517,6 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
       {user && isClient && (job.status !== "open" || job.escrow_status !== "none" || job.pending_accept_proposal_id) && (
         <div id="payment" className="job-money scroll-mt-24">
         <EscrowPanel jobId={job.id} escrowStatus={job.escrow_status || "none"} role="client" payoutStatus={job.payout_status} heldMwk={job.total_paid_mwk ?? job.accepted_bid_mwk ?? null} paymentHeldAt={job.payment_held_at} testMode={isTestMode()} />
-        {/* Screens 05 and 06: "What you paid", broken out. The client agreed a
-            price and was charged more than it, and until now the difference
-            was only ever visible on the checkout page they have long since
-            left. Three lines and the sentence that stops the obvious worry —
-            the 3% is charged once, on the way in, not again on release.
-
-            Real numbers where we have them: collection_fee_mwk is what
-            PayChangu actually charged, written on verify. The estimate is only
-            a fallback, and it is labelled as one. Renders only once money has
-            actually gone in. */}
-        {(() => {
-          const principal = job.total_paid_mwk ?? job.accepted_bid_mwk ?? null;
-          if (!principal) return null;
-          if (job.escrow_status !== "payment_held" && job.escrow_status !== "payment_released") return null;
-          const realFee = job.collection_fee_mwk as number | null | undefined;
-          const fee = realFee ?? collectionFee(principal, "mobile_money");
-          const paidOn = job.payment_held_at
-            ? new Date(job.payment_held_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" })
-            : null;
-          return (
-            <Card className="mt-4">
-              <CardContent className="p-5">
-                <p className="eyebrow">What you paid</p>
-                <dl className="mt-3 space-y-2 text-sm">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-ink/60">Agreed price</dt>
-                    <dd className="font-medium tabular-nums text-ink">{formatMwk(principal)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-ink/60">
-                      Processing fee (3%){realFee == null && <span className="text-ink/40"> · estimate</span>}
-                    </dt>
-                    <dd className="font-medium tabular-nums text-ink">{formatMwk(fee)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3 border-t border-ink/10 pt-2">
-                    <dt className="font-medium text-ink">You paid</dt>
-                    <dd className="font-display text-base font-semibold tabular-nums text-ink">
-                      {formatMwk(principal + fee)}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="mt-3 text-xs text-ink/55">
-                  {paidOn ? `Paid ${paidOn}. ` : ""}The 3% is charged once, when money comes in.
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })()}
 
         {/* Screens 05/06 close the rail with the four dates and figures the
             client comes back to check, then the sentence that says a person
@@ -599,18 +610,13 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
         <JobPayoutMethodPicker jobId={job.id} methods={myMethods || []} currentId={job.payout_method_id} />
       )}
 
-      <Card className="mt-4">
-        <CardContent className="p-5 sm:p-6">
-          {/* Brief collapses to a teaser; the terms below stay visible, since
-              budget and deadline are what people come back to check. */}
-          {/* Screens 05/06 head this "The brief" and leave it open: the brief
-              is what the page is about, and a teaser makes the reader ask for
-              it before they can start. */}
-          <Collapsible
-            title="The brief"
-            defaultOpen
-            summary={String(job.brief || "").slice(0, 110) + (String(job.brief || "").length > 110 ? "…" : "")}
-          >
+      {/* Screens 05/06 do not put the brief in a box. It is the body of the
+          page: a heading, a rule, and the text — with the terms under it, since
+          budget and deadline are what people come back to check. */}
+      <section className="mt-8">
+        <div>
+          <h2 className="border-b border-ink/10 pb-3 text-lg font-semibold text-ink">The brief</h2>
+          <div className="pt-4">
             {/* Item 69: markdown text in, sanitised elements out. Existing
                 plain-text briefs render unchanged — line breaks and dashes
                 are already valid markdown. */}
@@ -641,7 +647,7 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
                 </ul>
               </div>
             )}
-          </Collapsible>
+          </div>
 
           <dl className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ink/10 pt-4 text-sm">
             {(() => {
@@ -733,8 +739,8 @@ export default async function JobDetailPage({ params: paramsP }: { params: Promi
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {user && job.status === "scope_pending" && isClient && (
         <ScopeConfirmPanel
